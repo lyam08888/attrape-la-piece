@@ -1,9 +1,13 @@
 let config, level;
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d');
+let startButton = document.getElementById('startButton');
+startButton.style.display = 'none';
 
 // Sprites
 let playerImg = new Image(), coinImg = new Image();
+playerImg.onload = checkStart;
+coinImg.onload = checkStart;
 playerImg.src = 'assets/player.png';
 coinImg.src = 'assets/coin.png';
 
@@ -15,10 +19,18 @@ fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkStart(); });
 fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkStart(); });
 
 let ready = 0;
-function checkStart() { ready++; if (ready===2) startGame(); }
+function checkStart() {
+  ready++;
+  if (ready === 4) {
+    startButton.style.display = 'block';
+  }
+}
 
 let player = { x:0, y:0, size:32 }, coin = { x:0, y:0, size:32 }, score=0;
+startButton.addEventListener('click', startGame);
 function startGame() {
+  document.getElementById('startMenu').style.display = 'none';
+  canvas.style.display = 'block';
   player.x = level.playerStart.x;
   player.y = level.playerStart.y;
   coin.x = level.coinStart.x;
