@@ -2,26 +2,26 @@
   "gameTitle": "Super Pixel Adventure",
   "canvasWidth": 960,
   "canvasHeight": 540,
-  "tileSize": 16,
+  "tileSize": 32,
   "physics": {
-    "gravity": 0.35,
+    "gravity": 0.45,
     "jumpForce": 8.5,
-    "playerSpeed": 2.5
+    "playerSpeed": 3
   },
   "player": {
     "maxLives": 5,
     "gameTime": 180
   },
   "skins": [
-    "assets/player1.png",
-    "assets/player2.png",
-    "assets/player3.png"
+    "e74c3c",
+    "3498db",
+    "2ecc71"
   ],
   "assets": {
-    "coin": "assets/coin.png",
-    "enemy": "assets/enemy.png",
-    "flag": "assets/flag.png",
-    "bonus": "assets/bonus.png",
-    "wall": "assets/wall.png"
+    "wall": "https://placehold.co/32x32/c0392b/000000?text=B",
+    "coin": "https://placehold.co/32x32/f1c40f/000000?text=C",
+    "enemy": "https://placehold.co/32x32/8e44ad/FFFFFF?text=E",
+    "flag": "https://placehold.co/32x32/27ae60/FFFFFF?text=F",
+    "bonus": "https://placehold.co/32x32/e67e22/FFFFFF?text=P"
   }
 }
