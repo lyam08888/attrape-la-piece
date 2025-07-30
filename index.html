@@ -1,63 +1,160 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Attrape la pièce ! Ultimate</title>
-  <meta name="viewport" content="width=900, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <style>
-    body { background:#23272e; color:#fff; font-family:'Press Start 2P',monospace; margin:0; }
-    #mainMenu { display: flex; flex-direction: column; align-items: center; justify-content: center; width:100vw; height:99vh;}
-    #menuBox { background:#191e23; border:2px solid #ffb700; border-radius:18px; padding:32px 44px; box-shadow:0 6px 32px #000c; margin-top:30px; min-width:360px;}
-    h1 { color:#ffb700; margin: 8px 0 20px 0; text-align:center; text-shadow:2px 2px 0 #222; }
-    #modes button, #shop button, #startButton { font-family: inherit; margin: 6px 8px; padding: 11px 36px; border-radius: 10px; border: none; background: #ffb700; color: #111; cursor: pointer; font-size: 1.1rem;}
-    #modes button.selected { background: #111; color: #ffb700; border:2px solid #ffb700;}
-    #shop { margin-top:18px; text-align:center;}
-    #shop button { min-width:170px; }
-    #shopMsg { margin-top:6px; color:#f44; font-size:1rem; min-height:18px;}
-    #startButton {margin-top:26px; font-size:1.3rem;}
-    #pixelCanvas { margin: 24px auto 0 auto; display: none; border: 3px solid #ffb700; border-radius: 12px; background: #191e23; image-rendering: pixelated;}
-    #scoreBoard, #gameOver { margin:12px auto; background:#191e23; border:2px solid #444; border-radius:8px; padding:10px 18px; min-width:220px; text-align:center; display:none;}
-    #lives { color: #f44; font-size:1.1rem;}
-    #xpbar { background: #222; border-radius: 8px; overflow: hidden; margin: 8px 0 0 0;}
-    #xpbar-inner { background: #4af045; height: 16px; width: 0; transition: width .3s;}
-    #levelDisplay { color:#fff; background:#282b30; border-radius: 5px; padding:2px 15px; font-size:1rem; margin-top:5px; border:1px solid #424; display:inline-block;}
-    @media (max-width: 700px) {
-      #menuBox { min-width:0; width:96vw; padding:12vw 0; }
-      #pixelCanvas { width:95vw !important; height:95vw !important; max-width:98vw; max-height:98vw;}
-    }
-  </style>
-</head>
-<body>
-  <div id="mainMenu">
-    <div id="menuBox">
-      <h1>ATTRAPE LA PIÈCE !</h1>
-      <div id="modes">
-        <b>Modes :</b>
-        <button class="selected" id="mode_classic" onclick="selectMode('classic')">Classique</button>
-        <button id="mode_endless" onclick="selectMode('endless')">Infini</button>
-        <button id="mode_hardcore" onclick="selectMode('hardcore')">Hardcore</button>
-        <button id="mode_timed" onclick="selectMode('timed')">Time-Attack</button>
-      </div>
-      <div id="shop">
-        <b>Shop :</b>
-        <button onclick="buyPower('invincible')">Invincible (30 XP)</button>
-        <button onclick="buyPower('slow')">Ralentir ennemis (15 XP)</button>
-        <div id="shopMsg"></div>
-      </div>
-      <button id="startButton" disabled>Démarrer</button>
-    </div>
-  </div>
-  <div id="levelDisplay" style="display:none;">Niveau : <span id="levelNum">1</span></div>
-  <div id="scoreBoard">
-    <div>Score : <span id="scoreValue">0</span></div>
-    <div>🏆 Meilleur : <span id="highScore">0</span></div>
-    <div id="lives">Vies : <span id="lifeCount">3</span></div>
-    <div id="xpbar"><div id="xpbar-inner"></div></div>
-  </div>
-  <div id="gameOver"></div>
-  <canvas id="pixelCanvas" width="600" height="600"></canvas>
-  <audio id="bgMusic" src="assets/music.mp3" loop preload="auto"></audio>
-  <script src="game.js"></script>
-</body>
-</html>
+// --- CONFIGURATION GLOBALE ---
+let mode = "classic";
+let LEVELS = [
+  { grid: 80, json: 'level1.json' },
+  { grid: 100, json: 'level1.json' },
+  { grid: 120, json: 'level1.json' }
+];
+let currentLevel = 0, TAILLE_GRILLE = LEVELS[0].grid, config, level;
+let powers = { invincible: 0, slow: 0 };
+
+// --- SPRITES ---
+const spritePlayer = new Image(), spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
+spritePlayer.src = "assets/player.png"; 
+spriteCoin.src = "assets/coin.png"; 
+spriteEnemy.src = "assets/enemy.png";
+spriteBonus.src = "assets/bonus.png"; 
+spriteWall.src = "assets/wall.png";
+
+// --- SONS/MUSIQUE ---
+const catchSound = new Audio('assets/powerup.wav'), deathSound = new Audio('assets/death.wav'), bonusSound = new Audio('assets/powerup.wav');
+const bgMusic = document.getElementById('bgMusic');
+
+// --- DOM ---
+const canvas = document.getElementById('pixelCanvas'), ctx = canvas.getContext('2d');
+const startButton = document.getElementById('startButton'), scoreBoard = document.getElementById('scoreBoard'), scoreValue = document.getElementById('scoreValue');
+const highScoreElem = document.getElementById('highScore'), gameOverMenu = document.getElementById('gameOver'), lifeCountElem = document.getElementById('lifeCount'), levelNumElem = document.getElementById('levelNum');
+const xpBar = document.getElementById('xpbar-inner'), shopMsg = document.getElementById('shopMsg');
+const levelDisplay = document.getElementById('levelDisplay');
+canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.style.display = 'none'; levelDisplay.style.display = 'none';
+
+let loaded = 0, assetsToLoad = 5;
+function checkReady() {
+  loaded++; 
+  if (loaded >= assetsToLoad + 2) startButton.disabled = false;
+}
+[spritePlayer, spriteCoin, spriteEnemy, spriteBonus, spriteWall].forEach(img => { img.onload = checkReady; img.onerror = checkReady; });
+fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
+fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
+
+// --- JEU VARS ---
+let player = {}, coin = {}, enemies = [], bonus = null, score = 0, playing = false, lives = 3, xp = 0, highScore = 0, timer=60;
+if(localStorage.getItem("attrape_highscore")) highScore = parseInt(localStorage.getItem("attrape_highscore"));
+
+// --- MODES DE JEU ---
+function selectMode(m) {
+  mode = m;
+  document.querySelectorAll("#modes button").forEach(btn=>btn.classList.remove("selected"));
+  document.getElementById("mode_" + m).classList.add("selected");
+}
+function updateXP(val=0) { xp += val; xpBar.style.width = (Math.min(100, (xp%100))) + "%"; }
+function buyPower(type) {
+  if(type==="invincible" && xp>=30){powers.invincible+=1; xp-=30; shopMsg.innerText="Pouvoir acheté !"; setTimeout(()=>shopMsg.innerText="",1000);}
+  else if(type==="slow" && xp>=15){powers.slow+=1; xp-=15; shopMsg.innerText="Pouvoir acheté !"; setTimeout(()=>shopMsg.innerText="",1000);}
+  else shopMsg.innerText="Pas assez d'XP !";
+  updateXP(0);
+}
+
+// --- INIT ---
+function initGame(first=false) {
+  TAILLE_GRILLE = LEVELS[currentLevel].grid;
+  canvas.width = canvas.height = TAILLE_GRILLE*7; // grande grille
+  player = {...level.playerStart, size: config.playerSize*7};
+  coin = {...level.coinStart, size: config.coinSize*7};
+  enemies = (level.enemies||[]).map(e=>({...e, size: config.enemySize*7, speed: config.enemySpeed + (currentLevel*0.11)}));
+  bonus = null; score = 0; lives = config.lives; timer=60;
+  updateScore(); updateHighScore(); updateLives(); updateXP(0); levelNumElem.textContent = currentLevel+1;
+  bgMusic.volume=0.20; bgMusic.currentTime=0; bgMusic.play();
+  levelDisplay.style.display = "inline-block";
+  if(mode=="timed"){timer=40;}
+}
+
+function startGame() {
+  document.getElementById('mainMenu').style.display = 'none';
+  scoreBoard.style.display = 'block'; canvas.style.display = 'block'; gameOverMenu.style.display = 'none';
+  playing = true; currentLevel = 0;
+  fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{
+    level = l; initGame(true); window.focus(); document.addEventListener('keydown', onKeyDown); requestAnimationFrame(gameLoop);
+    if(mode=="timed") setTimeout(()=>{playing=false;endGame(true);},timer*1000);
+  });
+}
+
+function endGame(lost=false) {
+  playing = false; bgMusic.pause(); document.removeEventListener('keydown', onKeyDown);
+  if(score>highScore){highScore=score;localStorage.setItem("attrape_highscore",highScore);}
+  let txt = lost ? (mode=="timed"?"TEMPS ÉCOULÉ !":"GAME OVER !") : 'VICTOIRE !';
+  let btn = '<button id="restartButton">REJOUER</button>'; 
+  if(!lost && currentLevel<LEVELS.length-1 && mode=="classic") btn += ' <button id="nextLevel">Niveau suivant</button>';
+  gameOverMenu.innerHTML = txt+'<br>'+btn; (lost?deathSound:catchSound).play();
+  gameOverMenu.style.display = 'block'; canvas.style.display = 'none'; 
+  document.getElementById('restartButton').onclick = ()=>{ window.location.reload(); };
+  let nextBtn = document.getElementById('nextLevel'); if(nextBtn) nextBtn.onclick = nextLevel;
+}
+
+function nextLevel() { 
+  currentLevel++; fetch(LEVELS[currentLevel].json).then(r=>r.json()).then(l=>{
+    level = l; canvas.style.display='block'; scoreBoard.style.display='block'; gameOverMenu.style.display='none'; playing=true;
+    initGame(); window.focus(); document.addEventListener('keydown', onKeyDown); requestAnimationFrame(gameLoop); 
+  }); 
+}
+function updateScore() { scoreValue.textContent=score; }
+function updateHighScore() { highScoreElem.textContent=highScore; }
+function updateLives() { lifeCountElem.textContent=lives; }
+
+// --- CONTROLS & COLLISIONS ---
+function onKeyDown(e){movePlayer(e.key);}
+function movePlayer(k) {
+  if(!playing)return; let nx=player.x, ny=player.y;
+  if (["ArrowUp","z","Z"].includes(k)) ny -= config.playerSpeed*7;
+  if (["ArrowDown","s","S"].includes(k)) ny += config.playerSpeed*7;
+  if (["ArrowLeft","q","Q"].includes(k)) nx -= config.playerSpeed*7;
+  if (["ArrowRight","d","D"].includes(k)) nx += config.playerSpeed*7;
+  if (!isInObstacle(nx,ny,player.size)) {player.x=nx;player.y=ny;}
+}
+function isColliding(a,b) {return a.x<b.x+b.size && a.x+a.size>b.x && a.y<b.y+b.size && a.y+a.size>b.y;}
+function isInObstacle(x,y,size){
+  if(!level.obstacles)return false;
+  return level.obstacles.some(o=>x+size>o.x&&x<o.x+o.w*7&&y+size>o.y&&y<o.y+o.h*7);
+}
+
+// --- ENNEMIS + ACCÉLÉRATION ---
+function moveEnemies() {
+  for(let enemy of enemies){
+    let speed = enemy.speed*7;
+    if(powers.slow>0) speed *= 0.4;
+    enemy.x += enemy.dx * speed;
+    enemy.y += enemy.dy * speed;
+    if (enemy.x<0||enemy.x>canvas.width-enemy.size) enemy.dx*=-1;
+    if (enemy.y<0||enemy.y>canvas.height-enemy.size) enemy.dy*=-1;
+    if(isInObstacle(enemy.x,enemy.y,enemy.size)) {enemy.dx*=-1;enemy.dy*=-1;}
+  }
+}
+
+// --- BONUS/POUVOIRS TEMPORAIRES ---
+let invincibleFrames=0;
+function handleBonus() {
+  if (!bonus && Math.random() < (config.bonusFreq || 0.01)) {
+    const spawns = (level.bonusSpawns || level.coinSpawns);
+    const spawn = spawns[Math.floor(Math.random() * spawns.length)];
+    bonus = { x: spawn.x*7, y: spawn.y*7, size: config.bonusSize*7, timer: 250 };
+  }
+  if (bonus) { bonus.timer--; if (bonus.timer <= 0) bonus = null;}
+  if(invincibleFrames>0){invincibleFrames--; if(invincibleFrames==0)powers.invincible=0;}
+}
+
+// --- JEU PRINCIPAL ---
+function playerHit() {
+  if (powers.invincible || invincibleFrames>0) return;
+  lives--; updateLives(); invincibleFrames=60; powers.invincible=0;
+  if (lives <= 0) { setTimeout(() => endGame(true), 250); return;}
+  // anim mort : clignote
+}
+function gameLoop() {
+  if(!playing)return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#23272e";ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Obstacles/murs
+  if(level.obstacles){ctx.fillStyle=config.obstacleColor;for(let o of level.obstacles){ctx.fillRect(o.x*7,o.y*7,o.w*7,o.h*7);}}
+  // Pièce, Bonus, Joueur, Ennemis
+  ctx.drawImage(spriteCoin,coin.x,coin.y,coin.size,coin.size);
+  if(bonus)ctx.drawImage(spriteBonus,bonus.x,bonus.y,bonus.s
