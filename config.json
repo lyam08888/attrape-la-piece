@@ -24,7 +24,7 @@
     "wall": "assets/wall.png",
     "coin": "assets/coin.png",
     "bonus": "assets/bonus.png",
-    "decoration_bush": "assets/bush.png",
+    "decoration_bush": "assets/decoration_bush.png",
     "enemy_slime": "assets/enemy_slime.png",
     "enemy_frog": "assets/enemy_frog.png",
     "enemy_golem": "assets/enemy_golem.png",
