@@ -16,7 +16,7 @@ export class Player {
         // Inventaire simple
         this.inventory = { [TILE.DIRT]: 10, [TILE.STONE]: 10, [TILE.WOOD]: 10 }; // Commence avec quelques blocs
         this.equippedItem = TILE.DIRT;
-        // NOUVEAU: État pour l'animation de la hache
+        // État pour l'animation de la hache
         this.isSwinging = false;
     }
 
@@ -38,10 +38,7 @@ export class Player {
         this.vy += physics.gravity;
         
         this.handleMiningAndPlacing(mouse, game);
-
-        // Logique de collision stable
         this.handleTileCollisions(game);
-        
         this.checkEnemyCollisions(game);
 
         if (this.invulnerable > 0) this.invulnerable--;
@@ -58,7 +55,6 @@ export class Player {
         const playerCenterY = this.y + this.h / 2;
         const dist = Math.sqrt(Math.pow(playerCenterX - worldMouseX, 2) + Math.pow(playerCenterY - worldMouseY, 2));
 
-        // Si le curseur est hors de portée, on arrête l'animation
         if (dist > player.reach * tileSize) {
             this.isSwinging = false;
             return;
@@ -66,7 +62,7 @@ export class Player {
 
         // Minage (clic gauche)
         if (mouse.left) {
-            this.isSwinging = true; // Active l'animation de la hache
+            this.isSwinging = true;
             const tile = game.tileMap[tileY]?.[tileX];
             if (tile > 0) {
                 game.tileMap[tileY][tileX] = TILE.AIR;
@@ -74,9 +70,17 @@ export class Player {
                     this.inventory[tile]++;
                 }
                 game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 5, '#fff');
+
+                // NOUVEAU: Déclenche la vérification de la chute de l'arbre
+                if (tile === TILE.WOOD) {
+                    const neighbors = [[tileX, tileY - 1], [tileX - 1, tileY], [tileX + 1, tileY]];
+                    for (const [nx, ny] of neighbors) {
+                        game.propagateTreeCollapse(nx, ny);
+                    }
+                }
             }
         } else {
-            this.isSwinging = false; // Arrête l'animation si le clic est relâché
+            this.isSwinging = false;
         }
         // Placement (clic droit)
         if (mouse.right) {
@@ -90,11 +94,8 @@ export class Player {
     handleTileCollisions(game) {
         const { tileSize } = this.config;
 
-        // Appliquer le mouvement sur l'axe X
         this.x += this.vx;
-        
-        // Vérifier les collisions sur l'axe X
-        if (this.vx > 0) { // Droite
+        if (this.vx > 0) {
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let right = Math.floor((this.x + this.w) / tileSize);
@@ -105,7 +106,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vx < 0) { // Gauche
+        } else if (this.vx < 0) {
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let left = Math.floor(this.x / tileSize);
@@ -118,12 +119,9 @@ export class Player {
             }
         }
 
-        // Appliquer le mouvement sur l'axe Y
         this.y += this.vy;
         this.grounded = false;
-        
-        // Vérifier les collisions sur l'axe Y
-        if (this.vy > 0) { // Bas
+        if (this.vy > 0) {
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let bottom = Math.floor((this.y + this.h) / tileSize);
@@ -136,7 +134,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vy < 0) { // Haut
+        } else if (this.vy < 0) {
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let top = Math.floor(this.y / tileSize);
@@ -169,25 +167,19 @@ export class Player {
                this.y < other.y + other.h && this.y + this.h > other.y;
     }
 
-    // NOUVEAU: Fonction pour dessiner la hache
     drawAxe(ctx) {
         ctx.save();
-        // Position de la hache dans la main du personnage
         ctx.translate(this.w * 0.1, this.h * 0.1);
 
-        // Animation de balancement si le joueur est en train de miner
         if (this.isSwinging) {
-            const swingAngle = Math.sin(Date.now() / 80) * 1.2; // Angle en radians
+            const swingAngle = Math.sin(Date.now() / 80) * 1.2;
             ctx.rotate(swingAngle);
         }
 
-        // Dessiner la hache (simple représentation)
-        // Manche
-        ctx.fillStyle = '#8B4513'; // Marron
+        ctx.fillStyle = '#8B4513';
         ctx.fillRect(-2, -12, 4, 20);
 
-        // Tête de la hache
-        ctx.fillStyle = '#C0C0C0'; // Argent
+        ctx.fillStyle = '#C0C0C0';
         ctx.beginPath();
         ctx.moveTo(-8, -18);
         ctx.lineTo(8, -18);
@@ -219,7 +211,6 @@ export class Player {
             ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
         }
         
-        // On dessine la hache par-dessus le personnage
         this.drawAxe(ctx);
 
         ctx.restore();
