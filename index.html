@@ -95,6 +95,24 @@
       letter-spacing: 1px;
       background: #111e;
     }
+    #restartButton {
+      margin-top: 10px;
+      font-size: 1.1rem;
+      padding: 10px 30px;
+      border-radius: 20px;
+      border: none;
+      background: linear-gradient(90deg, #38ef7d, #11998e);
+      color: #fff;
+      font-weight: bold;
+      box-shadow: 0 2px 10px #0007;
+      cursor: pointer;
+      transition: background .3s, transform .13s;
+    }
+    #restartButton:hover, #restartButton:focus {
+      background: linear-gradient(90deg, #11998e, #38ef7d);
+      transform: scale(1.03);
+      outline: 2px solid #fff7;
+    }
     @media (max-width: 500px) {
       #gameCanvas { width: 94vw; height: 94vw; max-width: 380px; max-height: 380px;}
       body { padding: 0 2vw;}
@@ -105,14 +123,14 @@
   <h1>Attrape la pièce !</h1>
   <div id="instructions">
     Utilise <b>les flèches</b> ou <b>ZQSD</b> pour te déplacer.<br>
-    <b>Attrape la pièce</b> et évite les ennemis !<br>
+    <b>Attrape la pièce</b> et évite les ennemis (à venir) !<br>
     Bonne chance 🎮
   </div>
   <div id="startMenu">
     <button id="startButton" autofocus>Démarrer le jeu</button>
   </div>
   <div id="scoreBoard">Score : <span id="scoreValue">0</span></div>
-  <div id="gameOver">Game Over !<br><button id="restartButton">Rejouer</button></div>
+  <div id="gameOver">Félicitations !<br>Tu as gagné !<br><button id="restartButton">Rejouer</button></div>
   <canvas id="gameCanvas" width="400" height="400"></canvas>
   <script src="game.js"></script>
 </body>
