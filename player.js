@@ -26,8 +26,9 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
-        this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
+        this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
+        this.inventory = {};
         this.miningTarget = null;
         this.miningProgress = 0;
     }
@@ -69,7 +70,7 @@ export class Player {
                     this.miningProgress = 0;
                 }
                 
-                const toolMultiplier = TOOL_EFFECTIVENESS[selectedTool]?.includes(target.type) ? 2 : 1;
+                const toolMultiplier = TOOL_EFFECTIVENESS[selectedTool]?.includes(target.type) ? 3 : 0.5;
                 this.miningProgress += 0.05 * toolMultiplier;
 
                 game.miningEffect = { x: target.x, y: target.y, progress: this.miningProgress / TILE_HARDNESS[target.type] };
