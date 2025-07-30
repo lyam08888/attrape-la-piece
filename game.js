@@ -89,19 +89,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (action) handleMenuAction(action);
         });
 
-        ui.renderDistanceSlider.value = gameSettings.renderDistance;
-        ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-        ui.renderDistanceSlider.oninput = (e) => {
-            gameSettings.renderDistance = parseInt(e.target.value);
+        // CORRECTION: On vérifie que les éléments du menu options existent avant de les utiliser
+        if (ui.renderDistanceSlider && ui.renderDistanceValue) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
             ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-        };
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
 
-        ui.zoomSlider.value = gameSettings.zoom;
-        ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-        ui.zoomSlider.oninput = (e) => {
-            gameSettings.zoom = parseFloat(e.target.value);
+        if (ui.zoomSlider && ui.zoomValue) {
+            ui.zoomSlider.value = gameSettings.zoom;
             ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-        };
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            };
+        }
 
         if(ui.btnRestart) ui.btnRestart.onclick = initGame;
     }
@@ -481,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!game || game.over) return;
         game.over = true;
         if (ui.gameTitle) ui.gameTitle.style.display = 'block';
-        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over �`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
     }
@@ -502,3 +507,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     main();
 });
+�
