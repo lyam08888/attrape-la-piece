@@ -17,8 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRestart: document.getElementById('btnRestart'),
     };
 
-    // L'objet 'mouse' a été retiré, il n'est plus nécessaire
-    let config, assets = {}, game, keys = {}, currentSkin = 0;
+    let config, assets = {}, game, keys = {}, mouse = {x:0, y:0, left:false, right:false}, currentSkin = 0;
 
     async function main() {
         try {
@@ -146,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function update() {
         try {
-            // On ne passe plus la souris au joueur
             game.player.update(keys, game);
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
@@ -190,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.restore();
 
         updateHUD();
-        // L'inventaire n'est plus dessiné
     }
     
     function propagateTreeCollapse(startX, startY) {
@@ -237,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (game.tileMap[tileY]?.[tileX] > 0) {
                 game.fallingBlocks.splice(index, 1);
-                // On peut réactiver l'ajout à l'inventaire si besoin
             }
         });
     }
@@ -285,19 +281,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupInput() {
-        // On ajoute la touche 'action' pour la hache
         keys = { left: false, right: false, jump: false, action: false };
         document.addEventListener('keydown', e => {
             if (e.code === 'ArrowLeft') keys.left = true;
             if (e.code === 'ArrowRight') keys.right = true;
             if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = true;
-            if (e.code === 'KeyA') keys.action = true; // Touche A pour l'action
+            if (e.code === 'KeyA') keys.action = true;
         });
         document.addEventListener('keyup', e => {
             if (e.code === 'ArrowLeft') keys.left = false;
             if (e.code === 'ArrowRight') keys.right = false;
             if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
-            // L'action est gérée comme une pression unique, pas besoin de keyup
         });
     }
 
@@ -335,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endGame(win) {
         if (!game || game.over) return;
         game.over = true;
-        if (ui.gameTitle) ui.gameTitle.style.display = 'block'; // Réaffiche le titre
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
         if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
