@@ -1,4 +1,4 @@
-// ----- Sprites pixel art (en base64, aucun fichier à ajouter) -----
+// ----- Sprites pixel art (en base64) -----
 const spritePlayer = new Image();
 spritePlayer.src =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABiFBMVEUAAABX9vrU+PbU+PXU+PXU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbX///9h8ruuAAAAxHRSTlMAAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzU3ODk6Ozw9P0BBQkNERUdISUpLTE1QUVJTVFVWV1hZWltcXV5gYWJjZGdmZ2hobG1ub3BxcnN0dXZ3eHh5enx8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3uDh4uPk5ebn6Onq6+zt7vDx8vP09fb3+Pn6+/z9l08gWQAAAKpJREFUGJVjYAADY2BgZGJg5GRgYGBk4GBgaWxgZEFGBkYGRhZGBgYQmBkbGZgYGRgYGcgcmRgYGAGiwULIKoxF3USpA7E2TICgNCrEN9EyJ0Sm5UQCg7kGZmAEVHo9EA5l3YUEjR8CsLqhIxJUAGQG8S9AAL+BQXQAygnCRSoHqEQkTQwAbGRCkGJxChA0Ik4GIAACKDQLR1dQlmAAAAABJRU5ErkJggg==";
@@ -28,15 +28,33 @@ gameOverMenu.style.display = 'none';
 const catchSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b7bbd48.mp3');
 const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3');
 
-// Charger config/niveau puis afficher bouton
-Promise.all([
-  fetch('config.json').then(r=>r.json()),
-  fetch('level1.json').then(r=>r.json())
-]).then(([c, l]) => {
-  config = c;
-  level = l;
-  startButton.style.display = 'block';
+// Chargement des assets (images) et fichiers JSON AVANT d'activer le bouton démarrer
+let imagesReady = 0;
+[spritePlayer, spriteCoin, spriteEnemy].forEach(img => {
+  img.onload = () => {
+    imagesReady++;
+    showButtonIfReady();
+  };
 });
+
+let configReady = false, levelReady = false;
+
+fetch('config.json').then(r=>r.json()).then(c=>{
+  config = c;
+  configReady = true;
+  showButtonIfReady();
+});
+fetch('level1.json').then(r=>r.json()).then(l=>{
+  level = l;
+  levelReady = true;
+  showButtonIfReady();
+});
+
+function showButtonIfReady() {
+  if (imagesReady === 3 && configReady && levelReady) {
+    startButton.style.display = 'block';
+  }
+}
 
 // ----- Variables de jeu -----
 let player = {}, coin = {}, enemies = [], score = 0, playing = false;
