@@ -13,14 +13,10 @@ export class Player {
         this.canDoubleJump = true;
         this.dir = 1;
         this.invulnerable = 0;
-        // Inventaire simple
-        this.inventory = { [TILE.DIRT]: 10, [TILE.STONE]: 10, [TILE.WOOD]: 10 }; // Commence avec quelques blocs
-        this.equippedItem = TILE.DIRT;
-        // État pour l'animation de la hache
-        this.isSwinging = false;
+        this.swingTimer = 0; // Pour l'animation de la hache
     }
 
-    update(keys, mouse, game) {
+    update(keys, game) {
         const { physics } = this.config;
         
         // Mouvement horizontal
@@ -37,41 +33,33 @@ export class Player {
 
         this.vy += physics.gravity;
         
-        this.handleMiningAndPlacing(mouse, game);
+        // NOUVEAU: Action de minage avec la touche 'A'
+        this.handleActionKey(keys, game);
+        
         this.handleTileCollisions(game);
         this.checkEnemyCollisions(game);
 
         if (this.invulnerable > 0) this.invulnerable--;
+        if (this.swingTimer > 0) this.swingTimer--;
     }
 
-    handleMiningAndPlacing(mouse, game) {
-        const { tileSize, player } = this.config;
-        const worldMouseX = mouse.x + game.camera.x;
-        const worldMouseY = mouse.y + game.camera.y;
-        const tileX = Math.floor(worldMouseX / tileSize);
-        const tileY = Math.floor(worldMouseY / tileSize);
+    handleActionKey(keys, game) {
+        if (keys.action) {
+            this.swingTimer = 15; // Démarre l'animation de la hache
+            const { tileSize } = this.config;
+            
+            // Calcule la position de la tuile devant le joueur
+            const checkX = this.x + this.w / 2 + (this.dir * (this.w / 2 + 4));
+            const checkY = this.y + this.h / 2;
+            const tileX = Math.floor(checkX / tileSize);
+            const tileY = Math.floor(checkY / tileSize);
 
-        const playerCenterX = this.x + this.w / 2;
-        const playerCenterY = this.y + this.h / 2;
-        const dist = Math.sqrt(Math.pow(playerCenterX - worldMouseX, 2) + Math.pow(playerCenterY - worldMouseY, 2));
-
-        if (dist > player.reach * tileSize) {
-            this.isSwinging = false;
-            return;
-        }
-
-        // Minage (clic gauche)
-        if (mouse.left) {
-            this.isSwinging = true;
             const tile = game.tileMap[tileY]?.[tileX];
             if (tile > 0) {
                 game.tileMap[tileY][tileX] = TILE.AIR;
-                if (this.inventory[tile] !== undefined) {
-                    this.inventory[tile]++;
-                }
                 game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 5, '#fff');
-
-                // NOUVEAU: Déclenche la vérification de la chute de l'arbre
+                
+                // Déclenche la physique des arbres si on casse du bois
                 if (tile === TILE.WOOD) {
                     const neighbors = [[tileX, tileY - 1], [tileX - 1, tileY], [tileX + 1, tileY]];
                     for (const [nx, ny] of neighbors) {
@@ -79,21 +67,12 @@ export class Player {
                     }
                 }
             }
-        } else {
-            this.isSwinging = false;
-        }
-        // Placement (clic droit)
-        if (mouse.right) {
-            if (game.tileMap[tileY]?.[tileX] === TILE.AIR && this.inventory[this.equippedItem] > 0) {
-                game.tileMap[tileY][tileX] = this.equippedItem;
-                this.inventory[this.equippedItem]--;
-            }
+            keys.action = false; // Consomme l'action pour éviter les répétitions
         }
     }
 
     handleTileCollisions(game) {
         const { tileSize } = this.config;
-
         this.x += this.vx;
         if (this.vx > 0) {
             let top = Math.floor(this.y / tileSize);
@@ -118,7 +97,6 @@ export class Player {
                 }
             }
         }
-
         this.y += this.vy;
         this.grounded = false;
         if (this.vy > 0) {
@@ -169,16 +147,16 @@ export class Player {
 
     drawAxe(ctx) {
         ctx.save();
-        ctx.translate(this.w * 0.1, this.h * 0.1);
+        ctx.translate(this.w * 0.2, this.h * 0.3);
 
-        if (this.isSwinging) {
-            const swingAngle = Math.sin(Date.now() / 80) * 1.2;
+        if (this.swingTimer > 0) {
+            const swingProgress = (15 - this.swingTimer) / 15;
+            const swingAngle = Math.sin(swingProgress * Math.PI) * 1.5;
             ctx.rotate(swingAngle);
         }
 
         ctx.fillStyle = '#8B4513';
         ctx.fillRect(-2, -12, 4, 20);
-
         ctx.fillStyle = '#C0C0C0';
         ctx.beginPath();
         ctx.moveTo(-8, -18);
@@ -187,11 +165,10 @@ export class Player {
         ctx.lineTo(-4, -10);
         ctx.closePath();
         ctx.fill();
-
         ctx.restore();
     }
 
-    draw(ctx, assets, skinKey, isGodMode) {
+    draw(ctx, assets, skinKey) {
         ctx.save();
         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.globalAlpha = 0.5;
@@ -207,12 +184,11 @@ export class Player {
         if (skinAsset) {
             ctx.drawImage(skinAsset, -this.w / 2, -this.h / 2, this.w, this.h);
         } else {
-            ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
+            ctx.fillStyle = '#ea4335';
             ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
         }
         
         this.drawAxe(ctx);
-
         ctx.restore();
     }
 }
