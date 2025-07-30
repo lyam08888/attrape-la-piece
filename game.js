@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRestart: document.getElementById('btnRestart'),
     };
 
-    let config, assets = {}, game, keys = {}, mouse = {x:0, y:0, left:false, right:false}, currentSkin = 0;
+    // L'objet 'mouse' a été retiré, il n'est plus nécessaire
+    let config, assets = {}, game, keys = {}, currentSkin = 0;
 
     async function main() {
         try {
             config = await (await fetch('config.json')).json();
-            // Le canvas prend maintenant la taille de la fenêtre
             ui.canvas.width = window.innerWidth;
             ui.canvas.height = window.innerHeight;
             if(ui.gameTitle) ui.gameTitle.textContent = config.gameTitle;
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initGame() {
-        if (ui.gameTitle) ui.gameTitle.style.display = 'none'; // Cache le titre principal
+        if (ui.gameTitle) ui.gameTitle.style.display = 'none';
         game = {
             player: null,
             camera: { x: 0, y: 0 },
@@ -146,13 +146,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function update() {
         try {
-            game.player.update(keys, mouse, game);
+            // On ne passe plus la souris au joueur
+            game.player.update(keys, game);
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
             updateParticles();
             updateFallingBlocks();
             updateCamera(false);
-            mouse.left = false; mouse.right = false;
         } catch (error) {
             console.error("Erreur dans la boucle de jeu:", error);
             game.over = true;
@@ -190,35 +190,131 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.restore();
 
         updateHUD();
-        drawInventoryUI();
+        // L'inventaire n'est plus dessiné
     }
     
     function propagateTreeCollapse(startX, startY) {
-        // ... (code inchangé)
-    }
-    function updateFallingBlocks() {
-        // ... (code inchangé)
-    }
-    function drawFallingBlocks() {
-        // ... (code inchangé)
-    }
-    function drawTileMap() {
-        // ... (code inchangé)
-    }
-    function drawParticles() {
-        // ... (code inchangé)
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
+
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
+            
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
+
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
+
+            if (!isSupported) {
+                game.fallingBlocks.push({
+                    x: x * config.tileSize,
+                    y: y * config.tileSize,
+                    vy: 0,
+                    tileType: tile
+                });
+                game.tileMap[y][x] = TILE.AIR;
+
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
+                }
+            }
+        }
     }
 
-    function drawInventoryUI() {
-        // ... (code inchangé)
+    function updateFallingBlocks() {
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
+                // On peut réactiver l'ajout à l'inventaire si besoin
+            }
+        });
+    }
+
+    function drawFallingBlocks() {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ui.ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawTileMap() {
+        const { tileSize } = config;
+        const startCol = Math.floor(game.camera.x / tileSize);
+        const endCol = startCol + Math.ceil(ui.canvas.width / tileSize) + 1;
+        const startRow = Math.floor(game.camera.y / tileSize);
+        const endRow = startRow + Math.ceil(ui.canvas.height / tileSize) + 1;
+
+        const TILE_ASSETS = { [TILE.GRASS]: assets.tile_grass, [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+
+        for (let y = startRow; y <= endRow; y++) {
+            for (let x = startCol; x <= endCol; x++) {
+                if (game.tileMap[y]?.[x] > 0) {
+                    const asset = TILE_ASSETS[game.tileMap[y][x]];
+                    if (asset) ui.ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
+                }
+            }
+        }
+    }
+
+    function drawParticles() {
+        if (!game) return;
+        ui.ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ui.ctx.fillStyle = p.color;
+            ui.ctx.globalAlpha = p.life / p.maxLife;
+            ui.ctx.beginPath();
+            ui.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ui.ctx.fill();
+        });
+        ui.ctx.globalAlpha = 1.0;
     }
     
     function setupInput() {
-        // ... (code inchangé)
+        // On ajoute la touche 'action' pour la hache
+        keys = { left: false, right: false, jump: false, action: false };
+        document.addEventListener('keydown', e => {
+            if (e.code === 'ArrowLeft') keys.left = true;
+            if (e.code === 'ArrowRight') keys.right = true;
+            if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = true;
+            if (e.code === 'KeyA') keys.action = true; // Touche A pour l'action
+        });
+        document.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft') keys.left = false;
+            if (e.code === 'ArrowRight') keys.right = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
+            // L'action est gérée comme une pression unique, pas besoin de keyup
+        });
     }
 
     function createParticles(x, y, count, color, options = {}) {
-        // ... (code inchangé)
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
     }
 
     function updateHUD() {
@@ -239,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endGame(win) {
         if (!game || game.over) return;
         game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block'; // Réaffiche le titre
         if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
