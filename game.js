@@ -3,7 +3,6 @@
 // =================================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Éléments du DOM ---
     const ui = {
         canvas: document.getElementById('gameCanvas'),
         ctx: document.getElementById('gameCanvas').getContext('2d'),
@@ -11,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
         controlsMenu: document.getElementById('controlsMenu'),
+        menuTitle: document.getElementById('menuTitle'),
         skinlist: document.getElementById('skinlist'),
         hud: document.getElementById('hud'),
         score: document.getElementById('score'),
@@ -27,16 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRight: document.getElementById('btnRight'),
     };
 
-    // --- Variables globales ---
-    let config, level, assets = {}, game, keys = {}, currentSkin = 0;
+    let config, level, assets = {}, game, keys = {}, currentSkin = 0, audioCtx;
 
     const gameSettings = {
         godMode: false,
         soundEnabled: true,
-        difficulty: 'Normal', // Easy, Normal, Hard
+        difficulty: 'Normal',
     };
 
-    // --- Chargement initial ---
     async function main() {
         try {
             const [configRes, levelRes] = await Promise.all([fetch('config.json'), fetch('level1.json')]);
@@ -51,60 +49,48 @@ document.addEventListener('DOMContentLoaded', () => {
             setupMenus();
             setupInput();
         } catch (error) {
-            console.error("Erreur de chargement des fichiers du jeu:", error);
+            console.error("Erreur de chargement:", error);
             ui.mainMenu.innerHTML = "<h2>Erreur de chargement</h2>";
         }
     }
 
     async function loadAssets() {
         const promises = [];
-        const allAssetPaths = [...Object.values(config.assets)];
-        
-        // Créer les skins dynamiquement
-        config.skins.forEach((color, index) => {
-            const key = `player${index + 1}`;
-            config.assets[key] = `https://placehold.co/32x32/${color}/FFFFFF?text=${index + 1}`;
-            allAssetPaths.push(config.assets[key]);
-        });
+        const allAssetPaths = {...config.assets};
+        config.skins.forEach((color, i) => allAssetPaths[`player${i+1}`] = `https://placehold.co/32x32/${color}/FFFFFF?text=${i+1}`);
+        config.assets = allAssetPaths;
 
-
-        for (const path of allAssetPaths) {
-            const promise = new Promise((resolve, reject) => {
+        for (const [key, path] of Object.entries(allAssetPaths)) {
+            promises.push(new Promise((resolve, reject) => {
                 const img = new Image();
                 img.src = path;
-                img.onload = () => {
-                    const key = Object.keys(config.assets).find(k => config.assets[k] === path);
-                    if (key) assets[key] = img;
-                    resolve();
-                };
+                img.onload = () => { assets[key] = img; resolve(); };
                 img.onerror = reject;
-            });
-            promises.push(promise);
+            }));
         }
         await Promise.all(promises);
     }
 
-    // --- Gestion des Menus ---
     function setupMenus() {
+        ui.menuTitle.textContent = "Choisissez un héros";
         ui.skinlist.innerHTML = '';
-        config.skins.forEach((color, i) => {
-            const key = `player${i + 1}`;
-            const img = assets[key].cloneNode();
+        config.skins.forEach((_, i) => {
+            const img = assets[`player${i+1}`].cloneNode();
             img.onclick = () => selectSkin(i);
             if (i === currentSkin) img.classList.add("selected");
             ui.skinlist.appendChild(img);
         });
         
+        document.querySelectorAll('#mainMenu button').forEach(b => b.style.display = 'block');
         document.body.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
             const difficulty = e.target.dataset.difficulty;
-
             if (action) handleMenuAction(action);
             if (difficulty) setDifficulty(difficulty);
         });
         ui.btnRestart.onclick = initGame;
     }
-    
+
     function handleMenuAction(action) {
         switch(action) {
             case 'start': initGame(); break;
@@ -120,12 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameSettings.soundEnabled = !gameSettings.soundEnabled;
                 ui.soundBtn.textContent = gameSettings.soundEnabled ? 'ON' : 'OFF';
                 ui.soundBtn.classList.toggle('on', gameSettings.soundEnabled);
+                if(gameSettings.soundEnabled && !audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 break;
         }
     }
 
     function showMenu(menuToShow) {
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(menu => menu.classList.remove('active'));
+        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(m => m.classList.remove('active'));
         menuToShow.classList.add('active');
     }
 
@@ -141,27 +128,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Initialisation du Jeu ---
     function initGame() {
         game = {
-            player: {
-                x: 50, y: 150, vx: 0, vy: 0,
-                w: 32, h: 32,
-                grounded: false, canDoubleJump: true, dir: 1, invulnerable: 0
-            },
+            player: { x: 80, y: 150, vx: 0, vy: 0, w: 32, h: 32, grounded: false, canDoubleJump: true, dir: 1, invulnerable: 0 },
             camera: { x: 0 },
             enemies: [], particles: [],
             tileMap: level.tiles.map(row => row.split('').map(Number)),
             score: 0, lives: config.player.maxLives, time: config.player.gameTime,
             timeLast: Date.now(), over: false, dayNightCycle: 0, weather: { type: 'clear', particles: [] }
         };
-        
         setupDifficulty();
-        
         updateHUD();
         [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
         ui.hud.classList.add('active');
-        
         requestAnimationFrame(gameLoop);
     }
     
@@ -173,16 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
         game.tileMap.forEach((row, y) => {
             row.forEach((tile, x) => {
                 if (tile === 8 && Math.random() < enemyMultiplier) {
-                    game.enemies.push({ 
-                        x: x * config.tileSize, y: y * config.tileSize, 
-                        w: 32, h: 32, vx: -0.5 * (gameSettings.difficulty === 'Hard' ? 1.5 : 1), vy: 0 
-                    });
+                    game.enemies.push({ x: x * config.tileSize, y: y * config.tileSize, w: 32, h: 32, vx: -0.5 * (gameSettings.difficulty === 'Hard' ? 1.5 : 1), vy: 0 });
                 }
             });
         });
     }
 
-    // --- Boucle de Jeu ---
     function gameLoop() {
         if (game.over) return;
         update();
@@ -190,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(gameLoop);
     }
 
-    // --- Logique de mise à jour ---
     function update() {
         updatePlayer();
         updateEnemies();
@@ -213,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         p.vy += config.physics.gravity;
-        
         p.x += p.vx;
         handleCollision('x');
         p.y += p.vy;
@@ -258,10 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateParticles() {
         game.particles = game.particles.filter(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.1;
-            p.life--;
+            p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
             return p.life > 0;
         });
     }
@@ -276,19 +246,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Date.now() - game.timeLast > 1000) {
             game.time--;
             game.timeLast = Date.now();
-            if (game.time <= 0) {
-                endGame(false);
-            }
+            if (game.time <= 0) endGame(false);
             updateHUD();
         }
     }
 
     function updateWorld() {
         game.dayNightCycle = (game.dayNightCycle + 0.0005) % (Math.PI * 2);
-        if (Math.random() < 0.001) game.weather.type = ['clear', 'rain', 'snow'][Math.floor(Math.random() * 3)];
     }
     
-    // --- Dessin ---
     function draw() {
         drawSky();
         ui.ctx.save();
@@ -302,10 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function drawSky() {
         const time = (Math.sin(game.dayNightCycle) + 1) / 2;
-        let c1 = "#87ceeb", c2 = "#98d8e8"; // Jour
-        if (time < 0.3) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; } // Nuit
-        else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; } // Aube
-        else if (time > 0.8) { c1 = "#ff6b6b"; c2 = "#ffa500"; } // Crépuscule
+        let c1 = "#87ceeb", c2 = "#98d8e8";
+        if (time < 0.3) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; }
+        else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; }
+        else if (time > 0.8) { c1 = "#ff6b6b"; c2 = "#ffa500"; }
         const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
         grad.addColorStop(0, c1); grad.addColorStop(1, c2);
         ui.ctx.fillStyle = grad;
@@ -313,13 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawTiles() {
-        const startCol = Math.floor(game.camera.x / config.tileSize);
-        const endCol = startCol + (ui.canvas.width / config.tileSize) + 2;
+        const ts = config.tileSize;
+        const startCol = Math.floor(game.camera.x / ts);
+        const endCol = startCol + (ui.canvas.width / ts) + 2;
         for (let y = 0; y < level.height; y++) {
             for (let x = startCol; x < endCol; x++) {
                 const tile = getTile(x, y);
                 if (!tile) continue;
-                const tx = x * config.tileSize, ty = y * config.tileSize;
+                const tx = x * ts, ty = y * ts;
                 if(tile === 1 || tile === 2) ui.ctx.drawImage(assets.wall, tx, ty);
                 if(tile === 4) ui.ctx.drawImage(assets.coin, tx, ty);
                 if(tile === 9) ui.ctx.drawImage(assets.flag, tx, ty);
@@ -332,16 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.save();
         ui.ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
         if (p.dir === -1) { ui.ctx.scale(-1, 1); }
-        
-        if (gameSettings.godMode) {
-            ui.ctx.shadowColor = 'gold';
-            ui.ctx.shadowBlur = 15;
-        }
-        
+        if (gameSettings.godMode) { ui.ctx.shadowColor = 'gold'; ui.ctx.shadowBlur = 15; }
         if (p.invulnerable > 0 && p.invulnerable % 10 < 5) ui.ctx.globalAlpha = 0.5;
-        
-        const skinKey = `player${currentSkin + 1}`;
-        ui.ctx.drawImage(assets[skinKey], -p.w / 2, -p.h / 2, p.w, p.h);
+        ui.ctx.drawImage(assets[`player${currentSkin + 1}`], -p.w / 2, -p.h / 2, p.w, p.h);
         ui.ctx.restore();
     }
 
@@ -358,11 +318,22 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.globalAlpha = 1.0;
     }
 
-    // --- Utilitaires ---
     function getTile(x, y) { return (y < 0 || y >= level.height || x < 0 || x >= level.width) ? 0 : game.tileMap[y][x]; }
     function getTileAt(px, py) { return getTile(Math.floor(px / config.tileSize), Math.floor(py / config.tileSize)); }
     function rectCollide(r1, r2) { return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y; }
-    function playSound(type) { if(!gameSettings.soundEnabled) return; /* Logique audio ici */ }
+    
+    function playSound(type) {
+        if (!gameSettings.soundEnabled || !audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        if (type === 'jump') { osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1); }
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.2);
+    }
     
     function updateHUD() {
         ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`;
@@ -371,15 +342,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loseLife() {
-        if(gameSettings.godMode) return;
+        if (gameSettings.godMode) return;
         game.lives--;
-        if (game.lives <= 0) {
-            endGame(false);
-        } else {
-            game.player.x = 50;
-            game.player.y = 150;
-            game.player.invulnerable = 120; // 2 secondes d'invincibilité
-        }
+        if (game.lives <= 0) endGame(false);
+        else { game.player.x = 80; game.player.y = 150; game.player.invulnerable = 120; }
         updateHUD();
     }
 
@@ -408,11 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         else if (p.vy < 0) { p.y = (y + 1) * ts; p.vy = 0; }
                     }
                 }
-                if (tile === 4) {
-                    game.tileMap[y][x] = 0;
-                    game.score += 10;
-                    updateHUD();
-                }
+                if (tile === 4) { game.tileMap[y][x] = 0; game.score += 10; updateHUD(); }
                 if (tile === 9) endGame(true);
             }
         }
