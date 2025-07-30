@@ -20,24 +20,23 @@ const scoreBoard = document.getElementById('scoreBoard');
 const scoreValue = document.getElementById('scoreValue');
 const gameOverMenu = document.getElementById('gameOver');
 
-startButton.style.display = 'none';
 canvas.style.display = 'none';
 scoreBoard.style.display = 'none';
 gameOverMenu.style.display = 'none';
 
-// ----- Sons retro (8bits) -----
+// Sons retro (8bits)
 const catchSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b7bbd48.mp3');
 const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3');
 
-// ----- Charger config/niveau -----
-fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkStart(); });
-fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkStart(); });
-
-let ready = 0;
-function checkStart() {
-  ready++;
-  if (ready === 2) startButton.style.display = 'block';
-}
+// Charger config/niveau puis afficher bouton
+Promise.all([
+  fetch('config.json').then(r=>r.json()),
+  fetch('level1.json').then(r=>r.json())
+]).then(([c, l]) => {
+  config = c;
+  level = l;
+  startButton.style.display = 'block';
+});
 
 // ----- Variables de jeu -----
 let player = {}, coin = {}, enemies = [], score = 0, playing = false;
@@ -45,19 +44,19 @@ let player = {}, coin = {}, enemies = [], score = 0, playing = false;
 // ----- Initialisation -----
 function initGame() {
   player = {
-    x: Math.floor(level.playerStart.x/10), // adaptation pour grille 32x32
-    y: Math.floor(level.playerStart.y/10),
-    size: config.playerSize ? Math.floor(config.playerSize/10) : 3
+    x: Math.floor(level.playerStart.x / 10), // adaptation pour grille 32x32
+    y: Math.floor(level.playerStart.y / 10),
+    size: config.playerSize ? Math.floor(config.playerSize / 10) : 3
   };
   coin = {
-    x: Math.floor(level.coinStart.x/10),
-    y: Math.floor(level.coinStart.y/10),
-    size: config.coinSize ? Math.floor(config.coinSize/10) : 3
+    x: Math.floor(level.coinStart.x / 10),
+    y: Math.floor(level.coinStart.y / 10),
+    size: config.coinSize ? Math.floor(config.coinSize / 10) : 3
   };
   enemies = (level.enemies || []).map(e => ({
-    x: Math.floor(e.x/10),
-    y: Math.floor(e.y/10),
-    size: config.enemySize ? Math.floor(config.enemySize/10) : 3,
+    x: Math.floor(e.x / 10),
+    y: Math.floor(e.y / 10),
+    size: config.enemySize ? Math.floor(config.enemySize / 10) : 3,
     dx: e.dx ? Math.sign(e.dx) : 1,
     dy: e.dy ? Math.sign(e.dy) : 0
   }));
@@ -166,8 +165,8 @@ function gameLoop() {
     // Nouvelle position aléatoire (sur la grille)
     if (level.coinSpawns && level.coinSpawns.length) {
       const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
-      coin.x = Math.floor(sp.x/10);
-      coin.y = Math.floor(sp.y/10);
+      coin.x = Math.floor(sp.x / 10);
+      coin.y = Math.floor(sp.y / 10);
     } else {
       coin.x = Math.floor(Math.random() * (32 - coin.size));
       coin.y = Math.floor(Math.random() * (32 - coin.size));
