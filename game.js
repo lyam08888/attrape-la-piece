@@ -1,4 +1,10 @@
 let mode = "classic";
+let skinIndex = 0;
+const skinPaths = [
+  "assets/player.png",
+  "assets/skin1.png",
+  "assets/skin2.png"
+];
 let LEVELS = [
   { grid: 80, json: 'level1.json' },
   { grid: 100, json: 'level1.json' },
@@ -8,8 +14,9 @@ let currentLevel = 0, TAILLE_GRILLE = LEVELS[0].grid, config, level;
 let powers = { invincible: 0, slow: 0 };
 
 // SPRITES
-const spritePlayer = new Image(), spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
-spritePlayer.src = "assets/player.png";
+let spritePlayer = new Image();
+const spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
+spritePlayer.src = skinPaths[skinIndex];
 spriteCoin.src = "assets/coin.png";
 spriteEnemy.src = "assets/enemy.png";
 spriteBonus.src = "assets/bonus.png";
@@ -27,12 +34,17 @@ const xpBar = document.getElementById('xpbar-inner'), shopMsg = document.getElem
 const levelDisplay = document.getElementById('levelDisplay');
 canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.style.display = 'none'; levelDisplay.style.display = 'none';
 
-let loaded = 0, assetsToLoad = 5;
+let loaded = 0, assetsToLoad = 8;
 function checkReady() {
   loaded++; 
   if (loaded >= assetsToLoad + 2) startButton.disabled = false;
 }
 [spritePlayer, spriteCoin, spriteEnemy, spriteBonus, spriteWall].forEach(img => { img.onload = checkReady; img.onerror = checkReady; });
+for(let i=1;i<skinPaths.length;i++) {
+  let tmp=new Image();
+  tmp.src=skinPaths[i];
+  tmp.onload=checkReady; tmp.onerror=checkReady;
+}
 fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
 fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
 
@@ -45,6 +57,15 @@ function selectMode(m) {
   document.querySelectorAll("#modes button").forEach(btn=>btn.classList.remove("selected"));
   document.getElementById("mode_" + m).classList.add("selected");
 }
+
+// SKINS
+function chooseSkin(idx) {
+  skinIndex = idx;
+  spritePlayer.src = skinPaths[skinIndex];
+  document.querySelectorAll('#skins img').forEach((img,i)=>img.classList.toggle("selected", i===skinIndex));
+}
+
+// SHOP/XP
 function updateXP(val=0) { xp += val; xpBar.style.width = (Math.min(100, (xp%100))) + "%"; }
 function buyPower(type) {
   if(type==="invincible" && xp>=30){powers.invincible+=1; xp-=30; shopMsg.innerText="Pouvoir acheté !"; setTimeout(()=>shopMsg.innerText="",1000);}
