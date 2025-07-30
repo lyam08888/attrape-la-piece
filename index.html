@@ -3,25 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <title>Attrape la pièce !</title>
-  <meta name="viewport" content="width=400, user-scalable=no">
+  <meta name="viewport" content="width=600, user-scalable=no">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     body { background: #23272e; color: #fff; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; align-items: center; }
     h1 { color: #ffb700; margin-top: 24px; text-shadow: 2px 2px 0 #222; }
     #instructions { background: #191e23; color: #98d6ff; padding: 12px 24px; border-radius: 9px; border: 2px solid #444; margin: 14px 0 0 0;}
     #startButton, #restartButton { margin: 22px 0 0 0; font-family: inherit; font-size: 1rem; padding: 10px 40px; border-radius: 10px; border: none; background: #ffb700; color: #111; cursor: pointer;}
-    #scoreBoard, #gameOver { margin: 12px 0; background: #191e23; border: 2px solid #444; border-radius: 8px; padding: 10px 18px; min-width: 120px; text-align: center; display: none;}
-    #pixelCanvas { margin-top: 22px; border: 3px solid #ffb700; background: #16191d; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 6px 32px #000b; display: none; width: 320px; height: 320px;}
-    @media (max-width: 400px) { #pixelCanvas { width: 92vw; height: 92vw; } }
+    #scoreBoard, #gameOver { margin: 12px 0; background: #191e23; border: 2px solid #444; border-radius: 8px; padding: 10px 18px; min-width: 160px; text-align: center; display: none;}
+    #pixelCanvas { margin-top: 22px; border: 3px solid #ffb700; background: #16191d; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 6px 32px #000b; display: none; width: 480px; height: 480px;}
+    @media (max-width: 600px) { #pixelCanvas { width: 92vw; height: 92vw; } }
+    .bonus { color: #fff634; }
   </style>
 </head>
 <body>
   <h1>ATTRAPE LA PIÈCE !</h1>
   <div id="instructions">Déplace-toi avec <span style="color:#fff;">←↑↓→</span> ou ZQSD.<br>Attrape la pièce, évite l'ennemi !</div>
   <div id="startMenu"><button id="startButton" autofocus>Démarrer</button></div>
-  <div id="scoreBoard">Score : <span id="scoreValue">0</span></div>
+  <div id="scoreBoard">
+    Score : <span id="scoreValue">0</span>
+    <br>🏆 Meilleur : <span id="highScore">0</span>
+  </div>
   <div id="gameOver"></div>
-  <canvas id="pixelCanvas" width="32" height="32"></canvas>
+  <canvas id="pixelCanvas" width="64" height="64"></canvas>
   <script src="game.js"></script>
 </body>
 </html>
