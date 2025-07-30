@@ -6,22 +6,29 @@
   "physics": {
     "gravity": 0.45,
     "jumpForce": 9.5,
-    "playerSpeed": 3.2
+    "playerSpeed": 3.2,
+    "friction": 0.88,
+    "waterFriction": 0.65
   },
   "player": {
     "maxLives": 5,
     "gameTime": 180
   },
   "skins": [
-    "e74c3c", 
-    "3498db", 
+    "e74c3c",
+    "3498db",
     "2ecc71"
   ],
   "assets": {
     "wall": "https://placehold.co/32x32/c0392b/000000?text=",
     "coin": "https://placehold.co/32x32/f1c40f/000000?text=C",
-    "enemy": "https://placehold.co/32x32/8e44ad/FFFFFF?text=E",
-    "flag": "https://placehold.co/32x32/27ae60/FFFFFF?text=F",
-    "bonus": "https://placehold.co/32x32/e67e22/FFFFFF?text=?"
+    "enemy_slime": "https://placehold.co/32x32/9b59b6/FFFFFF?text=S",
+    "enemy_frog": "https://placehold.co/32x32/2ecc71/FFFFFF?text=F",
+    "enemy_golem": "https://placehold.co/32x32/7f8c8d/FFFFFF?text=G",
+    "flag": "https://placehold.co/64x64/27ae60/FFFFFF?text=F",
+    "bonus": "https://placehold.co/32x32/e67e22/FFFFFF?text=?",
+    "heart": "https://placehold.co/32x32/e74c3c/FFFFFF?text=H",
+    "checkpoint_off": "https://placehold.co/32x64/cccccc/000000?text=CP",
+    "checkpoint_on": "https://placehold.co/32x64/f1c40f/000000?text=CP"
   }
 }
