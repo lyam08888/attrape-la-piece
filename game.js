@@ -263,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function drawScenery() {
-        // Simple parallax for hills
         ui.ctx.fillStyle = '#8CD65C';
         const hillX = (-game.camera.x * 0.5) % ui.canvas.width;
         ui.ctx.beginPath();
