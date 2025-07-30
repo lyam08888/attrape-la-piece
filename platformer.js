@@ -6,9 +6,8 @@ const gameoverDiv = document.getElementById('gameover');
 const msgEnd = document.getElementById('message');
 
 const GRAVITY = 0.32, JUMP = 5.2, SPEED = 2.2, FRICTION = 0.81;
-const PX = 1; // taille du pixel virtuel (1 = natif, 2 = très gros pixel)
 const WORLD_W = 3000, WORLD_H = 224;
-let PARALLAX_COUNT = 5; // Augmente à chaque nouvelle version !
+let PARALLAX_COUNT = 5; // Augmente à chaque nouvelle version
 
 let game, keys = {};
 document.addEventListener('keydown', e=>{ keys[e.code]=true; });
@@ -44,7 +43,7 @@ function startGame() {
     {x:82, y:140, r:6},{x:330, y:90, r:6},{x:610, y:130, r:6},
     {x:900, y:78, r:6},{x:1215, y:110, r:6},{x:1440, y:65, r:6},
     {x:1715, y:115, r:6},{x:2020, y:80, r:6},{x:2470, y:150, r:6},
-    {x:W(1800), y:W(95), r:6},{x:W(200), y:W(40), r:6}
+    {x:1800, y:95, r:6},{x:200, y:40, r:6}
   ];
   // Ennemis
   game.enemies = [
@@ -58,7 +57,6 @@ function startGame() {
   msgEnd.innerHTML = "";
   requestAnimationFrame(loop);
 }
-function W(val){return val;}
 
 function loop() {
   if (game.over) return;
@@ -181,7 +179,7 @@ function draw() {
         ctx.globalAlpha=0.70;
         ctx.beginPath();ctx.arc(i+32,cy,14,0,2*Math.PI);ctx.arc(i+48,cy+8,8,0,2*Math.PI);ctx.arc(i+64,cy-4,7,0,2*Math.PI);ctx.fillStyle="#fff";ctx.fill();ctx.globalAlpha=1;
       }
-    } else { // Bonus : des oiseaux
+    } else { // Bonus : oiseaux/couches fun
       for(let i=0;i<WORLD_W;i+=135){
         let cy=65+(i%19); ctx.globalAlpha=0.5+0.2*((layer-5)%2);
         ctx.fillStyle="#000";
