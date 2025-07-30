@@ -1,4 +1,3 @@
-// --- CONFIGURATION GLOBALE ---
 let mode = "classic";
 let LEVELS = [
   { grid: 80, json: 'level1.json' },
@@ -8,19 +7,19 @@ let LEVELS = [
 let currentLevel = 0, TAILLE_GRILLE = LEVELS[0].grid, config, level;
 let powers = { invincible: 0, slow: 0 };
 
-// --- SPRITES ---
+// SPRITES
 const spritePlayer = new Image(), spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
-spritePlayer.src = "assets/player.png"; 
-spriteCoin.src = "assets/coin.png"; 
+spritePlayer.src = "assets/player.png";
+spriteCoin.src = "assets/coin.png";
 spriteEnemy.src = "assets/enemy.png";
-spriteBonus.src = "assets/bonus.png"; 
+spriteBonus.src = "assets/bonus.png";
 spriteWall.src = "assets/wall.png";
 
-// --- SONS/MUSIQUE ---
+// SONS/MUSIQUE
 const catchSound = new Audio('assets/powerup.wav'), deathSound = new Audio('assets/death.wav'), bonusSound = new Audio('assets/powerup.wav');
 const bgMusic = document.getElementById('bgMusic');
 
-// --- DOM ---
+// DOM
 const canvas = document.getElementById('pixelCanvas'), ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton'), scoreBoard = document.getElementById('scoreBoard'), scoreValue = document.getElementById('scoreValue');
 const highScoreElem = document.getElementById('highScore'), gameOverMenu = document.getElementById('gameOver'), lifeCountElem = document.getElementById('lifeCount'), levelNumElem = document.getElementById('levelNum');
@@ -37,11 +36,10 @@ function checkReady() {
 fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
 fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
 
-// --- JEU VARS ---
 let player = {}, coin = {}, enemies = [], bonus = null, score = 0, playing = false, lives = 3, xp = 0, highScore = 0, timer=60;
 if(localStorage.getItem("attrape_highscore")) highScore = parseInt(localStorage.getItem("attrape_highscore"));
 
-// --- MODES DE JEU ---
+// MODES DE JEU
 function selectMode(m) {
   mode = m;
   document.querySelectorAll("#modes button").forEach(btn=>btn.classList.remove("selected"));
@@ -55,10 +53,10 @@ function buyPower(type) {
   updateXP(0);
 }
 
-// --- INIT ---
+// INIT
 function initGame(first=false) {
   TAILLE_GRILLE = LEVELS[currentLevel].grid;
-  canvas.width = canvas.height = TAILLE_GRILLE*7; // grande grille
+  canvas.width = canvas.height = TAILLE_GRILLE*7;
   player = {...level.playerStart, size: config.playerSize*7};
   coin = {...level.coinStart, size: config.coinSize*7};
   enemies = (level.enemies||[]).map(e=>({...e, size: config.enemySize*7, speed: config.enemySpeed + (currentLevel*0.11)}));
@@ -101,7 +99,6 @@ function updateScore() { scoreValue.textContent=score; }
 function updateHighScore() { highScoreElem.textContent=highScore; }
 function updateLives() { lifeCountElem.textContent=lives; }
 
-// --- CONTROLS & COLLISIONS ---
 function onKeyDown(e){movePlayer(e.key);}
 function movePlayer(k) {
   if(!playing)return; let nx=player.x, ny=player.y;
@@ -114,10 +111,9 @@ function movePlayer(k) {
 function isColliding(a,b) {return a.x<b.x+b.size && a.x+a.size>b.x && a.y<b.y+b.size && a.y+a.size>b.y;}
 function isInObstacle(x,y,size){
   if(!level.obstacles)return false;
-  return level.obstacles.some(o=>x+size>o.x&&x<o.x+o.w*7&&y+size>o.y&&y<o.y+o.h*7);
+  return level.obstacles.some(o=>x+size>o.x*7&&x<o.x*7+o.w*7&&y+size>o.y*7&&y<o.y*7+o.h*7);
 }
 
-// --- ENNEMIS + ACCÉLÉRATION ---
 function moveEnemies() {
   for(let enemy of enemies){
     let speed = enemy.speed*7;
@@ -130,7 +126,6 @@ function moveEnemies() {
   }
 }
 
-// --- BONUS/POUVOIRS TEMPORAIRES ---
 let invincibleFrames=0;
 function handleBonus() {
   if (!bonus && Math.random() < (config.bonusFreq || 0.01)) {
@@ -142,19 +137,32 @@ function handleBonus() {
   if(invincibleFrames>0){invincibleFrames--; if(invincibleFrames==0)powers.invincible=0;}
 }
 
-// --- JEU PRINCIPAL ---
 function playerHit() {
   if (powers.invincible || invincibleFrames>0) return;
   lives--; updateLives(); invincibleFrames=60; powers.invincible=0;
   if (lives <= 0) { setTimeout(() => endGame(true), 250); return;}
-  // anim mort : clignote
 }
 function gameLoop() {
   if(!playing)return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle="#23272e";ctx.fillRect(0,0,canvas.width,canvas.height);
-  // Obstacles/murs
   if(level.obstacles){ctx.fillStyle=config.obstacleColor;for(let o of level.obstacles){ctx.fillRect(o.x*7,o.y*7,o.w*7,o.h*7);}}
-  // Pièce, Bonus, Joueur, Ennemis
   ctx.drawImage(spriteCoin,coin.x,coin.y,coin.size,coin.size);
-  if(bonus)ctx.drawImage(spriteBonus,bonus.x,bonus.y,bonus.s
+  if(bonus)ctx.drawImage(spriteBonus,bonus.x,bonus.y,bonus.size,bonus.size);
+  if(invincibleFrames%8<4) ctx.drawImage(spritePlayer,player.x,player.y,player.size,player.size);
+  for(let enemy of enemies) ctx.drawImage(spriteEnemy,enemy.x,enemy.y,enemy.size,enemy.size);
+
+  if(isColliding(player,coin)){
+    score+=config.coinScore;updateScore();updateXP(config.xpPerCoin);catchSound.play();
+    let sp=level.coinSpawns[Math.floor(Math.random()*level.coinSpawns.length)];
+    coin.x=sp.x*7;coin.y=sp.y*7;
+  }
+  if(bonus && isColliding(player,bonus)){
+    score+=config.bonusScore;updateScore();updateXP(config.xpPerBonus);bonusSound.play();bonus=null;
+  }
+  for(let enemy of enemies) {if(isColliding(player,enemy)) playerHit();}
+  if(mode==="classic" && score>=(config.winScore||100)){setTimeout(()=>endGame(false),350);return;}
+  moveEnemies(); handleBonus(); requestAnimationFrame(gameLoop);
+}
+
+startButton.addEventListener('click', startGame);
