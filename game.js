@@ -1,5 +1,5 @@
 // =================================================================================
-// SUPER PIXEL ADVENTURE - GAME ENGINE V4 (Fonctionnalités Avancées)
+// SUPER PIXEL ADVENTURE 2 - GAME ENGINE
 // =================================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setupInput();
         } catch (error) {
             console.error("Erreur de chargement:", error);
-            ui.mainMenu.innerHTML = "<h2>Erreur de chargement</h2>";
+            ui.mainMenu.innerHTML = `<h2>Erreur de chargement des assets. Vérifiez votre dépôt GitHub.</h2><p style="font-size:0.5em; margin-top:10px;">${error}</p>`;
         }
     }
 
@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const promises = [];
         const baseUrl = config.githubRepoUrl;
         const allAssetPaths = {};
-
         for (const [key, path] of Object.entries(config.assets)) {
             allAssetPaths[key] = baseUrl + path;
         }
@@ -72,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.crossOrigin = "Anonymous";
                 img.src = path;
                 img.onload = () => { assets[key] = img; resolve(); };
-                img.onerror = () => reject(`Erreur de chargement: ${path}`);
+                img.onerror = () => reject(`Erreur: ${path}`);
             }));
         }
         await Promise.all(promises);
@@ -157,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { worldWidth, worldHeight } = level;
         const groundY = worldHeight - 64;
 
-        // Sol principal avec des trous
         for (let x = 0; x < worldWidth; x += 200) {
             if (x > 400 && Math.random() < 0.3) {
                 if (Math.random() < 0.5) game.water.push({ x: x, y: groundY, w: 120, h: 64 });
@@ -166,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
             game.platforms.push({ x: x, y: groundY, w: 200, h: 64, type: 'ground' });
         }
 
-        // Plateformes flottantes
         for (let i = 0; i < level.generation.platformCount; i++) {
             game.platforms.push({
                 x: 400 + Math.random() * (worldWidth - 800),
@@ -177,7 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // Ennemis
         let enemyCount = level.generation.enemyCount;
         if(gameSettings.difficulty === 'Easy') enemyCount *= 0.7;
         if(gameSettings.difficulty === 'Hard') enemyCount *= 1.5;
@@ -186,21 +182,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const platform = game.platforms[Math.floor(Math.random() * game.platforms.length)];
             const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
             game.enemies.push({
-                x: platform.x + platform.w / 2,
-                y: platform.y - 32,
+                x: platform.x + platform.w / 2, y: platform.y - 32,
                 w: 32, h: 32, vx: -0.5, vy: 0, dir: -1,
-                type: enemyType,
-                health: enemyType === 'golem' ? 2 : 1,
+                type: enemyType, health: enemyType === 'golem' ? 2 : 1,
                 jumpTimer: Math.random() * 100
             });
         }
         
-        // Checkpoints
         for(let i = 1; i <= level.generation.checkpoints; i++) {
             game.checkpoints.push({
                 x: (worldWidth / (level.generation.checkpoints + 1)) * i,
-                y: groundY - 64,
-                w: 32, h: 64, activated: false
+                y: groundY - 64, w: 32, h: 64, activated: false
             });
         }
     }
@@ -254,9 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateEnemies() {
         game.enemies.forEach(e => {
             e.vy += config.physics.gravity;
-            let oldX = e.x;
             e.x += e.vx;
-            
             e.y += e.vy;
             let onGround = false;
             game.platforms.forEach(plat => {
@@ -266,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     onGround = true;
                 }
             });
-            
             if (onGround && (e.x < 0 || e.x > level.worldWidth)) e.vx *= -1;
         });
     }
