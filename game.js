@@ -68,8 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseUrl = config.githubRepoUrl || ''; 
 
         for (const [key, path] of Object.entries(config.assets)) {
-            // Si le chemin est une URL complète, on l'utilise directement
-            if (path.startsWith('http')) {
+            // CORRECTION: On vérifie si le chemin est déjà une URL complète
+            if (path.startsWith('http://') || path.startsWith('https://')) {
                 allAssetPaths[key] = path;
             } else {
                 allAssetPaths[key] = baseUrl + path;
@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMenuAction(action) {
+        console.log(`Action du menu déclenchée: ${action}`); // Log pour le débogage
         switch(action) {
             case 'start': initGame(); break;
             case 'options': showMenu(ui.optionsMenu); break;
@@ -157,28 +158,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialise une nouvelle partie
     function initGame() {
-        game = {
-            player: new Player(80, 300, config),
-            camera: { x: 0 },
-            platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [],
-            lastCheckpoint: { x: 80, y: 300 },
-            score: 0, lives: config.player.maxLives, time: config.player.gameTime,
-            timeLast: Date.now(), over: false, dayNightCycle: 0,
-            settings: gameSettings,
-            level: level,
-            // CORRECTION: La référence à la configuration était manquante ici !
-            config: config,
-            playSound: playSound,
-            createParticles: createParticles,
-            loseLife: loseLife
-        };
-        
-        generateLevel(game, level, gameSettings);
-        updateHUD();
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
-        ui.hud.classList.add('active');
-        
-        requestAnimationFrame(gameLoop);
+        console.log("initGame: Démarrage d'une nouvelle partie...");
+        try {
+            game = {
+                player: new Player(80, 300, config),
+                camera: { x: 0 },
+                platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [],
+                lastCheckpoint: { x: 80, y: 300 },
+                score: 0, lives: config.player.maxLives, time: config.player.gameTime,
+                timeLast: Date.now(), over: false, dayNightCycle: 0,
+                settings: gameSettings,
+                level: level,
+                config: config,
+                playSound: playSound,
+                createParticles: createParticles,
+                loseLife: loseLife
+            };
+            
+            console.log("initGame: Génération du niveau...");
+            generateLevel(game, level, gameSettings);
+            
+            console.log("initGame: Mise à jour de l'affichage et lancement de la boucle de jeu.");
+            updateHUD();
+            [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
+            ui.hud.classList.add('active');
+            
+            requestAnimationFrame(gameLoop);
+        } catch (error) {
+            console.error("ERREUR CRITIQUE pendant initGame:", error);
+            ui.mainMenu.innerHTML = `<h2>Une erreur critique est survenue.</h2><p style="font-size:0.5em; margin-top:10px;">Vérifiez la console (F12) pour les détails.</p>`;
+            showMenu(ui.mainMenu);
+        }
     }
     
     // Boucle de jeu principale
