@@ -1,145 +1,113 @@
 import { Slime, Frog, Golem } from './enemy.js';
 
-// Nouvelle fonction pour générer des niveaux plus riches et visuellement intéressants
-export function generateLevel(game, levelConfig, gameSettings) {
-    // On vide les anciens éléments du niveau avant de générer le nouveau
-    game.platforms = [];
-    game.enemies = [];
-    game.water = [];
-    game.coins = [];
-    game.bonuses = [];
-    game.decorations = []; // Nouveau: pour les éléments de décor
-
-    const { worldWidth, worldHeight, generation } = levelConfig;
-    const groundY = worldHeight - 64;
-
-    // --- 1. Génération du sol avec des collines ---
-    let currentX = 0;
-    let currentY = groundY;
-    while (currentX < worldWidth) {
-        const segmentWidth = 150 + Math.random() * 250;
-        // Fait varier la hauteur de la prochaine section de sol
-        const nextY = groundY + (Math.random() - 0.5) * 100;
-        
-        // Ajoute une plateforme de transition en pente si la différence de hauteur est importante
-        if (Math.abs(nextY - currentY) > 32) {
-             game.platforms.push({ x: currentX, y: Math.min(currentY, nextY) + 32, w: segmentWidth, h: 128, type: 'ground' });
+// --- NOUVEAU: Générateur de bruit de Perlin simple ---
+// Utilisé pour créer un terrain plus naturel et des grottes
+const Perlin = {
+    rand_vect: function(){
+        let theta = Math.random() * 2 * Math.PI;
+        return {x: Math.cos(theta), y: Math.sin(theta)};
+    },
+    dot_prod_grid: function(x, y, vx, vy){
+        let g_vect;
+        let d_vect = {x: x - vx, y: y - vy};
+        if (this.gradients[[vx,vy]]){
+            g_vect = this.gradients[[vx,vy]];
         } else {
-             game.platforms.push({ x: currentX, y: currentY, w: segmentWidth, h: 64, type: 'ground' });
+            g_vect = this.rand_vect();
+            this.gradients[[vx,vy]] = g_vect;
         }
-        
-        // Ajoute une chance de créer un trou avec de l'eau
-        if (currentX > 500 && Math.random() < 0.2) {
-            const holeWidth = 100 + Math.random() * 50;
-            game.water.push({ x: currentX + segmentWidth, y: groundY + 32, w: holeWidth, h: 32 });
-            currentX += holeWidth;
-        }
-        
-        currentX += segmentWidth;
-        currentY = nextY;
+        return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
+    },
+    smootherstep: function(x){
+        return 6*x**5 - 15*x**4 + 10*x**3;
+    },
+    interp: function(x, a, b){
+        return a + this.smootherstep(x) * (b-a);
+    },
+    seed: function(){
+        this.gradients = {};
+        this.memory = {};
+    },
+    get: function(x, y) {
+        if (this.memory.hasOwnProperty([x,y]))
+            return this.memory[[x,y]];
+        let xf = Math.floor(x);
+        let yf = Math.floor(y);
+        //interpolate
+        let tl = this.dot_prod_grid(x, y, xf,   yf);
+        let tr = this.dot_prod_grid(x, y, xf+1, yf);
+        let bl = this.dot_prod_grid(x, y, xf,   yf+1);
+        let br = this.dot_prod_grid(x, y, xf+1, yf+1);
+        let xt = this.interp(x-xf, tl, tr);
+        let xb = this.interp(x-xf, bl, br);
+        let v = this.interp(y-yf, xt, xb);
+        this.memory[[x,y]] = v;
+        return v;
     }
+}
+Perlin.seed();
 
-    // --- 2. Ajout de plateformes flottantes structurées ---
-    for (let i = 0; i < generation.platformCount; i++) {
-        const platX = 400 + Math.random() * (worldWidth - 800);
-        const platY = 200 + Math.random() * (groundY - 300);
-        
-        // Choix aléatoire d'un type de structure de plateforme
-        const structureType = Math.random();
-        if (structureType < 0.4) { // Escalier
-            createStaircase(game, platX, platY, 3 + Math.floor(Math.random() * 3), Math.random() < 0.5);
-        } else if (structureType < 0.7) { // Pont
-            createBridge(game, platX, platY, 4 + Math.floor(Math.random() * 4));
-        } else { // Îles flottantes
-            createFloatingIslands(game, platX, platY, 3 + Math.floor(Math.random() * 3));
-        }
-    }
+// --- Fonction de génération de niveau entièrement réécrite ---
+export function generateLevel(game, levelConfig, gameSettings) {
+    const { worldWidth, worldHeight, tileSize } = levelConfig;
+    const worldWidthInTiles = Math.floor(worldWidth / tileSize);
+    const worldHeightInTiles = Math.floor(worldHeight / tileSize);
+
+    // Initialisation de la carte de tuiles (tilemap)
+    game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(worldWidthInTiles).fill(0));
     
-    // --- 3. Placement des pièces, bonus et décorations ---
-    game.platforms.forEach(p => {
-        // Ajoute des pièces en arc au-dessus de certaines plateformes
-        if (p.w > 150 && Math.random() < 0.3) {
-            createCoinArc(game, p.x + p.w / 2, p.y - 20, 5, 80);
-        }
-        // Ajoute un bloc bonus
-        if (Math.random() < 0.1) {
-            game.bonuses.push({ x: p.x + p.w / 2 - 16, y: p.y - 80, w: 32, h: 32, type: 'random' });
-        }
-        // Ajoute des décorations (ex: un buisson)
-        if (p.type === 'ground' && Math.random() < 0.4) {
-             game.decorations.push({ x: p.x + Math.random() * (p.w - 32), y: p.y - 32, w: 32, h: 32, type: 'bush' });
-        }
-    });
+    // ID des tuiles
+    const TILE = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, COAL: 4, IRON: 5 };
 
-    // --- 4. Placement des ennemis ---
-    let enemyCount = generation.enemyCount;
-    if(gameSettings.difficulty === 'Easy') enemyCount = Math.floor(enemyCount * 0.7);
-    if(gameSettings.difficulty === 'Hard') enemyCount = Math.floor(enemyCount * 1.5);
+    // 1. Génération du terrain de surface
+    const surfaceLevel = Math.floor(worldHeightInTiles / 2.5);
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        const height = Math.floor(Perlin.get(x * 0.05, 0) * 10);
+        const ySurface = surfaceLevel + height;
 
-    for(let i = 0; i < enemyCount; i++) {
-        const platform = game.platforms[Math.floor(Math.random() * game.platforms.length)];
-        if(platform.y < groundY - 30) { // Place les ennemis principalement sur les plateformes flottantes
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            if (y > ySurface) {
+                if (y === ySurface + 1) {
+                    game.tileMap[y][x] = TILE.GRASS;
+                } else if (y < ySurface + 6) {
+                    game.tileMap[y][x] = TILE.DIRT;
+                } else {
+                    game.tileMap[y][x] = TILE.STONE;
+                }
+            }
+        }
+    }
+
+    // 2. Génération des grottes et des minerais
+    const caveNoiseScale = 0.07;
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        for (let y = surfaceLevel + 6; y < worldHeightInTiles; y++) {
+            if (game.tileMap[y][x] === TILE.STONE) {
+                const noiseValue = Perlin.get(x * caveNoiseScale, y * caveNoiseScale);
+                if (noiseValue > 0.35) { // Creuse les grottes
+                    game.tileMap[y][x] = TILE.AIR;
+                } else if (Math.random() < 0.05) { // Ajoute du charbon
+                    game.tileMap[y][x] = TILE.COAL;
+                } else if (Math.random() < 0.03) { // Ajoute du fer
+                    game.tileMap[y][x] = TILE.IRON;
+                }
+            }
+        }
+    }
+
+    // 3. Placement des ennemis
+    for (let i = 0; i < generation.enemyCount; i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        const y = surfaceLevel + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 5));
+        
+        // S'assure que l'ennemi apparaît sur une tuile solide avec de l'air au-dessus
+        if (game.tileMap[y][x] !== TILE.AIR && game.tileMap[y-1][x] === TILE.AIR && game.tileMap[y-2][x] === TILE.AIR) {
             const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
             let enemyClass;
             if (enemyType === 'slime') enemyClass = Slime;
             else if (enemyType === 'frog') enemyClass = Frog;
             else if (enemyType === 'golem') enemyClass = Golem;
-            game.enemies.push(new enemyClass(platform.x + platform.w / 2, platform.y - 32, game.config));
+            game.enemies.push(new enemyClass(x * tileSize, (y - 1) * tileSize, game.config));
         }
-    }
-    
-    // --- 5. Placement des checkpoints ---
-    for(let i = 1; i <= generation.checkpoints; i++) {
-        game.checkpoints.push({
-            x: (worldWidth / (generation.checkpoints + 1)) * i,
-            y: groundY - 64, w: 32, h: 64, activated: false
-        });
-    }
-}
-
-// --- Fonctions utilitaires pour créer des structures ---
-
-function createStaircase(game, x, y, steps, goingUp) {
-    for (let i = 0; i < steps; i++) {
-        game.platforms.push({
-            x: x + i * 110,
-            y: y + (goingUp ? -i * 40 : i * 40),
-            w: 100,
-            h: 32,
-            type: 'normal'
-        });
-    }
-}
-
-function createBridge(game, x, y, length) {
-    for (let i = 0; i < length; i++) {
-        game.platforms.push({
-            x: x + i * 90,
-            y: y + Math.sin(i / 2) * 15, // Pont légèrement incurvé
-            w: 85,
-            h: 32,
-            type: 'normal'
-        });
-    }
-}
-
-function createFloatingIslands(game, x, y, count) {
-    for (let i = 0; i < count; i++) {
-        game.platforms.push({
-            x: x + (Math.random() - 0.5) * 200,
-            y: y + (Math.random() - 0.5) * 80,
-            w: 60 + Math.random() * 50,
-            h: 32,
-            type: 'normal'
-        });
-    }
-}
-
-function createCoinArc(game, cx, cy, numCoins, radius) {
-    for (let i = 0; i < numCoins; i++) {
-        const angle = Math.PI * (i / (numCoins - 1)); // Arc de 180 degrés
-        const x = cx - radius * Math.cos(angle);
-        const y = cy - radius * Math.sin(angle);
-        game.coins.push({ x: x, y: y, w: 32, h: 32 });
     }
 }
