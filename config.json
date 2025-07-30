@@ -3,6 +3,8 @@
   "githubRepoUrl": "",
   "canvasWidth": 960,
   "canvasHeight": 540,
+  "worldWidth": 4000,
+  "worldHeight": 2000,
   "tileSize": 16,
   "physics": {
     "gravity": 0.35,
