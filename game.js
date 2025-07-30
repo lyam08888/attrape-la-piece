@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!game || game.over) return;
         game.over = true;
         if (ui.gameTitle) ui.gameTitle.style.display = 'block';
-        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over �`;
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
     }
@@ -507,4 +507,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     main();
 });
-�
