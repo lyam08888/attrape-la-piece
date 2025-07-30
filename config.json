@@ -6,6 +6,9 @@
   "worldWidth": 4000,
   "worldHeight": 2000,
   "tileSize": 16,
+  "zoom": 2,
+  "chunkSize": 16,
+  "renderDistance": 8,
   "generation": {
     "enemyCount": 50,
     "treeCount": 40
@@ -14,14 +17,13 @@
     "gravity": 0.35,
     "jumpForce": 7,
     "playerSpeed": 2.5,
-    "friction": 0.88,
-    "waterFriction": 0.65
+    "friction": 0.88
   },
   "player": {
     "maxLives": 5,
     "width": 16,
     "height": 28,
-    "reach": 5
+    "reach": 4
   },
   "skins": [
     "player1.png",
@@ -41,6 +43,7 @@
     "enemy_golem": "assets/enemy_golem.png",
     "tool_pickaxe": "assets/tool_pickaxe.png",
     "tool_shovel": "assets/tool_shovel.png",
+    "tool_axe": "assets/tool_axe.png",
     "tool_sword": "assets/tool_sword.png",
     "tool_bow": "assets/tool_bow.png",
     "tool_fishing_rod": "assets/tool_fishing_rod.png",
