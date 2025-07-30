@@ -68,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseUrl = config.githubRepoUrl || ''; 
 
         for (const [key, path] of Object.entries(config.assets)) {
-            // On vérifie si le chemin est déjà une URL complète
             if (path.startsWith('http://') || path.startsWith('https://')) {
                 allAssetPaths[key] = path;
             } else {
@@ -159,10 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function initGame() {
         try {
             game = {
-                player: new Player(80, 300, config),
-                camera: { x: 0 },
-                platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [], checkpoints: [],
-                lastCheckpoint: { x: 80, y: 300 },
+                player: new Player(config.canvasWidth / 2, 100, config),
+                camera: { x: 0, y: 0 },
+                tileMap: [], enemies: [], particles: [],
                 score: 0, lives: config.player.maxLives, time: config.player.gameTime,
                 timeLast: Date.now(), over: false, dayNightCycle: 0,
                 settings: gameSettings,
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loseLife: loseLife
             };
             
-            generateLevel(game, level, gameSettings);
+            generateLevel(game, config, gameSettings);
             
             updateHUD();
             [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
@@ -198,9 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Met à jour l'état de tous les objets du jeu
     function update() {
         game.player.update(keys, game);
-        // On met à jour chaque ennemi et on passe l'objet `game` pour qu'ils aient accès au joueur
         game.enemies.forEach(e => e.update(game));
-        // On retire les ennemis morts (après leur animation)
         game.enemies = game.enemies.filter(e => !e.isDead);
         updateParticles();
         updateCamera();
@@ -223,8 +219,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateCamera() {
         const targetX = game.player.x - ui.canvas.width / 2;
+        const targetY = game.player.y - ui.canvas.height / 2;
         game.camera.x += (targetX - game.camera.x) * 0.1;
-        game.camera.x = Math.max(0, Math.min(game.camera.x, level.worldWidth - ui.canvas.width));
+        game.camera.y += (targetY - game.camera.y) * 0.1;
+
+        const worldPixelWidth = config.worldWidth;
+        const worldPixelHeight = config.worldHeight;
+        
+        game.camera.x = Math.max(0, Math.min(game.camera.x, worldPixelWidth - ui.canvas.width));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, worldPixelHeight - ui.canvas.height));
     }
     
     function updateTimer() {
@@ -248,60 +251,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!game) return;
         drawSky();
         ui.ctx.save();
-        ui.ctx.translate(-game.camera.x, 0);
+        ui.ctx.translate(-game.camera.x, -game.camera.y);
 
-        drawScenery(); // Contient maintenant la parallaxe
+        drawTileMap();
         
-        game.platforms.forEach(p => ui.ctx.drawImage(assets.wall, p.x, p.y, p.w, p.h));
-        
-        if (assets.decoration_bush) {
-            game.decorations.forEach(d => ui.ctx.drawImage(assets.decoration_bush, d.x, d.y, d.w, d.h));
-        }
-        game.coins.forEach(c => ui.ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h));
-        game.bonuses.forEach(b => ui.ctx.drawImage(assets.bonus, b.x, b.y, b.w, b.h));
-        
-        game.checkpoints.forEach(cp => {
-            const img = cp.activated ? assets.checkpoint_on : assets.checkpoint_off;
-            if (img) ui.ctx.drawImage(img, cp.x, cp.y, cp.w, cp.h);
-        });
-
-        game.water.forEach(w => { ui.ctx.fillStyle = 'rgba(0, 100, 200, 0.6)'; ui.ctx.fillRect(w.x, w.y, w.w, w.h); });
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
         game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
         drawParticles();
         ui.ctx.restore();
 
-        drawVignette(); // Ajout de l'effet de vignettage
+        drawVignette();
     }
     
+    function drawTileMap() {
+        const { tileSize } = config;
+        const startCol = Math.floor(game.camera.x / tileSize);
+        const endCol = startCol + Math.ceil(ui.canvas.width / tileSize);
+        const startRow = Math.floor(game.camera.y / tileSize);
+        const endRow = startRow + Math.ceil(ui.canvas.height / tileSize);
+
+        const TILE_ASSETS = { 1: assets.tile_grass, 2: assets.tile_dirt, 3: assets.tile_stone, 4: assets.tile_coal, 5: assets.tile_iron };
+
+        for (let y = startRow; y <= endRow; y++) {
+            for (let x = startCol; x <= endCol; x++) {
+                if (game.tileMap[y] && game.tileMap[y][x]) {
+                    const tileId = game.tileMap[y][x];
+                    const asset = TILE_ASSETS[tileId];
+                    if (asset) {
+                        ui.ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
+                    }
+                }
+            }
+        }
+    }
+
     function drawSky() {
         const time = (Math.sin(game.dayNightCycle) + 1) / 2;
-        let c1 = "#5C94FC", c2 = "#87CEEB";
-        if (time < 0.25) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; }
-        else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; }
-        else if (time > 0.85) { c1 = "#ff6b6b"; c2 = "#ffa500"; }
+        let c1 = "#87CEEB", c2 = "#5C94FC"; // Jour
+        if (time < 0.25) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; } // Nuit
+        else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; } // Aube
+        else if (time > 0.85) { c1 = "#ff6b6b"; c2 = "#ffa500"; } // Crépuscule
         const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
         grad.addColorStop(0, c1); grad.addColorStop(1, c2);
         ui.ctx.fillStyle = grad;
         ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
-    }
-    
-    function drawScenery() {
-        // AMÉLIORATION VISUELLE: Effet de parallaxe avec deux couches de collines
-        const drawHillLayer = (speed, color, amplitude) => {
-            ui.ctx.fillStyle = color;
-            const hillX = (-game.camera.x * speed) % (ui.canvas.width + 1000);
-            ui.ctx.beginPath();
-            ui.ctx.moveTo(hillX - 200, level.worldHeight);
-            for (let x = hillX - 200; x < level.worldWidth + ui.canvas.width; x += 200) {
-                 ui.ctx.arc(x + 200, level.worldHeight, amplitude + Math.sin(x/300) * 20, Math.PI, 0, false);
-            }
-            ui.ctx.lineTo(level.worldWidth + ui.canvas.width, level.worldHeight);
-            ui.ctx.fill();
-        };
-
-        drawHillLayer(0.2, 'rgba(0, 60, 130, 0.4)', 180); // Couche lointaine
-        drawHillLayer(0.5, '#8CD65C', 220); // Couche proche
     }
     
     function drawParticles() {
@@ -359,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function playSound(type) { if(!gameSettings.soundEnabled || !audioCtx) return; /* ... logique du son ici ... */ }
     function updateHUD() { if(!game) return; ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
-    function loseLife() { if(!game || game.over || gameSettings.godMode) return; game.lives--; game.playSound('hurt'); if(game.lives <= 0) { endGame(false); } else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.vx = 0; game.player.vy = 0; game.player.invulnerable = 120; } updateHUD(); }
+    function loseLife() { if(!game || game.over || gameSettings.godMode) return; game.lives--; game.playSound('hurt'); if(game.lives <= 0) { endGame(false); } else { game.player.invulnerable = 120; } updateHUD(); }
     function endGame(win) { if (!game) return; game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
     function createParticles(x, y, count, color, options = {}) { 
         if (!game) return;
