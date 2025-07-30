@@ -1,13 +1,11 @@
 import { TILE } from './world.js';
 
-// Dureté des blocs pour le minage
 const TILE_HARDNESS = {
     [TILE.GRASS]: 1, [TILE.DIRT]: 1,
     [TILE.LEAVES]: 0.5, [TILE.WOOD]: 2,
     [TILE.STONE]: 3, [TILE.COAL]: 3.5, [TILE.IRON]: 4
 };
 
-// Outils efficaces contre certains types de blocs
 const TOOL_EFFECTIVENESS = {
     'shovel': [TILE.GRASS, TILE.DIRT],
     'axe': [TILE.WOOD, TILE.LEAVES],
@@ -28,8 +26,7 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
-        // La hache a été retirée pour correspondre à vos assets
-        this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
+        this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
         this.miningTarget = null;
@@ -101,7 +98,6 @@ export class Player {
         const { tileSize } = this.config;
         let tileX, tileY;
 
-        // On utilise la souris si le clic gauche est utilisé, sinon la direction du personnage
         if (mouse.left) {
             const worldMouseX = mouse.x / game.settings.zoom + game.camera.x;
             const worldMouseY = mouse.y / game.settings.zoom + game.camera.y;
@@ -149,11 +145,8 @@ export class Player {
     handleTileCollisions(game) {
         const { tileSize } = this.config;
 
-        // Appliquer le mouvement sur l'axe X
         this.x += this.vx;
-        
-        // Vérifier les collisions sur l'axe X
-        if (this.vx > 0) { // Droite
+        if (this.vx > 0) {
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let right = Math.floor((this.x + this.w) / tileSize);
@@ -164,7 +157,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vx < 0) { // Gauche
+        } else if (this.vx < 0) {
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let left = Math.floor(this.x / tileSize);
@@ -176,13 +169,9 @@ export class Player {
                 }
             }
         }
-
-        // Appliquer le mouvement sur l'axe Y
         this.y += this.vy;
         this.grounded = false;
-        
-        // Vérifier les collisions sur l'axe Y
-        if (this.vy > 0) { // Bas
+        if (this.vy > 0) {
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let bottom = Math.floor((this.y + this.h) / tileSize);
@@ -195,7 +184,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vy < 0) { // Haut
+        } else if (this.vy < 0) {
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let top = Math.floor(this.y / tileSize);
