@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // ... (autres éléments UI comme avant)
     };
 
-    let config, assets = {}, game, keys = {}, mouse = {x:0, y:0, left:false, right:false};
+    let config, assets = {}, game, keys = {}, mouse = {x:0, y:0, left:false, right:false}, currentSkin = 0, gameSettings = {};
 
     async function main() {
         config = await (await fetch('config.json')).json();
@@ -17,10 +17,37 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.canvas.height = config.canvasHeight;
         await loadAssets();
         setupInput(); // Inclut maintenant la souris
+        // Remplacé par un démarrage direct pour simplifier
         initGame();
     }
 
-    async function loadAssets() { /* ... (code de chargement inchangé) ... */ }
+    async function loadAssets() {
+        const promises = [];
+        const allAssetPaths = {};
+        const baseUrl = config.githubRepoUrl || ''; 
+
+        for (const [key, path] of Object.entries(config.assets)) {
+            if (path.startsWith('http://') || path.startsWith('https://')) {
+                allAssetPaths[key] = path;
+            } else {
+                allAssetPaths[key] = baseUrl + path;
+            }
+        }
+        config.skins.forEach((fileName, i) => {
+            allAssetPaths[`player${i+1}`] = baseUrl + 'assets/' + fileName;
+        });
+
+        for (const [key, path] of Object.entries(allAssetPaths)) {
+            promises.push(new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = path;
+                img.onload = () => { assets[key] = img; resolve(); };
+                img.onerror = () => reject(`Impossible de charger l'asset: ${path}`);
+            }));
+        }
+        await Promise.all(promises);
+    }
     
     function initGame() {
         game = {
@@ -32,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             createParticles: createParticles,
             loseLife: loseLife
         };
+        gameSettings = { godMode: false }; // Réinitialisation des paramètres
         generateLevel(game, config, {});
         requestAnimationFrame(gameLoop);
     }
@@ -66,12 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!game) return;
         drawSky();
         ui.ctx.save();
-        ui.ctx.translate(-game.camera.x, -game.camera.y);
+        ui.ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
 
         drawTileMap();
         
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
-        game.player.draw(ui.ctx, assets);
+        // CORRECTION: On passe maintenant les bons arguments à la fonction de dessin du joueur
+        game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
         drawParticles();
         ui.ctx.restore();
 
@@ -81,9 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawTileMap() {
         const { tileSize } = config;
         const startCol = Math.floor(game.camera.x / tileSize);
-        const endCol = startCol + Math.ceil(ui.canvas.width / tileSize);
+        const endCol = startCol + Math.ceil(ui.canvas.width / tileSize) + 1;
         const startRow = Math.floor(game.camera.y / tileSize);
-        const endRow = startRow + Math.ceil(ui.canvas.height / tileSize);
+        const endRow = startRow + Math.ceil(ui.canvas.height / tileSize) + 1;
 
         const TILE_ASSETS = { [TILE.GRASS]: assets.tile_grass, [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
 
@@ -104,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const slotSize = 40;
         const padding = 5;
 
-        // Dessine un slot pour la pioche (implicite) et un pour l'objet équipé
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -135,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
         });
 
-        // Gestion de la souris
         ui.canvas.addEventListener('mousemove', e => {
             const rect = ui.canvas.getBoundingClientRect();
             mouse.x = e.clientX - rect.left;
@@ -145,14 +172,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.button === 0) mouse.left = true;
             if (e.button === 2) mouse.right = true;
         });
-        // Empêche le menu contextuel du clic droit
         ui.canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    function createParticles(x, y, count, color, options = {}) { /* ... (code inchangé) ... */ }
-    function loseLife() { /* ... (code inchangé) ... */ }
-    function drawSky() { /* ... (code inchangé) ... */ }
-    function updateParticles() { /* ... (code inchangé) ... */ }
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+    function loseLife() { if(!game || game.over) return; game.lives--; if(game.lives <= 0) game.over=true; else game.player.invulnerable = 120; }
+    function drawSky() {
+        const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
+        grad.addColorStop(0, '#87CEEB');
+        grad.addColorStop(1, '#5C94FC');
+        ui.ctx.fillStyle = grad;
+        ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+    }
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
 
     main();
 });
