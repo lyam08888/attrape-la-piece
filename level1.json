@@ -1,13 +1,13 @@
 {
-  "playerStart": { "x": 15, "y": 15 },
-  "coinStart": { "x": 20, "y": 8 },
+  "playerStart": { "x": 12, "y": 20 },
+  "coinStart": { "x": 22, "y": 8 },
   "enemies": [
-    { "x": 28, "y": 4, "dx": 1, "dy": 0 }
+    { "x": 6, "y": 4, "dx": 1, "dy": 0 }
   ],
   "obstacles": [],
   "coinSpawns": [
-    { "x": 20, "y": 8 },
+    { "x": 22, "y": 8 },
     { "x": 5, "y": 25 },
-    { "x": 29, "y": 29 }
+    { "x": 28, "y": 28 }
   ]
 }
