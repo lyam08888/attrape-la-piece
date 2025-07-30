@@ -2,33 +2,45 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Super Pixel Platformer Asset</title>
+  <title>Super Pixel Platformer Deluxe</title>
   <meta name="viewport" content="width=450, initial-scale=1">
   <style>
     body { background: #222; margin:0; font-family:monospace;}
     #container { display:flex; flex-direction:column; align-items:center; }
     h1 { color:#ffe01b; margin:10px 0 2px 0;}
-    #gameCanvas { 
-      background:#8be0f8;
-      border:3px solid #222; margin:18px 0;
-      border-radius:11px; 
-      width: 1200px; height: 672px;
-      image-rendering: pixelated;
-      display: block;
-    }
+    #gameCanvas { background:#8be0f8; border:3px solid #222; margin:18px 0; border-radius:11px; width: 1200px; height: 672px; image-rendering: pixelated; display: block;}
     #hud { color:#fff; background:#191e23cc; font-size:1.2rem; padding:8px 26px; border-radius:10px; margin-bottom:8px;}
-    #btnRestart { padding:7px 24px; border-radius:7px; font-size:1rem; border:none; background:#ffe01b; color:#23272e; cursor:pointer;}
     #gameover h2 {margin-bottom:14px;}
+    #btnRestart, #btnStart { padding:7px 24px; border-radius:7px; font-size:1rem; border:none; background:#ffe01b; color:#23272e; cursor:pointer;}
+    #menu { background: #101722ee; color: #ffe01b; font-size: 1.15em; padding: 30px 22px 15px 22px; border-radius: 16px; position:absolute; top:15%; left:50%; transform:translateX(-50%); z-index:2; text-align:center; }
+    #skinlist img { width:48px; height:48px; margin:4px; border-radius:10px; border:3px solid #888; cursor:pointer; transition: border .2s;}
+    #skinlist img.selected { border:3px solid #ffe01b; }
+    @media(max-width:700px){
+      #gameCanvas{width:98vw; height:54vw; min-width: 250px;}
+    }
+    #controls {display:none; margin-top:14px;}
+    #controls button {padding:10px 20px; margin:0 8px; background:#ffe01b; border:none; border-radius:6px; color:#111; font-size:1.3em;}
   </style>
 </head>
 <body>
   <div id="container">
-    <h1>SUPER PIXEL PLATFORMER (avec assets)</h1>
-    <div id="hud">Score: <span id="score">0</span></div>
+    <h1>SUPER PIXEL PLATFORMER DELUXE</h1>
+    <div id="hud" style="display:none;">Score: <span id="score">0</span></div>
     <canvas id="gameCanvas" width="400" height="224"></canvas>
+    <div id="menu">
+      <h2>Bienvenue !</h2>
+      <p>Flèches ou ← → pour bouger, ↑/Espace pour sauter<br>P pour pause</p>
+      <div id="skinlist"></div>
+      <button id="btnStart">Commencer</button>
+    </div>
     <div id="gameover" style="display:none;">
       <h2 id="message"></h2>
       <button id="btnRestart">Rejouer</button>
+    </div>
+    <div id="controls">
+      <button onclick="mobileKey('ArrowLeft')">←</button>
+      <button onclick="mobileKey('ArrowUp')">↑</button>
+      <button onclick="mobileKey('ArrowRight')">→</button>
     </div>
   </div>
   <script src="platformer.js"></script>
