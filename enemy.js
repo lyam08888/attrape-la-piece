@@ -27,7 +27,6 @@ class Enemy {
             }
         });
 
-        // IA simple pour faire demi-tour aux bords des plateformes
         if (this.onGround) {
             const groundAhead = platforms.some(p => 
                 this.y + this.h >= p.y && this.y < p.y + p.h &&
