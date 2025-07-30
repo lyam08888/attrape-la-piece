@@ -1,8 +1,10 @@
+// On importe les classes et fonctions depuis les autres fichiers
 import { Player } from './player.js';
 import { Slime, Frog, Golem } from './enemy.js';
 import { generateLevel } from './world.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Références aux éléments de l'interface utilisateur
     const ui = {
         canvas: document.getElementById('gameCanvas'),
         ctx: document.getElementById('gameCanvas').getContext('2d'),
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRight: document.getElementById('btnRight'),
     };
 
+    // Variables globales du jeu
     let config, level, assets = {}, game, keys = {}, currentSkin = 0, audioCtx;
 
     const gameSettings = {
@@ -35,9 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
         difficulty: 'Normal',
     };
 
+    // Fonction principale qui lance le chargement
     async function main() {
         try {
-            const [configRes, levelRes] = await Promise.all([fetch('config.json'), fetch('level1.json')]);
+            // CORRECTION: On charge les fichiers de configuration avec fetch
+            const [configRes, levelRes] = await Promise.all([
+                fetch('config.json'),
+                fetch('level1.json')
+            ]);
             config = await configRes.json();
             level = await levelRes.json();
             
@@ -50,14 +58,19 @@ document.addEventListener('DOMContentLoaded', () => {
             setupInput();
         } catch (error) {
             console.error("Erreur de chargement:", error);
-            ui.mainMenu.innerHTML = `<h2>Erreur de chargement des assets. Vérifiez votre dépôt GitHub.</h2><p style="font-size:0.5em; margin-top:10px;">${error}</p>`;
+            ui.mainMenu.innerHTML = `<h2>Erreur de chargement des fichiers.</h2><p style="font-size:0.5em; margin-top:10px;">Vérifiez que les fichiers config.json et level1.json existent et que les URLs dans config.json sont correctes. Erreur: ${error}</p>`;
         }
     }
 
+    // Charge toutes les images nécessaires
     async function loadAssets() {
         const promises = [];
-        const baseUrl = config.githubRepoUrl;
         const allAssetPaths = {};
+        
+        // CORRECTION: Utilise l'URL de base du dépôt GitHub défini dans config.json
+        const baseUrl = config.githubRepoUrl || ''; 
+
+        // Combine les assets de base et les skins en une seule liste
         for (const [key, path] of Object.entries(config.assets)) {
             allAssetPaths[key] = baseUrl + path;
         }
@@ -71,12 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.crossOrigin = "Anonymous";
                 img.src = path;
                 img.onload = () => { assets[key] = img; resolve(); };
-                img.onerror = () => reject(`Erreur: ${path}`);
+                img.onerror = () => reject(`Impossible de charger l'asset: ${path}`);
             }));
         }
         await Promise.all(promises);
     }
 
+    // Met en place les menus et leurs interactions
     function setupMenus() {
         ui.menuTitle.textContent = "Choisissez un héros";
         ui.skinlist.innerHTML = '';
@@ -112,7 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameSettings.soundEnabled = !gameSettings.soundEnabled;
                 ui.soundBtn.textContent = gameSettings.soundEnabled ? 'ON' : 'OFF';
                 ui.soundBtn.classList.toggle('on', gameSettings.soundEnabled);
-                if(gameSettings.soundEnabled && !audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(gameSettings.soundEnabled && !audioCtx) {
+                    try {
+                       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch(e) {
+                       console.error("Web Audio API is not supported in this browser.");
+                    }
+                }
                 break;
         }
     }
@@ -134,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Initialise une nouvelle partie
     function initGame() {
         game = {
             player: new Player(80, 300, config),
@@ -141,9 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
             platforms: [], enemies: [], particles: [], water: [], coins: [], checkpoints: [], bonuses: [],
             lastCheckpoint: { x: 80, y: 300 },
             score: 0, lives: config.player.maxLives, time: config.player.gameTime,
-            timeLast: Date.now(), over: false, dayNightCycle: 0, weather: { type: 'clear', particles: [] },
+            timeLast: Date.now(), over: false, dayNightCycle: 0,
             settings: gameSettings,
             level: level,
+            config: config,
             playSound: playSound,
             createParticles: createParticles,
             loseLife: loseLife
@@ -157,16 +179,19 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(gameLoop);
     }
     
+    // Boucle de jeu principale
     function gameLoop() {
-        if (game.over) return;
+        if (!game || game.over) return;
         update();
         draw();
         requestAnimationFrame(gameLoop);
     }
 
+    // Met à jour l'état de tous les objets du jeu
     function update() {
         game.player.update(keys, game);
         game.enemies.forEach(e => e.update(game.platforms, level.worldWidth));
+        game.enemies = game.enemies.filter(e => e.health > 0);
         updateParticles();
         updateCamera();
         updateTimer();
@@ -190,7 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Date.now() - game.timeLast > 1000) {
             game.time--;
             game.timeLast = Date.now();
-            if (game.time <= 0) endGame(false);
+            if (game.time <= 0) {
+                game.time = 0;
+                endGame(false);
+            }
             updateHUD();
         }
     }
@@ -199,7 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
         game.dayNightCycle = (game.dayNightCycle + 0.0003) % (Math.PI * 2);
     }
     
+    // Dessine tous les éléments du jeu sur le canvas
     function draw() {
+        if (!game) return;
         drawSky();
         ui.ctx.save();
         ui.ctx.translate(-game.camera.x, 0);
@@ -226,16 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function drawScenery() {
         ui.ctx.fillStyle = '#8CD65C';
-        const hillX = (-game.camera.x * 0.5) % ui.canvas.width;
+        const hillX = (-game.camera.x * 0.5) % (ui.canvas.width + 1000);
         ui.ctx.beginPath();
-        ui.ctx.moveTo(hillX, level.worldHeight);
+        ui.ctx.moveTo(hillX - 200, level.worldHeight);
         ui.ctx.arc(hillX + 200, level.worldHeight, 200, Math.PI, 0, false);
         ui.ctx.arc(hillX + 600, level.worldHeight, 250, Math.PI, 0, false);
         ui.ctx.arc(hillX + 1000, level.worldHeight, 200, Math.PI, 0, false);
+        ui.ctx.arc(hillX + 1400, level.worldHeight, 220, Math.PI, 0, false);
+        ui.ctx.lineTo(hillX + 1620, level.worldHeight);
         ui.ctx.fill();
     }
     
     function drawParticles() {
+        if (!game) return;
         game.particles.forEach(p => {
             ui.ctx.fillStyle = p.color;
             ui.ctx.globalAlpha = p.life / p.maxLife;
@@ -244,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.globalAlpha = 1.0;
     }
     
+    // Gère les entrées clavier et tactiles
     function setupInput() {
         keys = { left: false, right: false, jump: false };
         document.addEventListener('keydown', e => {
@@ -254,23 +288,43 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('keyup', e => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
         });
 
         if ('ontouchstart' in window) {
             ui.controls.style.display = 'flex';
-            ['btnLeft', 'btnRight', 'btnJump'].forEach(id => {
-                const key = id.replace('btn', '').toLowerCase();
-                ui[id].addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
-                ui[id].addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-            });
+            const handleTouch = (e, isDown) => {
+                e.preventDefault();
+                const key = e.currentTarget.id.replace('btn', '').toLowerCase();
+                keys[key] = isDown;
+            };
+
+            ui.btnLeft.addEventListener('touchstart', e => handleTouch(e, true), {passive: false});
+            ui.btnLeft.addEventListener('touchend', e => handleTouch(e, false));
+            ui.btnRight.addEventListener('touchstart', e => handleTouch(e, true), {passive: false});
+            ui.btnRight.addEventListener('touchend', e => handleTouch(e, false));
+            ui.btnJump.addEventListener('touchstart', e => handleTouch(e, true), {passive: false});
+            ui.btnJump.addEventListener('touchend', e => handleTouch(e, false));
         }
     }
     
-    function playSound(type) { if(!gameSettings.soundEnabled || !audioCtx) return; /* ... */ }
-    function updateHUD() { ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
-    function loseLife() { if(gameSettings.godMode) return; game.lives--; if(game.lives <= 0) endGame(false); else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.invulnerable = 120; } updateHUD(); }
-    function endGame(win) { game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
-    function createParticles(x, y, count, color) { /* ... */ }
+    function playSound(type) { if(!gameSettings.soundEnabled || !audioCtx) return; /* ... logique du son ici ... */ }
+    function updateHUD() { if(!game) return; ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
+    function loseLife() { if(!game || game.over || gameSettings.godMode) return; game.lives--; game.playSound('hurt'); if(game.lives <= 0) { endGame(false); } else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.vx = 0; game.player.vy = 0; game.player.invulnerable = 120; } updateHUD(); }
+    function endGame(win) { if (!game) return; game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
+    function createParticles(x, y, count, color) { 
+        if (!game) return;
+         for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 4 - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                color: color
+            });
+        }
+    }
     
     main();
 });
