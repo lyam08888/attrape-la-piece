@@ -1,4 +1,3 @@
-// On exporte la classe pour qu'elle puisse être importée dans game.js
 export class Player {
     constructor(x, y, config) {
         this.x = x;
@@ -44,10 +43,10 @@ export class Player {
         if (this.inWater) this.vy = Math.min(this.vy, 2);
         
         this.x += this.vx;
-        this.handleCollision('x', game.platforms);
+        this.handleCollision('x', game);
         this.y += this.vy;
         this.grounded = false;
-        this.handleCollision('y', game.platforms);
+        this.handleCollision('y', game);
 
         this.inWater = game.water.some(w => this.rectCollide(w));
         if (this.y > game.level.worldHeight + 100) game.loseLife();
@@ -58,8 +57,9 @@ export class Player {
         else { this.frame = 0; }
     }
 
-    handleCollision(axis, platforms) {
-        platforms.forEach(plat => {
+    handleCollision(axis, game) {
+        // Collision avec les plateformes
+        game.platforms.forEach(plat => {
             if (this.rectCollide(plat)) {
                 if (axis === 'x') {
                     if (this.vx > 0) this.x = plat.x - this.w;
@@ -77,6 +77,27 @@ export class Player {
                         this.vy = 0; 
                     }
                 }
+            }
+        });
+
+        // NOUVEAU: Collision avec les pièces
+        game.coins.forEach((coin, index) => {
+            if (this.rectCollide(coin)) {
+                game.coins.splice(index, 1); // Retire la pièce du jeu
+                game.score += 10; // Augmente le score
+                game.playSound('coin');
+                game.createParticles(coin.x + coin.w / 2, coin.y + coin.h / 2, 10, '#f1c40f');
+            }
+        });
+
+        // NOUVEAU: Collision avec les bonus
+        game.bonuses.forEach((bonus, index) => {
+            if (this.rectCollide(bonus)) {
+                game.bonuses.splice(index, 1);
+                game.score += 50;
+                if(game.lives < this.config.player.maxLives) game.lives++; // Donne une vie si pas au max
+                game.playSound('powerup');
+                game.createParticles(bonus.x + bonus.w / 2, bonus.y + bonus.h / 2, 20, '#e67e22');
             }
         });
     }
