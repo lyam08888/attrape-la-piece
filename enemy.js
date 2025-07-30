@@ -13,7 +13,7 @@ class Enemy {
         this.onGround = false;
     }
 
-    update(platforms) {
+    update(platforms, worldWidth) {
         this.vy += this.config.physics.gravity;
         this.x += this.vx;
         this.y += this.vy;
@@ -27,16 +27,18 @@ class Enemy {
             }
         });
 
-        // Simple IA to turn at edges
-        const groundAhead = platforms.some(p => 
-            p.y === this.y + this.h && 
-            p.x < this.x + (this.vx > 0 ? this.w : 0) && 
-            p.x + p.w > this.x + (this.vx > 0 ? this.w : 0)
-        );
-        if(!this.onGround) {
-            // A simple check to avoid turning in mid-air
-        } else if (this.x < 0 || this.x > 4800) { // World bounds
-             this.vx *= -1;
+        // IA simple pour faire demi-tour aux bords des plateformes
+        if (this.onGround) {
+            const groundAhead = platforms.some(p => 
+                this.y + this.h >= p.y && this.y < p.y + p.h &&
+                this.x + (this.vx > 0 ? this.w + 2 : -2) > p.x &&
+                this.x + (this.vx > 0 ? this.w + 2 : -2) < p.x + p.w
+            );
+
+            if (!groundAhead || this.x < 0 || this.x + this.w > worldWidth) {
+                this.vx *= -1;
+                this.dir *= -1;
+            }
         }
     }
     
@@ -46,7 +48,11 @@ class Enemy {
     }
 
     draw(ctx, assets) {
-        ctx.drawImage(assets[`enemy_${this.type}`], this.x, this.y, this.w, this.h);
+        ctx.save();
+        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+        if (this.vx > 0) { ctx.scale(-1, 1); }
+        ctx.drawImage(assets[`enemy_${this.type}`], -this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.restore();
     }
 }
 
@@ -62,8 +68,8 @@ export class Frog extends Enemy {
         this.jumpTimer = Math.random() * 120;
     }
 
-    update(platforms) {
-        super.update(platforms);
+    update(platforms, worldWidth) {
+        super.update(platforms, worldWidth);
         if (this.onGround) {
             this.jumpTimer--;
             if (this.jumpTimer <= 0) {
