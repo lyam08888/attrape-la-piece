@@ -49,7 +49,8 @@ Perlin.seed();
 
 // --- Fonction de génération de niveau entièrement réécrite ---
 export function generateLevel(game, levelConfig, gameSettings) {
-    const { worldWidth, worldHeight, tileSize } = levelConfig;
+    // CORRECTION: On récupère l'objet "generation" depuis la configuration principale
+    const { worldWidth, worldHeight, tileSize, generation } = levelConfig;
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
@@ -101,7 +102,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
         const y = surfaceLevel + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 5));
         
         // S'assure que l'ennemi apparaît sur une tuile solide avec de l'air au-dessus
-        if (game.tileMap[y][x] !== TILE.AIR && game.tileMap[y-1][x] === TILE.AIR && game.tileMap[y-2][x] === TILE.AIR) {
+        if (game.tileMap[y] && game.tileMap[y][x] !== TILE.AIR && game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR && game.tileMap[y-2] && game.tileMap[y-2][x] === TILE.AIR) {
             const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
             let enemyClass;
             if (enemyType === 'slime') enemyClass = Slime;
