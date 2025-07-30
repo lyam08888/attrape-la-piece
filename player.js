@@ -8,7 +8,6 @@ const TILE_HARDNESS = {
 
 const TOOL_EFFECTIVENESS = {
     'shovel': [TILE.GRASS, TILE.DIRT],
-    'axe': [TILE.WOOD, TILE.LEAVES],
     'pickaxe': [TILE.STONE, TILE.COAL, TILE.IRON]
 };
 
@@ -26,7 +25,8 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
-        this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
+        // CORRECTION: La hache a été retirée pour correspondre à vos assets
+        this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
         this.selectedToolIndex = 0;
         this.inventory = {};
         this.miningTarget = null;
@@ -98,8 +98,8 @@ export class Player {
         let tileX, tileY;
 
         if (mouse.left) {
-            const worldMouseX = mouse.x + game.camera.x;
-            const worldMouseY = mouse.y + game.camera.y;
+            const worldMouseX = mouse.x / game.zoom + game.camera.x;
+            const worldMouseY = mouse.y / game.zoom + game.camera.y;
             tileX = Math.floor(worldMouseX / tileSize);
             tileY = Math.floor(worldMouseY / tileSize);
 
