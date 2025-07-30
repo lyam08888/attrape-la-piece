@@ -14,10 +14,8 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         // Inventaire simple
-        this.inventory = { [TILE.DIRT]: 0, [TILE.STONE]: 0, [TILE.WOOD]: 0 };
-        this.equippedItem = TILE.DIRT; // Par défaut, on peut poser de la terre
-        this.isMining = false;
-        this.miningTimer = 0;
+        this.inventory = { [TILE.DIRT]: 10, [TILE.STONE]: 10, [TILE.WOOD]: 10 }; // Commence avec quelques blocs
+        this.equippedItem = TILE.DIRT;
     }
 
     update(keys, mouse, game) {
@@ -39,7 +37,9 @@ export class Player {
         
         this.handleMiningAndPlacing(mouse, game);
 
+        // CORRECTION: Nouvelle logique de collision plus stable
         this.handleTileCollisions(game);
+        
         this.checkEnemyCollisions(game);
 
         if (this.invulnerable > 0) this.invulnerable--;
@@ -78,43 +78,65 @@ export class Player {
         }
     }
 
+    // CORRECTION: Logique de collision entièrement réécrite pour être plus précise
     handleTileCollisions(game) {
         const { tileSize } = this.config;
+
+        // Appliquer le mouvement sur l'axe X
         this.x += this.vx;
-        this.checkCollisionAxis('x', game, tileSize);
+        
+        // Vérifier les collisions sur l'axe X
+        if (this.vx > 0) { // Droite
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h) / tileSize);
+            let right = Math.floor((this.x + this.w) / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[right] > 0) {
+                    this.x = right * tileSize - this.w;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        } else if (this.vx < 0) { // Gauche
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h) / tileSize);
+            let left = Math.floor(this.x / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[left] > 0) {
+                    this.x = (left + 1) * tileSize;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        }
+
+        // Appliquer le mouvement sur l'axe Y
         this.y += this.vy;
         this.grounded = false;
-        this.checkCollisionAxis('y', game, tileSize);
-    }
-
-    checkCollisionAxis(axis, game, tileSize) {
-        const isX = axis === 'x';
-        const velocity = isX ? 'vx' : 'vy';
-        const pos = isX ? 'x' : 'y';
-        const dim = isX ? 'w' : 'h';
-
-        const start = Math.floor(this[pos] / tileSize);
-        const end = Math.floor((this[pos] + this[dim]) / tileSize);
-        const otherStart = Math.floor(this[isX ? 'y' : 'x'] / tileSize);
-        const otherEnd = Math.floor((this[isX ? 'y' : 'x'] + this[isX ? 'h' : 'w']) / tileSize);
-
-        for (let i = start; i <= end; i++) {
-            for (let j = otherStart; j <= otherEnd; j++) {
-                const tileX = isX ? i : j;
-                const tileY = isX ? j : i;
-                if (game.tileMap[tileY]?.[tileX] > 0) {
-                    if (this[velocity] > 0) {
-                        this[pos] = i * tileSize - this[dim];
-                    } else if (this[velocity] < 0) {
-                        this[pos] = (i + 1) * tileSize;
-                    }
-                    if (!isX) {
-                        if (this.vy > 0) {
-                            this.grounded = true;
-                            this.canDoubleJump = true;
-                        }
-                    }
-                    this[velocity] = 0;
+        
+        // Vérifier les collisions sur l'axe Y
+        if (this.vy > 0) { // Bas
+            let left = Math.floor(this.x / tileSize);
+            let right = Math.floor((this.x + this.w) / tileSize);
+            let bottom = Math.floor((this.y + this.h) / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[bottom]?.[tileX] > 0) {
+                    this.y = bottom * tileSize - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                    this.canDoubleJump = true;
+                    break;
+                }
+            }
+        } else if (this.vy < 0) { // Haut
+            let left = Math.floor(this.x / tileSize);
+            let right = Math.floor((this.x + this.w) / tileSize);
+            let top = Math.floor(this.y / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[top]?.[tileX] > 0) {
+                    this.y = (top + 1) * tileSize;
+                    this.vy = 0;
+                    break;
                 }
             }
         }
@@ -147,19 +169,14 @@ export class Player {
 
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
 
-        // CORRECTION: Si le sprite de base regarde vers la gauche,
-        // on le retourne quand le joueur va à droite (dir === 1).
-        // Si votre sprite de base regarde à droite, changez la condition en (this.dir === -1).
         if (this.dir === 1) {
             ctx.scale(-1, 1);
         }
 
         const skinAsset = assets[skinKey];
         if (skinAsset) {
-            // CORRECTION: On dessine le sprite du joueur, et non plus un rectangle.
             ctx.drawImage(skinAsset, -this.w / 2, -this.h / 2, this.w, this.h);
         } else {
-            // Fallback si l'image n'est pas chargée
             ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
             ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
         }
