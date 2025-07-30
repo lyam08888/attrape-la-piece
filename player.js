@@ -88,22 +88,22 @@ export class Player {
         // Vérifier les collisions sur l'axe X
         if (this.vx > 0) { // Droite
             let top = Math.floor(this.y / tileSize);
-            let bottom = Math.floor((this.y + this.h) / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize); // -1 pour éviter de s'accrocher au sol
             let right = Math.floor((this.x + this.w) / tileSize);
             for (let tileY = top; tileY <= bottom; tileY++) {
                 if (game.tileMap[tileY]?.[right] > 0) {
-                    this.x = right * tileSize - this.w;
+                    this.x = right * tileSize - this.w - 0.01; // -0.01 pour éviter de rester coincé
                     this.vx = 0;
                     break;
                 }
             }
         } else if (this.vx < 0) { // Gauche
             let top = Math.floor(this.y / tileSize);
-            let bottom = Math.floor((this.y + this.h) / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let left = Math.floor(this.x / tileSize);
             for (let tileY = top; tileY <= bottom; tileY++) {
                 if (game.tileMap[tileY]?.[left] > 0) {
-                    this.x = (left + 1) * tileSize;
+                    this.x = (left + 1) * tileSize + 0.01; // +0.01 pour éviter de rester coincé
                     this.vx = 0;
                     break;
                 }
@@ -116,8 +116,8 @@ export class Player {
         
         // Vérifier les collisions sur l'axe Y
         if (this.vy > 0) { // Bas
-            let left = Math.floor(this.x / tileSize);
-            let right = Math.floor((this.x + this.w) / tileSize);
+            let left = Math.floor((this.x + 1) / tileSize); // +1 et -1 pour éviter de s'accrocher aux murs
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
             let bottom = Math.floor((this.y + this.h) / tileSize);
             for (let tileX = left; tileX <= right; tileX++) {
                 if (game.tileMap[bottom]?.[tileX] > 0) {
@@ -129,8 +129,8 @@ export class Player {
                 }
             }
         } else if (this.vy < 0) { // Haut
-            let left = Math.floor(this.x / tileSize);
-            let right = Math.floor((this.x + this.w) / tileSize);
+            let left = Math.floor((this.x + 1) / tileSize);
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
             let top = Math.floor(this.y / tileSize);
             for (let tileX = left; tileX <= right; tileX++) {
                 if (game.tileMap[top]?.[tileX] > 0) {
