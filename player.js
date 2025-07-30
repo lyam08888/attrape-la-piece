@@ -33,7 +33,6 @@ export class Player {
 
         this.vy += physics.gravity;
         
-        // NOUVEAU: Action de minage avec la touche 'A'
         this.handleActionKey(keys, game);
         
         this.handleTileCollisions(game);
@@ -73,8 +72,12 @@ export class Player {
 
     handleTileCollisions(game) {
         const { tileSize } = this.config;
+
+        // Appliquer le mouvement sur l'axe X
         this.x += this.vx;
-        if (this.vx > 0) {
+        
+        // Vérifier les collisions sur l'axe X
+        if (this.vx > 0) { // Droite
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let right = Math.floor((this.x + this.w) / tileSize);
@@ -85,7 +88,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vx < 0) {
+        } else if (this.vx < 0) { // Gauche
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let left = Math.floor(this.x / tileSize);
@@ -97,9 +100,13 @@ export class Player {
                 }
             }
         }
+
+        // Appliquer le mouvement sur l'axe Y
         this.y += this.vy;
         this.grounded = false;
-        if (this.vy > 0) {
+        
+        // Vérifier les collisions sur l'axe Y
+        if (this.vy > 0) { // Bas
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let bottom = Math.floor((this.y + this.h) / tileSize);
@@ -112,7 +119,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vy < 0) {
+        } else if (this.vy < 0) { // Haut
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let top = Math.floor(this.y / tileSize);
