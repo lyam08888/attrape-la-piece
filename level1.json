@@ -4,7 +4,6 @@
   "enemies": [
     { "x": 6, "y": 4, "dx": 1, "dy": 0 }
   ],
-  "obstacles": [],
   "coinSpawns": [
     { "x": 22, "y": 8 },
     { "x": 5, "y": 25 },
