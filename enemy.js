@@ -35,10 +35,10 @@ class Enemy {
         const { tileSize } = this.config;
 
         this.x += this.vx;
-        // Simple collision pour que les ennemis fassent demi-tour aux murs
         let nextTileX = this.vx > 0 ? Math.floor((this.x + this.w) / tileSize) : Math.floor(this.x / tileSize);
         let currentTileY = Math.floor((this.y + this.h) / tileSize);
-        if (game.tileMap[currentTileY] && game.tileMap[currentTileY][nextTileX] > 0) {
+        // CORRECTION: Ajout d'une vérification (optional chaining) pour éviter les erreurs
+        if (game.tileMap[currentTileY]?.[nextTileX] > 0) {
             this.vx *= -1;
             this.dir *= -1;
         }
@@ -50,7 +50,7 @@ class Enemy {
         let yTile = Math.floor((this.y + this.h) / tileSize);
 
         for (let x = startX; x <= endX; x++) {
-            if (game.tileMap[yTile] && game.tileMap[yTile][x] > 0) {
+            if (game.tileMap[yTile]?.[x] > 0) {
                 if (this.vy > 0) {
                     this.y = yTile * tileSize - this.h;
                     this.onGround = true;
@@ -59,11 +59,11 @@ class Enemy {
             }
         }
         
-        // Fait demi-tour au bord d'un trou
         let frontFootX = this.vx > 0 ? this.x + this.w : this.x;
         let tileBelowX = Math.floor(frontFootX / tileSize);
         let tileBelowY = Math.floor((this.y + this.h + 1) / tileSize);
-        if (this.onGround && (!game.tileMap[tileBelowY] || game.tileMap[tileBelowY][tileBelowX] === 0)) {
+        // CORRECTION: Ajout d'une vérification pour éviter les erreurs
+        if (this.onGround && game.tileMap[tileBelowY]?.[tileBelowX] === 0) {
             this.vx *= -1;
             this.dir *= -1;
         }
@@ -113,7 +113,7 @@ class Enemy {
 export class Slime extends Enemy {
     constructor(x, y, config) {
         super(x, y, 'slime', config);
-        this.h = 12; // Slime is shorter
+        this.h = 12;
     }
 }
 
