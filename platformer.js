@@ -9,21 +9,25 @@ const gameoverDiv = document.getElementById('gameover');
 const msgEnd = document.getElementById('message');
 const hudDiv = document.getElementById('hud');
 const controlsDiv = document.getElementById('controls');
+const timerSpan = document.getElementById('timer');
+const bonusBar = document.getElementById('bonuslist');
 
-const GRAVITY = 0.32, JUMP = 5.2, SPEED = 2.3, FRICTION = 0.81;
+const GRAVITY = 0.32, JUMP = 5.2, SPEED = 2.4, FRICTION = 0.81;
 const WORLD_W = 3000, WORLD_H = 224;
+const GAME_TIME = 60; // secondes
+
 let PAUSED = false, IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 let skinNames = ["player1","player2","player3"];
 let skinImgs = {}, images = {}, allImagesLoaded = 0;
-let imagesToLoad = 7;
+let imagesToLoad = 8; // bonus.png inclus
 
 skinNames.forEach(name => {
   skinImgs[name] = new Image();
   skinImgs[name].src = `assets/${name}.png`;
   skinImgs[name].onload = countLoaded;
 });
-["coin","enemy","flag"].forEach(name => {
+["coin","enemy","flag","bonus"].forEach(name => {
   images[name] = new Image();
   images[name].src = `assets/${name}.png`;
   images[name].onload = countLoaded;
@@ -58,17 +62,20 @@ document.addEventListener('keydown', function(e){
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
 if(IS_MOBILE) controlsDiv.style.display="flex";
-function mobileKey(k){ keys[k]=true; setTimeout(()=>{keys[k]=false},150); }
+function mobileKey(k, mode){
+  if(mode==="double") { keys[k]=true; setTimeout(()=>{keys[k]=false;keys[k]=true;setTimeout(()=>{keys[k]=false},80)},80); }
+  else { keys[k]=true; setTimeout(()=>{keys[k]=false},150); }
+}
 
 btnStart.onclick = ()=>{
   menuDiv.style.display="none";
-  hudDiv.style.display="block";
+  hudDiv.style.display="flex";
   startGame();
   if(IS_MOBILE) controlsDiv.style.display="flex";
 }
 btnRestart.onclick = ()=>{
   gameoverDiv.style.display="none";
-  hudDiv.style.display="block";
+  hudDiv.style.display="flex";
   startGame();
   if(IS_MOBILE) controlsDiv.style.display="flex";
 };
@@ -77,35 +84,59 @@ function startGame() {
   PAUSED = false;
   game = {
     camX: 0,
-    player: {x:30, y:160, vx:0, vy:0, w:24, h:24, grounded:false, frame:0, dir:1, dead:false, win:false},
+    player: {x:30, y:160, vx:0, vy:0, w:24, h:24, grounded:false, doubleJump:true, frame:0, dir:1, dead:false, win:false},
     coins: [],
+    coinsPhys: [],
     enemies: [],
     platforms: [],
+    holes: [],
     score: 0,
     over: false,
     flag: {x:WORLD_W-50, y:175, w:24, h:24},
-    flagAnim: 0
+    flagAnim: 0,
+    time: GAME_TIME,
+    timeLast: Date.now(),
+    bonus: null,
+    bonusPhys: {x:0,y:0,vy:0,active:false},
+    bonusObtained: []
   };
-  game.platforms.push({x:0, y:204, w:WORLD_W, h:24});
-  game.platforms.push(
-    {x:70, y:170, w:40, h:7},{x:155, y:140, w:44, h:7},{x:320, y:120, w:40, h:7},
-    {x:440, y:80, w:30, h:7},{x:600, y:160, w:30, h:7},{x:880, y:108, w:40, h:7},
-    {x:1200, y:140, w:36, h:7},{x:1400, y:90, w:35, h:7},
-    {x:1700, y:145, w:32, h:7},{x:2000, y:110, w:40, h:7},{x:2450, y:180, w:40, h:7}
-  );
-  game.coins = [
-    {x:82, y:140},{x:330, y:90},{x:610, y:130},{x:900, y:78},{x:1215, y:110},{x:1440, y:65},
-    {x:1715, y:115},{x:2020, y:80},{x:2470, y:150},{x:1800, y:95},{x:200, y:40}
+  // Sol principal
+  game.platforms.push({x:0, y:204, w:400, h:24});
+  // Trous, plateformes plus "malines"
+  game.holes = [
+    {x:420, w:45},{x:920, w:45},{x:1900, w:70},{x:1600, w:28}
   ];
+  let platBase = 400;
+  for(let i=0; i<6; i++) {
+    let xx = platBase+i*360, ww = 140-12*i, yy = 204-(i%2===0?30:60);
+    if(i==2) {yy=130;}
+    if(i==4) {yy=60;}
+    game.platforms.push({x:xx, y:yy, w:ww, h:10});
+  }
+  // Sol de droite
+  game.platforms.push({x:2500, y:204, w:500, h:24});
+  // Ajout de trous dans le sol
+  game.platforms = game.platforms.concat(game.holes.map(h=>({x:h.x+h.w, y:204, w: (WORLD_W-h.x-h.w), h:24})));
+  // Pièces (certaines rebondissent)
+  [
+    {x:82, y:140},{x:610, y:80},{x:860, y:50},{x:1215, y:110},{x:1440, y:65},
+    {x:1715, y:115},{x:2020, y:60},{x:2470, y:150},{x:1800, y:50},{x:200, y:40}
+  ].forEach(c=>{
+    game.coins.push({...c});
+    game.coinsPhys.push({x:c.x, y:c.y-25, vy:2+Math.random()*2, bounce:2+Math.random(), t:0});
+  });
+  // Ennemis
   game.enemies = [
-    {x:420, y:188, w:24, h:24, dir:1, vx:0.7},
-    {x:1200, y:124, w:24, h:24, dir:-1, vx:0.9},
+    {x:520, y:188, w:24, h:24, dir:1, vx:0.7},
+    {x:1220, y:124, w:24, h:24, dir:-1, vx:0.9},
     {x:2100, y:188, w:24, h:24, dir:1, vx:0.9}
   ];
   game.camX = 0;
   hudScore.textContent = 0;
   gameoverDiv.style.display = "none";
   msgEnd.innerHTML = "";
+  timerSpan.textContent = "⏰ "+GAME_TIME;
+  bonusBar.innerHTML = "Aucun";
   requestAnimationFrame(loop);
 }
 
@@ -118,36 +149,89 @@ function loop() {
 }
 function update() {
   let p = game.player;
+  // Timer
+  let now = Date.now();
+  if(now - game.timeLast > 990) {
+    game.time -= 1; game.timeLast = now;
+    timerSpan.textContent = "⏰ "+game.time;
+    if(game.time<=0) {die(false); return;}
+  }
+  // Déplacement
   if (keys["ArrowLeft"]) { p.vx = -SPEED; p.dir = -1; }
   else if (keys["ArrowRight"]) { p.vx = SPEED; p.dir = 1; }
   else p.vx *= FRICTION;
-  if ((keys["Space"] || keys["ArrowUp"]) && p.grounded) {
-    p.vy = -JUMP; p.grounded = false;
+  // Double saut
+  let wantsJump = (keys["Space"]||keys["ArrowUp"]);
+  if (wantsJump && (p.grounded || p.doubleJump)) {
+    if(!p.grounded && p.doubleJump){
+      p.doubleJump = false;
+      p.vy = -JUMP*0.93;
+    } else if(p.grounded) {
+      p.vy = -JUMP; p.grounded = false; p.doubleJump = true;
+    }
   }
   p.vy += GRAVITY;
   p.x += p.vx;
   p.y += p.vy;
+  // Plateformes
   p.grounded = false;
   for(let plat of game.platforms){
     if (rectCollide(p, plat)) {
       if (p.vy > 0 && p.y + p.h - p.vy <= plat.y+3) {
-        p.y = plat.y - p.h; p.vy = 0; p.grounded = true;
+        p.y = plat.y - p.h; p.vy = 0; p.grounded = true; p.doubleJump = true;
       } else if (p.y < plat.y + plat.h && p.vy < 0) {
         p.y = plat.y + plat.h; p.vy = 0;
       }
     }
   }
+  // Trous
+  let inHole = game.holes.some(h=>p.x+p.w/2>h.x && p.x+p.w/2<h.x+h.w && p.y>=200);
+  if (inHole) { die(false); return; }
   if (p.x < 0) p.x = 0;
   if (p.x > WORLD_W-p.w) p.x = WORLD_W-p.w;
   if (p.y > 600 && !p.win) die(false);
   game.camX = Math.max(0, Math.min(p.x - 120, WORLD_W-canvas.width));
+  // Pièces avec physique
   for(let i=game.coins.length-1;i>=0;i--) {
     let c = game.coins[i];
     if (rectCollide({x:c.x,y:c.y,w:24,h:24}, p)) {
       playCoinSound();
       game.score += 10;
       hudScore.textContent = game.score;
-      game.coins.splice(i,1);
+      game.coins.splice(i,1); game.coinsPhys.splice(i,1);
+    }
+  }
+  // Pièces animation rebond
+  for(let i=0;i<game.coinsPhys.length;i++){
+    let coin = game.coinsPhys[i];
+    coin.vy += 0.36;
+    coin.y += coin.vy;
+    if(coin.y >= game.coins[i].y) {
+      coin.y = game.coins[i].y;
+      coin.vy = -coin.vy * 0.36 * coin.bounce;
+      if(Math.abs(coin.vy)<0.9) coin.vy = 0;
+    }
+  }
+  // Bonus apparition aléa
+  if(!game.bonus && Math.random()<0.003){
+    let bx = 180+Math.random()*(WORLD_W-200);
+    game.bonus = {x:bx, y:40, got:false, vy:0, frame:0, id: Date.now()%3};
+    game.bonusPhys = {x:bx, y:10, vy:3.5+Math.random()*2};
+  }
+  if(game.bonus && !game.bonus.got){
+    game.bonusPhys.vy += 0.32;
+    game.bonusPhys.y += game.bonusPhys.vy;
+    if(game.bonusPhys.y > 160) { game.bonusPhys.y = 160; game.bonusPhys.vy*=-0.35;}
+    game.bonus.x = game.bonusPhys.x;
+    game.bonus.y = game.bonusPhys.y;
+    if(rectCollide({x:game.bonus.x,y:game.bonus.y,w:24,h:24},p)){
+      game.bonus.got = true;
+      let bonusType = ["Double Score","Super Saut","+15s Temps"][game.bonus.id];
+      game.bonusObtained.push({type:bonusType, ts: Date.now()});
+      updateBonusBar(game.bonusObtained);
+      if(game.bonus.id===0) game.score+=30;
+      if(game.bonus.id===1) {p.vy = -JUMP*1.38;}
+      if(game.bonus.id===2) {game.time+=15;}
     }
   }
   if (Math.abs(p.vx)>0.4 && p.grounded) p.frame = (p.frame+1)%20;
@@ -165,11 +249,16 @@ function update() {
       } else die(false);
     }
   }
-  // Drapeau animé
   game.flagAnim++;
   if (!p.win && rectCollide(game.flag, p)) {
     p.win = true; win();
   }
+}
+function updateBonusBar(arr){
+  if(arr.length==0) { bonusBar.innerHTML="Aucun"; return;}
+  bonusBar.innerHTML = arr.map(b=>
+    `<img src="assets/bonus.png" title="${b.type}"/> <span>${b.type}</span>`
+  ).join(" ");
 }
 function die(win) {
   game.player.dead = true;
@@ -225,11 +314,29 @@ function draw() {
     ctx.fillStyle="#9f7b4d";ctx.fillRect(plat.x,plat.y,plat.w,plat.h);
     ctx.fillStyle="#e7cf6d";ctx.fillRect(plat.x,plat.y,plat.w,2);
   }
-  for(let c of game.coins){
-    ctx.drawImage(images.coin, c.x, c.y, 24, 24);
+  // Affichage des trous (sol manquant)
+  for(let h of game.holes){
+    ctx.clearRect(h.x,204,h.w,24);
+    ctx.fillStyle="#18391a"; ctx.fillRect(h.x,224,h.w,10);
+  }
+  // Pièces avec physique
+  for(let i=0;i<game.coins.length;i++){
+    ctx.save();
+    ctx.translate(game.coins[i].x+12, game.coinsPhys[i].y+12);
+    let scale = 1+0.07*Math.sin(Date.now()/90+i);
+    ctx.scale(scale,scale);
+    ctx.drawImage(images.coin, -12,-12, 24,24);
+    ctx.restore();
   }
   for(let e of game.enemies){
     ctx.drawImage(images.enemy, e.x, e.y, 24, 24);
+  }
+  if(game.bonus && !game.bonus.got){
+    ctx.save();
+    ctx.translate(game.bonus.x+12, game.bonus.y+12);
+    ctx.rotate(Math.sin(Date.now()/350)*0.25);
+    ctx.drawImage(images.bonus, -12,-12, 24,24);
+    ctx.restore();
   }
   // Drapeau animé
   let f = game.flag, anim = Math.sin(game.flagAnim/12)*5;
@@ -243,7 +350,6 @@ function draw() {
   ctx.restore();
 }
 
-// Génère un petit son "coin" dynamiquement (WebAudio)
 function playCoinSound(){
   try {
     let ctxx = window.AudioContext ? new window.AudioContext() : null;
