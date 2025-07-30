@@ -1,12 +1,27 @@
 {
-  "playerSpeed": 2,
-  "coinScore": 10,
-  "bonusScore": 50,
-  "enemySpeed": 1,
-  "playerSize": 16,
-  "coinSize": 12,
-  "enemySize": 16,
-  "bonusSize": 14,
-  "lives": 3,
-  "winScore": 100
+  "gameTitle": "Super Pixel Adventure",
+  "canvasWidth": 960,
+  "canvasHeight": 540,
+  "tileSize": 16,
+  "physics": {
+    "gravity": 0.35,
+    "jumpForce": 8.5,
+    "playerSpeed": 2.5
+  },
+  "player": {
+    "maxLives": 5,
+    "gameTime": 180
+  },
+  "skins": [
+    "assets/player1.png",
+    "assets/player2.png",
+    "assets/player3.png"
+  ],
+  "assets": {
+    "coin": "assets/coin.png",
+    "enemy": "assets/enemy.png",
+    "flag": "assets/flag.png",
+    "bonus": "assets/bonus.png",
+    "wall": "assets/wall.png"
+  }
 }
