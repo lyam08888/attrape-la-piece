@@ -12,35 +12,59 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.inWater = false;
+        this.frame = 0;
     }
 
     update(keys, game) {
-        const speed = this.config.physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 0.8 : 1);
+        const { physics } = this.config;
+        const speed = physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 0.8 : 1);
         
+        // Mouvement horizontal
         if (keys.left) { this.vx = -speed; this.dir = -1; }
         else if (keys.right) { this.vx = speed; this.dir = 1; }
-        else { this.vx *= this.inWater ? this.config.physics.waterFriction : this.config.physics.friction; }
+        else { this.vx *= this.inWater ? physics.waterFriction : physics.friction; }
 
+        // Saut
         if (keys.jump) {
-            if (this.grounded || this.inWater) { this.vy = -this.config.physics.jumpForce; this.canDoubleJump = true; }
-            else if (this.canDoubleJump) { this.vy = -this.config.physics.jumpForce * 0.8; this.canDoubleJump = false; }
+            if (this.grounded || this.inWater) { 
+                this.vy = -physics.jumpForce; 
+                this.canDoubleJump = true; 
+                game.playSound('jump');
+                game.createParticles(this.x + this.w / 2, this.y + this.h, 10, '#8B7355');
+            }
+            else if (this.canDoubleJump) { 
+                this.vy = -physics.jumpForce * 0.8; 
+                this.canDoubleJump = false; 
+                game.playSound('jump');
+                game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, '#87CEEB');
+            }
             keys.jump = false;
         }
 
-        this.vy += this.inWater ? this.config.physics.gravity * 0.4 : this.config.physics.gravity;
-        if (this.inWater) this.vy = Math.max(this.vy, -4);
+        // Gravité
+        this.vy += this.inWater ? physics.gravity * 0.4 : physics.gravity;
+        if (this.inWater) this.vy = Math.min(this.vy, 2); // Vitesse de chute max dans l'eau
         
+        // Application du mouvement et collisions
         this.x += this.vx;
         this.handleCollision('x', game.platforms);
         this.y += this.vy;
         this.grounded = false;
         this.handleCollision('y', game.platforms);
 
-        this.inWater = false;
-        game.water.forEach(w => { if(this.rectCollide(w)) this.inWater = true; });
-
-        if (this.y > game.level.worldHeight) game.loseLife();
+        // Vérification de l'état (eau, chute)
+        this.inWater = game.water.some(w => this.rectCollide(w));
+        if (this.y > game.level.worldHeight + 100) game.loseLife();
         if (this.invulnerable > 0) this.invulnerable--;
+        
+        // Animation
+        if (!this.grounded) {
+            this.frame = 1; // Frame de saut
+        } else if (Math.abs(this.vx) > 0.1) {
+            this.frame = (this.frame + 0.2) % 4; // Frames de marche
+        } else {
+            this.frame = 0; // Frame statique
+        }
     }
 
     handleCollision(axis, platforms) {
@@ -49,9 +73,18 @@ export class Player {
                 if (axis === 'x') {
                     if (this.vx > 0) this.x = plat.x - this.w;
                     else if (this.vx < 0) this.x = plat.x + plat.w;
-                } else {
-                    if (this.vy > 0) { this.y = plat.y - this.h; this.vy = 0; this.grounded = true; }
-                    else if (this.vy < 0) { this.y = plat.y + plat.h; this.vy = 0; }
+                    this.vx = 0;
+                } else { // axis === 'y'
+                    if (this.vy > 0) { 
+                        this.y = plat.y - this.h; 
+                        this.vy = 0; 
+                        this.grounded = true; 
+                        this.canDoubleJump = true;
+                    }
+                    else if (this.vy < 0) { 
+                        this.y = plat.y + plat.h; 
+                        this.vy = 0; 
+                    }
                 }
             }
         });
@@ -66,8 +99,15 @@ export class Player {
         ctx.save();
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         if (this.dir === -1) { ctx.scale(-1, 1); }
-        if (isGodMode) { ctx.shadowColor = 'gold'; ctx.shadowBlur = 15; }
-        if (this.invulnerable > 0 && this.invulnerable % 10 < 5) ctx.globalAlpha = 0.5;
+        
+        if (isGodMode) {
+            ctx.shadowColor = 'gold';
+            ctx.shadowBlur = 15;
+        }
+        
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+            ctx.globalAlpha = 0.5;
+        }
         
         ctx.drawImage(assets[skinKey], -this.w / 2, -this.h / 2, this.w, this.h);
         ctx.restore();
