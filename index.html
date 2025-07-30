@@ -1,242 +1,36 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const hudScore = document.getElementById('score');
-const btnRestart = document.getElementById('btnRestart');
-const gameoverDiv = document.getElementById('gameover');
-const msgEnd = document.getElementById('message');
-
-// --- PHYSIQUE & PARAMÈTRES ---
-const GRAVITY = 0.65, JUMP_POWER = 13, MOVE_SPEED = 4.2, FRICTION = 0.82;
-const LEVEL_LENGTH = 2500; // pixels
-
-let game, keys = {};
-document.addEventListener('keydown', e=>{ keys[e.code]=true; });
-document.addEventListener('keyup', e=>{ keys[e.code]=false; });
-
-function startGame() {
-  game = {
-    camX: 0,
-    player: {x:55, y:320, vx:0, vy:0, w:32, h:44, grounded:false, frame:0, dir:1, dead:false, win:false},
-    coins: [],
-    enemies: [],
-    platforms: [],
-    score: 0,
-    over: false,
-    flag: {x:LEVEL_LENGTH-80, y:303, w:24, h:64}
-  };
-  // SOL LONG
-  game.platforms.push({x:0, y:390, w:LEVEL_LENGTH, h:50});
-  // Autres plateformes
-  game.platforms.push(
-    {x:180, y:330, w:90, h:16},  {x:340, y:280, w:80, h:16},  {x:540, y:340, w:90, h:16},
-    {x:640, y:265, w:70, h:16},  {x:840, y:210, w:80, h:16},  {x:1180, y:295, w:100, h:16},
-    {x:1340, y:250, w:80, h:16}, {x:1500, y:330, w:70, h:16}, {x:1670, y:280, w:100, h:16},
-    {x:1830, y:340, w:60, h:16}, {x:1960, y:220, w:90, h:16}, {x:2200, y:330, w:70, h:16}
-  );
-  // Pièces
-  game.coins = [
-    {x:200, y:290, r:11}, {x:370, y:250, r:11}, {x:560, y:310, r:11}, {x:660, y:235, r:11},
-    {x:880, y:180, r:11}, {x:1200, y:265, r:11}, {x:1360, y:220, r:11}, {x:1510, y:300, r:11},
-    {x:1700, y:250, r:11}, {x:1840, y:310, r:11}, {x:1980, y:190, r:11}, {x:2210, y:300, r:11}
-  ];
-  // Ennemis (petits "goombas" simplifiés)
-  game.enemies = [
-    {x:480, y:374, w:30, h:18, dir:1, vx:1.35},
-    {x:1380, y:234, w:28, h:16, dir:-1, vx:1.7},
-    {x:2100, y:314, w:30, h:18, dir:1, vx:1.6}
-  ];
-  game.camX = 0;
-  hudScore.textContent = 0;
-  gameoverDiv.style.display = "none";
-  msgEnd.innerHTML = "";
-  requestAnimationFrame(loop);
-}
-
-function loop() {
-  if (game.over) return;
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-function update() {
-  let p = game.player;
-  // Déplacement
-  if (keys["ArrowLeft"]) { p.vx = -MOVE_SPEED; p.dir = -1; }
-  else if (keys["ArrowRight"]) { p.vx = MOVE_SPEED; p.dir = 1; }
-  else p.vx *= FRICTION;
-
-  // Saut
-  if ((keys["Space"] || keys["ArrowUp"]) && p.grounded) {
-    p.vy = -JUMP_POWER;
-    p.grounded = false;
-  }
-  // Gravité
-  p.vy += GRAVITY;
-  p.x += p.vx;
-  p.y += p.vy;
-
-  // Collision plateformes
-  p.grounded = false;
-  for(let plat of game.platforms){
-    if (rectCollide(p, plat)) {
-      // Arrive d'en haut
-      if (p.vy > 0 && p.y + p.h - p.vy <= plat.y+5) {
-        p.y = plat.y - p.h;
-        p.vy = 0;
-        p.grounded = true;
-      } else if (p.y < plat.y + plat.h && p.vy < 0) {
-        p.y = plat.y + plat.h;
-        p.vy = 0;
-      }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Super Pixel Platformer Parallax</title>
+  <meta name="viewport" content="width=450, initial-scale=1">
+  <style>
+    body { background: #222; margin:0; font-family:monospace;}
+    #container { display:flex; flex-direction:column; align-items:center; }
+    h1 { color:#ffe01b; margin:10px 0 2px 0;}
+    #gameCanvas { 
+      background:#8be0f8;
+      border:3px solid #222; margin:18px 0;
+      border-radius:11px; 
+      width: 1200px; height: 672px;  /* upscale x3 */
+      image-rendering: pixelated;
+      display: block;
     }
-  }
-  // Limites du monde
-  if (p.x < 0) p.x = 0;
-  if (p.x > LEVEL_LENGTH-p.w) p.x = LEVEL_LENGTH-p.w;
-  // Mort si chute
-  if (p.y > 700 && !p.win) die(false);
-  // Caméra suit le joueur
-  game.camX = Math.max(0, Math.min(p.x - 320, LEVEL_LENGTH-canvas.width));
-
-  // Collisions pièces
-  for(let i=game.coins.length-1;i>=0;i--) {
-    let c = game.coins[i];
-    if (circRectCollide(c, p)) {
-      game.score += 10;
-      hudScore.textContent = game.score;
-      game.coins.splice(i,1);
-    }
-  }
-  // Animation "marche"
-  if (Math.abs(p.vx)>0.6 && p.grounded) p.frame = (p.frame+1)%20;
-  else p.frame = 0;
-
-  // Ennemis
-  for(let e of game.enemies){
-    e.x += e.vx*e.dir;
-    // Va-et-vient sur plateformes
-    let plat = game.platforms.find(pl=>rectCollide({...e,y:e.y+1},pl));
-    if (!plat) e.dir*=-1;
-    if (e.x < 0) e.dir = 1;
-    if (e.x > LEVEL_LENGTH-e.w) e.dir = -1;
-    // Collision avec joueur : mort (sauf si saute sur la tête)
-    if (rectCollide(e,p) && !p.dead && !p.win) {
-      if (p.vy > 0 && p.y+0.7*p.h < e.y+8) {
-        // Écrase l’ennemi
-        game.enemies.splice(game.enemies.indexOf(e),1);
-        p.vy = -7;
-      } else die(false);
-    }
-  }
-
-  // Arrivée (victoire)
-  if (!p.win && rectCollide(p, game.flag)) {
-    p.win = true; win();
-  }
-}
-
-function die(win) {
-  game.player.dead = true;
-  game.over = true;
-  msgEnd.innerHTML = win ? "Bravo, tu as gagné ! <br>Score final : " + game.score : "Perdu !";
-  setTimeout(()=>gameoverDiv.style.display="block",450);
-}
-
-function win() {
-  die(true);
-}
-
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // Décor arrière : ciel bleu, nuages
-  ctx.fillStyle = "#9ee8fc";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  for(let i=0;i<7;i++){
-    let cx = (i*390 - game.camX*0.3)%LEVEL_LENGTH;
-    ctx.globalAlpha=0.6; ctx.beginPath();
-    ctx.arc(cx+120,60,38,0,2*Math.PI); ctx.arc(cx+148,68,25,0,2*Math.PI);
-    ctx.arc(cx+180,60,20,0,2*Math.PI);
-    ctx.fillStyle="#fff"; ctx.fill(); ctx.globalAlpha=1;
-  }
-  // Sol avec herbe
-  ctx.fillStyle = "#7ed255";
-  ctx.fillRect(0,380,canvas.width,70);
-  // Buissons décor
-  for(let i=0;i<8;i++){
-    let bx=(i*250-game.camX*0.55)%LEVEL_LENGTH;
-    ctx.beginPath();
-    ctx.arc(bx+80,410,32,Math.PI,2*Math.PI);ctx.arc(bx+120,410,21,Math.PI,2*Math.PI);
-    ctx.arc(bx+150,410,14,Math.PI,2*Math.PI);
-    ctx.fillStyle = "#45a65b";ctx.fill();
-  }
-  // Plateformes
-  ctx.save();
-  ctx.translate(-game.camX,0);
-  for(let plat of game.platforms){
-    ctx.fillStyle="#68543a";
-    ctx.fillRect(plat.x,plat.y,plat.w,plat.h);
-    ctx.fillStyle="#a0875b";
-    ctx.fillRect(plat.x,plat.y,plat.w,8);
-  }
-  // Pièces
-  for(let c of game.coins){
-    ctx.beginPath();
-    ctx.arc(c.x+12,c.y+12,11,0,2*Math.PI);
-    ctx.fillStyle="#ffe338";
-    ctx.fill();
-    ctx.strokeStyle="#e4b318";ctx.lineWidth=3;ctx.stroke();
-  }
-  // Ennemis
-  for(let e of game.enemies){
-    // Corps
-    ctx.fillStyle="#e8352b";
-    ctx.fillRect(e.x,e.y,e.w,e.h);
-    // Yeux
-    ctx.fillStyle="#fff"; ctx.fillRect(e.x+8,e.y+4,4,5);ctx.fillRect(e.x+16,e.y+4,4,5);
-    ctx.fillStyle="#111"; ctx.fillRect(e.x+9,e.y+7,2,2);ctx.fillRect(e.x+17,e.y+7,2,2);
-  }
-  // Drapeau de victoire
-  ctx.fillStyle="#fff";
-  ctx.fillRect(game.flag.x,game.flag.y,4,64);
-  ctx.fillStyle="#ffb700";
-  ctx.beginPath();ctx.moveTo(game.flag.x+4,game.flag.y);ctx.lineTo(game.flag.x+24,game.flag.y+13);ctx.lineTo(game.flag.x+4,game.flag.y+24);ctx.closePath();ctx.fill();
-  // Joueur (pixel art animé)
-  let p = game.player;
-  ctx.save();
-  ctx.translate(p.x + p.w/2, p.y + p.h/2);
-  ctx.scale(p.dir,1);
-  // Jambes (marche)
-  ctx.fillStyle="#3748a2";
-  if (p.frame<10) {
-    ctx.fillRect(-9,18,8,14); ctx.fillRect(2,18,8,14);
-  } else {
-    ctx.fillRect(-6,18,8,14); ctx.fillRect(0,18,8,14);
-  }
-  // Corps
-  ctx.fillStyle="#1791f5";
-  ctx.fillRect(-16,-16,32,32);
-  // Tête
-  ctx.fillStyle="#ffd38d";
-  ctx.fillRect(-13,-36,26,19);
-  // Yeux
-  ctx.fillStyle="#222";ctx.fillRect(-6,-27,4,4);ctx.fillRect(2,-27,4,4);
-  ctx.restore();
-  ctx.restore();
-}
-
-function rectCollide(a,b) {
-  return a.x+a.w > b.x && a.x < b.x+b.w && a.y+a.h > b.y && a.y < b.y+b.h;
-}
-function circRectCollide(c, r) {
-  let distX = Math.abs(c.x+12 - (r.x+r.w/2));
-  let distY = Math.abs(c.y+12 - (r.y+r.h/2));
-  if (distX > (r.w/2 + c.r)) return false;
-  if (distY > (r.h/2 + c.r)) return false;
-  if (distX <= (r.w/2)) return true;
-  if (distY <= (r.h/2)) return true;
-  let dx=distX-r.w/2, dy=distY-r.h/2;
-  return dx*dx+dy*dy <= c.r*c.r;
-}
-btnRestart.onclick = startGame;
-startGame();
+    #hud { color:#fff; background:#191e23cc; font-size:1.2rem; padding:8px 26px; border-radius:10px; margin-bottom:8px;}
+    #btnRestart { padding:7px 24px; border-radius:7px; font-size:1rem; border:none; background:#ffe01b; color:#23272e; cursor:pointer;}
+    #gameover h2 {margin-bottom:14px;}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>SUPER PIXEL PLATFORMER PARALLAX</h1>
+    <div id="hud">Score: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="400" height="224"></canvas>
+    <div id="gameover" style="display:none;">
+      <h2 id="message"></h2>
+      <button id="btnRestart">Rejouer</button>
+    </div>
+  </div>
+  <script src="pixelplatformer.js"></script>
+</body>
+</html>
