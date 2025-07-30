@@ -1,13 +1,16 @@
 import { TILE } from './world.js';
 
+// Dureté des blocs pour le minage
 const TILE_HARDNESS = {
     [TILE.GRASS]: 1, [TILE.DIRT]: 1,
     [TILE.LEAVES]: 0.5, [TILE.WOOD]: 2,
     [TILE.STONE]: 3, [TILE.COAL]: 3.5, [TILE.IRON]: 4
 };
 
+// Outils efficaces contre certains types de blocs
 const TOOL_EFFECTIVENESS = {
     'shovel': [TILE.GRASS, TILE.DIRT],
+    'axe': [TILE.WOOD, TILE.LEAVES],
     'pickaxe': [TILE.STONE, TILE.COAL, TILE.IRON]
 };
 
@@ -25,7 +28,7 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
-        // CORRECTION: La hache a été retirée pour correspondre à vos assets
+        // La hache a été retirée pour correspondre à vos assets
         this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
         this.selectedToolIndex = 0;
         this.inventory = {};
@@ -51,6 +54,7 @@ export class Player {
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);
         this.checkEnemyCollisions(game);
+        this.checkCollectibleCollisions(game);
 
         if (this.invulnerable > 0) this.invulnerable--;
         if (this.swingTimer > 0) this.swingTimer--;
@@ -97,9 +101,10 @@ export class Player {
         const { tileSize } = this.config;
         let tileX, tileY;
 
+        // On utilise la souris si le clic gauche est utilisé, sinon la direction du personnage
         if (mouse.left) {
-            const worldMouseX = mouse.x / game.zoom + game.camera.x;
-            const worldMouseY = mouse.y / game.zoom + game.camera.y;
+            const worldMouseX = mouse.x / game.settings.zoom + game.camera.x;
+            const worldMouseY = mouse.y / game.settings.zoom + game.camera.y;
             tileX = Math.floor(worldMouseX / tileSize);
             tileY = Math.floor(worldMouseY / tileSize);
 
@@ -125,7 +130,13 @@ export class Player {
 
     mineBlock(tileX, tileY, tile, game) {
         game.tileMap[tileY][tileX] = TILE.AIR;
-        game.createParticles(tileX * game.config.tileSize + game.config.tileSize / 2, tileY * game.config.tileSize + game.config.tileSize / 2, 10, '#fff');
+        
+        game.collectibles.push({
+            x: tileX * game.config.tileSize,
+            y: tileY * game.config.tileSize,
+            vy: -2,
+            tileType: tile
+        });
         
         if (tile === TILE.WOOD) {
             const neighbors = [[tileX, tileY - 1], [tileX - 1, tileY], [tileX + 1, tileY]];
@@ -137,8 +148,12 @@ export class Player {
 
     handleTileCollisions(game) {
         const { tileSize } = this.config;
+
+        // Appliquer le mouvement sur l'axe X
         this.x += this.vx;
-        if (this.vx > 0) {
+        
+        // Vérifier les collisions sur l'axe X
+        if (this.vx > 0) { // Droite
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let right = Math.floor((this.x + this.w) / tileSize);
@@ -149,7 +164,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vx < 0) {
+        } else if (this.vx < 0) { // Gauche
             let top = Math.floor(this.y / tileSize);
             let bottom = Math.floor((this.y + this.h - 1) / tileSize);
             let left = Math.floor(this.x / tileSize);
@@ -161,9 +176,13 @@ export class Player {
                 }
             }
         }
+
+        // Appliquer le mouvement sur l'axe Y
         this.y += this.vy;
         this.grounded = false;
-        if (this.vy > 0) {
+        
+        // Vérifier les collisions sur l'axe Y
+        if (this.vy > 0) { // Bas
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let bottom = Math.floor((this.y + this.h) / tileSize);
@@ -176,7 +195,7 @@ export class Player {
                     break;
                 }
             }
-        } else if (this.vy < 0) {
+        } else if (this.vy < 0) { // Haut
             let left = Math.floor((this.x + 1) / tileSize);
             let right = Math.floor((this.x + this.w - 1) / tileSize);
             let top = Math.floor(this.y / tileSize);
@@ -200,6 +219,18 @@ export class Player {
                 else if (this.invulnerable === 0) {
                     game.loseLife();
                 }
+            }
+        });
+    }
+
+    checkCollectibleCollisions(game) {
+        game.collectibles.forEach((item, index) => {
+            if (this.rectCollide(item)) {
+                if (!this.inventory[item.tileType]) {
+                    this.inventory[item.tileType] = 0;
+                }
+                this.inventory[item.tileType]++;
+                game.collectibles.splice(index, 1);
             }
         });
     }
