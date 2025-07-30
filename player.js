@@ -90,7 +90,10 @@ export class Player {
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         if (this.dir === -1) { ctx.scale(-1, 1); }
         
-        if (isGodMode) { ctx.shadowColor = 'gold'; ctx.shadowBlur = 15; }
+        if (isGodMode) {
+            ctx.shadowColor = 'gold';
+            ctx.shadowBlur = 15;
+        }
         
         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.globalAlpha = 0.5;
