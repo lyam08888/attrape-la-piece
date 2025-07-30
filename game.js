@@ -68,7 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseUrl = config.githubRepoUrl || ''; 
 
         for (const [key, path] of Object.entries(config.assets)) {
-            allAssetPaths[key] = baseUrl + path;
+            // Si le chemin est une URL complète, on l'utilise directement
+            if (path.startsWith('http')) {
+                allAssetPaths[key] = path;
+            } else {
+                allAssetPaths[key] = baseUrl + path;
+            }
         }
         config.skins.forEach((fileName, i) => {
             allAssetPaths[`player${i+1}`] = baseUrl + 'assets/' + fileName;
@@ -155,13 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
         game = {
             player: new Player(80, 300, config),
             camera: { x: 0 },
-            // NOUVEAU: Initialisation des nouveaux tableaux pour les objets du niveau
             platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [],
             lastCheckpoint: { x: 80, y: 300 },
             score: 0, lives: config.player.maxLives, time: config.player.gameTime,
             timeLast: Date.now(), over: false, dayNightCycle: 0,
             settings: gameSettings,
             level: level,
+            // CORRECTION: La référence à la configuration était manquante ici !
             config: config,
             playSound: playSound,
             createParticles: createParticles,
@@ -233,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         drawScenery();
         game.platforms.forEach(p => ui.ctx.drawImage(assets.wall, p.x, p.y, p.w, p.h));
         
-        // NOUVEAU: Dessine les nouveaux éléments
         if (assets.decoration_bush) {
             game.decorations.forEach(d => ui.ctx.drawImage(assets.decoration_bush, d.x, d.y, d.w, d.h));
         }
