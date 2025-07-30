@@ -1,5 +1,6 @@
 import { Player } from './player.js';
 import { Slime, Frog, Golem } from './enemy.js';
+import { generateLevel } from './world.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ui = {
@@ -140,59 +141,20 @@ document.addEventListener('DOMContentLoaded', () => {
             platforms: [], enemies: [], particles: [], water: [], coins: [], checkpoints: [], bonuses: [],
             lastCheckpoint: { x: 80, y: 300 },
             score: 0, lives: config.player.maxLives, time: config.player.gameTime,
-            timeLast: Date.now(), over: false, dayNightCycle: 0, weather: { type: 'clear', particles: [] }
+            timeLast: Date.now(), over: false, dayNightCycle: 0, weather: { type: 'clear', particles: [] },
+            settings: gameSettings,
+            level: level,
+            playSound: playSound,
+            createParticles: createParticles,
+            loseLife: loseLife
         };
         
-        generateLevel();
+        generateLevel(game, level, gameSettings);
         updateHUD();
         [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
         ui.hud.classList.add('active');
         
         requestAnimationFrame(gameLoop);
-    }
-    
-    function generateLevel() {
-        const { worldWidth, worldHeight } = level;
-        const groundY = worldHeight - 64;
-
-        for (let x = 0; x < worldWidth; x += 200) {
-            if (x > 400 && Math.random() < 0.3) {
-                if (Math.random() < 0.5) game.water.push({ x: x, y: groundY, w: 120, h: 64 });
-                x += 120;
-            }
-            game.platforms.push({ x: x, y: groundY, w: 200, h: 64, type: 'ground' });
-        }
-
-        for (let i = 0; i < level.generation.platformCount; i++) {
-            game.platforms.push({
-                x: 400 + Math.random() * (worldWidth - 800),
-                y: 200 + Math.random() * (groundY - 250),
-                w: 100 + Math.random() * 100,
-                h: 32,
-                type: 'normal'
-            });
-        }
-        
-        let enemyCount = level.generation.enemyCount;
-        if(gameSettings.difficulty === 'Easy') enemyCount *= 0.7;
-        if(gameSettings.difficulty === 'Hard') enemyCount *= 1.5;
-
-        for(let i = 0; i < enemyCount; i++) {
-            const platform = game.platforms[Math.floor(Math.random() * game.platforms.length)];
-            const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
-            let enemyClass;
-            if (enemyType === 'slime') enemyClass = Slime;
-            if (enemyType === 'frog') enemyClass = Frog;
-            if (enemyType === 'golem') enemyClass = Golem;
-            game.enemies.push(new enemyClass(platform.x + platform.w / 2, platform.y - 32, config));
-        }
-        
-        for(let i = 1; i <= level.generation.checkpoints; i++) {
-            game.checkpoints.push({
-                x: (worldWidth / (level.generation.checkpoints + 1)) * i,
-                y: groundY - 64, w: 32, h: 64, activated: false
-            });
-        }
     }
     
     function gameLoop() {
@@ -308,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateHUD() { ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
     function loseLife() { if(gameSettings.godMode) return; game.lives--; if(game.lives <= 0) endGame(false); else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.invulnerable = 120; } updateHUD(); }
     function endGame(win) { game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
+    function createParticles(x, y, count, color) { /* ... */ }
     
     main();
 });
