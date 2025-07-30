@@ -14,7 +14,6 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
-        // NOUVEAU: Inventaire des outils
         this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
         this.selectedToolIndex = 0;
     }
@@ -45,17 +44,15 @@ export class Player {
     handleActionKey(keys, game) {
         if (keys.action) {
             const selectedTool = this.tools[this.selectedToolIndex];
-            this.swingTimer = 15; // Démarre l'animation pour tous les outils
+            this.swingTimer = 15;
 
             switch(selectedTool) {
                 case 'pickaxe':
-                case 'shovel': // La pelle et la pioche ont la même fonction pour l'instant
+                case 'shovel':
                     this.mineBlock(game);
                     break;
                 case 'sword':
-                    // Logique d'attaque à ajouter ici
                     break;
-                // ... autres cas pour les autres outils
             }
             
             keys.action = false;
@@ -83,9 +80,83 @@ export class Player {
         }
     }
 
-    handleTileCollisions(game) { /* ... (code inchangé) ... */ }
-    checkEnemyCollisions(game) { /* ... (code inchangé) ... */ }
-    rectCollide(other) { /* ... (code inchangé) ... */ }
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+
+        this.x += this.vx;
+        
+        if (this.vx > 0) {
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
+            let right = Math.floor((this.x + this.w) / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[right] > 0) {
+                    this.x = right * tileSize - this.w - 0.01;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        } else if (this.vx < 0) {
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
+            let left = Math.floor(this.x / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[left] > 0) {
+                    this.x = (left + 1) * tileSize + 0.01;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        }
+
+        this.y += this.vy;
+        this.grounded = false;
+        
+        if (this.vy > 0) {
+            let left = Math.floor((this.x + 1) / tileSize);
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
+            let bottom = Math.floor((this.y + this.h) / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[bottom]?.[tileX] > 0) {
+                    this.y = bottom * tileSize - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                    this.canDoubleJump = true;
+                    break;
+                }
+            }
+        } else if (this.vy < 0) {
+            let left = Math.floor((this.x + 1) / tileSize);
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
+            let top = Math.floor(this.y / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[top]?.[tileX] > 0) {
+                    this.y = (top + 1) * tileSize;
+                    this.vy = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+    checkEnemyCollisions(game) {
+        game.enemies.forEach(enemy => {
+            if (this.rectCollide(enemy) && !enemy.isDying) {
+                if (this.vy > 0 && (this.y + this.h) < (enemy.y + enemy.h * 0.5)) {
+                    enemy.takeDamage(game);
+                    this.vy = -this.config.physics.jumpForce * 0.6;
+                } 
+                else if (this.invulnerable === 0) {
+                    game.loseLife();
+                }
+            }
+        });
+    }
+    
+    rectCollide(other) {
+        return this.x < other.x + other.w && this.x + this.w > other.x &&
+               this.y < other.y + other.h && this.y + this.h > other.y;
+    }
 
     drawTool(ctx, assets) {
         ctx.save();
@@ -100,7 +171,6 @@ export class Player {
                 const swingAngle = Math.sin(swingProgress * Math.PI) * 1.5;
                 ctx.rotate(swingAngle);
             }
-            // Ajuste la taille de l'outil pour qu'il soit bien proportionné
             ctx.drawImage(toolAsset, -12, -12, 24, 24);
         }
         ctx.restore();
@@ -126,7 +196,6 @@ export class Player {
             ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
         }
         
-        // On dessine l'outil sélectionné
         this.drawTool(ctx, assets);
         ctx.restore();
     }
