@@ -13,7 +13,7 @@ spriteEnemy.src =
 let config, level;
 
 // ----- HTML refs -----
-const canvas = document.getElementById('pixelCanvas'); // lowres pixel canvas !
+const canvas = document.getElementById('pixelCanvas');
 const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
 const scoreBoard = document.getElementById('scoreBoard');
@@ -44,19 +44,19 @@ let player = {}, coin = {}, enemies = [], score = 0, playing = false;
 // ----- Initialisation -----
 function initGame() {
   player = {
-    x: Math.floor(level.playerStart.x / 10), // adaptation pour grille 32x32
-    y: Math.floor(level.playerStart.y / 10),
-    size: config.playerSize ? Math.floor(config.playerSize / 10) : 3
+    x: level.playerStart.x,
+    y: level.playerStart.y,
+    size: config.playerSize || 3
   };
   coin = {
-    x: Math.floor(level.coinStart.x / 10),
-    y: Math.floor(level.coinStart.y / 10),
-    size: config.coinSize ? Math.floor(config.coinSize / 10) : 3
+    x: level.coinStart.x,
+    y: level.coinStart.y,
+    size: config.coinSize || 3
   };
   enemies = (level.enemies || []).map(e => ({
-    x: Math.floor(e.x / 10),
-    y: Math.floor(e.y / 10),
-    size: config.enemySize ? Math.floor(config.enemySize / 10) : 3,
+    x: e.x,
+    y: e.y,
+    size: config.enemySize || 3,
     dx: e.dx ? Math.sign(e.dx) : 1,
     dy: e.dy ? Math.sign(e.dy) : 0
   }));
@@ -165,8 +165,8 @@ function gameLoop() {
     // Nouvelle position aléatoire (sur la grille)
     if (level.coinSpawns && level.coinSpawns.length) {
       const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
-      coin.x = Math.floor(sp.x / 10);
-      coin.y = Math.floor(sp.y / 10);
+      coin.x = sp.x;
+      coin.y = sp.y;
     } else {
       coin.x = Math.floor(Math.random() * (32 - coin.size));
       coin.y = Math.floor(Math.random() * (32 - coin.size));
