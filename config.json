@@ -19,7 +19,6 @@
   },
   "player": {
     "maxLives": 5,
-    "gameTime": 300,
     "width": 16,
     "height": 28,
     "reach": 5
@@ -37,14 +36,14 @@
     "tile_leaves": "assets/tile_leaves.png",
     "tile_coal": "assets/tile_coal.png",
     "tile_iron": "assets/tile_iron.png",
-    "coin": "assets/coin.png",
-    "bonus": "assets/bonus.png",
     "enemy_slime": "assets/enemy_slime.png",
     "enemy_frog": "assets/enemy_frog.png",
     "enemy_golem": "assets/enemy_golem.png",
-    "flag": "assets/flag.png",
-    "heart": "assets/heart.png",
-    "checkpoint_off": "assets/checkpoint_off.png",
-    "checkpoint_on": "assets/checkpoint_on.png"
+    "tool_pickaxe": "https://placehold.co/32x32/808080/FFFFFF?text=P",
+    "tool_shovel": "https://placehold.co/32x32/8B4513/FFFFFF?text=S",
+    "tool_sword": "https://placehold.co/32x32/C0C0C0/FFFFFF?text=SW",
+    "tool_bow": "https://placehold.co/32x32/DAA520/FFFFFF?text=B",
+    "tool_fishing_rod": "https://placehold.co/32x32/00008B/FFFFFF?text=FR",
+    "tool_knife": "https://placehold.co/32x32/A9A9A9/FFFFFF?text=K"
   }
 }
