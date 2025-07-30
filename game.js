@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
     }
 
-    // NOUVEAU: Fonction pour trouver un point d'apparition sûr
     function findSpawnPoint(game, config) {
         const { tileSize, worldWidth, worldHeight } = config;
         const worldWidthInTiles = Math.floor(worldWidth / tileSize);
@@ -115,36 +114,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let y = 0; y < worldHeightInTiles; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                // Point d'apparition trouvé : 2 tuiles au-dessus du sol
-                return {
-                    x: spawnX * tileSize,
-                    y: (y - 2) * tileSize
-                };
+                return { x: spawnX * tileSize, y: (y - 2) * tileSize };
             }
         }
-        // Point de secours si aucun sol n'est trouvé
         return { x: worldWidth / 2, y: 100 };
     }
 
     function initGame() {
         game = {
-            player: null, // Le joueur sera créé après avoir trouvé un point d'apparition
+            player: null,
             camera: { x: 0, y: 0 },
             tileMap: [], enemies: [], particles: [],
-            score: 0, lives: config.player.maxLives, over: false,
+            score: 0, lives: config.player.maxLives, time: config.player.gameTime, over: false,
             config: config,
             createParticles: createParticles,
-            loseLife: loseLife
+            loseLife: loseLife,
+            timeLast: Date.now()
         };
         gameSettings = { godMode: false }; 
         
         generateLevel(game, config, {});
 
-        // CORRECTION: On trouve un point d'apparition sûr AVANT de créer le joueur
         const spawnPoint = findSpawnPoint(game, config);
         game.player = new Player(spawnPoint.x, spawnPoint.y, config);
 
-        // On positionne la caméra sur le joueur
         updateCamera(true); 
 
         if(ui.mainMenu) {
@@ -168,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         game.enemies = game.enemies.filter(e => !e.isDead);
         updateParticles();
         updateCamera(false);
+        updateTimer();
         mouse.left = false; mouse.right = false;
     }
     
@@ -187,6 +181,18 @@ document.addEventListener('DOMContentLoaded', () => {
         game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - ui.canvas.height));
     }
 
+    function updateTimer() {
+        if (Date.now() - game.timeLast > 1000) {
+            game.time--;
+            game.timeLast = Date.now();
+            if (game.time <= 0 && !game.over) {
+                game.time = 0;
+                endGame(false);
+            }
+            updateHUD();
+        }
+    }
+
     function draw() {
         if (!game) return;
         drawSky();
@@ -201,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.restore();
 
         drawInventoryUI();
+        updateHUD(); // Mettre à jour le HUD à chaque frame
     }
 
     function drawTileMap() {
@@ -220,6 +227,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
+    }
+
+    // CORRECTION: La fonction manquante a été restaurée ici.
+    function drawParticles() {
+        if (!game) return;
+        ui.ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ui.ctx.fillStyle = p.color;
+            ui.ctx.globalAlpha = p.life / p.maxLife;
+            ui.ctx.beginPath();
+            ui.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ui.ctx.fill();
+        });
+        ui.ctx.globalAlpha = 1.0;
     }
 
     function drawInventoryUI() {
@@ -287,7 +308,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
-    function loseLife() { if(!game || game.over) return; game.lives--; if(game.lives <= 0) game.over=true; else game.player.invulnerable = 120; }
+    function updateHUD() {
+        if(!game || !ui.hud) return; 
+        ui.lives.textContent = '❤'.repeat(game.lives); 
+        ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; 
+        ui.timer.textContent = `TEMPS: ${game.time}`; 
+    }
+    function loseLife() { if(!game || game.over) return; game.lives--; if(game.lives <= 0) endGame(false); else game.player.invulnerable = 120; }
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+    }
     function drawSky() {
         const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
         grad.addColorStop(0, '#87CEEB');
