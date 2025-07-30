@@ -7,19 +7,14 @@ const scoreBoard = document.getElementById('scoreBoard');
 const scoreValue = document.getElementById('scoreValue');
 const gameOverMenu = document.getElementById('gameOver');
 
-startButton.style.display = 'none';
-canvas.style.display = 'none';
-scoreBoard.style.display = 'none';
-gameOverMenu.style.display = 'none';
-
-// Sprites
+// Préparer pour plusieurs tailles
 let playerImg = new Image(), coinImg = new Image();
 playerImg.onload = checkStart;
 coinImg.onload = checkStart;
 playerImg.src = 'assets/player.png';
 coinImg.src = 'assets/coin.png';
 
-// Son en ligne, pas de fichier local nécessaire
+// Son
 let catchSound = new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa94ae.mp3');
 
 // Charger config et niveau
@@ -29,30 +24,33 @@ fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkStart(); });
 let ready = 0;
 function checkStart() {
   ready++;
-  if (ready === 4) {
-    startButton.style.display = 'block';
-  }
+  if (ready === 4) startButton.style.display = 'block';
 }
 
-// --- Game state ---
-let player = { x: 0, y: 0, size: 32 };
-let coin = { x: 0, y: 0, size: 32 };
-let score = 0;
-let playing = false;
+let player = {}, coin = {}, score = 0, playing = false;
+
+function initGame() {
+  player = {
+    x: level.playerStart.x,
+    y: level.playerStart.y,
+    size: config.playerSize || 32
+  };
+  coin = {
+    x: level.coinStart.x,
+    y: level.coinStart.y,
+    size: config.coinSize || 32
+  };
+  score = 0;
+  updateScore();
+}
 
 function startGame() {
-  // Reset state
   document.getElementById('startMenu').style.display = 'none';
   gameOverMenu.style.display = 'none';
   canvas.style.display = 'block';
   scoreBoard.style.display = 'block';
-  score = 0;
-  updateScore();
-  player.x = level.playerStart.x;
-  player.y = level.playerStart.y;
-  coin.x = level.coinStart.x;
-  coin.y = level.coinStart.y;
   playing = true;
+  initGame();
   window.focus();
   document.addEventListener('keydown', onKeyDown);
   requestAnimationFrame(gameLoop);
@@ -88,10 +86,14 @@ function updateScore() {
 function gameLoop() {
   if (!playing) return;
   ctx.clearRect(0, 0, 400, 400);
+  // Fond de canvas personnalisable
+  ctx.fillStyle = config.bgColor || "#171d29";
+  ctx.fillRect(0, 0, 400, 400);
+
   ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
   ctx.drawImage(coinImg, coin.x, coin.y, coin.size, coin.size);
 
-  // Collision (améliorée, centre à centre)
+  // Collision : centre à centre
   if (
     Math.abs(player.x + player.size / 2 - (coin.x + coin.size / 2)) < player.size &&
     Math.abs(player.y + player.size / 2 - (coin.y + coin.size / 2)) < player.size
@@ -100,20 +102,26 @@ function gameLoop() {
     updateScore();
     catchSound.currentTime = 0;
     catchSound.play();
-    // Nouvelle position aléatoire (dans les bords)
-    coin.x = Math.floor(Math.random() * (400 - coin.size));
-    coin.y = Math.floor(Math.random() * (400 - coin.size));
+    // Nouvelle position dans les spawn prévus ou au hasard
+    if (level.coinSpawns && level.coinSpawns.length) {
+      const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
+      coin.x = sp.x;
+      coin.y = sp.y;
+    } else {
+      coin.x = Math.floor(Math.random() * (400 - coin.size));
+      coin.y = Math.floor(Math.random() * (400 - coin.size));
+    }
   }
 
-  // Exemple de condition de fin (score 10)
-  if (score >= 10) {
-    setTimeout(endGame, 250); // Petite pause avant d’afficher le game over
+  // Victoire : score atteint winScore
+  if (score >= (config.winScore || 100)) {
+    setTimeout(endGame, 350); // Petite pause avant "Bravo"
     return;
   }
 
   requestAnimationFrame(gameLoop);
 }
 
-// --- Event listeners ---
+// Event listeners
 startButton.addEventListener('click', startGame);
 if (restartButton) restartButton.addEventListener('click', restartGame);
