@@ -8,18 +8,19 @@
     body { background: #5dc4e6; font-family: monospace; margin:0;}
     #container { display:flex; flex-direction:column; align-items:center;}
     h1 { color:#ffb700; margin:10px 0;}
-    #gameCanvas { background:#92e087; border:4px solid #222; margin:24px 0; border-radius:16px; image-rendering:pixelated;}
+    #gameCanvas { background:#a4e9fe; border:4px solid #222; margin:24px 0; border-radius:16px; image-rendering:pixelated;}
     #hud { color:#222; background:#fff8; font-size:1.2rem; padding:10px 28px; border-radius:10px; margin-bottom:10px;}
     #btnRestart { padding:8px 24px; border-radius:7px; font-size:1rem; border:none; background:#ffb700; color:#222; cursor:pointer;}
+    #gameover h2 {margin-bottom:18px;}
   </style>
 </head>
 <body>
   <div id="container">
     <h1>SUPER PIÈCE PLATFORMER</h1>
     <div id="hud">Score: <span id="score">0</span></div>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <canvas id="gameCanvas" width="900" height="440"></canvas>
     <div id="gameover" style="display:none;">
-      <h2 style="color:#d22;">Perdu !</h2>
+      <h2 id="message"></h2>
       <button id="btnRestart">Rejouer</button>
     </div>
   </div>
