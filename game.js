@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 lives: config.player.maxLives, over: false, paused: false,
                 config: config, createParticles: createParticles, loseLife: loseLife,
                 propagateTreeCollapse: propagateTreeCollapse, miningEffect: null,
-                settings: gameSettings // On attache les paramètres au jeu
+                settings: gameSettings
             };
             
             generateLevel(game, config, {});
@@ -261,286 +261,244 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ... (toutes les autres fonctions comme propagateTreeCollapse, setupInput, etc. restent ici)
-});
-```
+    function propagateTreeCollapse(startX, startY) {
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
 
----
-### `player.js` (Corrigé)
-Ce fichier contient la nouvelle physique de collision qui résout les problèmes de mouvement.
-
-
-```javascript
-import { TILE } from './world.js';
-
-const TILE_HARDNESS = {
-    [TILE.GRASS]: 1, [TILE.DIRT]: 1,
-    [TILE.LEAVES]: 0.5, [TILE.WOOD]: 2,
-    [TILE.STONE]: 3, [TILE.COAL]: 3.5, [TILE.IRON]: 4
-};
-
-const TOOL_EFFECTIVENESS = {
-    'shovel': [TILE.GRASS, TILE.DIRT],
-    'axe': [TILE.WOOD, TILE.LEAVES],
-    'pickaxe': [TILE.STONE, TILE.COAL, TILE.IRON]
-};
-
-export class Player {
-    constructor(x, y, config) {
-        this.x = x;
-        this.y = y;
-        this.vx = 0;
-        this.vy = 0;
-        this.w = config.player.width;
-        this.h = config.player.height;
-        this.config = config;
-        this.grounded = false;
-        this.canDoubleJump = true;
-        this.dir = 1;
-        this.invulnerable = 0;
-        this.swingTimer = 0;
-        this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
-        this.selectedToolIndex = 0;
-        this.inventory = {};
-        this.miningTarget = null;
-        this.miningProgress = 0;
-    }
-
-    update(keys, mouse, game) {
-        const { physics } = this.config;
-        
-        if (keys.left) { this.vx = -physics.playerSpeed; this.dir = -1; }
-        else if (keys.right) { this.vx = physics.playerSpeed; this.dir = 1; }
-        else { this.vx *= physics.friction; }
-
-        if (keys.jump) {
-            if (this.grounded) { this.vy = -physics.jumpForce; this.canDoubleJump = true; }
-            else if (this.canDoubleJump) { this.vy = -physics.jumpForce * 0.8; this.canDoubleJump = false; }
-            keys.jump = false;
-        }
-
-        this.vy += physics.gravity;
-        
-        this.handleActions(keys, mouse, game);
-        this.handleTileCollisions(game);
-        this.checkEnemyCollisions(game);
-        this.checkCollectibleCollisions(game);
-
-        if (this.invulnerable > 0) this.invulnerable--;
-        if (this.swingTimer > 0) this.swingTimer--;
-    }
-
-    handleActions(keys, mouse, game) {
-        const isActionPressed = keys.action || mouse.left;
-        const selectedTool = this.tools[this.selectedToolIndex];
-
-        if (isActionPressed) {
-            this.swingTimer = 15;
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
             
-            const target = this.getTargetTile(mouse, game);
-            if (target) {
-                if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
-                    this.miningTarget = { x: target.x, y: target.y, type: target.type };
-                    this.miningProgress = 0;
-                }
-                
-                const toolMultiplier = TOOL_EFFECTIVENESS[selectedTool]?.includes(target.type) ? 3 : 0.5;
-                this.miningProgress += 0.05 * toolMultiplier;
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
 
-                game.miningEffect = { x: target.x, y: target.y, progress: this.miningProgress / TILE_HARDNESS[target.type] };
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
 
-                if (this.miningProgress >= TILE_HARDNESS[target.type]) {
-                    this.mineBlock(target.x, target.y, target.type, game);
-                    this.resetMining(game);
-                }
-            } else {
-                this.resetMining(game);
-            }
-        } else {
-            this.resetMining(game);
-        }
-    }
+            if (!isSupported) {
+                game.fallingBlocks.push({
+                    x: x * config.tileSize,
+                    y: y * config.tileSize,
+                    vy: 0,
+                    tileType: tile
+                });
+                game.tileMap[y][x] = TILE.AIR;
 
-    resetMining(game) {
-        this.miningTarget = null;
-        this.miningProgress = 0;
-        game.miningEffect = null;
-    }
-
-    getTargetTile(mouse, game) {
-        const { tileSize } = this.config;
-        let tileX, tileY;
-
-        if (mouse.left) {
-            const worldMouseX = mouse.x / game.settings.zoom + game.camera.x;
-            const worldMouseY = mouse.y / game.settings.zoom + game.camera.y;
-            tileX = Math.floor(worldMouseX / tileSize);
-            tileY = Math.floor(worldMouseY / tileSize);
-
-            const playerCenterX = this.x + this.w / 2;
-            const playerCenterY = this.y + this.h / 2;
-            const dist = Math.sqrt(Math.pow(playerCenterX - worldMouseX, 2) + Math.pow(playerCenterY - worldMouseY, 2));
-            if (dist > this.config.player.reach * tileSize) return null;
-
-        } else {
-            const checkX = this.x + this.w / 2 + (this.dir * (this.w / 2 + 8));
-            const checkY = this.y + this.h / 2;
-            tileX = Math.floor(checkX / tileSize);
-            tileY = Math.floor(checkY / tileSize);
-        }
-        
-        const tile = game.tileMap[tileY]?.[tileX];
-
-        if (tile > 0) {
-            return { x: tileX, y: tileY, type: tile };
-        }
-        return null;
-    }
-
-    mineBlock(tileX, tileY, tile, game) {
-        game.tileMap[tileY][tileX] = TILE.AIR;
-        
-        game.collectibles.push({
-            x: tileX * game.config.tileSize,
-            y: tileY * game.config.tileSize,
-            vy: -2,
-            tileType: tile
-        });
-        
-        if (tile === TILE.WOOD) {
-            const neighbors = [[tileX, tileY - 1], [tileX - 1, tileY], [tileX + 1, tileY]];
-            for (const [nx, ny] of neighbors) {
-                game.propagateTreeCollapse(nx, ny);
-            }
-        }
-    }
-
-    handleTileCollisions(game) {
-        const { tileSize } = this.config;
-
-        this.x += this.vx;
-        if (this.vx > 0) {
-            let top = Math.floor(this.y / tileSize);
-            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
-            let right = Math.floor((this.x + this.w) / tileSize);
-            for (let tileY = top; tileY <= bottom; tileY++) {
-                if (game.tileMap[tileY]?.[right] > 0) {
-                    this.x = right * tileSize - this.w - 0.01;
-                    this.vx = 0;
-                    break;
-                }
-            }
-        } else if (this.vx < 0) {
-            let top = Math.floor(this.y / tileSize);
-            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
-            let left = Math.floor(this.x / tileSize);
-            for (let tileY = top; tileY <= bottom; tileY++) {
-                if (game.tileMap[tileY]?.[left] > 0) {
-                    this.x = (left + 1) * tileSize + 0.01;
-                    this.vx = 0;
-                    break;
-                }
-            }
-        }
-        this.y += this.vy;
-        this.grounded = false;
-        if (this.vy > 0) {
-            let left = Math.floor((this.x + 1) / tileSize);
-            let right = Math.floor((this.x + this.w - 1) / tileSize);
-            let bottom = Math.floor((this.y + this.h) / tileSize);
-            for (let tileX = left; tileX <= right; tileX++) {
-                if (game.tileMap[bottom]?.[tileX] > 0) {
-                    this.y = bottom * tileSize - this.h;
-                    this.vy = 0;
-                    this.grounded = true;
-                    this.canDoubleJump = true;
-                    break;
-                }
-            }
-        } else if (this.vy < 0) {
-            let left = Math.floor((this.x + 1) / tileSize);
-            let right = Math.floor((this.x + this.w - 1) / tileSize);
-            let top = Math.floor(this.y / tileSize);
-            for (let tileX = left; tileX <= right; tileX++) {
-                if (game.tileMap[top]?.[tileX] > 0) {
-                    this.y = (top + 1) * tileSize;
-                    this.vy = 0;
-                    break;
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
                 }
             }
         }
     }
 
-    checkEnemyCollisions(game) {
-        game.enemies.forEach(enemy => {
-            if (this.rectCollide(enemy) && !enemy.isDying) {
-                if (this.vy > 0 && (this.y + this.h) < (enemy.y + enemy.h * 0.5)) {
-                    enemy.takeDamage(game);
-                    this.vy = -this.config.physics.jumpForce * 0.6;
-                } 
-                else if (this.invulnerable === 0) {
-                    game.loseLife();
-                }
+    function updateFallingBlocks() {
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
             }
         });
     }
 
-    checkCollectibleCollisions(game) {
+    function drawFallingBlocks() {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ui.ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function updateCollectibles() {
         game.collectibles.forEach((item, index) => {
-            if (this.rectCollide(item)) {
-                if (!this.inventory[item.tileType]) {
-                    this.inventory[item.tileType] = 0;
-                }
-                this.inventory[item.tileType]++;
-                game.collectibles.splice(index, 1);
+            item.vy += config.physics.gravity;
+            item.y += item.vy;
+
+            const { tileSize } = config;
+            const tileY = Math.floor((item.y + tileSize) / tileSize);
+            const tileX = Math.floor((item.x + tileSize / 2) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                item.y = tileY * tileSize - tileSize;
+                item.vy = 0;
             }
         });
+    }
+
+    function drawCollectibles() {
+        const TILE_ASSETS = { [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+        game.collectibles.forEach(item => {
+            const asset = TILE_ASSETS[item.tileType];
+            if (asset) {
+                ui.ctx.drawImage(asset, item.x, item.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawParticles() {
+        if (!game) return;
+        ui.ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ui.ctx.fillStyle = p.color;
+            ui.ctx.globalAlpha = p.life / p.maxLife;
+            ui.ctx.beginPath();
+            ui.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ui.ctx.fill();
+        });
+        ui.ctx.globalAlpha = 1.0;
     }
     
-    rectCollide(other) {
-        return this.x < other.x + other.w && this.x + this.w > other.x &&
-               this.y < other.y + other.h && this.y + this.h > other.y;
-    }
-
-    drawTool(ctx, assets) {
-        ctx.save();
-        const selectedTool = this.tools[this.selectedToolIndex];
-        const toolAsset = assets[`tool_${selectedTool}`];
-
-        if (toolAsset) {
-            ctx.translate(this.w * 0.2, this.h * 0.3);
-
-            if (this.swingTimer > 0) {
-                const swingProgress = (15 - this.swingTimer) / 15;
-                const swingAngle = Math.sin(swingProgress * Math.PI) * 1.5;
-                ctx.rotate(swingAngle);
+    function drawMiningEffect() {
+        if (game && game.miningEffect) {
+            const { x, y, progress } = game.miningEffect;
+            const { tileSize } = config;
+            ui.ctx.globalAlpha = 0.5;
+            ui.ctx.fillStyle = 'white';
+            const crackWidth = tileSize * Math.min(1, progress * 2);
+            const crackHeight = 2;
+            ui.ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
+            if (progress > 0.5) {
+                const crackWidth2 = tileSize * Math.min(1, (progress - 0.5) * 2);
+                const crackHeight2 = 2;
+                ui.ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
             }
-            ctx.drawImage(toolAsset, -12, -12, 24, 24);
+            ui.ctx.globalAlpha = 1.0;
         }
-        ctx.restore();
     }
 
-    draw(ctx, assets, skinKey) {
-        ctx.save();
-        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-            ctx.globalAlpha = 0.5;
+    function createToolbar() {
+        ui.toolbar.innerHTML = '';
+        game.player.tools.forEach((toolName, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'toolbar-slot';
+            slot.dataset.index = index;
+            
+            const img = document.createElement('img');
+            img.src = assets[`tool_${toolName}`]?.src || '';
+            slot.appendChild(img);
+            
+            ui.toolbar.appendChild(slot);
+        });
+    }
+
+    function updateToolbarUI() {
+        if (!game || !ui.toolbar) return;
+        const slots = ui.toolbar.children;
+        for (let i = 0; i < slots.length; i++) {
+            slots[i].classList.toggle('selected', i === game.player.selectedToolIndex);
         }
+    }
 
-        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-
-        if (this.dir === 1) {
-            ctx.scale(-1, 1);
-        }
-
-        const skinAsset = assets[skinKey];
-        if (skinAsset) {
-            ctx.drawImage(skinAsset, -this.w / 2, -this.h / 2, this.w, this.h);
+    function toggleMenu(show) {
+        if (!game) return;
+        if (show) {
+            game.paused = true;
+            ui.controlsMenu.classList.add('active');
         } else {
-            ctx.fillStyle = '#ea4335';
-            ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+            game.paused = false;
+            ui.controlsMenu.classList.remove('active');
         }
-        
-        this.drawTool(ctx, assets);
-        ctx.restore();
     }
-}
+
+    function setupInput() {
+        keys = { left: false, right: false, jump: false, action: false };
+        document.addEventListener('keydown', e => {
+            if (game && game.paused && e.code !== 'KeyC') return;
+
+            if (e.code === 'ArrowLeft') keys.left = true;
+            if (e.code === 'ArrowRight') keys.right = true;
+            if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = true;
+            if (e.code === 'KeyA') keys.action = true;
+            if (e.code === 'KeyC') toggleMenu(!game.paused);
+
+            if (e.code.startsWith('Digit')) {
+                const index = parseInt(e.code.replace('Digit', '')) - 1;
+                if (game && game.player && index >= 0 && index < game.player.tools.length) {
+                    game.player.selectedToolIndex = index;
+                }
+            }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft') keys.left = false;
+            if (e.code === 'ArrowRight') keys.right = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
+        });
+        
+        ui.canvas.addEventListener('mousemove', e => {
+            const rect = ui.canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        ui.canvas.addEventListener('mousedown', e => {
+            if (game && !game.paused) {
+                if (e.button === 0) mouse.left = true;
+                if (e.button === 2) mouse.right = true;
+            }
+        });
+        ui.canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+    function updateHUD() {
+        if(!game || !ui.hud) return; 
+        ui.lives.textContent = '❤'.repeat(game.lives); 
+    }
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+    }
+    function drawSky() {
+        const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
+        grad.addColorStop(0, '#87CEEB');
+        grad.addColorStop(1, '#5C94FC');
+        ui.ctx.fillStyle = grad;
+        ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+    }
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
+
+    main();
+});
