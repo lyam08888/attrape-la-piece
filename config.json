@@ -1,9 +1,12 @@
 {
   "playerSpeed": 1,
   "coinScore": 10,
-  "winScore": 50,
+  "bonusScore": 50,
+  "winScore": 120,
   "enemySpeed": 1,
   "playerSize": 3,
   "coinSize": 3,
-  "enemySize": 3
+  "enemySize": 3,
+  "bonusSize": 3,
+  "bonusFreq": 0.08
 }
