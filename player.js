@@ -19,12 +19,10 @@ export class Player {
         const { physics } = this.config;
         const speed = physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 0.8 : 1);
         
-        // Mouvement horizontal
         if (keys.left) { this.vx = -speed; this.dir = -1; }
         else if (keys.right) { this.vx = speed; this.dir = 1; }
         else { this.vx *= this.inWater ? physics.waterFriction : physics.friction; }
 
-        // Saut
         if (keys.jump) {
             if (this.grounded || this.inWater) { 
                 this.vy = -physics.jumpForce; 
@@ -41,30 +39,22 @@ export class Player {
             keys.jump = false;
         }
 
-        // Gravité
         this.vy += this.inWater ? physics.gravity * 0.4 : physics.gravity;
-        if (this.inWater) this.vy = Math.min(this.vy, 2); // Vitesse de chute max dans l'eau
+        if (this.inWater) this.vy = Math.min(this.vy, 2);
         
-        // Application du mouvement et collisions
         this.x += this.vx;
         this.handleCollision('x', game.platforms);
         this.y += this.vy;
         this.grounded = false;
         this.handleCollision('y', game.platforms);
 
-        // Vérification de l'état (eau, chute)
         this.inWater = game.water.some(w => this.rectCollide(w));
         if (this.y > game.level.worldHeight + 100) game.loseLife();
         if (this.invulnerable > 0) this.invulnerable--;
         
-        // Animation
-        if (!this.grounded) {
-            this.frame = 1; // Frame de saut
-        } else if (Math.abs(this.vx) > 0.1) {
-            this.frame = (this.frame + 0.2) % 4; // Frames de marche
-        } else {
-            this.frame = 0; // Frame statique
-        }
+        if (!this.grounded) { this.frame = 1; } 
+        else if (Math.abs(this.vx) > 0.1) { this.frame = (this.frame + 0.2) % 4; } 
+        else { this.frame = 0; }
     }
 
     handleCollision(axis, platforms) {
@@ -74,7 +64,7 @@ export class Player {
                     if (this.vx > 0) this.x = plat.x - this.w;
                     else if (this.vx < 0) this.x = plat.x + plat.w;
                     this.vx = 0;
-                } else { // axis === 'y'
+                } else {
                     if (this.vy > 0) { 
                         this.y = plat.y - this.h; 
                         this.vy = 0; 
@@ -100,10 +90,7 @@ export class Player {
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         if (this.dir === -1) { ctx.scale(-1, 1); }
         
-        if (isGodMode) {
-            ctx.shadowColor = 'gold';
-            ctx.shadowBlur = 15;
-        }
+        if (isGodMode) { ctx.shadowColor = 'gold'; ctx.shadowBlur = 15; }
         
         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.globalAlpha = 0.5;
