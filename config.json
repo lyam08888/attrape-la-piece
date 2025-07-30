@@ -5,6 +5,5 @@
   "enemySpeed": 1,
   "playerSize": 3,
   "coinSize": 3,
-  "enemySize": 3,
-  "bgColor": "#23272e"
+  "enemySize": 3
 }
