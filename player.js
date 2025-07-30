@@ -1,3 +1,5 @@
+import { TILE } from './world.js';
+
 export class Player {
     constructor(x, y, config) {
         this.x = x;
@@ -11,10 +13,14 @@ export class Player {
         this.canDoubleJump = true;
         this.dir = 1;
         this.invulnerable = 0;
-        this.frame = 0;
+        // Inventaire simple
+        this.inventory = { [TILE.DIRT]: 0, [TILE.STONE]: 0, [TILE.WOOD]: 0 };
+        this.equippedItem = TILE.DIRT; // Par défaut, on peut poser de la terre
+        this.isMining = false;
+        this.miningTimer = 0;
     }
 
-    update(keys, game) {
+    update(keys, mouse, game) {
         const { physics } = this.config;
         
         // Mouvement horizontal
@@ -22,75 +28,94 @@ export class Player {
         else if (keys.right) { this.vx = physics.playerSpeed; this.dir = 1; }
         else { this.vx *= physics.friction; }
 
-        // Mouvement vertical (saut)
+        // Saut
         if (keys.jump) {
-            if (this.grounded) { 
-                this.vy = -physics.jumpForce; 
-                this.canDoubleJump = true; 
-                game.playSound('jump');
-            }
-            else if (this.canDoubleJump) { 
-                this.vy = -physics.jumpForce * 0.8; 
-                this.canDoubleJump = false; 
-                game.playSound('jump');
-            }
+            if (this.grounded) { this.vy = -physics.jumpForce; this.canDoubleJump = true; }
+            else if (this.canDoubleJump) { this.vy = -physics.jumpForce * 0.8; this.canDoubleJump = false; }
             keys.jump = false;
         }
 
-        // Appliquer la gravité
         this.vy += physics.gravity;
         
-        // Gérer les collisions avec le monde en tuiles
-        this.handleTileCollisions(game);
+        // NOUVEAU: Logique de minage et de placement
+        this.handleMiningAndPlacing(mouse, game);
 
-        // Gérer les collisions avec les ennemis
+        this.handleTileCollisions(game);
         this.checkEnemyCollisions(game);
 
         if (this.invulnerable > 0) this.invulnerable--;
     }
 
-    handleTileCollisions(game) {
-        const { tileSize } = this.config;
+    handleMiningAndPlacing(mouse, game) {
+        const { tileSize, player } = this.config;
+        const worldMouseX = mouse.x + game.camera.x;
+        const worldMouseY = mouse.y + game.camera.y;
+        const tileX = Math.floor(worldMouseX / tileSize);
+        const tileY = Math.floor(worldMouseY / tileSize);
 
-        // Collision sur l'axe X
-        this.x += this.vx;
-        let startX = Math.floor(this.x / tileSize);
-        let endX = Math.floor((this.x + this.w) / tileSize);
-        let startY = Math.floor(this.y / tileSize);
-        let endY = Math.floor((this.y + this.h) / tileSize);
+        const playerCenterX = this.x + this.w / 2;
+        const playerCenterY = this.y + this.h / 2;
+        const dist = Math.sqrt(Math.pow(playerCenterX - worldMouseX, 2) + Math.pow(playerCenterY - worldMouseY, 2));
 
-        for (let y = startY; y <= endY; y++) {
-            for (let x = startX; x <= endX; x++) {
-                if (game.tileMap[y] && game.tileMap[y][x] > 0) {
-                    if (this.vx > 0) {
-                        this.x = x * tileSize - this.w;
-                    } else if (this.vx < 0) {
-                        this.x = (x + 1) * tileSize;
-                    }
-                    this.vx = 0;
+        if (dist > player.reach * tileSize) return;
+
+        // Minage (clic gauche)
+        if (mouse.left) {
+            const tile = game.tileMap[tileY]?.[tileX];
+            if (tile > 0) {
+                game.tileMap[tileY][tileX] = TILE.AIR;
+                if (this.inventory[tile] !== undefined) {
+                    this.inventory[tile]++;
                 }
+                game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 5, '#fff');
             }
         }
+        // Placement (clic droit)
+        else if (mouse.right) {
+            if (game.tileMap[tileY]?.[tileX] === TILE.AIR && this.inventory[this.equippedItem] > 0) {
+                game.tileMap[tileY][tileX] = this.equippedItem;
+                this.inventory[this.equippedItem]--;
+            }
+        }
+    }
 
-        // Collision sur l'axe Y
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+        this.x += this.vx;
+        this.checkCollisionAxis('x', game, tileSize);
         this.y += this.vy;
         this.grounded = false;
-        startX = Math.floor(this.x / tileSize);
-        endX = Math.floor((this.x + this.w) / tileSize);
-        startY = Math.floor(this.y / tileSize);
-        endY = Math.floor((this.y + this.h) / tileSize);
+        this.checkCollisionAxis('y', game, tileSize);
+    }
 
-        for (let y = startY; y <= endY; y++) {
-            for (let x = startX; x <= endX; x++) {
-                if (game.tileMap[y] && game.tileMap[y][x] > 0) {
-                    if (this.vy > 0) {
-                        this.y = y * tileSize - this.h;
-                        this.grounded = true;
-                        this.canDoubleJump = true;
-                    } else if (this.vy < 0) {
-                        this.y = (y + 1) * tileSize;
+    checkCollisionAxis(axis, game, tileSize) {
+        const isX = axis === 'x';
+        const velocity = isX ? 'vx' : 'vy';
+        const pos = isX ? 'x' : 'y';
+        const dim = isX ? 'w' : 'h';
+
+        const start = Math.floor(this[pos] / tileSize);
+        const end = Math.floor((this[pos] + this[dim]) / tileSize);
+        const otherStart = Math.floor(this[isX ? 'y' : 'x'] / tileSize);
+        const otherEnd = Math.floor((this[isX ? 'y' : 'x'] + this[isX ? 'h' : 'w']) / tileSize);
+
+        for (let i = start; i <= end; i++) {
+            for (let j = otherStart; j <= otherEnd; j++) {
+                const tileX = isX ? i : j;
+                const tileY = isX ? j : i;
+                if (game.tileMap[tileY]?.[tileX] > 0) {
+                    if (this[velocity] > 0) {
+                        this[pos] = i * tileSize - this[dim];
+                    } else if (this[velocity] < 0) {
+                        this[pos] = (i + 1) * tileSize;
                     }
-                    this.vy = 0;
+                    if (!isX) {
+                        if (this.vy > 0) {
+                            this.grounded = true;
+                            this.canDoubleJump = true;
+                        }
+                    }
+                    this[velocity] = 0;
                 }
             }
         }
@@ -99,13 +124,10 @@ export class Player {
     checkEnemyCollisions(game) {
         game.enemies.forEach(enemy => {
             if (this.rectCollide(enemy) && !enemy.isDying) {
-                // Si le joueur saute sur l'ennemi
                 if (this.vy > 0 && (this.y + this.h) < (enemy.y + enemy.h * 0.5)) {
                     enemy.takeDamage(game);
-                    this.vy = -this.config.physics.jumpForce * 0.6; // Rebond
-                    game.playSound('stomp');
+                    this.vy = -this.config.physics.jumpForce * 0.6;
                 } 
-                // Sinon, le joueur prend des dégâts
                 else if (this.invulnerable === 0) {
                     game.loseLife();
                 }
@@ -120,11 +142,7 @@ export class Player {
 
     draw(ctx, assets, skinKey, isGodMode) {
         ctx.save();
-        
-        // L'invulnérabilité fait clignoter le joueur
-        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-            ctx.globalAlpha = 0.5;
-        }
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
         
         ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
         ctx.translate(this.x, this.y);
@@ -132,11 +150,7 @@ export class Player {
             ctx.scale(-1, 1);
             ctx.translate(-this.w, 0);
         }
-        
-        // On dessine une simple boîte pour le joueur pour l'instant
-        // Vous pouvez remplacer ceci par votre sprite
         ctx.fillRect(0, 0, this.w, this.h);
-        
         ctx.restore();
     }
 }
