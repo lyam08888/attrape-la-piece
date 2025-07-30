@@ -4,108 +4,96 @@ export class Player {
         this.y = y;
         this.vx = 0;
         this.vy = 0;
-        this.w = 32;
-        this.h = 32;
+        this.w = config.player.width;
+        this.h = config.player.height;
         this.config = config;
         this.grounded = false;
         this.canDoubleJump = true;
         this.dir = 1;
         this.invulnerable = 0;
-        this.inWater = false;
         this.frame = 0;
     }
 
     update(keys, game) {
         const { physics } = this.config;
-        const speed = physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 1.2 : 1);
         
         // Mouvement horizontal
-        if (keys.left) { this.vx = -speed; this.dir = -1; }
-        else if (keys.right) { this.vx = speed; this.dir = 1; }
-        else { this.vx *= this.inWater ? physics.waterFriction : physics.friction; }
+        if (keys.left) { this.vx = -physics.playerSpeed; this.dir = -1; }
+        else if (keys.right) { this.vx = physics.playerSpeed; this.dir = 1; }
+        else { this.vx *= physics.friction; }
 
         // Mouvement vertical (saut)
         if (keys.jump) {
-            if (this.grounded || this.inWater) { 
+            if (this.grounded) { 
                 this.vy = -physics.jumpForce; 
                 this.canDoubleJump = true; 
                 game.playSound('jump');
-                game.createParticles(this.x + this.w / 2, this.y + this.h, 10, '#8B7355');
             }
             else if (this.canDoubleJump) { 
                 this.vy = -physics.jumpForce * 0.8; 
                 this.canDoubleJump = false; 
                 game.playSound('jump');
-                game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, '#87CEEB');
             }
             keys.jump = false;
         }
 
         // Appliquer la gravité
-        this.vy += this.inWater ? physics.gravity * 0.4 : physics.gravity;
-        if (this.inWater) this.vy = Math.min(this.vy, 2);
+        this.vy += physics.gravity;
         
-        // Gérer les collisions
-        this.x += this.vx;
-        this.handleCollision('x', game);
-        this.y += this.vy;
-        this.grounded = false;
-        this.handleCollision('y', game);
+        // Gérer les collisions avec le monde en tuiles
+        this.handleTileCollisions(game);
 
-        // Gérer les collisions avec les ennemis (NOUVEAU)
+        // Gérer les collisions avec les ennemis
         this.checkEnemyCollisions(game);
 
-        this.inWater = game.water.some(w => this.rectCollide(w));
-        if (this.y > game.level.worldHeight + 100) game.loseLife();
         if (this.invulnerable > 0) this.invulnerable--;
-        
-        // Gérer l'animation du joueur
-        if (!this.grounded) { this.frame = 1; } 
-        else if (Math.abs(this.vx) > 0.1) { this.frame = (this.frame + 0.2) % 4; } 
-        else { this.frame = 0; }
     }
 
-    handleCollision(axis, game) {
-        // Collision avec les plateformes
-        game.platforms.forEach(plat => {
-            if (this.rectCollide(plat)) {
-                if (axis === 'x') {
-                    if (this.vx > 0) this.x = plat.x - this.w;
-                    else if (this.vx < 0) this.x = plat.x + plat.w;
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+
+        // Collision sur l'axe X
+        this.x += this.vx;
+        let startX = Math.floor(this.x / tileSize);
+        let endX = Math.floor((this.x + this.w) / tileSize);
+        let startY = Math.floor(this.y / tileSize);
+        let endY = Math.floor((this.y + this.h) / tileSize);
+
+        for (let y = startY; y <= endY; y++) {
+            for (let x = startX; x <= endX; x++) {
+                if (game.tileMap[y] && game.tileMap[y][x] > 0) {
+                    if (this.vx > 0) {
+                        this.x = x * tileSize - this.w;
+                    } else if (this.vx < 0) {
+                        this.x = (x + 1) * tileSize;
+                    }
                     this.vx = 0;
-                } else { // axis === 'y'
-                    if (this.vy > 0) { 
-                        this.y = plat.y - this.h; 
-                        this.vy = 0; 
-                        this.grounded = true; 
-                        this.canDoubleJump = true;
-                    }
-                    else if (this.vy < 0) { 
-                        this.y = plat.y + plat.h; 
-                        this.vy = 0; 
-                    }
                 }
             }
-        });
+        }
 
-        // Collision avec les pièces et bonus
-        game.coins.forEach((coin, index) => {
-            if (this.rectCollide(coin)) {
-                game.coins.splice(index, 1);
-                game.score += 10;
-                game.playSound('coin');
-                game.createParticles(coin.x + coin.w / 2, coin.y + coin.h / 2, 10, '#f1c40f');
+        // Collision sur l'axe Y
+        this.y += this.vy;
+        this.grounded = false;
+        startX = Math.floor(this.x / tileSize);
+        endX = Math.floor((this.x + this.w) / tileSize);
+        startY = Math.floor(this.y / tileSize);
+        endY = Math.floor((this.y + this.h) / tileSize);
+
+        for (let y = startY; y <= endY; y++) {
+            for (let x = startX; x <= endX; x++) {
+                if (game.tileMap[y] && game.tileMap[y][x] > 0) {
+                    if (this.vy > 0) {
+                        this.y = y * tileSize - this.h;
+                        this.grounded = true;
+                        this.canDoubleJump = true;
+                    } else if (this.vy < 0) {
+                        this.y = (y + 1) * tileSize;
+                    }
+                    this.vy = 0;
+                }
             }
-        });
-        game.bonuses.forEach((bonus, index) => {
-            if (this.rectCollide(bonus)) {
-                game.bonuses.splice(index, 1);
-                game.score += 50;
-                if(game.lives < this.config.player.maxLives) game.lives++;
-                game.playSound('powerup');
-                game.createParticles(bonus.x + bonus.w / 2, bonus.y + bonus.h / 2, 20, '#e67e22');
-            }
-        });
+        }
     }
 
     checkEnemyCollisions(game) {
@@ -132,22 +120,23 @@ export class Player {
 
     draw(ctx, assets, skinKey, isGodMode) {
         ctx.save();
-        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-        if (this.dir === -1) { ctx.scale(-1, 1); }
-        
-        if (isGodMode) {
-            ctx.shadowColor = 'gold';
-            ctx.shadowBlur = 15;
-        }
         
         // L'invulnérabilité fait clignoter le joueur
         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.globalAlpha = 0.5;
         }
         
-        if (assets[skinKey]) {
-            ctx.drawImage(assets[skinKey], -this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
+        ctx.translate(this.x, this.y);
+        if (this.dir === -1) {
+            ctx.scale(-1, 1);
+            ctx.translate(-this.w, 0);
         }
+        
+        // On dessine une simple boîte pour le joueur pour l'instant
+        // Vous pouvez remplacer ceci par votre sprite
+        ctx.fillRect(0, 0, this.w, this.h);
+        
         ctx.restore();
     }
 }
