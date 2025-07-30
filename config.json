@@ -1,17 +1,12 @@
 {
-  "playerSpeed": 1,
+  "playerSpeed": 2,
   "coinScore": 10,
-  "bonusScore": 40,
-  "winScore": 60,
-  "enemySpeed": 0.25,
-  "playerSize": 6,
-  "coinSize": 6,
-  "enemySize": 6,
-  "bonusSize": 6,
-  "bonusFreq": 0.08,
+  "bonusScore": 50,
+  "enemySpeed": 1,
+  "playerSize": 16,
+  "coinSize": 12,
+  "enemySize": 16,
+  "bonusSize": 14,
   "lives": 3,
-  "levelUpBonus": 50,
-  "xpPerCoin": 3,
-  "xpPerBonus": 10,
-  "obstacleColor": "#232323"
+  "winScore": 100
 }
