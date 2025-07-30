@@ -23,11 +23,11 @@
     "player3.png"
   ],
   "assets": {
-    "tile_grass": "tile_grass.png",
-    "tile_dirt": "tile_dirt.png",
-    "tile_stone": "tile_stone.png",
-    "tile_coal": "tile_coal.png",
-    "tile_iron": "tile_iron.png",
+    "tile_grass": "assets/tile_grass.png",
+    "tile_dirt": "assets/tile_dirt.png",
+    "tile_stone": "assets/tile_stone.png",
+    "tile_coal": "assets/tile_coal.png",
+    "tile_iron": "assets/tile_iron.png",
     "coin": "assets/coin.png",
     "bonus": "assets/bonus.png",
     "enemy_slime": "assets/enemy_slime.png",
