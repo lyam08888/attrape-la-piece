@@ -32,3 +32,14 @@ Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dé
 Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne.
 
 Jouez ! Le jeu chargera les assets depuis votre GitHub et sera prêt à jouer.
+
+🎮 Contrôles
+Clavier
+Bouger : Flèches Gauche / Droite ou Q / D
+
+Sauter : Espace ou Flèche Haut
+
+Pause : P
+
+Mobile
+Des contrôles tactiles apparaîtront automatiquement à l'écran.
