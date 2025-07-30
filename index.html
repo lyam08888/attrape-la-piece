@@ -4,134 +4,109 @@
   <meta charset="UTF-8" />
   <title>Attrape la pièce !</title>
   <meta name="viewport" content="width=400, user-scalable=no">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     body {
-      background: linear-gradient(135deg, #182848, #3a6073);
+      background: #23272e;
       min-height: 100vh;
+      margin: 0;
+      color: #f8f8ff;
+      font-family: 'Press Start 2P', monospace;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      color: #fff;
-      font-family: 'Inter', Arial, sans-serif;
-      margin: 0;
     }
     h1 {
-      margin-top: 32px;
-      margin-bottom: 6px;
-      font-size: 2.4rem;
-      letter-spacing: 1px;
-      font-weight: 900;
-      text-shadow: 0 2px 16px #000a, 0 1px 1px #3337;
-      animation: bounce 2s infinite;
-    }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0);}
-      50% { transform: translateY(-12px);}
+      font-size: 1.5rem;
+      margin: 24px 0 6px 0;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 0 #222, 0 0 6px #ffb70055;
+      color: #ffb700;
     }
     #instructions {
-      margin: 10px 0 0 0;
-      padding: 10px 18px;
-      background: rgba(0,0,0,0.20);
-      border-radius: 16px;
-      font-size: 1.1rem;
-      box-shadow: 0 2px 8px #0006;
+      font-size: 0.78rem;
+      color: #98d6ff;
+      background: #191e23;
+      border: 2px solid #444;
+      border-radius: 8px;
+      margin: 8px 0 0 0;
+      padding: 10px 20px;
+      box-shadow: 0 2px 8px #000a;
+      max-width: 320px;
       text-align: center;
     }
     #startMenu {
-      margin-top: 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      animation: appear 1.2s cubic-bezier(.55,.09,.68,.53);
+      margin-top: 18px;
     }
-    @keyframes appear {
-      0% { opacity: 0; transform: translateY(30px);}
-      100% { opacity: 1; transform: translateY(0);}
-    }
-    #startButton {
-      font-size: 1.3rem;
+    #startButton, #restartButton {
       font-family: inherit;
-      font-weight: bold;
-      padding: 14px 40px;
-      color: #fff;
-      background: linear-gradient(90deg, #38ef7d, #11998e);
+      font-size: 1rem;
+      color: #222;
+      background: linear-gradient(90deg, #ffd200 60%, #ff8c00 100%);
       border: none;
-      border-radius: 24px;
-      box-shadow: 0 4px 16px #0008;
+      border-radius: 8px;
+      padding: 11px 38px;
+      box-shadow: 0 2px 8px #0006;
+      letter-spacing: 1px;
+      margin-top: 12px;
       cursor: pointer;
-      transition: transform .13s, box-shadow .13s, background .6s;
+      transition: background .18s, transform .12s;
     }
-    #startButton:focus, #startButton:hover {
-      background: linear-gradient(90deg, #11998e, #38ef7d);
-      transform: scale(1.04);
-      box-shadow: 0 6px 28px #000a;
-      outline: 2px solid #fff7;
-    }
-    #gameCanvas {
-      margin-top: 32px;
-      border-radius: 16px;
-      border: 3px solid #38ef7d;
-      box-shadow: 0 6px 32px #000b;
-      display: none;
-      background: #171d29;
-      transition: box-shadow .4s;
+    #startButton:hover, #restartButton:hover {
+      background: linear-gradient(90deg, #ffb700, #ff8c00 80%);
+      transform: scale(1.05);
+      color: #111;
     }
     #scoreBoard, #gameOver {
+      margin-top: 12px;
+      background: #191e23;
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.98rem;
+      min-width: 120px;
+      text-align: center;
       display: none;
-      margin-top: 14px;
-      font-size: 1.2rem;
-      background: #222a;
-      padding: 8px 20px;
-      border-radius: 14px;
-      box-shadow: 0 1px 6px #0005;
+      box-shadow: 0 1px 7px #0006;
     }
+    #scoreBoard { color: #a5e549; border-color: #425f34; }
     #gameOver {
-      color: #ff2d55;
-      font-weight: bold;
-      font-size: 1.5rem;
-      letter-spacing: 1px;
-      background: #111e;
+      color: #ff455a;
+      border-color: #a2001a;
+      font-size: 1.12rem;
     }
-    #restartButton {
-      margin-top: 10px;
-      font-size: 1.1rem;
-      padding: 10px 30px;
-      border-radius: 20px;
-      border: none;
-      background: linear-gradient(90deg, #38ef7d, #11998e);
-      color: #fff;
-      font-weight: bold;
-      box-shadow: 0 2px 10px #0007;
-      cursor: pointer;
-      transition: background .3s, transform .13s;
+    /* Canvas pixel art effect */
+    #pixelCanvas {
+      margin-top: 26px;
+      border: 3px solid #ffb700;
+      background: #16191d;
+      image-rendering: pixelated;
+      border-radius: 10px;
+      box-shadow: 0 6px 32px #000b;
+      display: none;
+      width: 320px;
+      height: 320px;
     }
-    #restartButton:hover, #restartButton:focus {
-      background: linear-gradient(90deg, #11998e, #38ef7d);
-      transform: scale(1.03);
-      outline: 2px solid #fff7;
-    }
-    @media (max-width: 500px) {
-      #gameCanvas { width: 94vw; height: 94vw; max-width: 380px; max-height: 380px;}
-      body { padding: 0 2vw;}
+    @media (max-width: 400px) {
+      #pixelCanvas { width: 92vw; height: 92vw; }
     }
   </style>
 </head>
 <body>
-  <h1>Attrape la pièce !</h1>
+  <h1>ATTRAPE LA PIÈCE !</h1>
   <div id="instructions">
-    Utilise <b>les flèches</b> ou <b>ZQSD</b> pour te déplacer.<br>
-    <b>Attrape la pièce</b> et évite les ennemis (à venir) !<br>
-    Bonne chance 🎮
+    <b>Déplace-toi</b> avec <span style="color:#fff;">←↑↓→</span> ou ZQSD.<br>
+    <b>Attrape</b> la pièce, évite l'ennemi&nbsp;!<br>
+    Score max pour gagner 🚩
   </div>
   <div id="startMenu">
-    <button id="startButton" autofocus>Démarrer le jeu</button>
+    <button id="startButton" autofocus>Démarrer</button>
   </div>
   <div id="scoreBoard">Score : <span id="scoreValue">0</span></div>
-  <div id="gameOver">Félicitations !<br>Tu as gagné !<br><button id="restartButton">Rejouer</button></div>
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="gameOver"></div>
+  <!-- CANVAS EN LOW RES, AGRANDI EN PIXEL -->
+  <canvas id="pixelCanvas" width="32" height="32"></canvas>
   <script src="game.js"></script>
 </body>
 </html>
