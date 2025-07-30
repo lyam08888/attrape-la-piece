@@ -1,78 +1,53 @@
-// Sprites pixel art (base64 intégrés)
+// Chargement des images depuis /assets
 const spritePlayer = new Image();
-spritePlayer.src =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABiFBMVEUAAABX9vrU+PbU+PXU+PXU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbU+PbX///9h8ruuAAAAxHRSTlMAAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzU3ODk6Ozw9P0BBQkNERUdISUpLTE1QUVJTVFVWV1hZWltcXV5gYWJjZGdmZ2hobG1ub3BxcnN0dXZ3eHh5enx8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3uDh4uPk5ebn6Onq6+zt7vDx8vP09fb3+Pn6+/z9l08gWQAAAKpJREFUGJVjYAADY2BgZGJg5GRgYGBk4GBgaWxgZEFGBkYGRhZGBgYQmBkbGZgYGRgYGcgcmRgYGAGiwULIKoxF3USpA7E2TICgNCrEN9EyJ0Sm5UQCg7kGZmAEVHo9EA5l3YUEjR8CsLqhIxJUAGQG8S9AAL+BQXQAygnCRSoHqEQkTQwAbGRCkGJxChA0Ik4GIAACKDQLR1dQlmAAAAABJRU5ErkJggg==";
 const spriteCoin = new Image();
-spriteCoin.src =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAVFBMVEUAAABmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmbfZ5hAAAAAXRSTlMAQObYZgAAAEZJREFUGJVjYEADMjAwYGBgaGRgYGBwZGAgBgYGdgAAowgAEYwYJgGUyDTWwZDAYDCrKAAAvlQwA8ZAS9QAAAABJRU5ErkJggg==";
 const spriteEnemy = new Image();
-spriteEnemy.src =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABXFBMVEUAAADr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eLr4eL///8jEabxAAAAe3RSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNTc4OTo7PD0/QEFCQ0RFRkdISUpLTE1QUVJTVFVWV1hZWltcXV5gYWJjZGdmZ2hobG1ub3BxcnN0dXZ3eHh5enx8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3uDh4uPk5ebn6Onq6+zt7vDx8vP09fb3+Pn6+/z9IpdLwQAAAKFJREFUGJVjYIADMiZGNgYDAwMjAwYGBkYGZgZGBgZGNgYGQwZ2BgZGJg5KBgZ2BgZGpgYGQwZ2BgZGJg4JY2OgE5SRDCkoDZkZjkmYKBmQZkZmCwIGhFoA4gYlZlQDoRgDggZiY0QzoToICQvYIzQiAwoJUw4iEBFgtpLgYg1o5AeC8wTAwMAAAJ0pwN9kRnjUAAAAASUVORK5CYII=";
+spritePlayer.src = "assets/player.png";
+spriteCoin.src = "assets/coin.png";
+spriteEnemy.src = "assets/enemy.png";
 
-// ----- Chargement images + JSONs AVANT affichage bouton démarrer -----
-let imagesReady = 0;
-[spritePlayer, spriteCoin, spriteEnemy].forEach(img => {
-  img.onload = () => {
-    imagesReady++;
-    showButtonIfReady();
-  };
-});
-
-let configReady = false, levelReady = false;
+// Chargement JSON
 let config, level;
 
-fetch('config.json').then(r=>r.json()).then(c=>{
-  config = c;
-  configReady = true;
-  showButtonIfReady();
-});
-fetch('level1.json').then(r=>r.json()).then(l=>{
-  level = l;
-  levelReady = true;
-  showButtonIfReady();
-});
+// Sons (optionnel)
+const catchSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b7bbd48.mp3');
+const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3');
 
-function showButtonIfReady() {
-  if (imagesReady === 3 && configReady && levelReady) {
-    document.getElementById('startButton').style.display = 'block';
-  }
+// Attendre images + jsons
+let loaded = 0;
+function checkReady() {
+  loaded++;
+  if (loaded === 5) document.getElementById('startButton').style.display = 'block';
 }
+spritePlayer.onload = checkReady;
+spriteCoin.onload = checkReady;
+spriteEnemy.onload = checkReady;
 
-// ----- HTML refs -----
+fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
+fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkReady(); });
+
+// --- DOM
 const canvas = document.getElementById('pixelCanvas');
 const ctx = canvas.getContext('2d');
 const startButton = document.getElementById('startButton');
 const scoreBoard = document.getElementById('scoreBoard');
 const scoreValue = document.getElementById('scoreValue');
 const gameOverMenu = document.getElementById('gameOver');
-
 canvas.style.display = 'none';
 scoreBoard.style.display = 'none';
 gameOverMenu.style.display = 'none';
 
-// Sons retro (8bits)
-const catchSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b7bbd48.mp3');
-const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3');
-
-// ----- Variables de jeu -----
+// --- Game vars
 let player = {}, coin = {}, enemies = [], score = 0, playing = false;
 
-// ----- Initialisation -----
+// --- Game init
 function initGame() {
-  player = {
-    x: level.playerStart.x,
-    y: level.playerStart.y,
-    size: config.playerSize || 3
-  };
-  coin = {
-    x: level.coinStart.x,
-    y: level.coinStart.y,
-    size: config.coinSize || 3
-  };
+  player = { x: level.playerStart.x, y: level.playerStart.y, size: config.playerSize };
+  coin = { x: level.coinStart.x, y: level.coinStart.y, size: config.coinSize };
   enemies = (level.enemies || []).map(e => ({
     x: e.x,
     y: e.y,
-    size: config.enemySize || 3,
+    size: config.enemySize,
     dx: e.dx ? Math.sign(e.dx) : 1,
     dy: e.dy ? Math.sign(e.dy) : 0
   }));
@@ -80,7 +55,7 @@ function initGame() {
   updateScore();
 }
 
-// ----- Gestion menus -----
+// --- Menus
 function startGame() {
   document.getElementById('startMenu').style.display = 'none';
   gameOverMenu.style.display = 'none';
@@ -92,13 +67,11 @@ function startGame() {
   document.addEventListener('keydown', onKeyDown);
   requestAnimationFrame(gameLoop);
 }
-
 function endGame(lost = false) {
   playing = false;
   if (lost) {
     gameOverMenu.innerHTML = 'GAME OVER !<br><button id="restartButton">REJOUER</button>';
-    loseSound.currentTime = 0;
-    loseSound.play();
+    loseSound.currentTime = 0; loseSound.play();
   } else {
     gameOverMenu.innerHTML = 'VICTOIRE !<br><button id="restartButton">REJOUER</button>';
   }
@@ -107,12 +80,9 @@ function endGame(lost = false) {
   document.removeEventListener('keydown', onKeyDown);
   document.getElementById('restartButton').onclick = restartGame;
 }
+function restartGame() { startGame(); }
 
-function restartGame() {
-  startGame();
-}
-
-// ----- Déplacements -----
+// --- Controls
 function onKeyDown(e) {
   if (!playing) return;
   let k = e.key.toLowerCase();
@@ -120,17 +90,14 @@ function onKeyDown(e) {
   if (k === "arrowdown" || k === "s") player.y += 1;
   if (k === "arrowleft" || k === "q") player.x -= 1;
   if (k === "arrowright" || k === "d") player.x += 1;
-  // Empêcher de sortir du canvas
   player.x = Math.max(0, Math.min(32 - player.size, player.x));
   player.y = Math.max(0, Math.min(32 - player.size, player.y));
 }
 
-// ----- Affichage score -----
-function updateScore() {
-  scoreValue.textContent = score;
-}
+// --- Affichage score
+function updateScore() { scoreValue.textContent = score; }
 
-// ----- Collision -----
+// --- Collision
 function isColliding(a, b) {
   return (
     a.x < b.x + b.size &&
@@ -140,55 +107,38 @@ function isColliding(a, b) {
   );
 }
 
-// ----- Mouvements ennemis -----
+// --- Mouvements ennemis
 function moveEnemies() {
   for (let enemy of enemies) {
     enemy.x += enemy.dx;
     enemy.y += enemy.dy;
-    // Rebond horizontal/vertical pixelisé
     if (enemy.x < 0 || enemy.x > 32 - enemy.size) enemy.dx *= -1;
     if (enemy.y < 0 || enemy.y > 32 - enemy.size) enemy.dy *= -1;
   }
 }
 
-// ----- GAME LOOP -----
+// --- Game loop
 function gameLoop() {
   if (!playing) return;
-
-  // Effacer canvas
   ctx.clearRect(0, 0, 32, 32);
-  // Fond rétro
   ctx.fillStyle = "#23272e";
   ctx.fillRect(0, 0, 32, 32);
-
-  // Pièce
   ctx.drawImage(spriteCoin, coin.x, coin.y, coin.size, coin.size);
-
-  // Joueur
   ctx.drawImage(spritePlayer, player.x, player.y, player.size, player.size);
-
-  // Ennemis
-  for (let enemy of enemies) {
-    ctx.drawImage(spriteEnemy, enemy.x, enemy.y, enemy.size, enemy.size);
-  }
+  for (let enemy of enemies) ctx.drawImage(spriteEnemy, enemy.x, enemy.y, enemy.size, enemy.size);
 
   // Collision pièce
   if (isColliding(player, coin)) {
-    score += config.coinScore || 10;
-    updateScore();
-    catchSound.currentTime = 0;
-    catchSound.play();
-    // Nouvelle position aléatoire (sur la grille)
+    score += config.coinScore || 10; updateScore();
+    catchSound.currentTime = 0; catchSound.play();
     if (level.coinSpawns && level.coinSpawns.length) {
       const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
-      coin.x = sp.x;
-      coin.y = sp.y;
+      coin.x = sp.x; coin.y = sp.y;
     } else {
       coin.x = Math.floor(Math.random() * (32 - coin.size));
       coin.y = Math.floor(Math.random() * (32 - coin.size));
     }
   }
-
   // Collision ennemis
   for (let enemy of enemies) {
     if (isColliding(player, enemy)) {
@@ -196,16 +146,13 @@ function gameLoop() {
       return;
     }
   }
-
   // Victoire
   if (score >= (config.winScore || 50)) {
-    setTimeout(() => endGame(false), 200);
-    return;
+    setTimeout(() => endGame(false), 200); return;
   }
-
   moveEnemies();
   requestAnimationFrame(gameLoop);
 }
 
-// ----- Listeners -----
+// --- Start
 startButton.addEventListener('click', startGame);
