@@ -2,62 +2,476 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Super Pixel Platformer Deluxe PRO</title>
-  <meta name="viewport" content="width=450, initial-scale=1">
+  <title>Super Platformer HD - Ultimate Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { background: #151c2e; margin:0; font-family:monospace;}
-    #container { display:flex; flex-direction:column; align-items:center; }
-    h1 { color:#ffe01b; margin:10px 0 2px 0; text-shadow:0 2px 9px #393;}
-    #gameCanvas { background:#8be0f8; border:3px solid #222; margin:18px 0; border-radius:14px; width: 1200px; height: 672px; image-rendering: pixelated; display: block; box-shadow:0 8px 60px #21292a;}
-    #hud { color:#fff; background:#1d2232cc; font-size:1.25rem; padding:12px 30px; border-radius:12px; margin-bottom:12px; display:flex; gap:24px; justify-content:center; align-items:center; box-shadow:0 2px 16px #202628;}
-    #bonusbar { color:#ffe01b; background:#23262c; padding:6px 20px; border-radius:8px; margin-left:12px; min-width:160px; display:inline-block;}
-    #timer { font-weight:bold; color:#ffe01b; margin-left:18px;}
-    #gameover h2 {margin-bottom:14px;}
-    #btnRestart, #btnStart { padding:10px 28px; border-radius:10px; font-size:1.1rem; border:none; background:#ffe01b; color:#23272e; cursor:pointer; font-weight:bold; box-shadow:0 2px 8px #0c0;}
-    #menu { background: #191f32f7; color: #ffe01b; font-size: 1.08em; padding: 36px 22px 18px 22px; border-radius: 18px; position:absolute; top:13%; left:50%; transform:translateX(-50%); z-index:2; text-align:center; box-shadow:0 2px 60px #181e23;}
-    #skinlist img { width:48px; height:48px; margin:4px; border-radius:10px; border:3px solid #888; cursor:pointer; transition: border .2s;}
-    #skinlist img.selected { border:3px solid #ffe01b; }
-    #controls {display:flex; margin-top:14px; gap:14px;}
-    #controls button {padding:14px 20px; background:#ffe01b; border:none; border-radius:6px; color:#111; font-size:1.3em; min-width:56px; font-weight:bold; box-shadow:0 2px 8px #0c0;}
-    #bonusbar img { vertical-align:middle; margin:0 4px; width:24px; height:24px;}
-    #bonusbar span { font-size:1em;}
-    #cmd { color:#ffc940; font-size:0.95em; margin:6px 0 3px 0;}
-    @media (max-width:700px){ #gameCanvas{width:98vw;height:54vw; min-width: 250px;} }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+      min-height: 100vh;
+      font-family: 'Orbitron', monospace;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* Effet d'étoiles animées en arrière-plan */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, white, transparent),
+        radial-gradient(2px 2px at 40px 70px, white, transparent),
+        radial-gradient(1px 1px at 50px 90px, white, transparent),
+        radial-gradient(1px 1px at 130px 40px, white, transparent),
+        radial-gradient(2px 2px at 180px 10px, white, transparent);
+      background-repeat: repeat;
+      background-size: 200px 200px;
+      opacity: 0.3;
+      animation: stars 200s linear infinite;
+      z-index: -1;
+    }
+    
+    @keyframes stars {
+      from { transform: translateY(0); }
+      to { transform: translateY(-2000px); }
+    }
+    
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    h1 {
+      color: #fff;
+      font-size: 3em;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 30px #00ffff,
+        0 0 40px #0088ff;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #0088ff; }
+      to { text-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff, 0 0 50px #0088ff; }
+    }
+    
+    h1 .pro {
+      background: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient 3s ease infinite;
+    }
+    
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    #gameCanvas {
+      border: 4px solid #00ffff;
+      border-radius: 20px;
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.5),
+        0 0 40px rgba(0, 255, 255, 0.3),
+        0 0 60px rgba(0, 255, 255, 0.1),
+        inset 0 0 20px rgba(0, 255, 255, 0.1);
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+      transition: transform 0.3s ease;
+    }
+    
+    #gameCanvas:hover {
+      transform: scale(1.02);
+    }
+    
+    #hud {
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 50, 100, 0.8));
+      border: 2px solid #00ffff;
+      border-radius: 15px;
+      padding: 15px 30px;
+      margin-bottom: 20px;
+      display: none;
+      gap: 30px;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+    
+    #hud > span {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #score {
+      color: #ffff00;
+      font-size: 1.4rem;
+      text-shadow: 0 0 10px #ffff00;
+    }
+    
+    #timer {
+      color: #ff6b6b;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    #lives {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 0 5px #ff0066);
+    }
+    
+    #bonusbar {
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #ffd700;
+      padding: 5px 15px;
+      border-radius: 10px;
+      min-width: 200px;
+    }
+    
+    #bonuslist {
+      color: #ffd700;
+      font-size: 0.9rem;
+    }
+    
+    #bonuslist img {
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
+      margin-right: 5px;
+      filter: drop-shadow(0 0 5px #ffd700);
+    }
+    
+    #menu, #gameover {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 50, 100, 0.95));
+      border: 3px solid #00ffff;
+      border-radius: 25px;
+      padding: 40px;
+      text-align: center;
+      color: #fff;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 0 30px rgba(0, 255, 255, 0.5),
+        inset 0 0 30px rgba(0, 255, 255, 0.1);
+      z-index: 10;
+      animation: menuAppear 0.5s ease-out;
+    }
+    
+    @keyframes menuAppear {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    #menu h2, #gameover h2 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #00ffff;
+      text-shadow: 0 0 20px #00ffff;
+    }
+    
+    #cmd {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #00ffff;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+      font-size: 0.9rem;
+      color: #fff;
+      text-align: left;
+      line-height: 1.8;
+    }
+    
+    #cmd b {
+      color: #ffd700;
+      font-size: 1.1rem;
+      display: block;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .control-key {
+      display: inline-block;
+      background: #00ffff;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin: 0 3px;
+    }
+    
+    .feature {
+      color: #ffd700;
+      font-weight: bold;
+    }
+    
+    #skinlist {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    
+    #skinlist img {
+      width: 64px;
+      height: 64px;
+      border: 3px solid #555;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      image-rendering: pixelated;
+    }
+    
+    #skinlist img:hover {
+      transform: scale(1.1) rotate(5deg);
+      border-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    }
+    
+    #skinlist img.selected {
+      border-color: #ffd700;
+      box-shadow: 0 0 25px #ffd700;
+      animation: selected 0.5s ease;
+    }
+    
+    @keyframes selected {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.2) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+    
+    button {
+      background: linear-gradient(45deg, #00ffff, #0088ff);
+      color: #fff;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    button:hover::before {
+      left: 100%;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 255, 255, 0.6);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    #controls {
+      display: none;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    #controls button {
+      width: 70px;
+      height: 70px;
+      font-size: 1.8rem;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(0, 136, 255, 0.3));
+      backdrop-filter: blur(10px);
+      border: 2px solid #00ffff;
+    }
+    
+    #controls button:active {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.6), rgba(0, 136, 255, 0.6));
+    }
+    
+    #message {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      color: #ffd700;
+      text-shadow: 0 0 20px #ffd700;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1000px) {
+      #gameCanvas {
+        width: 90vw;
+        height: 50.625vw;
+        max-width: 960px;
+        max-height: 540px;
+      }
+      
+      h1 {
+        font-size: 2em;
+      }
+      
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 20px;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5em;
+      }
+      
+      #menu, #gameover {
+        width: 90%;
+        padding: 20px;
+      }
+      
+      #controls button {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+      }
+    }
+    
+    /* Loading animation */
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: #00ffff;
+      z-index: 100;
+    }
+    
+    .loading::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+    
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
   </style>
 </head>
 <body>
   <div id="container">
-    <h1>SUPER PIXEL PLATFORMER DELUXE <span style="color:#39f;">PRO</span></h1>
-    <div id="hud" style="display:none;">
-      <span>Score: <span id="score">0</span></span>
-      <span id="timer">⏰ 60</span>
-      <span id="bonusbar">Bonus : <span id="bonuslist">Aucun</span></span>
+    <h1>SUPER PLATFORMER HD <span class="pro">ULTIMATE</span></h1>
+    
+    <div id="hud">
+      <span>🏆 Score: <span id="score">0</span></span>
+      <span id="lives">❤️❤️❤️❤️❤️</span>
+      <span id="timer">⏰ 120</span>
+      <span id="bonusbar">
+        Bonus: <span id="bonuslist">Aucun</span>
+      </span>
     </div>
-    <canvas id="gameCanvas" width="400" height="224"></canvas>
+    
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    
     <div id="menu">
-      <h2>Bienvenue !</h2>
+      <h2>🎮 Prêt pour l'Aventure ? 🎮</h2>
       <div id="cmd">
-        <b>Commandes :</b><br>
-        ← / → ou flèches pour bouger<br>
-        ↑ ou Espace pour sauter (deux fois = double saut)<br>
-        P = pause &nbsp;&nbsp;|&nbsp; Boutons = mobile !<br>
-        <span style="color:#9bf;">Bonus, trous, timer, parallax, etc.!</span>
+        <b>🎯 Contrôles du Jeu 🎯</b>
+        <span class="control-key">←</span> <span class="control-key">→</span> ou <span class="control-key">A</span> <span class="control-key">D</span> : Déplacer<br>
+        <span class="control-key">↑</span> ou <span class="control-key">ESPACE</span> ou <span class="control-key">W</span> : Sauter<br>
+        ⭐ Double saut disponible !<br>
+        <span class="control-key">P</span> : Pause<br><br>
+        
+        <span class="feature">✨ Nouvelles Fonctionnalités ✨</span><br>
+        🌟 Cycle Jour/Nuit dynamique<br>
+        🌧️ Météo changeante (pluie, neige)<br>
+        💧 Zones d'eau avec physique spéciale<br>
+        ❤️ Système de 5 vies avec checkpoints<br>
+        👹 3 types d'ennemis avec IA améliorée<br>
+        🎁 5 types de bonus différents<br>
+        🌳 Décors multi-couches avec parallaxe<br>
+        👣 Empreintes et effets de particules<br>
+        🎵 Sons immersifs pour chaque action
       </div>
+      
+      <p style="color: #ffd700; margin-bottom: 15px;">Choisissez votre héros :</p>
       <div id="skinlist"></div>
-      <button id="btnStart">Commencer</button>
+      
+      <button id="btnStart">🚀 JOUER</button>
     </div>
+    
     <div id="gameover" style="display:none;">
       <h2 id="message"></h2>
-      <button id="btnRestart">Rejouer</button>
+      <button id="btnRestart">🔄 REJOUER</button>
     </div>
+    
     <div id="controls">
-      <button id="btnLeft">←</button>
-      <button id="btnJump">↑</button>
-      <button id="btnJump2">↑↑</button>
-      <button id="btnRight">→</button>
-      <button id="btnPause">⏸</button>
+      <button id="btnLeft">◀</button>
+      <button id="btnJump">🔺</button>
+      <button id="btnJump2">⏫</button>
+      <button id="btnRight">▶</button>
+      <button id="btnPause">⏸️</button>
     </div>
   </div>
+  
   <script src="platformer.js"></script>
 </body>
 </html>
