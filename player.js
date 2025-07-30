@@ -1,3 +1,4 @@
+// On exporte la classe pour qu'elle puisse être importée dans game.js
 export class Player {
     constructor(x, y, config) {
         this.x = x;
@@ -17,7 +18,7 @@ export class Player {
 
     update(keys, game) {
         const { physics } = this.config;
-        const speed = physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 0.8 : 1);
+        const speed = physics.playerSpeed * (game.settings.difficulty === 'Easy' ? 1.2 : 1);
         
         if (keys.left) { this.vx = -speed; this.dir = -1; }
         else if (keys.right) { this.vx = speed; this.dir = 1; }
@@ -64,7 +65,7 @@ export class Player {
                     if (this.vx > 0) this.x = plat.x - this.w;
                     else if (this.vx < 0) this.x = plat.x + plat.w;
                     this.vx = 0;
-                } else {
+                } else { // axis === 'y'
                     if (this.vy > 0) { 
                         this.y = plat.y - this.h; 
                         this.vy = 0; 
@@ -99,7 +100,9 @@ export class Player {
             ctx.globalAlpha = 0.5;
         }
         
-        ctx.drawImage(assets[skinKey], -this.w / 2, -this.h / 2, this.w, this.h);
+        if (assets[skinKey]) {
+            ctx.drawImage(assets[skinKey], -this.w / 2, -this.h / 2, this.w, this.h);
+        }
         ctx.restore();
     }
 }
