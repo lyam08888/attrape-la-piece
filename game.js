@@ -209,15 +209,147 @@ document.addEventListener('DOMContentLoaded', () => {
         updateToolbarUI();
     }
     
-    function propagateTreeCollapse(startX, startY) { /* ... (code inchangé) ... */ }
-    function updateFallingBlocks() { /* ... (code inchangé) ... */ }
-    function drawFallingBlocks() { /* ... (code inchangé) ... */ }
-    function drawTileMap() { /* ... (code inchangé) ... */ }
-    function drawParticles() { /* ... (code inchangé) ... */ }
-    function drawMiningEffect() { /* ... (code inchangé) ... */ }
-    function createToolbar() { /* ... (code inchangé) ... */ }
-    function updateToolbarUI() { /* ... (code inchangé) ... */ }
-    function toggleMenu(show) { /* ... (code inchangé) ... */ }
+    function propagateTreeCollapse(startX, startY) {
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
+
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
+            
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
+
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
+
+            if (!isSupported) {
+                game.fallingBlocks.push({
+                    x: x * config.tileSize,
+                    y: y * config.tileSize,
+                    vy: 0,
+                    tileType: tile
+                });
+                game.tileMap[y][x] = TILE.AIR;
+
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
+                }
+            }
+        }
+    }
+
+    function updateFallingBlocks() {
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
+            }
+        });
+    }
+
+    function drawFallingBlocks() {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ui.ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawTileMap() {
+        const { tileSize } = config;
+        const startCol = Math.floor(game.camera.x / tileSize);
+        const endCol = startCol + Math.ceil(ui.canvas.width / tileSize) + 1;
+        const startRow = Math.floor(game.camera.y / tileSize);
+        const endRow = startRow + Math.ceil(ui.canvas.height / tileSize) + 1;
+
+        const TILE_ASSETS = { [TILE.GRASS]: assets.tile_grass, [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+
+        for (let y = startRow; y <= endRow; y++) {
+            for (let x = startCol; x <= endCol; x++) {
+                if (game.tileMap[y]?.[x] > 0) {
+                    const asset = TILE_ASSETS[game.tileMap[y][x]];
+                    if (asset) ui.ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
+                }
+            }
+        }
+    }
+
+    function drawParticles() {
+        if (!game) return;
+        ui.ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ui.ctx.fillStyle = p.color;
+            ui.ctx.globalAlpha = p.life / p.maxLife;
+            ui.ctx.beginPath();
+            ui.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ui.ctx.fill();
+        });
+        ui.ctx.globalAlpha = 1.0;
+    }
+    
+    function drawMiningEffect() {
+        if (game && game.miningEffect) {
+            const { x, y, progress } = game.miningEffect;
+            const { tileSize } = config;
+            ui.ctx.globalAlpha = 0.5;
+            ui.ctx.fillStyle = 'white';
+            const crackWidth = tileSize * Math.min(1, progress * 2);
+            const crackHeight = 2;
+            ui.ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
+            if (progress > 0.5) {
+                const crackWidth2 = tileSize * Math.min(1, (progress - 0.5) * 2);
+                const crackHeight2 = 2;
+                ui.ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
+            }
+            ui.ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function createToolbar() {
+        ui.toolbar.innerHTML = '';
+        game.player.tools.forEach((toolName, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'toolbar-slot';
+            slot.dataset.index = index;
+            
+            const img = document.createElement('img');
+            img.src = assets[`tool_${toolName}`]?.src || '';
+            slot.appendChild(img);
+            
+            ui.toolbar.appendChild(slot);
+        });
+    }
+
+    function updateToolbarUI() {
+        if (!game || !ui.toolbar) return;
+        const slots = ui.toolbar.children;
+        for (let i = 0; i < slots.length; i++) {
+            slots[i].classList.toggle('selected', i === game.player.selectedToolIndex);
+        }
+    }
+
+    function toggleMenu(show) {
+        if (!game) return;
+        if (show) {
+            game.paused = true;
+            ui.controlsMenu.classList.add('active');
+        } else {
+            game.paused = false;
+            ui.controlsMenu.classList.remove('active');
+        }
+    }
 
     function setupInput() {
         keys = { left: false, right: false, jump: false, action: false };
@@ -243,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.code === 'Space' || e.code === 'ArrowUp') keys.jump = false;
         });
         
-        // CORRECTION: Restauration de la gestion de la souris
         ui.canvas.addEventListener('mousemove', e => {
             const rect = ui.canvas.getBoundingClientRect();
             mouse.x = e.clientX - rect.left;
@@ -258,12 +389,57 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    function createParticles(x, y, count, color, options = {}) { /* ... (code inchangé) ... */ }
-    function updateHUD() { /* ... (code inchangé) ... */ }
-    function loseLife() { /* ... (code inchangé) ... */ }
-    function endGame(win) { /* ... (code inchangé) ... */ }
-    function drawSky() { /* ... (code inchangé) ... */ }
-    function updateParticles() { /* ... (code inchangé) ... */ }
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+    function updateHUD() {
+        if(!game || !ui.hud) return; 
+        ui.lives.textContent = '❤'.repeat(game.lives); 
+    }
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+    }
+    function drawSky() {
+        const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
+        grad.addColorStop(0, '#87CEEB');
+        grad.addColorStop(1, '#5C94FC');
+        ui.ctx.fillStyle = grad;
+        ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+    }
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
 
     main();
 });
