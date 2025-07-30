@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseUrl = config.githubRepoUrl || ''; 
 
         for (const [key, path] of Object.entries(config.assets)) {
-            // CORRECTION: On vérifie si le chemin est déjà une URL complète
+            // On vérifie si le chemin est déjà une URL complète
             if (path.startsWith('http://') || path.startsWith('https://')) {
                 allAssetPaths[key] = path;
             } else {
@@ -113,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMenuAction(action) {
-        console.log(`Action du menu déclenchée: ${action}`); // Log pour le débogage
         switch(action) {
             case 'start': initGame(); break;
             case 'options': showMenu(ui.optionsMenu); break;
@@ -158,12 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialise une nouvelle partie
     function initGame() {
-        console.log("initGame: Démarrage d'une nouvelle partie...");
         try {
             game = {
                 player: new Player(80, 300, config),
                 camera: { x: 0 },
-                platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [],
+                // CORRECTION: Ajout du tableau `checkpoints` qui manquait
+                platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [], checkpoints: [],
                 lastCheckpoint: { x: 80, y: 300 },
                 score: 0, lives: config.player.maxLives, time: config.player.gameTime,
                 timeLast: Date.now(), over: false, dayNightCycle: 0,
@@ -175,10 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loseLife: loseLife
             };
             
-            console.log("initGame: Génération du niveau...");
             generateLevel(game, level, gameSettings);
             
-            console.log("initGame: Mise à jour de l'affichage et lancement de la boucle de jeu.");
             updateHUD();
             [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
             ui.hud.classList.add('active');
@@ -253,6 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         game.coins.forEach(c => ui.ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h));
         game.bonuses.forEach(b => ui.ctx.drawImage(assets.bonus, b.x, b.y, b.w, b.h));
+        // Affiche les checkpoints
+        game.checkpoints.forEach(cp => {
+            const img = cp.activated ? assets.checkpoint_on : assets.checkpoint_off;
+            if (img) ui.ctx.drawImage(img, cp.x, cp.y, cp.w, cp.h);
+        });
 
         game.water.forEach(w => { ui.ctx.fillStyle = 'rgba(0, 100, 200, 0.6)'; ui.ctx.fillRect(w.x, w.y, w.w, w.h); });
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
