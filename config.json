@@ -7,7 +7,8 @@
   "worldHeight": 2000,
   "tileSize": 16,
   "generation": {
-    "enemyCount": 50
+    "enemyCount": 50,
+    "treeCount": 40
   },
   "physics": {
     "gravity": 0.35,
@@ -20,7 +21,8 @@
     "maxLives": 5,
     "gameTime": 300,
     "width": 16,
-    "height": 28
+    "height": 28,
+    "reach": 5
   },
   "skins": [
     "player1.png",
@@ -31,6 +33,8 @@
     "tile_grass": "assets/tile_grass.png",
     "tile_dirt": "assets/tile_dirt.png",
     "tile_stone": "assets/tile_stone.png",
+    "tile_wood": "assets/tile_wood.png",
+    "tile_leaves": "assets/tile_leaves.png",
     "tile_coal": "assets/tile_coal.png",
     "tile_iron": "assets/tile_iron.png",
     "coin": "assets/coin.png",
