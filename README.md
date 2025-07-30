@@ -1,43 +1,34 @@
-Super Pixel Adventure
-Bienvenue dans Super Pixel Adventure, un jeu de plateforme 2D complet inspiré des classiques 8-bit, développé en HTML5 et JavaScript.
+Super Pixel Adventure 2
+Bienvenue dans Super Pixel Adventure 2, une refonte technique et visuelle majeure du jeu de plateforme classique. Ce projet a été entièrement reconstruit pour offrir une expérience plus riche, plus dynamique et visuellement impressionnante.
 
-🌟 Fonctionnalités Principales
-Menus Complets et Fonctionnels : Naviguez entre le menu principal, les options et les contrôles.
+🌟 Évolutions Techniques Majeures
+Moteur Graphique HD : Le jeu tourne maintenant en résolution 960x540px avec des sprites de 32x32px pour des graphismes plus fins et détaillés.
 
-Options de Gameplay :
+Monde Procédural : Fini les niveaux statiques ! Chaque partie génère un monde unique avec des plateformes, des pièges et des secrets, offrant une rejouabilité infinie.
 
-God Mode : Devenez invincible avec une aura dorée !
+Monde Vivant et Dynamique :
 
-Difficulté Réglable : Choisissez entre Facile, Normal et Difficile pour ajuster le défi.
+Cycle Jour/Nuit : Regardez le ciel changer de couleur, du lever au coucher du soleil, avec des étoiles qui apparaissent la nuit.
 
-Contrôle du Son : Activez ou désactivez tous les effets sonores.
+Météo Dynamique : La pluie et la neige peuvent survenir à tout moment, avec un vent qui influence les mouvements du joueur et des particules.
 
-Style Rétro Authentique : Plongez dans une ambiance inspirée de Mario Bros avec des graphismes pixelisés, des couleurs vives et une interface style NES.
+Physique Réaliste : Le moteur physique a été amélioré avec une gestion de la friction, une physique aquatique et des collisions plus précises.
 
-Gameplay Riche et Dynamique :
+Gameplay Approfondi :
 
-Physique Améliorée : Sauts précis, double saut, et zones aquatiques.
+Ennemis Variés : Affrontez 3 types d'ennemis (Slime, Grenouille, Golem) avec des comportements uniques.
 
-Cycle Jour/Nuit et Météo : Le monde change pendant que vous jouez.
+Bonus Stratégiques : Découvrez 5 bonus différents qui peuvent changer le cours de la partie.
 
-Niveaux Détaillés : Explorez des niveaux remplis de plateformes, d'ennemis variés et de bonus.
+Checkpoints : Votre progression est sauvegardée à des points clés du niveau.
 
-Checkpoints pour sauvegarder votre progression.
+Décors Multi-couches : Le monde a gagné en profondeur grâce à un système de parallaxe sur 9 couches, avec des montagnes, des forêts et des nuages animés.
+
+Système de Particules Avancé : Plus de 10 types de particules (poussière, éclaboussures, explosions, etc.) enrichissent l'expérience visuelle.
 
 🚀 Comment Lancer le Jeu
-Téléchargez le projet : Assurez-vous d'avoir tous les fichiers (index.html, game.js, config.json, level1.json) et le dossier assets dans le même répertoire.
+Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
 
-Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne (Chrome, Firefox, etc.).
+Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne.
 
-Jouez ! Utilisez les menus pour configurer votre partie et lancez-vous dans l'aventure.
-
-🎮 Contrôles
-Clavier
-Bouger : Flèches Gauche / Droite ou Q / D
-
-Sauter : Espace ou Flèche Haut
-
-Pause : P
-
-Mobile
-Des contrôles tactiles apparaîtront automatiquement à l'écran.
+Jouez ! Le jeu chargera les assets depuis votre GitHub et sera prêt à jouer.
