@@ -161,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
             game = {
                 player: new Player(80, 300, config),
                 camera: { x: 0 },
-                // CORRECTION: Ajout du tableau `checkpoints` qui manquait
                 platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [], checkpoints: [],
                 lastCheckpoint: { x: 80, y: 300 },
                 score: 0, lives: config.player.maxLives, time: config.player.gameTime,
@@ -199,8 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Met à jour l'état de tous les objets du jeu
     function update() {
         game.player.update(keys, game);
-        game.enemies.forEach(e => e.update(game.platforms, level.worldWidth));
-        game.enemies = game.enemies.filter(e => e.health > 0);
+        // On met à jour chaque ennemi et on passe l'objet `game` pour qu'ils aient accès au joueur
+        game.enemies.forEach(e => e.update(game));
+        // On retire les ennemis morts (après leur animation)
+        game.enemies = game.enemies.filter(e => !e.isDead);
         updateParticles();
         updateCamera();
         updateTimer();
@@ -208,9 +209,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateParticles() {
-        game.particles = game.particles.filter(p => {
-            p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
-            return p.life > 0;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.life--;
+            p.size = Math.max(0, p.size - 0.1);
+            if (p.life <= 0) {
+                game.particles.splice(index, 1);
+            }
         });
     }
     
@@ -233,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateWorld() {
-        game.dayNightCycle = (game.dayNightCycle + 0.0003) % (Math.PI * 2);
+        game.dayNightCycle = (game.dayNightCycle + 0.0002) % (Math.PI * 2);
     }
     
     // Dessine tous les éléments du jeu sur le canvas
@@ -242,7 +249,9 @@ document.addEventListener('DOMContentLoaded', () => {
         drawSky();
         ui.ctx.save();
         ui.ctx.translate(-game.camera.x, 0);
-        drawScenery();
+
+        drawScenery(); // Contient maintenant la parallaxe
+        
         game.platforms.forEach(p => ui.ctx.drawImage(assets.wall, p.x, p.y, p.w, p.h));
         
         if (assets.decoration_bush) {
@@ -250,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         game.coins.forEach(c => ui.ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h));
         game.bonuses.forEach(b => ui.ctx.drawImage(assets.bonus, b.x, b.y, b.w, b.h));
-        // Affiche les checkpoints
+        
         game.checkpoints.forEach(cp => {
             const img = cp.activated ? assets.checkpoint_on : assets.checkpoint_off;
             if (img) ui.ctx.drawImage(img, cp.x, cp.y, cp.w, cp.h);
@@ -261,14 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
         game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
         drawParticles();
         ui.ctx.restore();
+
+        drawVignette(); // Ajout de l'effet de vignettage
     }
     
     function drawSky() {
         const time = (Math.sin(game.dayNightCycle) + 1) / 2;
         let c1 = "#5C94FC", c2 = "#87CEEB";
-        if (time < 0.3) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; }
+        if (time < 0.25) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; }
         else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; }
-        else if (time > 0.8) { c1 = "#ff6b6b"; c2 = "#ffa500"; }
+        else if (time > 0.85) { c1 = "#ff6b6b"; c2 = "#ffa500"; }
         const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
         grad.addColorStop(0, c1); grad.addColorStop(1, c2);
         ui.ctx.fillStyle = grad;
@@ -276,16 +287,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function drawScenery() {
-        ui.ctx.fillStyle = '#8CD65C';
-        const hillX = (-game.camera.x * 0.5) % (ui.canvas.width + 1000);
-        ui.ctx.beginPath();
-        ui.ctx.moveTo(hillX - 200, level.worldHeight);
-        ui.ctx.arc(hillX + 200, level.worldHeight, 200, Math.PI, 0, false);
-        ui.ctx.arc(hillX + 600, level.worldHeight, 250, Math.PI, 0, false);
-        ui.ctx.arc(hillX + 1000, level.worldHeight, 200, Math.PI, 0, false);
-        ui.ctx.arc(hillX + 1400, level.worldHeight, 220, Math.PI, 0, false);
-        ui.ctx.lineTo(hillX + 1620, level.worldHeight);
-        ui.ctx.fill();
+        // AMÉLIORATION VISUELLE: Effet de parallaxe avec deux couches de collines
+        const drawHillLayer = (speed, color, amplitude) => {
+            ui.ctx.fillStyle = color;
+            const hillX = (-game.camera.x * speed) % (ui.canvas.width + 1000);
+            ui.ctx.beginPath();
+            ui.ctx.moveTo(hillX - 200, level.worldHeight);
+            for (let x = hillX - 200; x < level.worldWidth + ui.canvas.width; x += 200) {
+                 ui.ctx.arc(x + 200, level.worldHeight, amplitude + Math.sin(x/300) * 20, Math.PI, 0, false);
+            }
+            ui.ctx.lineTo(level.worldWidth + ui.canvas.width, level.worldHeight);
+            ui.ctx.fill();
+        };
+
+        drawHillLayer(0.2, 'rgba(0, 60, 130, 0.4)', 180); // Couche lointaine
+        drawHillLayer(0.5, '#8CD65C', 220); // Couche proche
     }
     
     function drawParticles() {
@@ -293,9 +309,22 @@ document.addEventListener('DOMContentLoaded', () => {
         game.particles.forEach(p => {
             ui.ctx.fillStyle = p.color;
             ui.ctx.globalAlpha = p.life / p.maxLife;
-            ui.ctx.fillRect(p.x, p.y, 2, 2);
+            ui.ctx.beginPath();
+            ui.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ui.ctx.fill();
         });
         ui.ctx.globalAlpha = 1.0;
+    }
+
+    function drawVignette() {
+        const grad = ui.ctx.createRadialGradient(
+            ui.canvas.width / 2, ui.canvas.height / 2, ui.canvas.width / 3,
+            ui.canvas.width / 2, ui.canvas.height / 2, ui.canvas.width / 2 + 150
+        );
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.3)');
+        ui.ctx.fillStyle = grad;
+        ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
     }
     
     function setupInput() {
@@ -332,15 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateHUD() { if(!game) return; ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
     function loseLife() { if(!game || game.over || gameSettings.godMode) return; game.lives--; game.playSound('hurt'); if(game.lives <= 0) { endGame(false); } else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.vx = 0; game.player.vy = 0; game.player.invulnerable = 120; } updateHUD(); }
     function endGame(win) { if (!game) return; game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
-    function createParticles(x, y, count, color) { 
+    function createParticles(x, y, count, color, options = {}) { 
         if (!game) return;
          for (let i = 0; i < count; i++) {
             game.particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 3,
-                vy: (Math.random() - 0.5) * 4 - 2,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
                 life: 30 + Math.random() * 30,
                 maxLife: 60,
+                size: 2 + Math.random() * 3,
+                gravity: options.gravity || 0.1,
                 color: color
             });
         }
