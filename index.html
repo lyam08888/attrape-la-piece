@@ -100,7 +100,7 @@
         #skinlist { display: flex; gap: 16px; margin-bottom: 24px; justify-content: center; }
         #skinlist img { width: 48px; height: 48px; border: 4px solid #505050; cursor: pointer; }
         #skinlist img.selected { border-color: var(--mario-orange); transform: scale(1.1); }
-        #hud { justify-content: flex-start; pointer-events: none; background: none; }
+        #hud { justify-content: flex-start; pointer-events: none; background: none; visibility: hidden; opacity: 0; }
         .hud-info { width: 100%; padding: 10px 20px; display: flex; justify-content: space-between; }
         #controls { display: none; position: fixed; bottom: 15px; width: 100%; max-width: 400px; left: 50%; transform: translateX(-50%); justify-content: space-between; z-index: 20; padding: 0 20px; }
         .control-btn { width: 70px; height: 70px; border-radius: 50%; background: rgba(0,0,0,0.3); border: 2px solid #fff; display:flex; align-items:center; justify-content:center; font-size: 30px; user-select: none; color: white; }
@@ -111,18 +111,16 @@
     <div id="gameWrapper">
         <canvas id="gameCanvas"></canvas>
         
-        <!-- Menu Principal -->
         <div id="mainMenu" class="overlay active">
             <div class="menu-box">
-                <h2 id="menuTitle">Choisissez un héros</h2>
+                <h2 id="menuTitle">Chargement...</h2>
                 <div id="skinlist"></div>
-                <button data-action="start">START GAME</button>
-                <button data-action="options">OPTIONS</button>
-                <button data-action="controls">CONTROLS</button>
+                <button data-action="start" style="display: none;">START GAME</button>
+                <button data-action="options" style="display: none;">OPTIONS</button>
+                <button data-action="controls" style="display: none;">CONTROLS</button>
             </div>
         </div>
 
-        <!-- Menu Options -->
         <div id="optionsMenu" class="overlay">
             <div class="menu-box">
                 <h2>OPTIONS</h2>
@@ -146,7 +144,6 @@
             </div>
         </div>
 
-        <!-- Menu Contrôles -->
         <div id="controlsMenu" class="overlay">
             <div class="menu-box" style="text-align: left; font-size: 0.8em; line-height: 2;">
                 <h2>CONTROLES</h2>
@@ -160,7 +157,6 @@
             </div>
         </div>
 
-        <!-- HUD en jeu -->
         <div id="hud" class="overlay">
             <div class="hud-info">
                 <span id="score">SCORE: 0</span>
@@ -169,7 +165,6 @@
             </div>
         </div>
 
-        <!-- Écran Game Over -->
         <div id="gameover" class="overlay">
             <div class="menu-box">
                 <h2 id="message">Game Over</h2>
@@ -183,355 +178,6 @@
         <div id="btnRight" class="control-btn">➡️</div>
     </div>
     
-    <!-- Fichiers de données et logique du jeu -->
-    <script src="config.json" type="application/json"></script>
-    <script src="level1.json" type="application/json"></script>
     <script src="game.js"></script>
 </body>
 </html>
-```
-
----
-
-### `game.js`
-
-Ce fichier est le cerveau du jeu. Il gère les menus, la physique, les graphismes, les options et toute la logique du gameplay. Il est conçu pour être modulaire et facile à comprendre.
-
-
-```javascript
-// =================================================================================
-// SUPER PIXEL ADVENTURE - GAME ENGINE V3
-// =================================================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Éléments du DOM ---
-    const ui = {
-        canvas: document.getElementById('gameCanvas'),
-        ctx: document.getElementById('gameCanvas').getContext('2d'),
-        gameTitle: document.getElementById('gameTitle'),
-        mainMenu: document.getElementById('mainMenu'),
-        optionsMenu: document.getElementById('optionsMenu'),
-        controlsMenu: document.getElementById('controlsMenu'),
-        skinlist: document.getElementById('skinlist'),
-        hud: document.getElementById('hud'),
-        score: document.getElementById('score'),
-        lives: document.getElementById('lives'),
-        timer: document.getElementById('timer'),
-        gameover: document.getElementById('gameover'),
-        message: document.getElementById('message'),
-        btnRestart: document.getElementById('btnRestart'),
-        godModeBtn: document.getElementById('godModeBtn'),
-        soundBtn: document.getElementById('soundBtn'),
-        controls: document.getElementById('controls'),
-    };
-
-    // --- Variables globales ---
-    let config, level, assets = {}, game, keys = {}, currentSkin = 0;
-
-    const gameSettings = {
-        godMode: false,
-        soundEnabled: true,
-        difficulty: 'Normal', // Easy, Normal, Hard
-    };
-
-    // --- Chargement initial ---
-    async function main() {
-        try {
-            const [configRes, levelRes] = await Promise.all([fetch('config.json'), fetch('level1.json')]);
-            config = await configRes.json();
-            level = await levelRes.json();
-            
-            ui.gameTitle.textContent = config.gameTitle;
-            ui.canvas.width = config.canvasWidth;
-            ui.canvas.height = config.canvasHeight;
-            
-            await loadAssets();
-            setupMenus();
-            setupInput();
-        } catch (error) {
-            console.error("Erreur de chargement des fichiers du jeu:", error);
-            ui.mainMenu.innerHTML = "<h2>Erreur de chargement</h2>";
-        }
-    }
-
-    async function loadAssets() {
-        const promises = Object.entries(config.assets).map(([key, path]) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.src = path;
-                img.onload = () => { assets[key] = img; resolve(); };
-                img.onerror = reject;
-            });
-        });
-        await Promise.all(promises);
-    }
-
-    // --- Gestion des Menus ---
-    function setupMenus() {
-        ui.skinlist.innerHTML = '';
-        config.skins.forEach((key, i) => {
-            const img = assets[key].cloneNode();
-            img.onclick = () => selectSkin(i);
-            if (i === currentSkin) img.classList.add("selected");
-            ui.skinlist.appendChild(img);
-        });
-        
-        document.body.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            const difficulty = e.target.dataset.difficulty;
-
-            if (action) handleMenuAction(action);
-            if (difficulty) setDifficulty(difficulty);
-        });
-        ui.btnRestart.onclick = initGame;
-    }
-    
-    function handleMenuAction(action) {
-        switch(action) {
-            case 'start': initGame(); break;
-            case 'options': showMenu(ui.optionsMenu); break;
-            case 'controls': showMenu(ui.controlsMenu); break;
-            case 'backToMain': showMenu(ui.mainMenu); break;
-            case 'toggleGodMode':
-                gameSettings.godMode = !gameSettings.godMode;
-                ui.godModeBtn.textContent = gameSettings.godMode ? 'ON' : 'OFF';
-                ui.godModeBtn.classList.toggle('on', gameSettings.godMode);
-                break;
-            case 'toggleSound':
-                gameSettings.soundEnabled = !gameSettings.soundEnabled;
-                ui.soundBtn.textContent = gameSettings.soundEnabled ? 'ON' : 'OFF';
-                ui.soundBtn.classList.toggle('on', gameSettings.soundEnabled);
-                break;
-        }
-    }
-
-    function showMenu(menuToShow) {
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(menu => menu.classList.remove('active'));
-        menuToShow.classList.add('active');
-    }
-
-    function selectSkin(i) {
-        currentSkin = i;
-        [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
-    }
-
-    function setDifficulty(level) {
-        gameSettings.difficulty = level;
-        document.querySelectorAll('.difficulty-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.difficulty === level);
-        });
-    }
-
-    // --- Initialisation du Jeu ---
-    function initGame() {
-        game = {
-            player: {
-                x: 50, y: 150, vx: 0, vy: 0,
-                w: 32, h: 32,
-                grounded: false, canDoubleJump: true, dir: 1, invulnerable: 0
-            },
-            camera: { x: 0 },
-            enemies: [], particles: [],
-            tileMap: level.tiles.map(row => row.split('').map(Number)),
-            score: 0, lives: config.player.maxLives, time: config.player.gameTime,
-            timeLast: Date.now(), over: false, dayNightCycle: 0, weather: { type: 'clear', particles: [] }
-        };
-        
-        setupDifficulty();
-        
-        updateHUD();
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m.classList.remove('active'));
-        ui.hud.style.display = 'flex';
-        
-        requestAnimationFrame(gameLoop);
-    }
-    
-    function setupDifficulty() {
-        let enemyMultiplier = 1;
-        if (gameSettings.difficulty === 'Easy') enemyMultiplier = 0.7;
-        if (gameSettings.difficulty === 'Hard') enemyMultiplier = 1.5;
-        
-        game.tileMap.forEach((row, y) => {
-            row.forEach((tile, x) => {
-                if (tile === 8 && Math.random() < enemyMultiplier) {
-                    game.enemies.push({ 
-                        x: x * config.tileSize, y: y * config.tileSize, 
-                        w: 32, h: 32, vx: -0.5 * (gameSettings.difficulty === 'Hard' ? 1.5 : 1), vy: 0 
-                    });
-                }
-            });
-        });
-    }
-
-    // --- Boucle de Jeu ---
-    function gameLoop() {
-        if (game.over) return;
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
-
-    // --- Logique de mise à jour ---
-    function update() {
-        updatePlayer();
-        updateEnemies();
-        updateParticles();
-        updateCamera();
-        updateTimer();
-        updateWorld();
-    }
-
-    function updatePlayer() {
-        const p = game.player;
-        if (keys.left) { p.vx = -config.physics.playerSpeed; p.dir = -1; }
-        else if (keys.right) { p.vx = config.physics.playerSpeed; p.dir = 1; }
-        else { p.vx = 0; }
-
-        if (keys.jump) {
-            if (p.grounded) { p.vy = -config.physics.jumpForce; p.canDoubleJump = true; playSound('jump'); }
-            else if (p.canDoubleJump) { p.vy = -config.physics.jumpForce * 0.8; p.canDoubleJump = false; playSound('jump'); }
-            keys.jump = false;
-        }
-
-        p.vy += config.physics.gravity;
-        
-        // Collisions
-        p.x += p.vx;
-        handleCollision('x');
-        p.y += p.vy;
-        p.grounded = false;
-        handleCollision('y');
-
-        if (p.y > level.height * config.tileSize) loseLife();
-        if (p.invulnerable > 0) p.invulnerable--;
-    }
-    
-    function updateEnemies() {
-        game.enemies.forEach(e => {
-            e.vy += config.physics.gravity;
-            let oldX = e.x;
-            e.x += e.vx;
-            
-            const nextTileX = e.vx > 0 ? e.x + e.w : e.x;
-            const groundAhead = getTileAt(e.vx > 0 ? e.x + e.w : e.x -1, e.y + e.h + 1);
-
-            if (getTileAt(nextTileX, e.y) > 0 || getTileAt(nextTileX, e.y + e.h - 1) > 0 || groundAhead === 0) {
-                e.x = oldX;
-                e.vx *= -1;
-            }
-
-            e.y += e.vy;
-            if (e.vy > 0 && (getTileAt(e.x, e.y + e.h) > 0 || getTileAt(e.x + e.w, e.y + e.h) > 0)) {
-                e.y = Math.floor((e.y + e.h) / config.tileSize) * config.tileSize - e.h;
-                e.vy = 0;
-            }
-
-            if (rectCollide(game.player, e) && game.player.invulnerable === 0) {
-                if (game.player.vy > 0 && game.player.y + game.player.h < e.y + 16) {
-                    game.enemies = game.enemies.filter(en => en !== e);
-                    game.score += 100;
-                    game.player.vy = -config.physics.jumpForce / 2;
-                } else {
-                    loseLife();
-                }
-            }
-        });
-    }
-
-    function updateWorld() {
-        game.dayNightCycle = (game.dayNightCycle + 0.0005) % (Math.PI * 2);
-        if (Math.random() < 0.001) game.weather.type = ['clear', 'rain', 'snow'][Math.floor(Math.random() * 3)];
-    }
-    
-    // --- Dessin ---
-    function draw() {
-        drawSky();
-        ui.ctx.save();
-        ui.ctx.translate(-game.camera.x, 0);
-        drawTiles();
-        drawEnemies();
-        drawPlayer();
-        ui.ctx.restore();
-    }
-    
-    function drawSky() {
-        const time = (Math.sin(game.dayNightCycle) + 1) / 2;
-        let c1 = "#87ceeb", c2 = "#98d8e8"; // Jour
-        if (time < 0.3) { c1 = "#0a0a2e"; c2 = "#1e1e4e"; } // Nuit
-        else if (time < 0.5) { c1 = "#4a5a8e"; c2 = "#f4a460"; } // Aube
-        else if (time > 0.8) { c1 = "#ff6b6b"; c2 = "#ffa500"; } // Crépuscule
-        const grad = ui.ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
-        grad.addColorStop(0, c1); grad.addColorStop(1, c2);
-        ui.ctx.fillStyle = grad;
-        ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
-    }
-
-    function drawTiles() {
-        const startCol = Math.floor(game.camera.x / config.tileSize);
-        const endCol = startCol + (ui.canvas.width / config.tileSize) + 2;
-        for (let y = 0; y < level.height; y++) {
-            for (let x = startCol; x < endCol; x++) {
-                const tile = getTile(x, y);
-                if (!tile) continue;
-                const tx = x * config.tileSize, ty = y * config.tileSize;
-                if(tile === 1 || tile === 2) ui.ctx.drawImage(assets.wall, tx, ty, 32, 32);
-                if(tile === 4) ui.ctx.drawImage(assets.coin, tx, ty, 32, 32);
-                if(tile === 9) ui.ctx.drawImage(assets.flag, tx, ty, 32, 32);
-            }
-        }
-    }
-
-    function drawPlayer() {
-        const p = game.player;
-        ui.ctx.save();
-        ui.ctx.translate(p.x, p.y);
-        if (p.dir === -1) { ui.ctx.scale(-1, 1); ui.ctx.translate(-p.w, 0); }
-        
-        if (gameSettings.godMode) {
-            ui.ctx.shadowColor = 'gold';
-            ui.ctx.shadowBlur = 15;
-        }
-        
-        if (p.invulnerable > 0 && p.invulnerable % 10 < 5) ui.ctx.globalAlpha = 0.5;
-        
-        ui.ctx.drawImage(assets[config.skins[currentSkin]], 0, 0, p.w, p.h);
-        ui.ctx.restore();
-    }
-
-    function drawEnemies() {
-        game.enemies.forEach(e => ui.ctx.drawImage(assets.enemy, e.x, e.y, e.w, e.h));
-    }
-
-    // --- Utilitaires ---
-    function getTile(x, y) { return (y < 0 || y >= level.height || x < 0 || x >= level.width) ? 0 : game.tileMap[y][x]; }
-    function getTileAt(px, py) { return getTile(Math.floor(px / config.tileSize), Math.floor(py / config.tileSize)); }
-    function rectCollide(r1, r2) { return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y; }
-    function playSound(type) { if(!gameSettings.soundEnabled) return; /* Logique audio ici */ }
-    function updateHUD() { /* ... */ }
-    function updateTimer() { /* ... */ }
-    function updateParticles() { /* ... */ }
-    function loseLife() { if(gameSettings.godMode) return; game.lives--; if(game.lives <= 0) endGame(false); else { game.player.x = 50; game.player.y = 150; game.player.invulnerable = 120; } updateHUD(); }
-    function endGame(win) { game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`; ui.hud.style.display = 'none'; ui.gameover.classList.add('active'); }
-    function handleCollision(axis) { /* Logique de collision détaillée */ }
-    function setupInput() { /* Logique des contrôles clavier et tactiles */ }
-
-    main();
-});
-```
-
----
-
-### 6. Fichiers d'Assets (Images)
-
-**Important :** Vous devez créer ces images vous-même. Ce sont des fichiers PNG avec un fond transparent. Pour un style 8-bit, utilisez une résolution basse (ex: 32x32 pixels).
-
--   `assets/player1.png`
--   `assets/player2.png`
--   `assets/player3.png`
--   `assets/coin.png`
--   `assets/enemy.png`
--   `assets/flag.png`
--   `assets/bonus.png`
--   `assets/wall.png`
-
-Une fois ces fichiers en place, votre jeu sera complet et fonctionnel, avec toutes les améliorations demandé
