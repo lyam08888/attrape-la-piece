@@ -3,7 +3,6 @@ import { Slime, Frog, Golem } from './enemy.js';
 import { generateLevel, TILE } from './world.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // CORRECTION: Restauration de toutes les références à l'interface utilisateur
     const ui = {
         canvas: document.getElementById('gameCanvas'),
         ctx: document.getElementById('gameCanvas').getContext('2d'),
@@ -38,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(ui.gameTitle) ui.gameTitle.textContent = config.gameTitle;
 
             await loadAssets();
-            // CORRECTION: On appelle la configuration des menus au lieu de lancer le jeu directement
             setupMenus();
             setupInput();
         } catch (error) {
@@ -75,9 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await Promise.all(promises);
     }
     
-    // CORRECTION: Restauration de la logique des menus
     function setupMenus() {
-        if(!ui.mainMenu) { // Si les menus n'existent pas, on lance le jeu directement
+        if(!ui.mainMenu) { 
             initGame();
             return;
         }
@@ -93,17 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('#mainMenu button').forEach(b => b.style.display = 'block');
         document.body.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
-            const difficulty = e.target.dataset.difficulty;
             if (action) handleMenuAction(action);
-            if (difficulty) setDifficulty(difficulty);
         });
-        ui.btnRestart.onclick = initGame;
+        if(ui.btnRestart) ui.btnRestart.onclick = initGame;
     }
 
     function handleMenuAction(action) {
         switch(action) {
             case 'start': initGame(); break;
-            // ... (autres cas pour options, etc. si vous les réactivez)
         }
     }
     
@@ -112,9 +106,29 @@ document.addEventListener('DOMContentLoaded', () => {
         [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
     }
 
+    // NOUVEAU: Fonction pour trouver un point d'apparition sûr
+    function findSpawnPoint(game, config) {
+        const { tileSize, worldWidth, worldHeight } = config;
+        const worldWidthInTiles = Math.floor(worldWidth / tileSize);
+        const worldHeightInTiles = Math.floor(worldHeight / tileSize);
+        const spawnX = Math.floor(worldWidthInTiles / 2);
+
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
+                // Point d'apparition trouvé : 2 tuiles au-dessus du sol
+                return {
+                    x: spawnX * tileSize,
+                    y: (y - 2) * tileSize
+                };
+            }
+        }
+        // Point de secours si aucun sol n'est trouvé
+        return { x: worldWidth / 2, y: 100 };
+    }
+
     function initGame() {
         game = {
-            player: new Player(config.worldWidth / 2, 100, config),
+            player: null, // Le joueur sera créé après avoir trouvé un point d'apparition
             camera: { x: 0, y: 0 },
             tileMap: [], enemies: [], particles: [],
             score: 0, lives: config.player.maxLives, over: false,
@@ -123,9 +137,16 @@ document.addEventListener('DOMContentLoaded', () => {
             loseLife: loseLife
         };
         gameSettings = { godMode: false }; 
+        
         generateLevel(game, config, {});
 
-        // CORRECTION: On s'assure de cacher les menus et d'afficher le HUD
+        // CORRECTION: On trouve un point d'apparition sûr AVANT de créer le joueur
+        const spawnPoint = findSpawnPoint(game, config);
+        game.player = new Player(spawnPoint.x, spawnPoint.y, config);
+
+        // On positionne la caméra sur le joueur
+        updateCamera(true); 
+
         if(ui.mainMenu) {
             [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m?.classList.remove('active'));
             ui.hud?.classList.add('active');
@@ -146,15 +167,22 @@ document.addEventListener('DOMContentLoaded', () => {
         game.enemies.forEach(e => e.update(game));
         game.enemies = game.enemies.filter(e => !e.isDead);
         updateParticles();
-        updateCamera();
+        updateCamera(false);
         mouse.left = false; mouse.right = false;
     }
     
-    function updateCamera() {
+    function updateCamera(isInstant = false) {
         const targetX = game.player.x - ui.canvas.width / 2;
         const targetY = game.player.y - ui.canvas.height / 2;
-        game.camera.x += (targetX - game.camera.x) * 0.1;
-        game.camera.y += (targetY - game.camera.y) * 0.1;
+        
+        if (isInstant) {
+            game.camera.x = targetX;
+            game.camera.y = targetY;
+        } else {
+            game.camera.x += (targetX - game.camera.x) * 0.1;
+            game.camera.y += (targetY - game.camera.y) * 0.1;
+        }
+        
         game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - ui.canvas.width));
         game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - ui.canvas.height));
     }
