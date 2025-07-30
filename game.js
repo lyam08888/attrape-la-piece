@@ -124,12 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         game = {
             player: null,
             camera: { x: 0, y: 0 },
-            tileMap: [], enemies: [], particles: [],
+            tileMap: [], enemies: [], particles: [], fallingBlocks: [], // NOUVEAU: Pour les blocs qui tombent
             score: 0, lives: config.player.maxLives, time: config.player.gameTime, over: false,
             config: config,
             createParticles: createParticles,
             loseLife: loseLife,
-            timeLast: Date.now()
+            timeLast: Date.now(),
+            // NOUVEAU: On expose la fonction de physique des arbres au jeu
+            propagateTreeCollapse: propagateTreeCollapse
         };
         gameSettings = { godMode: false }; 
         
@@ -161,12 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
             updateParticles();
+            updateFallingBlocks(); // NOUVEAU: Mise à jour des blocs qui tombent
             updateCamera(false);
             updateTimer();
             mouse.left = false; mouse.right = false;
         } catch (error) {
             console.error("Erreur dans la boucle de jeu:", error);
-            game.over = true; // Arrête le jeu en cas d'erreur
+            game.over = true;
         }
     }
     
@@ -204,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
 
         drawTileMap();
+        drawFallingBlocks(); // NOUVEAU: Dessine les blocs qui tombent
         
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
         game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
@@ -212,6 +216,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
         drawInventoryUI();
         updateHUD();
+    }
+
+    // NOUVEAU: Logique pour la chute des blocs d'arbres
+    function propagateTreeCollapse(startX, startY) {
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
+
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
+            
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
+
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
+
+            if (!isSupported) {
+                game.fallingBlocks.push({
+                    x: x * config.tileSize,
+                    y: y * config.tileSize,
+                    vy: 0,
+                    tileType: tile
+                });
+                game.tileMap[y][x] = TILE.AIR;
+
+                // Ajoute les voisins à la file d'attente pour vérifier s'ils tombent aussi
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
+                }
+            }
+        }
+    }
+
+    function updateFallingBlocks() {
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
+                if (game.player.inventory[block.tileType] !== undefined) {
+                    game.player.inventory[block.tileType]++;
+                }
+                createParticles(block.x + tileSize / 2, block.y + tileSize / 2, 5, '#fff');
+            }
+        });
+    }
+
+    function drawFallingBlocks() {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ui.ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
     }
 
     function drawTileMap() {
