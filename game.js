@@ -1,7 +1,14 @@
-// Config
-const TAILLE_GRILLE = 64;
+// PARAMÈTRES JEU
+let LEVELS = [
+  { grid: 64, json: 'level1.json' },
+  { grid: 80, json: 'level1.json' },
+  { grid: 96, json: 'level1.json' }
+];
+let currentLevel = 0;
+let TAILLE_GRILLE = LEVELS[0].grid;
+let config, level;
 
-// Chargement des images
+// Chargement des sprites PNG
 const spritePlayer = new Image();
 const spriteCoin = new Image();
 const spriteEnemy = new Image();
@@ -11,14 +18,24 @@ spriteCoin.src = "assets/coin.png";
 spriteEnemy.src = "assets/enemy.png";
 spriteBonus.src = "assets/bonus.png";
 
-let config, level;
-
 // Sons
 const catchSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b7bbd48.mp3');
 const bonusSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_1114e9d6bc.mp3');
 const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3');
+const upSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_116c041e06.mp3');
 
-// Attente chargement
+// DOM
+const canvas = document.getElementById('pixelCanvas');
+const ctx = canvas.getContext('2d');
+const startButton = document.getElementById('startButton');
+const scoreBoard = document.getElementById('scoreBoard');
+const scoreValue = document.getElementById('scoreValue');
+const highScoreElem = document.getElementById('highScore');
+const gameOverMenu = document.getElementById('gameOver');
+const lifeCountElem = document.getElementById('lifeCount');
+const levelNumElem = document.getElementById('levelNum');
+canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.style.display = 'none';
+
 let loaded = 0;
 function checkReady() {
   loaded++;
@@ -28,53 +45,53 @@ spritePlayer.onload = checkReady;
 spriteCoin.onload = checkReady;
 spriteEnemy.onload = checkReady;
 spriteBonus.onload = checkReady;
-
 fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
-fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkReady(); });
+fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
 
-// DOM refs
-const canvas = document.getElementById('pixelCanvas');
-const ctx = canvas.getContext('2d');
-const startButton = document.getElementById('startButton');
-const scoreBoard = document.getElementById('scoreBoard');
-const scoreValue = document.getElementById('scoreValue');
-const highScoreElem = document.getElementById('highScore');
-const gameOverMenu = document.getElementById('gameOver');
-canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.style.display = 'none';
+let player = {}, coin = {}, enemies = [], bonus = null, score = 0, playing = false, bonusTimer = 0, lives = 3, highScore = 0;
 
-// Vars jeu
-let player = {}, coin = {}, enemies = [], bonus = null, score = 0, playing = false, bonusTimer = 0;
-let highScore = localStorage.getItem("attrape_highscore") || 0;
+if (localStorage.getItem("attrape_highscore")) {
+  highScore = parseInt(localStorage.getItem("attrape_highscore"));
+}
 
-// --- Game init
-function initGame() {
+function initGame(first = false) {
+  TAILLE_GRILLE = LEVELS[currentLevel].grid;
+  canvas.width = canvas.height = TAILLE_GRILLE;
   player = { x: level.playerStart.x, y: level.playerStart.y, size: config.playerSize };
   coin = { x: level.coinStart.x, y: level.coinStart.y, size: config.coinSize };
   enemies = (level.enemies || []).map(e => ({
     x: e.x, y: e.y, size: config.enemySize,
     dx: e.dx ? Math.sign(e.dx) : 1,
     dy: e.dy ? Math.sign(e.dy) : 0,
-    speed: config.enemySpeed + Math.random()
+    speed: config.enemySpeed
   }));
   bonus = null;
   score = 0;
   bonusTimer = 0;
-  updateScore();
+  lives = config.lives;
+  updateScore(0);
   updateHighScore();
+  updateLives();
+  updateLevelNum();
+  if (first) currentLevel = 0;
 }
 
-// --- Menus
 function startGame() {
-  document.getElementById('startMenu').style.display = 'none';
-  gameOverMenu.style.display = 'none';
-  canvas.style.display = 'block';
-  scoreBoard.style.display = 'block';
-  playing = true;
-  initGame();
-  window.focus();
-  document.addEventListener('keydown', onKeyDown);
-  requestAnimationFrame(gameLoop);
+  currentLevel = 0;
+  fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{
+    level = l;
+    document.getElementById('startMenu').style.display = 'none';
+    gameOverMenu.style.display = 'none';
+    canvas.style.display = 'block';
+    scoreBoard.style.display = 'block';
+    playing = true;
+    initGame(true);
+    window.focus();
+    document.addEventListener('keydown', onKeyDown);
+    requestAnimationFrame(gameLoop);
+  });
 }
+
 function endGame(lost = false) {
   playing = false;
   if (score > highScore) {
@@ -82,22 +99,46 @@ function endGame(lost = false) {
     localStorage.setItem("attrape_highscore", highScore);
     updateHighScore();
   }
-  if (lost) {
-    gameOverMenu.innerHTML = 'GAME OVER !<br><button id="restartButton">REJOUER</button>';
-    loseSound.currentTime = 0; loseSound.play();
-  } else {
-    gameOverMenu.innerHTML = 'VICTOIRE !<br><button id="restartButton">REJOUER</button>';
-  }
+  let txt = lost ? 'GAME OVER !' : 'VICTOIRE !';
+  let btn = '<button id="restartButton">REJOUER</button>';
+  if (!lost && currentLevel < LEVELS.length-1) btn += ' <button id="nextLevel">Niveau suivant</button>';
+  gameOverMenu.innerHTML = txt + '<br>' + btn;
+  (lost ? loseSound : upSound).play();
   gameOverMenu.style.display = 'block';
   canvas.style.display = 'none';
   document.removeEventListener('keydown', onKeyDown);
-  document.getElementById('restartButton').onclick = restartGame;
+  document.getElementById('restartButton').onclick = startGame;
+  let nextBtn = document.getElementById('nextLevel');
+  if (nextBtn) nextBtn.onclick = nextLevel;
 }
-function restartGame() { startGame(); }
-function updateScore() { scoreValue.textContent = score; }
-function updateHighScore() { highScoreElem.textContent = highScore; }
 
-// --- Déplacement
+function nextLevel() {
+  currentLevel++;
+  fetch(LEVELS[currentLevel].json).then(r=>r.json()).then(l=>{
+    level = l;
+    canvas.width = canvas.height = LEVELS[currentLevel].grid;
+    playing = true;
+    gameOverMenu.style.display = 'none';
+    canvas.style.display = 'block';
+    scoreBoard.style.display = 'block';
+    initGame();
+    window.focus();
+    document.addEventListener('keydown', onKeyDown);
+    requestAnimationFrame(gameLoop);
+  });
+}
+
+function updateScore(anim = 0) {
+  if(anim>0) {
+    scoreValue.style.color = "#fff634";
+    setTimeout(()=>scoreValue.style.color="#fff",320);
+  }
+  scoreValue.textContent = score;
+}
+function updateHighScore() { highScoreElem.textContent = highScore; }
+function updateLives() { lifeCountElem.textContent = lives; }
+function updateLevelNum() { levelNumElem.textContent = currentLevel+1; }
+
 function onKeyDown(e) {
   if (!playing) return;
   let k = e.key.toLowerCase();
@@ -109,7 +150,6 @@ function onKeyDown(e) {
   player.y = Math.max(0, Math.min(TAILLE_GRILLE - player.size, player.y));
 }
 
-// --- Collision
 function isColliding(a, b) {
   return (
     a.x < b.x + b.size &&
@@ -119,7 +159,6 @@ function isColliding(a, b) {
   );
 }
 
-// --- Mouvements ennemis
 function moveEnemies() {
   for (let enemy of enemies) {
     enemy.x += enemy.dx * enemy.speed;
@@ -129,11 +168,11 @@ function moveEnemies() {
   }
 }
 
-// --- Bonus gestion
 function handleBonus() {
   if (!bonus && Math.random() < (config.bonusFreq || 0.01)) {
-    const spawn = (level.bonusSpawns || level.coinSpawns)[Math.floor(Math.random() * (level.bonusSpawns || level.coinSpawns).length)];
-    bonus = { x: spawn.x, y: spawn.y, size: config.bonusSize, timer: 180 };
+    const spawns = (level.bonusSpawns || level.coinSpawns);
+    const spawn = spawns[Math.floor(Math.random() * spawns.length)];
+    bonus = { x: spawn.x, y: spawn.y, size: config.bonusSize, timer: 250 };
   }
   if (bonus) {
     bonus.timer--;
@@ -141,7 +180,20 @@ function handleBonus() {
   }
 }
 
-// --- Game loop
+// Vies et hit / respawn
+function playerHit() {
+  lives--;
+  updateLives();
+  if (lives <= 0) {
+    setTimeout(() => endGame(true), 200);
+    return;
+  }
+  // Petit respawn du joueur (position safe)
+  player.x = level.playerStart.x;
+  player.y = level.playerStart.y;
+}
+
+// GAME LOOP
 function gameLoop() {
   if (!playing) return;
   ctx.clearRect(0, 0, TAILLE_GRILLE, TAILLE_GRILLE);
@@ -159,7 +211,8 @@ function gameLoop() {
 
   // Collision pièce
   if (isColliding(player, coin)) {
-    score += config.coinScore || 10; updateScore();
+    score += config.coinScore || 10;
+    updateScore(1);
     catchSound.currentTime = 0; catchSound.play();
     if (level.coinSpawns && level.coinSpawns.length) {
       const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
@@ -172,7 +225,7 @@ function gameLoop() {
 
   // Collision bonus
   if (bonus && isColliding(player, bonus)) {
-    score += config.bonusScore || 50; updateScore();
+    score += config.bonusScore || 50; updateScore(1);
     bonusSound.currentTime = 0; bonusSound.play();
     bonus = null;
   }
@@ -180,18 +233,18 @@ function gameLoop() {
   // Collision ennemis
   for (let enemy of enemies) {
     if (isColliding(player, enemy)) {
-      setTimeout(() => endGame(true), 120);
+      playerHit();
       return;
     }
   }
-  // Victoire
-  if (score >= (config.winScore || 120)) {
-    setTimeout(() => endGame(false), 200); return;
+  // Victoire = atteindre le winScore du niveau
+  if (score >= (config.winScore || 70)) {
+    score += config.levelUpBonus || 0;
+    setTimeout(() => endGame(false), 350); return;
   }
   moveEnemies();
   handleBonus();
   requestAnimationFrame(gameLoop);
 }
 
-// --- Start
 startButton.addEventListener('click', startGame);
