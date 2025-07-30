@@ -37,7 +37,6 @@ export class Player {
 
         this.vy += physics.gravity;
         
-        // NOUVEAU: Logique de minage et de placement
         this.handleMiningAndPlacing(mouse, game);
 
         this.handleTileCollisions(game);
@@ -142,15 +141,29 @@ export class Player {
 
     draw(ctx, assets, skinKey, isGodMode) {
         ctx.save();
-        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
-        
-        ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
-        ctx.translate(this.x, this.y);
-        if (this.dir === -1) {
-            ctx.scale(-1, 1);
-            ctx.translate(-this.w, 0);
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+            ctx.globalAlpha = 0.5;
         }
-        ctx.fillRect(0, 0, this.w, this.h);
+
+        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+
+        // CORRECTION: Si le sprite de base regarde vers la gauche,
+        // on le retourne quand le joueur va à droite (dir === 1).
+        // Si votre sprite de base regarde à droite, changez la condition en (this.dir === -1).
+        if (this.dir === 1) {
+            ctx.scale(-1, 1);
+        }
+
+        const skinAsset = assets[skinKey];
+        if (skinAsset) {
+            // CORRECTION: On dessine le sprite du joueur, et non plus un rectangle.
+            ctx.drawImage(skinAsset, -this.w / 2, -this.h / 2, this.w, this.h);
+        } else {
+            // Fallback si l'image n'est pas chargée
+            ctx.fillStyle = isGodMode ? 'gold' : '#ea4335';
+            ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+        }
+        
         ctx.restore();
     }
 }
