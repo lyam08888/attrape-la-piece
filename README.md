@@ -1,22 +1,43 @@
-# Super Pixel Adventure
+Super Pixel Adventure
+Bienvenue dans Super Pixel Adventure, un jeu de plateforme 2D complet inspiré des classiques 8-bit, développé en HTML5 et JavaScript.
 
-Ceci est un jeu de plateforme 2D simple créé en HTML5 Canvas et JavaScript.
+🌟 Fonctionnalités Principales
+Menus Complets et Fonctionnels : Naviguez entre le menu principal, les options et les contrôles.
 
-## Comment jouer
+Options de Gameplay :
 
-1.  Ouvrez `index.html` dans un navigateur web moderne.
-2.  Choisissez votre personnage dans le menu.
-3.  Cliquez sur "Démarrer".
+God Mode : Devenez invincible avec une aura dorée !
 
-## Contrôles
+Difficulté Réglable : Choisissez entre Facile, Normal et Difficile pour ajuster le défi.
 
--   **Flèches Gauche/Droite** : Bouger
--   **Flèche Haut / Espace** : Sauter (appuyez à nouveau en l'air pour un double saut)
+Contrôle du Son : Activez ou désactivez tous les effets sonores.
 
-## Structure du projet
+Style Rétro Authentique : Plongez dans une ambiance inspirée de Mario Bros avec des graphismes pixelisés, des couleurs vives et une interface style NES.
 
--   `index.html`: Fichier principal du jeu.
--   `game.js`: Contient toute la logique du jeu.
--   `config.json`: Paramètres généraux du jeu.
--   `level1.json`: Données du premier niveau.
--   `assets/`: Contient toutes les images.
+Gameplay Riche et Dynamique :
+
+Physique Améliorée : Sauts précis, double saut, et zones aquatiques.
+
+Cycle Jour/Nuit et Météo : Le monde change pendant que vous jouez.
+
+Niveaux Détaillés : Explorez des niveaux remplis de plateformes, d'ennemis variés et de bonus.
+
+Checkpoints pour sauvegarder votre progression.
+
+🚀 Comment Lancer le Jeu
+Téléchargez le projet : Assurez-vous d'avoir tous les fichiers (index.html, game.js, config.json, level1.json) et le dossier assets dans le même répertoire.
+
+Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne (Chrome, Firefox, etc.).
+
+Jouez ! Utilisez les menus pour configurer votre partie et lancez-vous dans l'aventure.
+
+🎮 Contrôles
+Clavier
+Bouger : Flèches Gauche / Droite ou Q / D
+
+Sauter : Espace ou Flèche Haut
+
+Pause : P
+
+Mobile
+Des contrôles tactiles apparaîtront automatiquement à l'écran.
