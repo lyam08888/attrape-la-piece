@@ -12,8 +12,11 @@ let powers = { invincible: 0, slow: 0 };
 const skinPaths = ["assets/player.png", "assets/skin1.png", "assets/skin2.png"];
 let skinIndex = 0;
 const spritePlayer = new Image(), spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
-spritePlayer.src = skinPaths[skinIndex]; spriteCoin.src = "assets/coin.png"; spriteEnemy.src = "assets/enemy.png";
-spriteBonus.src = "assets/bonus.png"; spriteWall.src = "assets/wall.png";
+spritePlayer.src = skinPaths[skinIndex]; 
+spriteCoin.src = "assets/coin.png"; 
+spriteEnemy.src = "assets/enemy.png";
+spriteBonus.src = "assets/bonus.png"; 
+spriteWall.src = "assets/wall.png";
 
 // --- SONS/MUSIQUE ---
 const catchSound = new Audio('assets/powerup.wav'), deathSound = new Audio('assets/death.wav'), bonusSound = new Audio('assets/powerup.wav');
@@ -29,9 +32,19 @@ canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.s
 // --- MOBILE TOUCHES ---
 document.getElementById('mobileControls').style.display = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'block':'none';
 
+// --- CHARGEMENT DES ASSETS ---
+let assetsToLoad = 5; // Nombre d'images réelles à charger (player, coin, enemy, bonus, wall)
 let loaded = 0;
-function checkReady() { loaded++; if (loaded >= 7) startButton.style.display = 'block'; }
-[spritePlayer,spriteCoin,spriteEnemy,spriteBonus,spriteWall].forEach(img=>img.onload=checkReady);
+function checkReady() {
+  loaded++; 
+  if (loaded >= assetsToLoad + 2) startButton.style.display = 'block'; // 2 fetch (config + level)
+}
+
+// Pour chaque sprite, s'il échoue à charger, on continue quand même (pas de blocage !)
+[spritePlayer, spriteCoin, spriteEnemy, spriteBonus, spriteWall].forEach(img => {
+  img.onload = checkReady;
+  img.onerror = checkReady; // même s'il manque, débloque
+});
 fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
 fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
 
@@ -93,7 +106,7 @@ function updateLives() { lifeCountElem.textContent=lives; }
 
 // --- CONTROLS & COLLISIONS ---
 function onKeyDown(e){movePlayer(e.key);}
-function mobileMove(dir){const kmap={up:"ArrowUp",down:"ArrowDown",left:"ArrowLeft",right:"ArrowRight"};movePlayer(kmap[dir]);}
+function mobileMove(dir){const kmap={up:"ArrowUp",down:"ArrowDown",left:"ArrowLeft",right:"Right"};movePlayer(kmap[dir]);}
 function movePlayer(k) {
   if(!playing)return; let nx=player.x, ny=player.y;
   if (["ArrowUp","z","Z"].includes(k)) ny -= config.playerSpeed;
@@ -163,8 +176,7 @@ function gameLoop() {
 
 // --- LEADERBOARD (fake data + hook Firebase/Supabase) ---
 function loadLeaderboard(){
-  // Si tu utilises Firebase/Supabase, récupère ici puis:
-  leaderboardList.innerHTML = '<li>Lyes: 400</li><li>Guest: 280</li><li>Toto: 210</li>'; // Exemple
+  leaderboardList.innerHTML = '<li>Lyes: 400</li><li>Guest: 280</li><li>Toto: 210</li>';
 }
 
 // --- UI ---
