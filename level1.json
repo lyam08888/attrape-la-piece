@@ -1,4 +1,11 @@
 {
   "playerStart": { "x": 200, "y": 200 },
-  "coinStart": { "x": 100, "y": 100 }
+  "coinStart": { "x": 100, "y": 100 },
+  "enemies": [],
+  "obstacles": [],
+  "coinSpawns": [
+    { "x": 100, "y": 100 },
+    { "x": 300, "y": 80 },
+    { "x": 60, "y": 280 }
+  ]
 }
