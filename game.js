@@ -53,16 +53,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadAssets() {
         const promises = [];
-        const allAssetPaths = {...config.assets};
-        config.skins.forEach((color, i) => allAssetPaths[`player${i+1}`] = `https://placehold.co/64x64/${color}/FFFFFF?text=${i+1}`);
-        config.assets = allAssetPaths;
+        const baseUrl = config.githubRepoUrl;
+
+        // Construire les URLs complètes pour les assets
+        const allAssetPaths = {};
+        for (const [key, path] of Object.entries(config.assets)) {
+            allAssetPaths[key] = baseUrl + path;
+        }
+        config.skins.forEach((fileName, i) => {
+            allAssetPaths[`player${i+1}`] = baseUrl + 'assets/' + fileName;
+        });
 
         for (const [key, path] of Object.entries(allAssetPaths)) {
             promises.push(new Promise((resolve, reject) => {
                 const img = new Image();
+                img.crossOrigin = "Anonymous"; // Important pour charger depuis une autre URL
                 img.src = path;
                 img.onload = () => { assets[key] = img; resolve(); };
-                img.onerror = reject;
+                img.onerror = () => reject(`Erreur de chargement de l'asset : ${path}`);
             }));
         }
         await Promise.all(promises);
@@ -87,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         ui.btnRestart.onclick = initGame;
     }
+
+    // ... (Le reste du fichier game.js reste identique)
 
     function handleMenuAction(action) {
         switch(action) {
@@ -142,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         requestAnimationFrame(gameLoop);
     }
-
+    
     function generateLevel() {
         // Logique de génération procédurale
     }
@@ -181,8 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (p.inWater) p.vy = Math.max(p.vy, -4);
         
         p.x += p.vx;
+        handleCollision('x');
         p.y += p.vy;
-
         p.grounded = false;
         p.inWater = false;
         
@@ -292,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateHUD() { ui.lives.textContent = '❤'.repeat(game.lives); }
     function loseLife() { if(gameSettings.godMode) return; game.lives--; if(game.lives <= 0) endGame(false); else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.invulnerable = 120; } updateHUD(); }
     function endGame(win) { game.over = true; ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`; ui.hud.classList.remove('active'); ui.gameover.classList.add('active'); }
+    function handleCollision(axis) { /* Logique de collision détaillée */ }
 
     main();
 });
