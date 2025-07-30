@@ -7,15 +7,18 @@ const scoreBoard = document.getElementById('scoreBoard');
 const scoreValue = document.getElementById('scoreValue');
 const gameOverMenu = document.getElementById('gameOver');
 
-// Préparer pour plusieurs tailles
-let playerImg = new Image(), coinImg = new Image();
+// Sprites
+let playerImg = new Image(), coinImg = new Image(), enemyImg = new Image();
 playerImg.onload = checkStart;
 coinImg.onload = checkStart;
+enemyImg.onload = checkStart;
 playerImg.src = 'assets/player.png';
 coinImg.src = 'assets/coin.png';
+enemyImg.src = 'assets/enemy.png';
 
 // Son
 let catchSound = new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa94ae.mp3');
+let loseSound = new Audio('https://cdn.pixabay.com/audio/2022/10/16/audio_12a47e5270.mp3'); // Son de défaite (exemple)
 
 // Charger config et niveau
 fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkStart(); });
@@ -24,10 +27,11 @@ fetch('level1.json').then(r=>r.json()).then(l=>{ level = l; checkStart(); });
 let ready = 0;
 function checkStart() {
   ready++;
-  if (ready === 4) startButton.style.display = 'block';
+  if (ready === 5) startButton.style.display = 'block';
 }
 
-let player = {}, coin = {}, score = 0, playing = false;
+// --- État du jeu ---
+let player = {}, coin = {}, enemies = [], score = 0, playing = false;
 
 function initGame() {
   player = {
@@ -40,6 +44,14 @@ function initGame() {
     y: level.coinStart.y,
     size: config.coinSize || 32
   };
+  // Générer les ennemis depuis le niveau
+  enemies = (level.enemies || []).map(e => ({
+    x: e.x,
+    y: e.y,
+    size: config.enemySize || 32,
+    dx: e.dx || config.enemySpeed || 2, // Vitesse horizontale initiale
+    dy: e.dy || 0 // Optionnel, tu peux ajouter des ennemis verticaux dans le JSON
+  }));
   score = 0;
   updateScore();
 }
@@ -56,11 +68,20 @@ function startGame() {
   requestAnimationFrame(gameLoop);
 }
 
-function endGame() {
+function endGame(lost = false) {
   playing = false;
+  if (lost) {
+    gameOverMenu.innerHTML = 'Game Over !<br>Tu as été touché !<br><button id="restartButton">Rejouer</button>';
+    loseSound.currentTime = 0;
+    loseSound.play();
+  } else {
+    gameOverMenu.innerHTML = 'Félicitations !<br>Tu as gagné !<br><button id="restartButton">Rejouer</button>';
+  }
   gameOverMenu.style.display = 'block';
   canvas.style.display = 'none';
   document.removeEventListener('keydown', onKeyDown);
+  // Remettre le listener sur le bouton rejouer
+  document.getElementById('restartButton').addEventListener('click', restartGame);
 }
 
 function restartGame() {
@@ -83,26 +104,50 @@ function updateScore() {
   scoreValue.textContent = score;
 }
 
+// Fonction collision rectangulaire (rapide)
+function isColliding(a, b) {
+  return (
+    a.x < b.x + b.size &&
+    a.x + a.size > b.x &&
+    a.y < b.y + b.size &&
+    a.y + a.size > b.y
+  );
+}
+
+function moveEnemies() {
+  for (let enemy of enemies) {
+    // Mouvement horizontal simple : rebond sur les bords
+    enemy.x += enemy.dx;
+    enemy.y += enemy.dy;
+    if (enemy.x < 0 || enemy.x > 400 - enemy.size) enemy.dx *= -1;
+    if (enemy.y < 0 || enemy.y > 400 - enemy.size) enemy.dy *= -1;
+  }
+}
+
 function gameLoop() {
   if (!playing) return;
   ctx.clearRect(0, 0, 400, 400);
-  // Fond de canvas personnalisable
   ctx.fillStyle = config.bgColor || "#171d29";
   ctx.fillRect(0, 0, 400, 400);
 
-  ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+  // Pièce
   ctx.drawImage(coinImg, coin.x, coin.y, coin.size, coin.size);
 
-  // Collision : centre à centre
-  if (
-    Math.abs(player.x + player.size / 2 - (coin.x + coin.size / 2)) < player.size &&
-    Math.abs(player.y + player.size / 2 - (coin.y + coin.size / 2)) < player.size
-  ) {
+  // Joueur
+  ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+
+  // Ennemis
+  for (let enemy of enemies) {
+    ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
+  }
+
+  // Collisions
+  if (isColliding(player, coin)) {
     score += config.coinScore;
     updateScore();
     catchSound.currentTime = 0;
     catchSound.play();
-    // Nouvelle position dans les spawn prévus ou au hasard
+    // Nouvelle position pour la pièce
     if (level.coinSpawns && level.coinSpawns.length) {
       const sp = level.coinSpawns[Math.floor(Math.random() * level.coinSpawns.length)];
       coin.x = sp.x;
@@ -113,15 +158,23 @@ function gameLoop() {
     }
   }
 
-  // Victoire : score atteint winScore
+  // Collision avec un ennemi = Game Over
+  for (let enemy of enemies) {
+    if (isColliding(player, enemy)) {
+      setTimeout(() => endGame(true), 200);
+      return;
+    }
+  }
+
+  // Gagner la partie
   if (score >= (config.winScore || 100)) {
-    setTimeout(endGame, 350); // Petite pause avant "Bravo"
+    setTimeout(() => endGame(false), 350);
     return;
   }
 
+  moveEnemies();
   requestAnimationFrame(gameLoop);
 }
 
-// Event listeners
+// Listeners
 startButton.addEventListener('click', startGame);
-if (restartButton) restartButton.addEventListener('click', restartGame);
