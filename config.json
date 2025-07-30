@@ -6,6 +6,9 @@
   "worldWidth": 4000,
   "worldHeight": 2000,
   "tileSize": 16,
+  "generation": {
+    "enemyCount": 50
+  },
   "physics": {
     "gravity": 0.35,
     "jumpForce": 7,
