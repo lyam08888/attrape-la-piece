@@ -74,6 +74,48 @@ function buyPower(type) {
   updateXP(0);
 }
 
+// DÉCOR MARIO
+let bgCloudOffset = 0;
+function drawBackground() {
+  // Ciel dégradé bleu clair
+  let grad = ctx.createLinearGradient(0,0,0,canvas.height);
+  grad.addColorStop(0, "#77cfff");
+  grad.addColorStop(1, "#e9f5ff");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Sol (vert)
+  ctx.fillStyle = "#79e065";
+  ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+  // Buissons arrondis
+  for(let i=0; i<canvas.width; i+=120) {
+    ctx.beginPath();
+    ctx.arc(i+40, canvas.height-40, 25, Math.PI, 2*Math.PI);
+    ctx.arc(i+65, canvas.height-40, 20, Math.PI, 2*Math.PI);
+    ctx.arc(i+90, canvas.height-40, 15, Math.PI, 2*Math.PI);
+    ctx.fillStyle = "#57b54b";
+    ctx.fill();
+  }
+  // Nuages animés
+  for(let i=0;i<canvas.width;i+=200){
+    let x = (i + 60 + bgCloudOffset) % (canvas.width + 200) - 100;
+    ctx.beginPath();
+    ctx.arc(x,60,24,Math.PI,2*Math.PI);
+    ctx.arc(x+20,64,18,Math.PI,2*Math.PI);
+    ctx.arc(x+38,58,15,Math.PI,2*Math.PI);
+    ctx.fillStyle="#fff"; ctx.globalAlpha=0.7; ctx.fill(); ctx.globalAlpha=1;
+  }
+  // Fleurs sur l'herbe
+  for(let i=0; i<canvas.width; i+=70) {
+    ctx.beginPath();
+    ctx.arc(i+25, canvas.height-20, 3, 0, 2*Math.PI);
+    ctx.arc(i+30, canvas.height-22, 2, 0, 2*Math.PI);
+    ctx.fillStyle = "#ffe";
+    ctx.fill();
+  }
+}
+
 // INIT
 function initGame(first=false) {
   TAILLE_GRILLE = LEVELS[currentLevel].grid;
@@ -166,7 +208,7 @@ function playerHit() {
 function gameLoop() {
   if(!playing)return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#23272e";ctx.fillRect(0,0,canvas.width,canvas.height);
+  drawBackground();
   if(level.obstacles){ctx.fillStyle=config.obstacleColor;for(let o of level.obstacles){ctx.fillRect(o.x*7,o.y*7,o.w*7,o.h*7);}}
   ctx.drawImage(spriteCoin,coin.x,coin.y,coin.size,coin.size);
   if(bonus)ctx.drawImage(spriteBonus,bonus.x,bonus.y,bonus.size,bonus.size);
@@ -183,7 +225,9 @@ function gameLoop() {
   }
   for(let enemy of enemies) {if(isColliding(player,enemy)) playerHit();}
   if(mode==="classic" && score>=(config.winScore||100)){setTimeout(()=>endGame(false),350);return;}
-  moveEnemies(); handleBonus(); requestAnimationFrame(gameLoop);
+  moveEnemies(); handleBonus();
+  bgCloudOffset += 0.3;
+  requestAnimationFrame(gameLoop);
 }
 
 startButton.addEventListener('click', startGame);
