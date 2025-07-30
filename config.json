@@ -1,9 +1,10 @@
 {
-  "playerSpeed": 4,
+  "playerSpeed": 1,
   "coinScore": 10,
-  "winScore": 100,
-  "enemySpeed": 2,
-  "playerSize": 32,
-  "coinSize": 32,
-  "bgColor": "#171d29"
+  "winScore": 50,
+  "enemySpeed": 1,
+  "playerSize": 3,
+  "coinSize": 3,
+  "enemySize": 3,
+  "bgColor": "#23272e"
 }
