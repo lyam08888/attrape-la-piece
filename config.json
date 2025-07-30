@@ -39,11 +39,11 @@
     "enemy_slime": "assets/enemy_slime.png",
     "enemy_frog": "assets/enemy_frog.png",
     "enemy_golem": "assets/enemy_golem.png",
-    "tool_pickaxe": "https://placehold.co/32x32/808080/FFFFFF?text=P",
-    "tool_shovel": "https://placehold.co/32x32/8B4513/FFFFFF?text=S",
-    "tool_sword": "https://placehold.co/32x32/C0C0C0/FFFFFF?text=SW",
-    "tool_bow": "https://placehold.co/32x32/DAA520/FFFFFF?text=B",
-    "tool_fishing_rod": "https://placehold.co/32x32/00008B/FFFFFF?text=FR",
-    "tool_knife": "https://placehold.co/32x32/A9A9A9/FFFFFF?text=K"
+    "tool_pickaxe": "assets/tool_pickaxe",
+    "tool_shovel": "assets/tool_shovel",
+    "tool_sword": "assets/tool_sword",
+    "tool_bow": "assets/tool_bow",
+    "tool_fishing_rod": "assets/tool_fishing_rod",
+    "tool_knife": "assets/tool_knife"
   }
 }
