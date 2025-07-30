@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fonction principale qui lance le chargement
     async function main() {
         try {
-            // CORRECTION: On charge les fichiers de configuration avec fetch
             const [configRes, levelRes] = await Promise.all([
                 fetch('config.json'),
                 fetch('level1.json')
@@ -66,11 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAssets() {
         const promises = [];
         const allAssetPaths = {};
-        
-        // CORRECTION: Utilise l'URL de base du dépôt GitHub défini dans config.json
         const baseUrl = config.githubRepoUrl || ''; 
 
-        // Combine les assets de base et les skins en une seule liste
         for (const [key, path] of Object.entries(config.assets)) {
             allAssetPaths[key] = baseUrl + path;
         }
@@ -159,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
         game = {
             player: new Player(80, 300, config),
             camera: { x: 0 },
-            platforms: [], enemies: [], particles: [], water: [], coins: [], checkpoints: [], bonuses: [],
+            // NOUVEAU: Initialisation des nouveaux tableaux pour les objets du niveau
+            platforms: [], enemies: [], particles: [], water: [], coins: [], bonuses: [], decorations: [],
             lastCheckpoint: { x: 80, y: 300 },
             score: 0, lives: config.player.maxLives, time: config.player.gameTime,
             timeLast: Date.now(), over: false, dayNightCycle: 0,
@@ -235,6 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.translate(-game.camera.x, 0);
         drawScenery();
         game.platforms.forEach(p => ui.ctx.drawImage(assets.wall, p.x, p.y, p.w, p.h));
+        
+        // NOUVEAU: Dessine les nouveaux éléments
+        if (assets.decoration_bush) {
+            game.decorations.forEach(d => ui.ctx.drawImage(assets.decoration_bush, d.x, d.y, d.w, d.h));
+        }
+        game.coins.forEach(c => ui.ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h));
+        game.bonuses.forEach(b => ui.ctx.drawImage(assets.bonus, b.x, b.y, b.w, b.h));
+
         game.water.forEach(w => { ui.ctx.fillStyle = 'rgba(0, 100, 200, 0.6)'; ui.ctx.fillRect(w.x, w.y, w.w, w.h); });
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
         game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
@@ -277,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.globalAlpha = 1.0;
     }
     
-    // Gère les entrées clavier et tactiles
     function setupInput() {
         keys = { left: false, right: false, jump: false };
         document.addEventListener('keydown', e => {
