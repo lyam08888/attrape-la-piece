@@ -1,6 +1,5 @@
-// =================================================================================
-// SUPER PIXEL ADVENTURE 2 - GAME ENGINE
-// =================================================================================
+import { Player } from './player.js';
+import { Slime, Frog, Golem } from './enemy.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const ui = {
@@ -136,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initGame() {
         game = {
-            player: { x: 80, y: 300, vx: 0, vy: 0, w: 32, h: 32, grounded: false, canDoubleJump: true, dir: 1, invulnerable: 0, inWater: false },
+            player: new Player(80, 300, config),
             camera: { x: 0 },
             platforms: [], enemies: [], particles: [], water: [], coins: [], checkpoints: [], bonuses: [],
             lastCheckpoint: { x: 80, y: 300 },
@@ -181,12 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
         for(let i = 0; i < enemyCount; i++) {
             const platform = game.platforms[Math.floor(Math.random() * game.platforms.length)];
             const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
-            game.enemies.push({
-                x: platform.x + platform.w / 2, y: platform.y - 32,
-                w: 32, h: 32, vx: -0.5, vy: 0, dir: -1,
-                type: enemyType, health: enemyType === 'golem' ? 2 : 1,
-                jumpTimer: Math.random() * 100
-            });
+            let enemyClass;
+            if (enemyType === 'slime') enemyClass = Slime;
+            if (enemyType === 'frog') enemyClass = Frog;
+            if (enemyType === 'golem') enemyClass = Golem;
+            game.enemies.push(new enemyClass(platform.x + platform.w / 2, platform.y - 32, config));
         }
         
         for(let i = 1; i <= level.generation.checkpoints; i++) {
@@ -205,61 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function update() {
-        updatePlayer();
-        updateEnemies();
+        game.player.update(keys, game);
+        game.enemies.forEach(e => e.update(game.platforms, level.worldWidth));
         updateParticles();
         updateCamera();
         updateTimer();
         updateWorld();
     }
-
-    function updatePlayer() {
-        const p = game.player;
-        const speed = config.physics.playerSpeed * (gameSettings.difficulty === 'Easy' ? 0.8 : 1);
-        
-        if (keys.left) { p.vx = -speed; p.dir = -1; }
-        else if (keys.right) { p.vx = speed; p.dir = 1; }
-        else { p.vx *= p.inWater ? config.physics.waterFriction : config.physics.friction; }
-
-        if (keys.jump) {
-            if (p.grounded || p.inWater) { p.vy = -config.physics.jumpForce; p.canDoubleJump = true; playSound('jump'); }
-            else if (p.canDoubleJump) { p.vy = -config.physics.jumpForce * 0.8; p.canDoubleJump = false; playSound('jump'); }
-            keys.jump = false;
-        }
-
-        p.vy += p.inWater ? config.physics.gravity * 0.4 : config.physics.gravity;
-        if (p.inWater) p.vy = Math.max(p.vy, -4);
-        
-        p.x += p.vx;
-        p.y += p.vy;
-
-        p.grounded = false;
-        p.inWater = false;
-        
-        game.platforms.forEach(plat => handlePlatformCollision(p, plat));
-        game.water.forEach(w => { if(rectCollide(p, w)) p.inWater = true; });
-
-        if (p.y > level.worldHeight) loseLife();
-        if (p.invulnerable > 0) p.invulnerable--;
-    }
     
-    function updateEnemies() {
-        game.enemies.forEach(e => {
-            e.vy += config.physics.gravity;
-            e.x += e.vx;
-            e.y += e.vy;
-            let onGround = false;
-            game.platforms.forEach(plat => {
-                if (rectCollide(e, plat) && e.vy >= 0) {
-                    e.y = plat.y - e.h;
-                    e.vy = 0;
-                    onGround = true;
-                }
-            });
-            if (onGround && (e.x < 0 || e.x > level.worldWidth)) e.vx *= -1;
-        });
-    }
-
     function updateParticles() {
         game.particles = game.particles.filter(p => {
             p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
@@ -293,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
         drawScenery();
         game.platforms.forEach(p => ui.ctx.drawImage(assets.wall, p.x, p.y, p.w, p.h));
         game.water.forEach(w => { ui.ctx.fillStyle = 'rgba(0, 100, 200, 0.6)'; ui.ctx.fillRect(w.x, w.y, w.w, w.h); });
-        game.enemies.forEach(e => ui.ctx.drawImage(assets[`enemy_${e.type}`], e.x, e.y, e.w, e.h));
-        drawPlayer();
+        game.enemies.forEach(e => e.draw(ui.ctx, assets));
+        game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
         drawParticles();
         ui.ctx.restore();
     }
@@ -311,17 +262,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
     }
     
-    function drawScenery() { /* Dessin des nuages, collines, etc. */ }
-
-    function drawPlayer() {
-        const p = game.player;
-        ui.ctx.save();
-        ui.ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
-        if (p.dir === -1) { ui.ctx.scale(-1, 1); }
-        if (gameSettings.godMode) { ui.ctx.shadowColor = 'gold'; ui.ctx.shadowBlur = 15; }
-        if (p.invulnerable > 0 && p.invulnerable % 10 < 5) ui.ctx.globalAlpha = 0.5;
-        ui.ctx.drawImage(assets[`player${currentSkin + 1}`], -p.w / 2, -p.h / 2, p.w, p.h);
-        ui.ctx.restore();
+    function drawScenery() {
+        // Simple parallax for hills
+        ui.ctx.fillStyle = '#8CD65C';
+        const hillX = (-game.camera.x * 0.5) % ui.canvas.width;
+        ui.ctx.beginPath();
+        ui.ctx.moveTo(hillX, level.worldHeight);
+        ui.ctx.arc(hillX + 200, level.worldHeight, 200, Math.PI, 0, false);
+        ui.ctx.arc(hillX + 600, level.worldHeight, 250, Math.PI, 0, false);
+        ui.ctx.arc(hillX + 1000, level.worldHeight, 200, Math.PI, 0, false);
+        ui.ctx.fill();
     }
     
     function drawParticles() {
@@ -331,16 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.ctx.fillRect(p.x, p.y, 2, 2);
         });
         ui.ctx.globalAlpha = 1.0;
-    }
-
-    function handlePlatformCollision(p, plat) {
-        if (rectCollide(p, plat)) {
-            if (p.vy > 0 && p.y + p.h - p.vy <= plat.y + 1) {
-                p.y = plat.y - p.h;
-                p.vy = 0;
-                p.grounded = true;
-            }
-        }
     }
     
     function setupInput() {
@@ -365,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function rectCollide(r1, r2) { return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y; }
     function playSound(type) { if(!gameSettings.soundEnabled || !audioCtx) return; /* ... */ }
     function updateHUD() { ui.lives.textContent = '❤'.repeat(game.lives); ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; ui.timer.textContent = `TEMPS: ${game.time}`; }
     function loseLife() { if(gameSettings.godMode) return; game.lives--; if(game.lives <= 0) endGame(false); else { game.player.x = game.lastCheckpoint.x; game.player.y = game.lastCheckpoint.y; game.player.invulnerable = 120; } updateHUD(); }
