@@ -1,10 +1,9 @@
 {
-  "worldWidth": 4800,
+  "worldWidth": 3000,
   "worldHeight": 540,
   "generation": {
     "platformCount": 40,
-    "enemyCount": 30,
-    "waterPits": 5,
+    "enemyCount": 15,
     "checkpoints": 3
   }
 }
