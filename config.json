@@ -3,17 +3,19 @@
   "githubRepoUrl": "",
   "canvasWidth": 960,
   "canvasHeight": 540,
-  "tileSize": 32,
+  "tileSize": 16,
   "physics": {
-    "gravity": 0.45,
-    "jumpForce": 9.5,
-    "playerSpeed": 3.2,
+    "gravity": 0.35,
+    "jumpForce": 7,
+    "playerSpeed": 2.5,
     "friction": 0.88,
     "waterFriction": 0.65
   },
   "player": {
     "maxLives": 5,
-    "gameTime": 180
+    "gameTime": 300,
+    "width": 16,
+    "height": 28
   },
   "skins": [
     "player1.png",
@@ -21,10 +23,13 @@
     "player3.png"
   ],
   "assets": {
-    "wall": "assets/wall.png",
+    "tile_grass": "tile_grass.png",
+    "tile_dirt": "tile_dirt.png",
+    "tile_stone": "tile_stone.png",
+    "tile_coal": "tile_coal.png",
+    "tile_iron": "tile_iron.png",
     "coin": "assets/coin.png",
     "bonus": "assets/bonus.png",
-    "decoration_bush": "assets/decoration_bush.png",
     "enemy_slime": "assets/enemy_slime.png",
     "enemy_frog": "assets/enemy_frog.png",
     "enemy_golem": "assets/enemy_golem.png",
