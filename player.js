@@ -1,13 +1,11 @@
 import { TILE } from './world.js';
 
-// NOUVEAU: Dureté des blocs pour le minage
 const TILE_HARDNESS = {
     [TILE.GRASS]: 1, [TILE.DIRT]: 1,
     [TILE.LEAVES]: 0.5, [TILE.WOOD]: 2,
     [TILE.STONE]: 3, [TILE.COAL]: 3.5, [TILE.IRON]: 4
 };
 
-// NOUVEAU: Outils efficaces contre certains types de blocs
 const TOOL_EFFECTIVENESS = {
     'shovel': [TILE.GRASS, TILE.DIRT],
     'axe': [TILE.WOOD, TILE.LEAVES],
@@ -30,7 +28,6 @@ export class Player {
         this.swingTimer = 0;
         this.tools = ['pickaxe', 'shovel', 'sword', 'bow', 'fishing_rod', 'knife'];
         this.selectedToolIndex = 0;
-        // NOUVEAU: Système de minage
         this.miningTarget = null;
         this.miningProgress = 0;
     }
@@ -65,24 +62,21 @@ export class Player {
         if (isActionPressed) {
             this.swingTimer = 15;
             
-            const target = this.getTargetTile(game);
+            const target = this.getTargetTile(mouse, game);
             if (target) {
-                // Si on change de cible, on réinitialise la progression
                 if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
                     this.miningTarget = { x: target.x, y: target.y, type: target.type };
                     this.miningProgress = 0;
                 }
                 
                 const toolMultiplier = TOOL_EFFECTIVENESS[selectedTool]?.includes(target.type) ? 2 : 1;
-                this.miningProgress += 0.05 * toolMultiplier; // Vitesse de minage
+                this.miningProgress += 0.05 * toolMultiplier;
 
                 game.miningEffect = { x: target.x, y: target.y, progress: this.miningProgress / TILE_HARDNESS[target.type] };
 
                 if (this.miningProgress >= TILE_HARDNESS[target.type]) {
                     this.mineBlock(target.x, target.y, target.type, game);
-                    this.miningTarget = null;
-                    this.miningProgress = 0;
-                    game.miningEffect = null;
+                    this.resetMining(game);
                 }
             } else {
                 this.resetMining(game);
@@ -90,9 +84,6 @@ export class Player {
         } else {
             this.resetMining(game);
         }
-
-        // Consomme l'action pour éviter les répétitions
-        if (keys.action) keys.action = false;
     }
 
     resetMining(game) {
@@ -101,12 +92,28 @@ export class Player {
         game.miningEffect = null;
     }
 
-    getTargetTile(game) {
-        const { tileSize, player } = this.config;
-        const checkX = this.x + this.w / 2 + (this.dir * (this.w / 2 + 8));
-        const checkY = this.y + this.h / 2;
-        const tileX = Math.floor(checkX / tileSize);
-        const tileY = Math.floor(checkY / tileSize);
+    getTargetTile(mouse, game) {
+        const { tileSize } = this.config;
+        let tileX, tileY;
+
+        if (mouse.left) {
+            const worldMouseX = mouse.x + game.camera.x;
+            const worldMouseY = mouse.y + game.camera.y;
+            tileX = Math.floor(worldMouseX / tileSize);
+            tileY = Math.floor(worldMouseY / tileSize);
+
+            const playerCenterX = this.x + this.w / 2;
+            const playerCenterY = this.y + this.h / 2;
+            const dist = Math.sqrt(Math.pow(playerCenterX - worldMouseX, 2) + Math.pow(playerCenterY - worldMouseY, 2));
+            if (dist > this.config.player.reach * tileSize) return null;
+
+        } else {
+            const checkX = this.x + this.w / 2 + (this.dir * (this.w / 2 + 8));
+            const checkY = this.y + this.h / 2;
+            tileX = Math.floor(checkX / tileSize);
+            tileY = Math.floor(checkY / tileSize);
+        }
+        
         const tile = game.tileMap[tileY]?.[tileX];
 
         if (tile > 0) {
@@ -127,9 +134,79 @@ export class Player {
         }
     }
 
-    handleTileCollisions(game) { /* ... (code de collision inchangé) ... */ }
-    checkEnemyCollisions(game) { /* ... (code de collision inchangé) ... */ }
-    rectCollide(other) { /* ... (code de collision inchangé) ... */ }
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+        this.x += this.vx;
+        if (this.vx > 0) {
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
+            let right = Math.floor((this.x + this.w) / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[right] > 0) {
+                    this.x = right * tileSize - this.w - 0.01;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        } else if (this.vx < 0) {
+            let top = Math.floor(this.y / tileSize);
+            let bottom = Math.floor((this.y + this.h - 1) / tileSize);
+            let left = Math.floor(this.x / tileSize);
+            for (let tileY = top; tileY <= bottom; tileY++) {
+                if (game.tileMap[tileY]?.[left] > 0) {
+                    this.x = (left + 1) * tileSize + 0.01;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        }
+        this.y += this.vy;
+        this.grounded = false;
+        if (this.vy > 0) {
+            let left = Math.floor((this.x + 1) / tileSize);
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
+            let bottom = Math.floor((this.y + this.h) / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[bottom]?.[tileX] > 0) {
+                    this.y = bottom * tileSize - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                    this.canDoubleJump = true;
+                    break;
+                }
+            }
+        } else if (this.vy < 0) {
+            let left = Math.floor((this.x + 1) / tileSize);
+            let right = Math.floor((this.x + this.w - 1) / tileSize);
+            let top = Math.floor(this.y / tileSize);
+            for (let tileX = left; tileX <= right; tileX++) {
+                if (game.tileMap[top]?.[tileX] > 0) {
+                    this.y = (top + 1) * tileSize;
+                    this.vy = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+    checkEnemyCollisions(game) {
+        game.enemies.forEach(enemy => {
+            if (this.rectCollide(enemy) && !enemy.isDying) {
+                if (this.vy > 0 && (this.y + this.h) < (enemy.y + enemy.h * 0.5)) {
+                    enemy.takeDamage(game);
+                    this.vy = -this.config.physics.jumpForce * 0.6;
+                } 
+                else if (this.invulnerable === 0) {
+                    game.loseLife();
+                }
+            }
+        });
+    }
+    
+    rectCollide(other) {
+        return this.x < other.x + other.w && this.x + this.w > other.x &&
+               this.y < other.y + other.h && this.y + this.h > other.y;
+    }
 
     drawTool(ctx, assets) {
         ctx.save();
