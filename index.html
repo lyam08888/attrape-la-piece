@@ -17,11 +17,12 @@
     #menu { background: #101722ee; color: #ffe01b; font-size: 1.08em; padding: 30px 22px 15px 22px; border-radius: 16px; position:absolute; top:15%; left:50%; transform:translateX(-50%); z-index:2; text-align:center; }
     #skinlist img { width:48px; height:48px; margin:4px; border-radius:10px; border:3px solid #888; cursor:pointer; transition: border .2s;}
     #skinlist img.selected { border:3px solid #ffe01b; }
-    #controls {display:none; margin-top:14px;}
-    #controls button {padding:10px 20px; margin:0 8px; background:#ffe01b; border:none; border-radius:6px; color:#111; font-size:1.3em;}
+    #controls {display:flex; margin-top:14px; gap:14px;}
+    #controls button {padding:14px 20px; background:#ffe01b; border:none; border-radius:6px; color:#111; font-size:1.3em; min-width:56px;}
     #bonusbar img { vertical-align:middle; margin:0 4px; width:24px; height:24px;}
     #bonusbar span { font-size:1em;}
     #cmd { color:#ffc940; font-size:0.95em; margin:6px 0 3px 0;}
+    @media (max-width:700px){ #gameCanvas{width:98vw;height:54vw; min-width: 250px;} }
   </style>
 </head>
 <body>
@@ -40,7 +41,7 @@
         ← / → ou flèches pour bouger<br>
         ↑ ou Espace pour sauter (2× = double saut)<br>
         P = pause<br>
-        <span style="color:#8bf;">Tente d'attraper un bonus en jouant !</span>
+        <span style="color:#8bf;">Bonus aléatoires, trous, timer, etc.</span>
       </div>
       <div id="skinlist"></div>
       <button id="btnStart">Commencer</button>
@@ -50,10 +51,11 @@
       <button id="btnRestart">Rejouer</button>
     </div>
     <div id="controls">
-      <button onclick="mobileKey('ArrowLeft')">←</button>
-      <button onclick="mobileKey('ArrowUp')">↑</button>
-      <button onclick="mobileKey('ArrowUp','double')">↑↑</button>
-      <button onclick="mobileKey('ArrowRight')">→</button>
+      <button id="btnLeft">←</button>
+      <button id="btnJump">↑</button>
+      <button id="btnJump2">↑↑</button>
+      <button id="btnRight">→</button>
+      <button id="btnPause">⏸</button>
     </div>
   </div>
   <script src="platformer.js"></script>
