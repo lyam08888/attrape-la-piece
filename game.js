@@ -3,22 +3,48 @@ import { Slime, Frog, Golem } from './enemy.js';
 import { generateLevel, TILE } from './world.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // CORRECTION: Restauration de toutes les références à l'interface utilisateur
     const ui = {
         canvas: document.getElementById('gameCanvas'),
         ctx: document.getElementById('gameCanvas').getContext('2d'),
-        // ... (autres éléments UI comme avant)
+        gameTitle: document.getElementById('gameTitle'),
+        mainMenu: document.getElementById('mainMenu'),
+        optionsMenu: document.getElementById('optionsMenu'),
+        controlsMenu: document.getElementById('controlsMenu'),
+        menuTitle: document.getElementById('menuTitle'),
+        skinlist: document.getElementById('skinlist'),
+        hud: document.getElementById('hud'),
+        score: document.getElementById('score'),
+        lives: document.getElementById('lives'),
+        timer: document.getElementById('timer'),
+        gameover: document.getElementById('gameover'),
+        message: document.getElementById('message'),
+        btnRestart: document.getElementById('btnRestart'),
+        godModeBtn: document.getElementById('godModeBtn'),
+        soundBtn: document.getElementById('soundBtn'),
+        controls: document.getElementById('controls'),
+        btnLeft: document.getElementById('btnLeft'),
+        btnJump: document.getElementById('btnJump'),
+        btnRight: document.getElementById('btnRight'),
     };
 
     let config, assets = {}, game, keys = {}, mouse = {x:0, y:0, left:false, right:false}, currentSkin = 0, gameSettings = {};
 
     async function main() {
-        config = await (await fetch('config.json')).json();
-        ui.canvas.width = config.canvasWidth;
-        ui.canvas.height = config.canvasHeight;
-        await loadAssets();
-        setupInput(); // Inclut maintenant la souris
-        // Remplacé par un démarrage direct pour simplifier
-        initGame();
+        try {
+            config = await (await fetch('config.json')).json();
+            ui.canvas.width = config.canvasWidth;
+            ui.canvas.height = config.canvasHeight;
+            if(ui.gameTitle) ui.gameTitle.textContent = config.gameTitle;
+
+            await loadAssets();
+            // CORRECTION: On appelle la configuration des menus au lieu de lancer le jeu directement
+            setupMenus();
+            setupInput();
+        } catch (error) {
+            console.error("Erreur de chargement:", error);
+            if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em; margin-top:10px;">Vérifiez les fichiers et la console (F12). Erreur: ${error}</p>`;
+        }
     }
 
     async function loadAssets() {
@@ -49,6 +75,43 @@ document.addEventListener('DOMContentLoaded', () => {
         await Promise.all(promises);
     }
     
+    // CORRECTION: Restauration de la logique des menus
+    function setupMenus() {
+        if(!ui.mainMenu) { // Si les menus n'existent pas, on lance le jeu directement
+            initGame();
+            return;
+        }
+        ui.menuTitle.textContent = "Choisissez un héros";
+        ui.skinlist.innerHTML = '';
+        config.skins.forEach((_, i) => {
+            const img = assets[`player${i+1}`].cloneNode();
+            img.onclick = () => selectSkin(i);
+            if (i === currentSkin) img.classList.add("selected");
+            ui.skinlist.appendChild(img);
+        });
+        
+        document.querySelectorAll('#mainMenu button').forEach(b => b.style.display = 'block');
+        document.body.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            const difficulty = e.target.dataset.difficulty;
+            if (action) handleMenuAction(action);
+            if (difficulty) setDifficulty(difficulty);
+        });
+        ui.btnRestart.onclick = initGame;
+    }
+
+    function handleMenuAction(action) {
+        switch(action) {
+            case 'start': initGame(); break;
+            // ... (autres cas pour options, etc. si vous les réactivez)
+        }
+    }
+    
+    function selectSkin(i) {
+        currentSkin = i;
+        [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
+    }
+
     function initGame() {
         game = {
             player: new Player(config.worldWidth / 2, 100, config),
@@ -59,8 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
             createParticles: createParticles,
             loseLife: loseLife
         };
-        gameSettings = { godMode: false }; // Réinitialisation des paramètres
+        gameSettings = { godMode: false }; 
         generateLevel(game, config, {});
+
+        // CORRECTION: On s'assure de cacher les menus et d'afficher le HUD
+        if(ui.mainMenu) {
+            [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.gameover].forEach(m => m?.classList.remove('active'));
+            ui.hud?.classList.add('active');
+        }
+
         requestAnimationFrame(gameLoop);
     }
     
@@ -77,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
         game.enemies = game.enemies.filter(e => !e.isDead);
         updateParticles();
         updateCamera();
-        // Réinitialise l'état de la souris pour éviter les actions répétées
         mouse.left = false; mouse.right = false;
     }
     
@@ -99,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         drawTileMap();
         
         game.enemies.forEach(e => e.draw(ui.ctx, assets));
-        // CORRECTION: On passe maintenant les bons arguments à la fonction de dessin du joueur
         game.player.draw(ui.ctx, assets, `player${currentSkin + 1}`, gameSettings.godMode);
         drawParticles();
         ui.ctx.restore();
@@ -127,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawInventoryUI() {
+        if (!game) return;
         const ctx = ui.ctx;
         const startX = 20;
         const startY = 20;
