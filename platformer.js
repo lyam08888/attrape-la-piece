@@ -16,7 +16,7 @@ const GRAVITY = 0.32, JUMP = 5.2, SPEED = 2.4, FRICTION = 0.81;
 const WORLD_W = 3000, WORLD_H = 224;
 const GAME_TIME = 60; // secondes
 
-let PAUSED = false, IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+let PAUSED = false;
 
 let skinNames = ["player1","player2","player3"];
 let skinImgs = {}, images = {}, allImagesLoaded = 0;
@@ -61,23 +61,27 @@ document.addEventListener('keydown', function(e){
 });
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
-if(IS_MOBILE) controlsDiv.style.display="flex";
-function mobileKey(k, mode){
-  if(mode==="double") { keys[k]=true; setTimeout(()=>{keys[k]=false;keys[k]=true;setTimeout(()=>{keys[k]=false},80)},80); }
-  else { keys[k]=true; setTimeout(()=>{keys[k]=false},150); }
-}
+document.getElementById('btnLeft').ontouchstart = ()=>{keys["ArrowLeft"]=true};
+document.getElementById('btnLeft').ontouchend = ()=>{keys["ArrowLeft"]=false};
+document.getElementById('btnRight').ontouchstart = ()=>{keys["ArrowRight"]=true};
+document.getElementById('btnRight').ontouchend = ()=>{keys["ArrowRight"]=false};
+document.getElementById('btnJump').ontouchstart = ()=>{keys["ArrowUp"]=true};
+document.getElementById('btnJump').ontouchend = ()=>{keys["ArrowUp"]=false};
+document.getElementById('btnJump2').ontouchstart = ()=>{keys["ArrowUp"]=true; setTimeout(()=>{keys["ArrowUp"]=false;keys["ArrowUp"]=true;setTimeout(()=>{keys["ArrowUp"]=false},80)},80)};
+document.getElementById('btnJump2').ontouchend = ()=>{keys["ArrowUp"]=false};
+document.getElementById('btnPause').onclick = ()=>{PAUSED=!PAUSED};
 
 btnStart.onclick = ()=>{
   menuDiv.style.display="none";
   hudDiv.style.display="flex";
   startGame();
-  if(IS_MOBILE) controlsDiv.style.display="flex";
+  controlsDiv.style.display="flex";
 }
 btnRestart.onclick = ()=>{
   gameoverDiv.style.display="none";
   hudDiv.style.display="flex";
   startGame();
-  if(IS_MOBILE) controlsDiv.style.display="flex";
+  controlsDiv.style.display="flex";
 };
 
 function startGame() {
@@ -86,7 +90,6 @@ function startGame() {
     camX: 0,
     player: {x:30, y:160, vx:0, vy:0, w:24, h:24, grounded:false, doubleJump:true, frame:0, dir:1, dead:false, win:false},
     coins: [],
-    coinsPhys: [],
     enemies: [],
     platforms: [],
     holes: [],
@@ -102,29 +105,42 @@ function startGame() {
   };
   // Sol principal
   game.platforms.push({x:0, y:204, w:400, h:24});
-  // Trous, plateformes plus "malines"
+  // Trous, plateformes variées
   game.holes = [
     {x:420, w:45},{x:920, w:45},{x:1900, w:70},{x:1600, w:28}
   ];
   let platBase = 400;
-  for(let i=0; i<6; i++) {
-    let xx = platBase+i*360, ww = 140-12*i, yy = 204-(i%2===0?30:60);
-    if(i==2) {yy=130;}
-    if(i==4) {yy=60;}
-    game.platforms.push({x:xx, y:yy, w:ww, h:10});
-  }
+  let pfpos = [
+    // x, y, w
+    [platBase+20, 178, 90],
+    [platBase+180, 135, 65],
+    [900, 100, 90],
+    [1200, 50, 55],
+    [1460, 90, 90],
+    [1700, 60, 110],
+    [2000, 135, 65],
+    [2200, 110, 90],
+    [2400, 178, 150]
+  ];
+  pfpos.forEach(([x,y,w])=>game.platforms.push({x:x, y:y, w:w, h:10}));
   // Sol de droite
   game.platforms.push({x:2500, y:204, w:500, h:24});
   // Ajout de trous dans le sol
   game.platforms = game.platforms.concat(game.holes.map(h=>({x:h.x+h.w, y:204, w: (WORLD_W-h.x-h.w), h:24})));
-  // Pièces (certaines rebondissent)
-  [
-    {x:82, y:140},{x:610, y:80},{x:860, y:50},{x:1215, y:110},{x:1440, y:65},
-    {x:1715, y:115},{x:2020, y:60},{x:2470, y:150},{x:1800, y:50},{x:200, y:40}
-  ].forEach(c=>{
-    game.coins.push({...c});
-    game.coinsPhys.push({x:c.x, y:c.y-25, vy:2+Math.random()*2, bounce:2+Math.random(), t:0});
-  });
+
+  // Pièces : placées sur les plateformes (jamais en l'air)
+  function addCoinsOnPlatform(plat, n=2) {
+    for(let i=0;i<n;i++) {
+      let px = plat.x+10+i*(plat.w-20)/(n-1);
+      let py = plat.y-24;
+      game.coins.push({x:px,y:py});
+    }
+  }
+  // Sol et chaque plateforme (pas dans les trous)
+  addCoinsOnPlatform({x:0,y:204,w:400}, 4);
+  pfpos.forEach((p)=>addCoinsOnPlatform({x:p[0],y:p[1],w:p[2]},2));
+  addCoinsOnPlatform({x:2500,y:204,w:500},3);
+
   // Ennemis
   game.enemies = [
     {x:520, y:188, w:24, h:24, dir:1, vx:0.7},
@@ -191,43 +207,39 @@ function update() {
   if (p.x > WORLD_W-p.w) p.x = WORLD_W-p.w;
   if (p.y > 600 && !p.win) die(false);
   game.camX = Math.max(0, Math.min(p.x - 120, WORLD_W-canvas.width));
-  // Pièces avec physique
+  // Pièces normales : PAS de physique
   for(let i=game.coins.length-1;i>=0;i--) {
     let c = game.coins[i];
     if (rectCollide({x:c.x,y:c.y,w:24,h:24}, p)) {
       playCoinSound();
       game.score += 10;
       hudScore.textContent = game.score;
-      game.coins.splice(i,1); game.coinsPhys.splice(i,1);
+      game.coins.splice(i,1);
     }
   }
-  // Pièces animation rebond
-  for(let i=0;i<game.coinsPhys.length;i++){
-    let coin = game.coinsPhys[i];
-    coin.vy += 0.36;
-    coin.y += coin.vy;
-    if(coin.y >= game.coins[i].y) {
-      coin.y = game.coins[i].y;
-      coin.vy = -coin.vy * 0.36 * coin.bounce;
-      if(Math.abs(coin.vy)<0.9) coin.vy = 0;
-    }
-  }
-  // Bonus apparition aléa
+  // Bonus apparition et "rebond" dynamique
   if(!game.bonus && Math.random()<0.003){
-    let bx = 180+Math.random()*(WORLD_W-200);
-    game.bonus = {x:bx, y:40, got:false, vy:0, frame:0, id: Date.now()%3};
-    game.bonusPhys = {x:bx, y:10, vy:3.5+Math.random()*2};
+    let plats = game.platforms.filter(pl=>pl.y<204 && pl.w>35);
+    let plat = plats[Math.floor(Math.random()*plats.length)];
+    let bx = plat.x + 12 + Math.random()*(plat.w-32);
+    game.bonus = {x:bx, y:plat.y-25, got:false, vy:3+Math.random()*1.8, frame:0, id: Date.now()%3};
+    game.bonusPhys = {x:bx, y:plat.y-55, vy:game.bonus.vy};
   }
   if(game.bonus && !game.bonus.got){
-    game.bonusPhys.vy += 0.32;
+    game.bonusPhys.vy += 0.38;
     game.bonusPhys.y += game.bonusPhys.vy;
-    if(game.bonusPhys.y > 160) { game.bonusPhys.y = 160; game.bonusPhys.vy*=-0.35;}
+    let plat = game.platforms.find(pl=>game.bonusPhys.x>pl.x-12&&game.bonusPhys.x<pl.x+pl.w+12&&pl.y<204);
+    if(game.bonusPhys.y > plat.y-24) {
+      game.bonusPhys.y = plat.y-24;
+      game.bonusPhys.vy*=-0.42;
+      if(Math.abs(game.bonusPhys.vy)<0.8) game.bonusPhys.vy = 0;
+    }
     game.bonus.x = game.bonusPhys.x;
     game.bonus.y = game.bonusPhys.y;
     if(rectCollide({x:game.bonus.x,y:game.bonus.y,w:24,h:24},p)){
       game.bonus.got = true;
       let bonusType = ["Double Score","Super Saut","+15s Temps"][game.bonus.id];
-      game.bonusObtained.push({type:bonusType, ts: Date.now()});
+      game.bonusObtained = [{type:bonusType, ts: Date.now()}];
       updateBonusBar(game.bonusObtained);
       if(game.bonus.id===0) game.score+=30;
       if(game.bonus.id===1) {p.vy = -JUMP*1.38;}
@@ -255,7 +267,7 @@ function update() {
   }
 }
 function updateBonusBar(arr){
-  if(arr.length==0) { bonusBar.innerHTML="Aucun"; return;}
+  if(!arr || arr.length==0) { bonusBar.innerHTML="Aucun"; return;}
   bonusBar.innerHTML = arr.map(b=>
     `<img src="assets/bonus.png" title="${b.type}"/> <span>${b.type}</span>`
   ).join(" ");
@@ -319,18 +331,14 @@ function draw() {
     ctx.clearRect(h.x,204,h.w,24);
     ctx.fillStyle="#18391a"; ctx.fillRect(h.x,224,h.w,10);
   }
-  // Pièces avec physique
-  for(let i=0;i<game.coins.length;i++){
-    ctx.save();
-    ctx.translate(game.coins[i].x+12, game.coinsPhys[i].y+12);
-    let scale = 1+0.07*Math.sin(Date.now()/90+i);
-    ctx.scale(scale,scale);
-    ctx.drawImage(images.coin, -12,-12, 24,24);
-    ctx.restore();
+  // Pièces sur plateforme/sol
+  for(let c of game.coins){
+    ctx.drawImage(images.coin, c.x, c.y, 24, 24);
   }
   for(let e of game.enemies){
     ctx.drawImage(images.enemy, e.x, e.y, 24, 24);
   }
+  // Bonus avec animation rebond/dynamique
   if(game.bonus && !game.bonus.got){
     ctx.save();
     ctx.translate(game.bonus.x+12, game.bonus.y+12);
