@@ -1,286 +1,185 @@
-let mode = "classic";
-let skinIndex = 0;
-const skinPaths = [
-  "assets/player.png",
-  "assets/skin1.png",
-  "assets/skin2.png"
-];
-let LEVELS = [
-  { grid: 80, json: 'level1.json' },
-  { grid: 100, json: 'level1.json' },
-  { grid: 120, json: 'level1.json' }
-];
-let currentLevel = 0, TAILLE_GRILLE = LEVELS[0].grid, config, level;
-let powers = { invincible: 0, slow: 0 };
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const hudScore = document.getElementById('score');
+const btnRestart = document.getElementById('btnRestart');
+const gameoverDiv = document.getElementById('gameover');
 
-// SPRITES
-let spritePlayer = new Image();
-const spriteCoin = new Image(), spriteEnemy = new Image(), spriteBonus = new Image(), spriteWall = new Image();
-spritePlayer.src = skinPaths[skinIndex];
-spriteCoin.src = "assets/coin.png";
-spriteEnemy.src = "assets/enemy.png";
-spriteBonus.src = "assets/bonus.png";
-spriteWall.src = "assets/wall.png";
-
-// WebAudio context pour sons dynamiques
-let audioCtx;
-function playSound(type) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let o = audioCtx.createOscillator();
-  let g = audioCtx.createGain();
-  o.connect(g); g.connect(audioCtx.destination);
-
-  if (type === "powerup") {
-    o.type = "triangle";
-    o.frequency.setValueAtTime(700, audioCtx.currentTime);
-    o.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.14);
-    g.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
-    o.start(); o.stop(audioCtx.currentTime + 0.16);
-  }
-  else if (type === "death") {
-    o.type = "square";
-    o.frequency.setValueAtTime(220, audioCtx.currentTime);
-    o.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.30);
-    g.gain.setValueAtTime(0.22, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.31);
-    o.start(); o.stop(audioCtx.currentTime + 0.33);
-  }
-  else if (type === "bonus") {
-    o.type = "sine";
-    o.frequency.setValueAtTime(900, audioCtx.currentTime);
-    o.frequency.linearRampToValueAtTime(1800, audioCtx.currentTime + 0.15);
-    g.gain.setValueAtTime(0.16, audioCtx.currentTime);
-    g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.18);
-    o.start(); o.stop(audioCtx.currentTime + 0.2);
-  }
-}
-
-// Musique de fond "générée" (arpège boucle simple)
-let musicPlaying = false;
-function playMusic() {
-  if (musicPlaying) return;
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let notes = [440, 587, 784, 587, 659, 523, 698, 523]; // petit air "joyeux"
-  let t = audioCtx.currentTime;
-  for (let i = 0; i < 48; i++) {
-    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.type = "square";
-    o.frequency.value = notes[i % notes.length];
-    o.connect(g); g.connect(audioCtx.destination);
-    let start = t + i * 0.18;
-    let end = start + 0.15;
-    g.gain.setValueAtTime(0.04, start);
-    g.gain.linearRampToValueAtTime(0, end);
-    o.start(start); o.stop(end);
-  }
-  musicPlaying = true;
-  setTimeout(() => { musicPlaying = false; playMusic(); }, notes.length * 180);
-}
-
-// DOM
-const canvas = document.getElementById('pixelCanvas'), ctx = canvas.getContext('2d');
-const startButton = document.getElementById('startButton'), scoreBoard = document.getElementById('scoreBoard'), scoreValue = document.getElementById('scoreValue');
-const highScoreElem = document.getElementById('highScore'), gameOverMenu = document.getElementById('gameOver'), lifeCountElem = document.getElementById('lifeCount'), levelNumElem = document.getElementById('levelNum');
-const xpBar = document.getElementById('xpbar-inner'), shopMsg = document.getElementById('shopMsg');
-const levelDisplay = document.getElementById('levelDisplay');
-canvas.style.display = 'none'; scoreBoard.style.display = 'none'; gameOverMenu.style.display = 'none'; levelDisplay.style.display = 'none';
-
-let loaded = 0, assetsToLoad = 8;
-function checkReady() {
-  loaded++; 
-  if (loaded >= assetsToLoad + 2) startButton.disabled = false;
-}
-[spritePlayer, spriteCoin, spriteEnemy, spriteBonus, spriteWall].forEach(img => { img.onload = checkReady; img.onerror = checkReady; });
-for(let i=1;i<skinPaths.length;i++) {
-  let tmp=new Image();
-  tmp.src=skinPaths[i];
-  tmp.onload=checkReady; tmp.onerror=checkReady;
-}
-fetch('config.json').then(r=>r.json()).then(c=>{ config = c; checkReady(); });
-fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{ level = l; checkReady(); });
-
-let player = {}, coin = {}, enemies = [], bonus = null, score = 0, playing = false, lives = 3, xp = 0, highScore = 0, timer=60;
-if(localStorage.getItem("attrape_highscore")) highScore = parseInt(localStorage.getItem("attrape_highscore"));
-
-// MODES DE JEU
-function selectMode(m) {
-  mode = m;
-  document.querySelectorAll("#modes button").forEach(btn=>btn.classList.remove("selected"));
-  document.getElementById("mode_" + m).classList.add("selected");
-}
-
-// SKINS
-function chooseSkin(idx) {
-  skinIndex = idx;
-  spritePlayer.src = skinPaths[skinIndex];
-  document.querySelectorAll('#skins img').forEach((img,i)=>img.classList.toggle("selected", i===skinIndex));
-}
-
-// SHOP/XP
-function updateXP(val=0) { xp += val; xpBar.style.width = (Math.min(100, (xp%100))) + "%"; }
-function buyPower(type) {
-  if(type==="invincible" && xp>=30){powers.invincible+=1; xp-=30; shopMsg.innerText="Pouvoir acheté !"; setTimeout(()=>shopMsg.innerText="",1000);}
-  else if(type==="slow" && xp>=15){powers.slow+=1; xp-=15; shopMsg.innerText="Pouvoir acheté !"; setTimeout(()=>shopMsg.innerText="",1000);}
-  else shopMsg.innerText="Pas assez d'XP !";
-  updateXP(0);
-}
-
-// DÉCOR MARIO
-let bgCloudOffset = 0;
-function drawBackground() {
-  // Ciel dégradé bleu clair
-  let grad = ctx.createLinearGradient(0,0,0,canvas.height);
-  grad.addColorStop(0, "#77cfff");
-  grad.addColorStop(1, "#e9f5ff");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Sol (vert)
-  ctx.fillStyle = "#79e065";
-  ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
-
-  // Buissons arrondis
-  for(let i=0; i<canvas.width; i+=120) {
-    ctx.beginPath();
-    ctx.arc(i+40, canvas.height-40, 25, Math.PI, 2*Math.PI);
-    ctx.arc(i+65, canvas.height-40, 20, Math.PI, 2*Math.PI);
-    ctx.arc(i+90, canvas.height-40, 15, Math.PI, 2*Math.PI);
-    ctx.fillStyle = "#57b54b";
-    ctx.fill();
-  }
-  // Nuages animés
-  for(let i=0;i<canvas.width;i+=200){
-    let x = (i + 60 + bgCloudOffset) % (canvas.width + 200) - 100;
-    ctx.beginPath();
-    ctx.arc(x,60,24,Math.PI,2*Math.PI);
-    ctx.arc(x+20,64,18,Math.PI,2*Math.PI);
-    ctx.arc(x+38,58,15,Math.PI,2*Math.PI);
-    ctx.fillStyle="#fff"; ctx.globalAlpha=0.7; ctx.fill(); ctx.globalAlpha=1;
-  }
-  // Fleurs sur l'herbe
-  for(let i=0; i<canvas.width; i+=70) {
-    ctx.beginPath();
-    ctx.arc(i+25, canvas.height-20, 3, 0, 2*Math.PI);
-    ctx.arc(i+30, canvas.height-22, 2, 0, 2*Math.PI);
-    ctx.fillStyle = "#ffe";
-    ctx.fill();
-  }
-}
-
-// INIT
-function initGame(first=false) {
-  TAILLE_GRILLE = LEVELS[currentLevel].grid;
-  canvas.width = canvas.height = TAILLE_GRILLE*7;
-  player = {...level.playerStart, size: config.playerSize*7};
-  coin = {...level.coinStart, size: config.coinSize*7};
-  enemies = (level.enemies||[]).map(e=>({...e, size: config.enemySize*7, speed: config.enemySpeed + (currentLevel*0.11)}));
-  bonus = null; score = 0; lives = config.lives; timer=60;
-  updateScore(); updateHighScore(); updateLives(); updateXP(0); levelNumElem.textContent = currentLevel+1;
-  levelDisplay.style.display = "inline-block";
-  if(mode=="timed"){timer=40;}
-  playMusic();
-}
+// --- PHYSIQUE ---
+const GRAVITY = 0.6, JUMP_POWER = 12, MOVE_SPEED = 4, FRICTION = 0.8;
+let game, keys = {};
+document.addEventListener('keydown', e=>{ keys[e.code]=true; });
+document.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
 function startGame() {
-  document.getElementById('mainMenu').style.display = 'none';
-  scoreBoard.style.display = 'block'; canvas.style.display = 'block'; gameOverMenu.style.display = 'none';
-  playing = true; currentLevel = 0;
-  fetch(LEVELS[0].json).then(r=>r.json()).then(l=>{
-    level = l; initGame(true); window.focus(); document.addEventListener('keydown', onKeyDown); requestAnimationFrame(gameLoop);
-    if(mode=="timed") setTimeout(()=>{playing=false;endGame(true);},timer*1000);
-  });
+  game = {
+    camX: 0,
+    player: {x:60, y:260, vx:0, vy:0, w:32, h:42, grounded:false, frame:0, dir:1, dead:false},
+    coins: [],
+    enemies: [],
+    platforms: [
+      {x:0, y:350, w:1200, h:50}, // sol principal
+      {x:200, y:280, w:90, h:15},
+      {x:370, y:220, w:70, h:15},
+      {x:530, y:300, w:70, h:15},
+      {x:690, y:230, w:90, h:15},
+      {x:940, y:340, w:70, h:15}
+    ],
+    score: 0,
+    over: false
+  };
+  // Ajoute pièces
+  game.coins = [
+    {x:215, y:250, r:11}, {x:385, y:190, r:11}, {x:550, y:270, r:11}, {x:710, y:200, r:11},
+    {x:970, y:310, r:11}
+  ];
+  // Ajoute ennemis
+  game.enemies = [
+    {x:420, y:332, w:26, h:16, dir:1, vx:1.2}
+  ];
+  game.camX = 0;
+  hudScore.textContent = 0;
+  gameoverDiv.style.display = "none";
+  requestAnimationFrame(loop);
 }
 
-function endGame(lost=false) {
-  playing = false; document.removeEventListener('keydown', onKeyDown);
-  if(score>highScore){highScore=score;localStorage.setItem("attrape_highscore",highScore);}
-  let txt = lost ? (mode=="timed"?"TEMPS ÉCOULÉ !":"GAME OVER !") : 'VICTOIRE !';
-  let btn = '<button id="restartButton">REJOUER</button>'; 
-  if(!lost && currentLevel<LEVELS.length-1 && mode=="classic") btn += ' <button id="nextLevel">Niveau suivant</button>';
-  gameOverMenu.innerHTML = txt+'<br>'+btn; playSound(lost?"death":"powerup");
-  gameOverMenu.style.display = 'block'; canvas.style.display = 'none'; 
-  document.getElementById('restartButton').onclick = ()=>{ window.location.reload(); };
-  let nextBtn = document.getElementById('nextLevel'); if(nextBtn) nextBtn.onclick = nextLevel;
+function loop() {
+  if (game.over) return;
+  update();
+  draw();
+  requestAnimationFrame(loop);
 }
 
-function nextLevel() { 
-  currentLevel++; fetch(LEVELS[currentLevel].json).then(r=>r.json()).then(l=>{
-    level = l; canvas.style.display='block'; scoreBoard.style.display='block'; gameOverMenu.style.display='none'; playing=true;
-    initGame(); window.focus(); document.addEventListener('keydown', onKeyDown); requestAnimationFrame(gameLoop); 
-  }); 
-}
-function updateScore() { scoreValue.textContent=score; }
-function updateHighScore() { highScoreElem.textContent=highScore; }
-function updateLives() { lifeCountElem.textContent=lives; }
+function update() {
+  let p = game.player;
+  // Déplacement horizontal
+  if (keys["ArrowLeft"]) { p.vx = -MOVE_SPEED; p.dir = -1; }
+  else if (keys["ArrowRight"]) { p.vx = MOVE_SPEED; p.dir = 1; }
+  else p.vx *= FRICTION;
 
-function onKeyDown(e){movePlayer(e.key);}
-function movePlayer(k) {
-  if(!playing)return; let nx=player.x, ny=player.y;
-  if (["ArrowUp","z","Z"].includes(k)) ny -= config.playerSpeed*7;
-  if (["ArrowDown","s","S"].includes(k)) ny += config.playerSpeed*7;
-  if (["ArrowLeft","q","Q"].includes(k)) nx -= config.playerSpeed*7;
-  if (["ArrowRight","d","D"].includes(k)) nx += config.playerSpeed*7;
-  if (!isInObstacle(nx,ny,player.size)) {player.x=nx;player.y=ny;}
-}
-function isColliding(a,b) {return a.x<b.x+b.size && a.x+a.size>b.x && a.y<b.y+b.size && a.y+a.size>b.y;}
-function isInObstacle(x,y,size){
-  if(!level.obstacles)return false;
-  return level.obstacles.some(o=>x+size>o.x*7&&x<o.x*7+o.w*7&&y+size>o.y*7&&y<o.y*7+o.h*7);
-}
+  // Saut
+  if ((keys["Space"] || keys["ArrowUp"]) && p.grounded) {
+    p.vy = -JUMP_POWER;
+    p.grounded = false;
+  }
+  // Gravité
+  p.vy += GRAVITY;
+  p.x += p.vx;
+  p.y += p.vy;
 
-function moveEnemies() {
-  for(let enemy of enemies){
-    let speed = enemy.speed*7;
-    if(powers.slow>0) speed *= 0.4;
-    enemy.x += enemy.dx * speed;
-    enemy.y += enemy.dy * speed;
-    if (enemy.x<0||enemy.x>canvas.width-enemy.size) enemy.dx*=-1;
-    if (enemy.y<0||enemy.y>canvas.height-enemy.size) enemy.dy*=-1;
-    if(isInObstacle(enemy.x,enemy.y,enemy.size)) {enemy.dx*=-1;enemy.dy*=-1;}
+  // Collision plateformes
+  p.grounded = false;
+  for(let plat of game.platforms){
+    if (rectCollide(p, plat)) {
+      // Arrive d'en haut
+      if (p.vy > 0 && p.y + p.h - p.vy <= plat.y+5) {
+        p.y = plat.y - p.h;
+        p.vy = 0;
+        p.grounded = true;
+      } else if (p.y < plat.y + plat.h && p.vy < 0) {
+        p.y = plat.y + plat.h;
+        p.vy = 0;
+      }
+    }
+  }
+  // Empêche de tomber sous le niveau
+  if (p.y > 600) die();
+  // Caméra suit le joueur
+  game.camX = Math.max(0, p.x - 150);
+
+  // Collisions pièces
+  for(let i=game.coins.length-1;i>=0;i--) {
+    let c = game.coins[i];
+    if (circRectCollide(c, p)) {
+      game.score += 10;
+      hudScore.textContent = game.score;
+      game.coins.splice(i,1);
+    }
+  }
+  // Animation "marche"
+  if (Math.abs(p.vx)>0.5 && p.grounded) p.frame = (p.frame+1)%20;
+  else p.frame = 0;
+
+  // Ennemis : va-et-vient
+  for(let e of game.enemies){
+    e.x += e.vx*e.dir;
+    // Retourne à gauche/droite sur les bords des plateformes
+    let plat = game.platforms.find(pl=>rectCollide(e,pl));
+    if (!plat) e.dir*=-1;
+    if (e.x < 0) e.dir = 1;
+    if (e.x > 1200-e.w) e.dir = -1;
+    // Collision avec joueur : mort
+    if (rectCollide(e,p) && !p.dead) die();
   }
 }
 
-let invincibleFrames=0;
-function handleBonus() {
-  if (!bonus && Math.random() < (config.bonusFreq || 0.01)) {
-    const spawns = (level.bonusSpawns || level.coinSpawns);
-    const spawn = spawns[Math.floor(Math.random() * spawns.length)];
-    bonus = { x: spawn.x*7, y: spawn.y*7, size: config.bonusSize*7, timer: 250 };
-  }
-  if (bonus) { bonus.timer--; if (bonus.timer <= 0) bonus = null;}
-  if(invincibleFrames>0){invincibleFrames--; if(invincibleFrames==0)powers.invincible=0;}
+function die() {
+  game.player.dead = true;
+  game.over = true;
+  setTimeout(()=>gameoverDiv.style.display="block",500);
 }
 
-function playerHit() {
-  if (powers.invincible || invincibleFrames>0) return;
-  lives--; updateLives(); invincibleFrames=60; powers.invincible=0;
-  playSound("death");
-  if (lives <= 0) { setTimeout(() => endGame(true), 250); return;}
-}
-function gameLoop() {
-  if(!playing)return;
+function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawBackground();
-  if(level.obstacles){ctx.fillStyle=config.obstacleColor;for(let o of level.obstacles){ctx.fillRect(o.x*7,o.y*7,o.w*7,o.h*7);}}
-  ctx.drawImage(spriteCoin,coin.x,coin.y,coin.size,coin.size);
-  if(bonus)ctx.drawImage(spriteBonus,bonus.x,bonus.y,bonus.size,bonus.size);
-  if(invincibleFrames%8<4) ctx.drawImage(spritePlayer,player.x,player.y,player.size,player.size);
-  for(let enemy of enemies) ctx.drawImage(spriteEnemy,enemy.x,enemy.y,enemy.size,enemy.size);
+  // Background ciel
+  ctx.fillStyle = "#7ce7ff";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Sol
+  ctx.fillStyle = "#91e66b";
+  ctx.fillRect(0,350-game.camX/10,canvas.width,60);
 
-  if(isColliding(player,coin)){
-    score+=config.coinScore;updateScore();updateXP(config.xpPerCoin);playSound("powerup");
-    let sp=level.coinSpawns[Math.floor(Math.random()*level.coinSpawns.length)];
-    coin.x=sp.x*7;coin.y=sp.y*7;
+  // Plateformes
+  ctx.save();
+  ctx.translate(-game.camX,0);
+  for(let plat of game.platforms){
+    ctx.fillStyle="#68543a";
+    ctx.fillRect(plat.x,plat.y,plat.w,plat.h);
+    ctx.fillStyle="#a0875b";
+    ctx.fillRect(plat.x,plat.y,plat.w,8);
   }
-  if(bonus && isColliding(player,bonus)){
-    score+=config.bonusScore;updateScore();updateXP(config.xpPerBonus);playSound("bonus");bonus=null;
+  // Pièces
+  for(let c of game.coins){
+    ctx.beginPath();
+    ctx.arc(c.x+12,c.y+12,11,0,2*Math.PI);
+    ctx.fillStyle="#ffe338";
+    ctx.fill();
+    ctx.strokeStyle="#e4b318";ctx.lineWidth=3;ctx.stroke();
   }
-  for(let enemy of enemies) {if(isColliding(player,enemy)) playerHit();}
-  if(mode==="classic" && score>=(config.winScore||100)){setTimeout(()=>endGame(false),350);return;}
-  moveEnemies(); handleBonus();
-  bgCloudOffset += 0.3;
-  requestAnimationFrame(gameLoop);
+  // Ennemis
+  for(let e of game.enemies){
+    ctx.fillStyle="#e8352b";
+    ctx.fillRect(e.x,e.y,e.w,e.h);
+    ctx.fillStyle="#fff"; ctx.fillRect(e.x+6,e.y+4,5,5);
+  }
+  // Joueur (sprite simple)
+  let p = game.player;
+  ctx.save();
+  ctx.translate(p.x + p.w/2, p.y + p.h/2);
+  ctx.scale(p.dir,1);
+  // Corps
+  ctx.fillStyle="#1791f5";
+  ctx.fillRect(-16,-18,32,36);
+  // Tête
+  ctx.fillStyle="#ffd38d";
+  ctx.fillRect(-14,-38,28,20);
+  // Jambes (marche)
+  if (p.frame<10) ctx.fillStyle="#3748a2", ctx.fillRect(-10,18,7,13), ctx.fillRect(5,18,7,13);
+  else ctx.fillStyle="#3748a2", ctx.fillRect(-7,18,7,13), ctx.fillRect(3,18,7,13);
+  ctx.restore();
+  ctx.restore();
 }
 
-startButton.addEventListener('click', startGame);
+function rectCollide(a,b) {
+  return a.x+a.w > b.x && a.x < b.x+b.w && a.y+a.h > b.y && a.y < b.y+b.h;
+}
+function circRectCollide(c, r) {
+  let distX = Math.abs(c.x+12 - (r.x+r.w/2));
+  let distY = Math.abs(c.y+12 - (r.y+r.h/2));
+  if (distX > (r.w/2 + c.r)) return false;
+  if (distY > (r.h/2 + c.r)) return false;
+  if (distX <= (r.w/2)) return true;
+  if (distY <= (r.h/2)) return true;
+  let dx=distX-r.w/2, dy=distY-r.h/2;
+  return dx*dx+dy*dy <= c.r*c.r;
+}
+btnRestart.onclick = startGame;
+startGame();
