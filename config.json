@@ -23,11 +23,12 @@
   "assets": {
     "wall": "assets/wall.png",
     "coin": "assets/coin.png",
+    "bonus": "assets/bonus.png",
+    "decoration_bush": "assets/bush.png",
     "enemy_slime": "assets/enemy_slime.png",
     "enemy_frog": "assets/enemy_frog.png",
     "enemy_golem": "assets/enemy_golem.png",
     "flag": "assets/flag.png",
-    "bonus": "assets/bonus.png",
     "heart": "assets/heart.png",
     "checkpoint_off": "assets/checkpoint_off.png",
     "checkpoint_on": "assets/checkpoint_on.png"
