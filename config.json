@@ -5,23 +5,23 @@
   "tileSize": 32,
   "physics": {
     "gravity": 0.45,
-    "jumpForce": 8.5,
-    "playerSpeed": 3
+    "jumpForce": 9.5,
+    "playerSpeed": 3.2
   },
   "player": {
     "maxLives": 5,
     "gameTime": 180
   },
   "skins": [
-    "e74c3c",
-    "3498db",
+    "e74c3c", 
+    "3498db", 
     "2ecc71"
   ],
   "assets": {
-    "wall": "https://placehold.co/32x32/c0392b/000000?text=B",
+    "wall": "https://placehold.co/32x32/c0392b/000000?text=",
     "coin": "https://placehold.co/32x32/f1c40f/000000?text=C",
     "enemy": "https://placehold.co/32x32/8e44ad/FFFFFF?text=E",
     "flag": "https://placehold.co/32x32/27ae60/FFFFFF?text=F",
-    "bonus": "https://placehold.co/32x32/e67e22/FFFFFF?text=P"
+    "bonus": "https://placehold.co/32x32/e67e22/FFFFFF?text=?"
   }
 }
