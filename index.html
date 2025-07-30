@@ -2,81 +2,61 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Attrape la pièce ! - Ultimate Edition</title>
+  <title>Attrape la pièce ! Ultimate</title>
   <meta name="viewport" content="width=900, initial-scale=1">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    body { background: #23272e; color: #fff; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; align-items: center; margin:0; }
-    h1 { color: #ffb700; margin: 20px 0 10px; text-shadow: 2px 2px 0 #222; }
-    #instructions { background: #191e23; color: #98d6ff; padding: 10px 16px; border-radius: 9px; border: 2px solid #444; margin-bottom: 12px; text-align: center;}
-    #gameModes, #shop {margin: 10px 0; }
-    #gameModes button, #shop button, #startButton, #restartButton, #nextLevel { font-family: inherit; margin: 0 6px 0 0; padding: 7px 25px; border-radius: 10px; border: none; background: #ffb700; color: #111; cursor: pointer; font-size: 1rem;}
-    #scoreBoard, #gameOver { margin: 12px 0; background: #191e23; border: 2px solid #444; border-radius: 8px; padding: 10px 18px; min-width: 180px; text-align: center; display: none;}
-    #pixelCanvas { margin-top: 14px; border: 3px solid #ffb700; background: #16191d; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 6px 32px #000b; display: none; width: 600px; height: 600px; }
-    #levelDisplay { color: #fff; background: #282b30; border-radius: 5px; padding: 2px 15px; font-size: 1rem; margin-top: 5px; border: 1px solid #424; display: inline-block;}
-    #lives { color: #f44; font-size: 1.1rem; letter-spacing: 3px; }
-    #xpbar { background: #222; border-radius: 8px; overflow: hidden; margin: 8px 0 0 0; }
-    #xpbar-inner { background: #4af045; height: 16px; width: 0; transition: width .3s; }
-    #leaderboard { background: #101319; color: #fff; border: 1px solid #444; border-radius: 7px; padding: 8px 18px; margin: 10px auto; width: 330px; font-size: 0.9rem;}
-    #skins { margin: 14px 0; }
-    #skins img { width: 32px; height: 32px; margin: 0 8px; border: 2px solid #333; border-radius: 5px; cursor: pointer; }
-    #skins img.selected { border-color: #ffb700; }
-    .mobile-controls { display: none; margin-top: 14px; }
-    .mobile-btn { width: 52px; height: 52px; background: #ffb700; color: #23272e; border-radius: 13px; font-size: 2rem; border: none; margin: 2px; }
-    @media (max-width: 800px) {
-      #pixelCanvas { width: 95vw; height: 95vw; max-width: 98vw; max-height: 98vw;}
-      #leaderboard { width: 95vw; min-width:0;}
-    }
-    @media (max-width: 600px) {
-      .mobile-controls { display: flex; flex-wrap: wrap; width: 180px; justify-content: center;}
+    body { background:#23272e; color:#fff; font-family:'Press Start 2P',monospace; margin:0; }
+    #mainMenu { display: flex; flex-direction: column; align-items: center; justify-content: center; width:100vw; height:99vh;}
+    #menuBox { background:#191e23; border:2px solid #ffb700; border-radius:18px; padding:32px 44px; box-shadow:0 6px 32px #000c; margin-top:30px; min-width:360px;}
+    h1 { color:#ffb700; margin: 8px 0 20px 0; text-align:center; text-shadow:2px 2px 0 #222; }
+    #modes button, #shop button, #startButton { font-family: inherit; margin: 6px 8px; padding: 11px 36px; border-radius: 10px; border: none; background: #ffb700; color: #111; cursor: pointer; font-size: 1.1rem;}
+    #modes button.selected { background: #111; color: #ffb700; border:2px solid #ffb700;}
+    #shop { margin-top:18px; text-align:center;}
+    #shop button { min-width:170px; }
+    #shopMsg { margin-top:6px; color:#f44; font-size:1rem; min-height:18px;}
+    #startButton {margin-top:26px; font-size:1.3rem;}
+    #pixelCanvas { margin: 24px auto 0 auto; display: none; border: 3px solid #ffb700; border-radius: 12px; background: #191e23; image-rendering: pixelated;}
+    #scoreBoard, #gameOver { margin:12px auto; background:#191e23; border:2px solid #444; border-radius:8px; padding:10px 18px; min-width:220px; text-align:center; display:none;}
+    #lives { color: #f44; font-size:1.1rem;}
+    #xpbar { background: #222; border-radius: 8px; overflow: hidden; margin: 8px 0 0 0;}
+    #xpbar-inner { background: #4af045; height: 16px; width: 0; transition: width .3s;}
+    #levelDisplay { color:#fff; background:#282b30; border-radius: 5px; padding:2px 15px; font-size:1rem; margin-top:5px; border:1px solid #424; display:inline-block;}
+    @media (max-width: 700px) {
+      #menuBox { min-width:0; width:96vw; padding:12vw 0; }
+      #pixelCanvas { width:95vw !important; height:95vw !important; max-width:98vw; max-height:98vw;}
     }
   </style>
 </head>
 <body>
-  <h1>ATTRAPE LA PIÈCE ! - Ultimate</h1>
-  <div id="instructions">
-    Attrape la pièce, évite les ennemis et obstacles, utilise tes pouvoirs.<br>
-    <b>XP, shop, skins, modes & leaderboard inclus !</b>
+  <div id="mainMenu">
+    <div id="menuBox">
+      <h1>ATTRAPE LA PIÈCE !</h1>
+      <div id="modes">
+        <b>Modes :</b>
+        <button class="selected" id="mode_classic" onclick="selectMode('classic')">Classique</button>
+        <button id="mode_endless" onclick="selectMode('endless')">Infini</button>
+        <button id="mode_hardcore" onclick="selectMode('hardcore')">Hardcore</button>
+        <button id="mode_timed" onclick="selectMode('timed')">Time-Attack</button>
+      </div>
+      <div id="shop">
+        <b>Shop :</b>
+        <button onclick="buyPower('invincible')">Invincible (30 XP)</button>
+        <button onclick="buyPower('slow')">Ralentir ennemis (15 XP)</button>
+        <div id="shopMsg"></div>
+      </div>
+      <button id="startButton" disabled>Démarrer</button>
+    </div>
   </div>
-  <div id="gameModes">
-    <b>Modes :</b>
-    <button onclick="selectMode('classic')">Classique</button>
-    <button onclick="selectMode('endless')">Infini</button>
-    <button onclick="selectMode('hardcore')">Hardcore</button>
-    <button onclick="selectMode('timed')">Time-Attack</button>
-  </div>
-  <div id="levelDisplay">Niveau : <span id="levelNum">1</span></div>
-  <div id="startMenu"><button id="startButton" autofocus>Démarrer</button></div>
+  <div id="levelDisplay" style="display:none;">Niveau : <span id="levelNum">1</span></div>
   <div id="scoreBoard">
-    <div>Score : <span id="scoreValue">0</span></div>
-    <div>🏆 Meilleur : <span id="highScore">0</span></div>
-    <div id="lives">Vies : <span id="lifeCount">3</span></div>
+    <div>Score : <span id="scoreValue">0</span></div>
+    <div>🏆 Meilleur : <span id="highScore">0</span></div>
+    <div id="lives">Vies : <span id="lifeCount">3</span></div>
     <div id="xpbar"><div id="xpbar-inner"></div></div>
   </div>
   <div id="gameOver"></div>
-  <canvas id="pixelCanvas" width="80" height="80"></canvas>
-  <div id="shop">
-    <b>Shop :</b>
-    <button onclick="buyPower('invincible')">Invincible (30 XP)</button>
-    <button onclick="buyPower('slow')">Ralentir ennemis (15 XP)</button>
-  </div>
-  <div id="skins">
-    <b>Skins :</b>
-    <img src="assets/player.png" id="skin0" onclick="chooseSkin(0)" class="selected">
-    <img src="assets/skin1.png" id="skin1" onclick="chooseSkin(1)">
-    <img src="assets/skin2.png" id="skin2" onclick="chooseSkin(2)">
-  </div>
-  <div id="leaderboard">
-    <b>Leaderboard</b>
-    <ol id="leaderList"><li>Chargement…</li></ol>
-  </div>
-  <!-- Mobile controls -->
-  <div class="mobile-controls" id="mobileControls">
-    <button class="mobile-btn" onclick="mobileMove('up')">↑</button><br>
-    <button class="mobile-btn" onclick="mobileMove('left')">←</button>
-    <button class="mobile-btn" onclick="mobileMove('down')">↓</button>
-    <button class="mobile-btn" onclick="mobileMove('right')">→</button>
-  </div>
+  <canvas id="pixelCanvas" width="600" height="600"></canvas>
   <audio id="bgMusic" src="assets/music.mp3" loop preload="auto"></audio>
   <script src="game.js"></script>
 </body>
