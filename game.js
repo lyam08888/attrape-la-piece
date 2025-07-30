@@ -156,13 +156,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function update() {
-        game.player.update(keys, mouse, game);
-        game.enemies.forEach(e => e.update(game));
-        game.enemies = game.enemies.filter(e => !e.isDead);
-        updateParticles();
-        updateCamera(false);
-        updateTimer();
-        mouse.left = false; mouse.right = false;
+        try {
+            game.player.update(keys, mouse, game);
+            game.enemies.forEach(e => e.update(game));
+            game.enemies = game.enemies.filter(e => !e.isDead);
+            updateParticles();
+            updateCamera(false);
+            updateTimer();
+            mouse.left = false; mouse.right = false;
+        } catch (error) {
+            console.error("Erreur dans la boucle de jeu:", error);
+            game.over = true; // Arrête le jeu en cas d'erreur
+        }
     }
     
     function updateCamera(isInstant = false) {
@@ -185,11 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Date.now() - game.timeLast > 1000) {
             game.time--;
             game.timeLast = Date.now();
-            if (game.time <= 0 && !game.over) {
+            if (game.time <= 0) {
                 game.time = 0;
                 endGame(false);
             }
-            updateHUD();
         }
     }
 
@@ -207,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.ctx.restore();
 
         drawInventoryUI();
-        updateHUD(); // Mettre à jour le HUD à chaque frame
+        updateHUD();
     }
 
     function drawTileMap() {
@@ -229,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // CORRECTION: La fonction manquante a été restaurée ici.
     function drawParticles() {
         if (!game) return;
         ui.ctx.globalAlpha = 1.0;
@@ -244,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawInventoryUI() {
-        if (!game) return;
+        if (!game || !game.player) return;
         const ctx = ui.ctx;
         const startX = 20;
         const startY = 20;
@@ -314,11 +317,20 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.score.textContent = `SCORE: ${String(game.score).padStart(6, '0')}`; 
         ui.timer.textContent = `TEMPS: ${game.time}`; 
     }
-    function loseLife() { if(!game || game.over) return; game.lives--; if(game.lives <= 0) endGame(false); else game.player.invulnerable = 120; }
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
     function endGame(win) {
         if (!game || game.over) return;
         game.over = true;
-        ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`;
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉<br>SCORE: ${game.score}` : `💀 Game Over 💀`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
     }
