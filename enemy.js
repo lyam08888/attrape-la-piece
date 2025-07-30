@@ -3,8 +3,8 @@ class Enemy {
     constructor(x, y, type, config) {
         this.x = x;
         this.y = y;
-        this.w = 32;
-        this.h = 32;
+        this.w = 16;
+        this.h = 16;
         this.vx = -0.5;
         this.vy = 0;
         this.dir = -1;
@@ -23,35 +23,49 @@ class Enemy {
             if (this.deathTimer <= 0) {
                 this.isDead = true;
             }
-            return; // Arrête toute autre logique si l'ennemi est en train de mourir
+            return;
         }
 
-        // Logique de base (gravité, collision avec plateformes)
         this.vy += this.config.physics.gravity;
-        this.x += this.vx;
-        this.y += this.vy;
         
+        this.handleTileCollisions(game);
+    }
+
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+
+        this.x += this.vx;
+        // Simple collision pour que les ennemis fassent demi-tour aux murs
+        let nextTileX = this.vx > 0 ? Math.floor((this.x + this.w) / tileSize) : Math.floor(this.x / tileSize);
+        let currentTileY = Math.floor((this.y + this.h) / tileSize);
+        if (game.tileMap[currentTileY] && game.tileMap[currentTileY][nextTileX] > 0) {
+            this.vx *= -1;
+            this.dir *= -1;
+        }
+
+        this.y += this.vy;
         this.onGround = false;
-        game.platforms.forEach(plat => {
-            if (this.rectCollide(plat) && this.vy >= 0 && this.y + this.h - this.vy <= plat.y) {
-                this.y = plat.y - this.h;
+        let startX = Math.floor(this.x / tileSize);
+        let endX = Math.floor((this.x + this.w) / tileSize);
+        let yTile = Math.floor((this.y + this.h) / tileSize);
+
+        for (let x = startX; x <= endX; x++) {
+            if (game.tileMap[yTile] && game.tileMap[yTile][x] > 0) {
+                if (this.vy > 0) {
+                    this.y = yTile * tileSize - this.h;
+                    this.onGround = true;
+                }
                 this.vy = 0;
-                this.onGround = true;
             }
-        });
-
-        // Fait demi-tour au bord d'une plateforme
-        if (this.onGround) {
-            const groundAhead = game.platforms.some(p => 
-                this.y + this.h > p.y && this.y < p.y + p.h &&
-                this.x + (this.vx > 0 ? this.w + 2 : -2) >= p.x &&
-                this.x + (this.vx > 0 ? this.w + 2 : -2) <= p.x + p.w
-            );
-
-            if (!groundAhead) {
-                this.vx *= -1;
-                this.dir *= -1;
-            }
+        }
+        
+        // Fait demi-tour au bord d'un trou
+        let frontFootX = this.vx > 0 ? this.x + this.w : this.x;
+        let tileBelowX = Math.floor(frontFootX / tileSize);
+        let tileBelowY = Math.floor((this.y + this.h + 1) / tileSize);
+        if (this.onGround && (!game.tileMap[tileBelowY] || game.tileMap[tileBelowY][tileBelowX] === 0)) {
+            this.vx *= -1;
+            this.dir *= -1;
         }
     }
 
@@ -59,9 +73,8 @@ class Enemy {
         this.health--;
         if (this.health <= 0 && !this.isDying) {
             this.isDying = true;
-            this.vx = 0; // Arrête le mouvement
+            this.vx = 0;
             game.score += 100;
-            // Crée une explosion de particules
             game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 20, '#95a5a6', { speed: 5 });
         }
     }
@@ -78,29 +91,30 @@ class Enemy {
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         
         if (this.isDying) {
-            // Animation de mort : rétrécit et devient transparent
             const scale = this.deathTimer / 30;
             ctx.scale(scale, scale);
             ctx.globalAlpha = scale;
             ctx.rotate(this.deathTimer * 0.5);
-        } else if (this.dir === 1) { 
+        } else if (this.dir === -1) { 
             ctx.scale(-1, 1); 
         }
 
         const assetKey = `enemy_${this.type}`;
         if (assets[assetKey]) {
             ctx.drawImage(assets[assetKey], -this.w / 2, -this.h / 2, this.w, this.h);
+        } else {
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
         }
         ctx.restore();
     }
 }
 
-// Classes spécifiques pour chaque ennemi, exportées pour être utilisées dans game.js
 export class Slime extends Enemy {
     constructor(x, y, config) {
         super(x, y, 'slime', config);
+        this.h = 12; // Slime is shorter
     }
-    // Le Slime garde le comportement de base
 }
 
 export class Frog extends Enemy {
@@ -118,16 +132,13 @@ export class Frog extends Enemy {
             if (this.jumpTimer <= 0) {
                 const player = game.player;
                 const dx = player.x - this.x;
-                // Saute vers le joueur s'il est assez proche
-                if (Math.abs(dx) < 300) {
-                    this.vx = Math.sign(dx) * 2;
+                if (Math.abs(dx) < 200) {
+                    this.vx = Math.sign(dx) * 1.5;
                     this.dir = Math.sign(this.vx);
                 }
-                this.vy = -6;
+                this.vy = -4;
                 this.jumpTimer = 120 + Math.random() * 60;
             }
-        } else {
-            // En l'air, il ne peut pas changer de direction
         }
     }
 }
@@ -136,8 +147,10 @@ export class Golem extends Enemy {
     constructor(x, y, config) {
         super(x, y, 'golem', config);
         this.health = 3;
+        this.w = 24;
+        this.h = 24;
         this.vx = -0.3;
-        this.state = 'patrolling'; // patrolling, preparing, charging
+        this.state = 'patrolling';
         this.chargeTimer = 180;
     }
 
@@ -149,9 +162,9 @@ export class Golem extends Enemy {
         const dx = player.x - this.x;
         const dy = Math.abs(player.y - this.y);
 
-        if (this.state === 'patrolling' && Math.abs(dx) < 250 && dy < 50) {
+        if (this.state === 'patrolling' && Math.abs(dx) < 200 && dy < 50) {
             this.state = 'preparing';
-            this.chargeTimer = 60; // Temps de préparation
+            this.chargeTimer = 60;
             this.vx = 0;
         }
 
@@ -160,8 +173,8 @@ export class Golem extends Enemy {
             if (this.chargeTimer <= 0) {
                 this.state = 'charging';
                 this.dir = Math.sign(dx);
-                this.vx = this.dir * 5; // Charge rapide
-                this.chargeTimer = 90; // Durée de la charge
+                this.vx = this.dir * 4;
+                this.chargeTimer = 90;
             }
         }
 
@@ -169,13 +182,12 @@ export class Golem extends Enemy {
             this.chargeTimer--;
             if (this.chargeTimer <= 0) {
                 this.state = 'patrolling';
-                this.vx = this.dir * -0.3; // Retourne à sa vitesse de patrouille
+                this.vx = this.dir * -0.3;
             }
         }
     }
 
     draw(ctx, assets) {
-        // Le golem devient rouge quand il prépare sa charge
         if (this.state === 'preparing' && Math.floor(this.chargeTimer / 10) % 2) {
             ctx.filter = 'sepia(1) saturate(10) hue-rotate(-50deg)';
         }
