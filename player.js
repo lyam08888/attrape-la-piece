@@ -89,7 +89,7 @@ export class Player {
     }
 
     handleActions(keys, mouse, game) {
-        const isAction = keys.action || mouse.left;
+        const isAction = keys.action || mouse.left || mouse.right;
         const selectedTool = this.tools[this.selectedToolIndex];
 
         if (isAction) {
@@ -134,7 +134,7 @@ export class Player {
 
 // Use mouse if pressed, otherwise check blocks around/in front of the player
 
-        if (mouse.left) {
+        if (mouse.left || mouse.right) {
             const worldMouseX = mouse.x / game.settings.zoom + game.camera.x;
             const worldMouseY = mouse.y / game.settings.zoom + game.camera.y;
             tileX = Math.floor(worldMouseX / tileSize);

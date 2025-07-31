@@ -83,6 +83,14 @@ export class GameEngine {
             if (e.button === 0) this.mouse.left = true;
             if (e.button === 2) this.mouse.right = true;
         });
+        this.canvas.addEventListener('wheel', e => {
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
+            if (this.gameLogic.cycleTool) {
+                if (e.deltaY < 0) this.gameLogic.cycleTool(-1);
+                else if (e.deltaY > 0) this.gameLogic.cycleTool(1);
+            }
+            e.preventDefault();
+        });
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
 
