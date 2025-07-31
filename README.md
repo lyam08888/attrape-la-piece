@@ -23,6 +23,12 @@ différentes lorsqu'il marche, saute ou vole, offrant un rendu plus vivant.
 
 Checkpoints : Votre progression est sauvegardée à des points clés du niveau.
 
+Interface enrichie :
+- Barre d'EXP avec affichage du niveau.
+- Inventaire complet (touche **I**).
+- Menu des compétences (touche **P**).
+- Menu des commandes remis à jour.
+
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
 

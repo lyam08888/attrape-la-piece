@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         volumeValue: document.getElementById('volumeValue'),
         xpFill: document.getElementById('xpFill'),
         levelPopup: document.getElementById('levelPopup'),
+        levelDisplay: document.getElementById('levelDisplay'),
         skillsMenu: document.getElementById('skillsMenu'),
         skillPointsInfo: document.getElementById('skillPointsInfo'),
         skillRows: document.querySelectorAll('.skill-row'),
@@ -369,6 +370,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (ui.xpFill && game.player) {
             const pct = (game.player.xp / game.player.xpToNext) * 100;
             ui.xpFill.style.width = pct + '%';
+        }
+        if (ui.levelDisplay && game.player) {
+            ui.levelDisplay.textContent = `Lvl ${game.player.level}`;
         }
     }
 
