@@ -1,11 +1,13 @@
 import { TILE } from './world.js';
 
+// NOUVEAU: Dureté des blocs pour le minage
 const TILE_HARDNESS = {
     [TILE.GRASS]: 1, [TILE.DIRT]: 1,
     [TILE.LEAVES]: 0.5, [TILE.WOOD]: 2,
     [TILE.STONE]: 3, [TILE.COAL]: 3.5, [TILE.IRON]: 4
 };
 
+// NOUVEAU: Outils efficaces contre certains types de blocs
 const TOOL_EFFECTIVENESS = {
     'shovel': [TILE.GRASS, TILE.DIRT],
     'axe': [TILE.WOOD, TILE.LEAVES],
