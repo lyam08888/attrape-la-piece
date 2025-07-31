@@ -54,21 +54,23 @@
              allAssetPaths['player1'] = custom;
          }
  
-         for (const [key, path] of Object.entries(allAssetPaths)) {
-             promises.push(new Promise((resolve) => { // On utilise resolve dans tous les cas
-                 const img = new Image();
-                 img.crossOrigin = "Anonymous";
-                 img.src = path;
-                 img.onload = () => {
-                     this.assets[key] = img;
-                     resolve({ status: 'fulfilled', value: key });
-                 };
-                 img.onerror = () => {
-                     console.warn(`Impossible de charger l'asset: ${path}`); // Affiche une alerte mais ne bloque pas
-                     resolve({ status: 'rejected', reason: key });
-                 };
-             }));
-         }
+        for (const [key, path] of Object.entries(allAssetPaths)) {
+            promises.push(new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = path;
+                img.onload = () => {
+                    this.assets[key] = img;
+                    resolve({ status: 'fulfilled', value: key });
+                };
+                img.onerror = () => {
+                    console.warn(`Impossible de charger l'asset: ${path}`);
+                    const placeholder = new Image();
+                    this.assets[key] = placeholder;
+                    resolve({ status: 'rejected', reason: key });
+                };
+            }));
+        }
          await Promise.all(promises); // Attend que toutes les tentatives de chargement soient terminées
      }
  
