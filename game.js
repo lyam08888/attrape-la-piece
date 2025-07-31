@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initGame() {
-function initGame() {
     try {
         if (ui.gameTitle) ui.gameTitle.style.display = 'none';
         game = {
@@ -128,21 +127,6 @@ function initGame() {
     }
 }
 
-        }
-        
-        createToolbar();
-    } catch (error) {
-        logger.error(`Erreur init: ${error.message}`);
-    }
-}
-
-        }
-        
-        createToolbar();
-    } catch (error) {
-        logger.error(`Erreur init: ${error.message}`);
-    }
-}
 
 
     function update(keys, mouse) {
