@@ -5,7 +5,7 @@ import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
 import { updateMining } from './miningEngine.js';
-import { TimeSystem } from './timeSystem.js';
+import { TimeSystem, updateCalendarUI } from './calendar.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         levelPopup: document.getElementById('levelPopup'),
         levelDisplay: document.getElementById('levelDisplay'),
         timeDisplay: document.getElementById('timeDisplay'),
+        calendarMenu: document.getElementById('calendarMenu'),
+        calendarDate: document.getElementById('calendarDate'),
+        calendarTime: document.getElementById('calendarTime'),
+        calendarStage: document.getElementById('calendarStage'),
+        closeCalendar: document.getElementById('closeCalendar'),
         skillsMenu: document.getElementById('skillsMenu'),
         skillPointsInfo: document.getElementById('skillPointsInfo'),
         skillRows: document.querySelectorAll('.skill-row'),
@@ -154,6 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'closeInventory': toggleInventoryMenu(); break;
             case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
             case 'closeSkills': toggleSkillsMenu(); break;
+            case 'closeCalendar': toggleCalendarMenu(); break;
         }
     }
 
@@ -214,7 +220,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function update(keys, mouse) {
         logger.update();
-        if (!game.player || game.over || game.paused) return;
+        if (!game.player || game.over || game.paused) {
+            if (ui.calendarMenu && ui.calendarMenu.classList.contains('active')) {
+                updateCalendarUI(timeSystem, { date: ui.calendarDate, time: ui.calendarTime, stage: ui.calendarStage });
+            }
+            return;
+        }
         try {
             if (timeSystem) timeSystem.update();
             sound.update();
@@ -368,12 +379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function drawSky(ctx) {
         if (!timeSystem) return;
-        const { hour, minute } = timeSystem.getTime();
-        const t = (hour * 60 + minute) / (24 * 60);
-        let c1 = '#87CEEB', c2 = '#5C94FC';
-        if (t > 0.75 || t < 0.25) { c1 = '#0a0a2e'; c2 = '#1e1e4e'; }
-        else if (t >= 0.25 && t < 0.3) { c1 = '#ff6b6b'; c2 = '#ffa500'; }
-        else if (t >= 0.7 && t <= 0.75) { c1 = '#4a5a8e'; c2 = '#f4a460'; }
+        const [c1, c2] = timeSystem.getSkyGradient();
 
         const grad = ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
         grad.addColorStop(0, c1);
@@ -722,6 +728,22 @@ if (physics.realistic) {
         }
     }
 
+    function toggleCalendarMenu() {
+        if (!ui.calendarMenu) return;
+        if (ui.calendarMenu.classList.contains('active')) {
+            ui.calendarMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            updateCalendarUI(timeSystem, {
+                date: ui.calendarDate,
+                time: ui.calendarTime,
+                stage: ui.calendarStage
+            });
+            ui.calendarMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
+
     // --- Lancement du moteur ---
 
     const gameLogic = {
@@ -746,6 +768,7 @@ if (physics.realistic) {
         },
         toggleInventory: () => toggleInventoryMenu(),
         toggleSkills: () => toggleSkillsMenu(),
+        toggleCalendar: () => toggleCalendarMenu(),
         openChest: (ch) => openChestMenu(ch),
         showError: (error) => {
             logger.error(error.message);

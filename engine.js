@@ -92,10 +92,10 @@
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
              if (e.code === 'KeyA') this.keys.action = true;
              if (e.code === 'KeyV') this.keys.fly = true;
-             if (e.code === 'KeyP' && this.gameLogic.toggleSkills) this.gameLogic.toggleSkills();
-             if (e.code === 'KeyI' && this.gameLogic.toggleInventory) this.gameLogic.toggleInventory();
-             if (e.code === 'KeyC' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('controls');
-             if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
+            if (e.code === 'KeyP' && this.gameLogic.toggleSkills) this.gameLogic.toggleSkills();
+            if (e.code === 'KeyI' && this.gameLogic.toggleInventory) this.gameLogic.toggleInventory();
+            if (e.code === 'KeyC' && this.gameLogic.toggleCalendar) this.gameLogic.toggleCalendar();
+            if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
              if (e.code === 'Escape' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
  
              if (e.code.startsWith('Digit')) {
