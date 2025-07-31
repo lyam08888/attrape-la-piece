@@ -46,6 +46,17 @@ Les outils utilisables pour casser les blocs disposent chacun de leur icône dan
 - l'arc (`tool_bow.png`)
 - la canne à pêche (`tool_fishing_rod.png`)
 
+### Utilisation des outils
+
+Appuyez sur **A** ou cliquez avec la souris pour utiliser l'outil sélectionné. Vous pouvez miner les blocs, mais aussi infliger des dégâts aux ennemis à portée. Utilisez la molette ou les touches **1-9** pour changer rapidement d'outil.
+
+### Physique des blocs
+
+Les blocs soumis à la gravité tombent désormais si leur support est détruit. Ils
+accélèrent avec la gravité, rebondissent légèrement (paramètre `blockBounce` dans
+`config.json`) puis se replacent au sol. Les chutes peuvent blesser le joueur ou
+les ennemis.
+
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
 

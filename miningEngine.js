@@ -84,4 +84,8 @@ function destroyBlock(game, x, y, type) {
     if ((type === TILE.WOOD || type === TILE.LEAVES) && game.propagateTreeCollapse) {
         game.propagateTreeCollapse(x, y);
     }
+
+    if (game.checkBlockSupport) {
+        game.checkBlockSupport(x, y - 1);
+    }
 }

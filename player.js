@@ -146,6 +146,7 @@ export class Player {
  
         if (isAction) {
             this.swingTimer = 15;
+            this.attackNearbyEnemies(game);
             const target = this.getTargetTile(mouse, game);
             if (target) {
                 if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
@@ -299,6 +300,22 @@ export class Player {
 
         if (game.flag && this.rectCollide(game.flag)) {
             if (game.addXP) game.addXP(50);
+        }
+    }
+
+    attackNearbyEnemies(game) {
+        const range = this.config.player.attackRange || this.config.tileSize;
+        const attackBox = {
+            x: this.dir === 1 ? this.x + this.w : this.x - range,
+            y: this.y,
+            w: range,
+            h: this.h
+        };
+        for (const enemy of game.enemies) {
+            if (enemy.isDead || enemy.isDying) continue;
+            if (enemy.rectCollide(attackBox)) {
+                enemy.takeDamage(game, this.getDamage());
+            }
         }
     }
 

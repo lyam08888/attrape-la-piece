@@ -22,13 +22,15 @@
      "gravity": 0.35,
      "jumpForce": 7,
      "playerSpeed": 2.5,
-     "friction": 0.88
-   },
+    "friction": 0.88,
+    "blockBounce": 0.3
+  },
    "player": {
      "maxLives": 5,
     "width": 12,
     "height": 24,
-     "reach": 4
+     "reach": 4,
+     "attackRange": 20
    },
    "skins": [
      "player1.png",
