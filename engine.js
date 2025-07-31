@@ -69,6 +69,7 @@ export class GameEngine {
             if (e.code === 'ArrowLeft') this.keys.left = false;
             if (e.code === 'ArrowRight') this.keys.right = false;
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = false;
+            if (e.code === 'KeyA') this.keys.action = false;
         });
         
         this.canvas.addEventListener('mousemove', e => {
