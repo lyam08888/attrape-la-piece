@@ -40,6 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         lightingCheckbox: document.getElementById('lightingCheckbox'),
         soundSlider: document.getElementById('soundSlider'),
         volumeValue: document.getElementById('volumeValue'),
+        xpFill: document.getElementById('xpFill'),
+        levelPopup: document.getElementById('levelPopup'),
+        skillsMenu: document.getElementById('skillsMenu'),
+        skillPointsInfo: document.getElementById('skillPointsInfo'),
+        skillRows: document.querySelectorAll('.skill-row'),
     };
 
     let game = {};
@@ -71,7 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         document.body.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
-            if (action) handleMenuAction(action);
+            if (action) { handleMenuAction(action); return; }
+            const inc = e.target.dataset.inc;
+            if (inc) { increaseSkill(inc); }
         });
 
         if (ui.renderDistanceSlider) {
@@ -134,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'closeOptions': toggleMenu(false, 'options'); break;
             case 'closeInventory': toggleInventoryMenu(); break;
             case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
+            case 'closeSkills': toggleSkillsMenu(); break;
         }
     }
 
@@ -141,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         if (ui.gameTitle) ui.gameTitle.style.display = 'none';
         game = {
-            player: null, 
+            player: null,
             camera: { x: 0, y: 0 },
             tileMap: [],
             enemies: [],
@@ -163,6 +171,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             miningEffect: null,
             createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
             loseLife: () => loseLife(),
+            addXP: (amount) => addXP(amount),
+            showLevelPopup: (lvl) => showLevelPopup(lvl),
         };
         
         generateLevel(game, config, {});
@@ -352,8 +362,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateHUD() {
-        if(!game || !ui.hud) return; 
+        if(!game || !ui.hud) return;
         ui.lives.textContent = '❤'.repeat(game.lives);
+        if (ui.xpFill && game.player) {
+            const pct = (game.player.xp / game.player.xpToNext) * 100;
+            ui.xpFill.style.width = pct + '%';
+        }
     }
 
     function loseLife() { 
@@ -383,6 +397,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
             if (p.life <= 0) game.particles.splice(index, 1);
         });
+    }
+
+    function showLevelPopup(level) {
+        if (!ui.levelPopup) return;
+        ui.levelPopup.textContent = `Niveau ${level}!`;
+        ui.levelPopup.classList.add('show');
+        setTimeout(() => ui.levelPopup.classList.remove('show'), 1500);
+    }
+
+    function addXP(amount) {
+        if (!game.player) return;
+        game.player.addXP(amount, game);
+        updateHUD();
     }
 
     function drawParticles(ctx) {
@@ -537,6 +564,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         ui.chestList.innerHTML = chest.items.map(i => `<li>${i}</li>`).join('');
         ui.chestMenu.classList.add('active');
         game.paused = true;
+        game.addXP(15);
+    }
+
+    function increaseSkill(skill) {
+        if (!game.player || game.player.skillPoints <= 0) return;
+        if (game.player.attributes[skill] !== undefined) {
+            game.player.attributes[skill]++;
+            game.player.skillPoints--;
+            updateSkillsUI();
+        }
+    }
+
+    function toggleSkillsMenu() {
+        if (!ui.skillsMenu) return;
+        if (ui.skillsMenu.classList.contains('active')) {
+            ui.skillsMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            updateSkillsUI();
+            ui.skillsMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
+
+    function updateSkillsUI() {
+        if (!game.player) return;
+        if (ui.skillPointsInfo) ui.skillPointsInfo.textContent = `Points: ${game.player.skillPoints}`;
+        ui.skillRows.forEach(row => {
+            const skill = row.dataset.skill;
+            row.querySelector('.value').textContent = game.player.attributes[skill];
+        });
     }
 
     function toggleInventoryMenu() {
@@ -574,6 +632,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         toggleInventory: () => toggleInventoryMenu(),
+        toggleSkills: () => toggleSkillsMenu(),
         openChest: (ch) => openChestMenu(ch),
         showError: (error) => {
             logger.error(error.message);

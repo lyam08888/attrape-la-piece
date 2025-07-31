@@ -43,13 +43,21 @@ export class Player {
         this.inventory = {};
         this.miningTarget = null;
         this.miningProgress = 0;
+
+        this.level = 1;
+        this.xp = 0;
+        this.xpToNext = 100;
+        this.skillPoints = 0;
+        this.attributes = { strength: 0, agility: 0, vitality: 0 };
     }
 
     update(keys, mouse, game) {
         const { physics } = this.config;
+        const speed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
+        const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
 
-        if (keys.left) { this.vx = -physics.playerSpeed; this.dir = -1; }
-        else if (keys.right) { this.vx = physics.playerSpeed; this.dir = 1; }
+        if (keys.left) { this.vx = -speed; this.dir = -1; }
+        else if (keys.right) { this.vx = speed; this.dir = 1; }
         else { this.vx *= physics.friction; }
 
         if (this.grounded && Math.abs(this.vx) > 0.1) {
@@ -65,11 +73,11 @@ export class Player {
 
         if (keys.jump) {
             if (this.grounded) {
-                this.vy = -physics.jumpForce;
+                this.vy = -jumpForce;
                 this.sound?.playJump();
                 this.canDoubleJump = true;
             } else if (this.canDoubleJump) {
-                this.vy = -physics.jumpForce * 0.8;
+                this.vy = -jumpForce * 0.8;
                 this.sound?.playJump();
                 this.canDoubleJump = false;
             }
@@ -205,6 +213,7 @@ return null;
             10,
             '#fff'
         );
+        game.addXP(5);
 
         if (tile === TILE.WOOD || tile === TILE.LEAVES) {
             const neighbors = [[tileX, tileY - 1], [tileX - 1, tileY], [tileX + 1, tileY]];
@@ -277,7 +286,8 @@ return null;
         game.enemies.forEach(enemy => {
             if (this.rectCollide(enemy) && !enemy.isDying) {
                 if (this.vy > 0 && (this.y + this.h) < (enemy.y + enemy.h * 0.5)) {
-                    enemy.takeDamage(game);
+                    enemy.takeDamage(game, this.getDamage());
+                    if (enemy.health <= 0) game.addXP(20);
                     this.vy = -this.config.physics.jumpForce * 0.6;
                 } else if (this.invulnerable === 0) {
                     game.loseLife();
@@ -317,6 +327,22 @@ return null;
                 game.lastCheckpoint = { x: cp.x, y: cp.y };
             }
         });
+    }
+
+    addXP(amount, game) {
+        this.xp += amount;
+        game.createParticles(this.x + this.w / 2, this.y, 5, '#ffff66');
+        while (this.xp >= this.xpToNext && this.level < 999) {
+            this.xp -= this.xpToNext;
+            this.level++;
+            this.skillPoints++;
+            this.xpToNext = Math.floor(this.xpToNext * 1.1 + 50);
+            game.showLevelPopup(this.level);
+        }
+    }
+
+    getDamage() {
+        return 1 + this.attributes.strength * 0.2;
     }
 
     rectCollide(other) {

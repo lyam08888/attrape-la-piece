@@ -147,6 +147,38 @@
             width: 80%;
             height: 80%;
         }
+
+        #xpContainer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(0,0,0,0.5);
+        }
+        #xpFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,#4caf50,#8bc34a);
+        }
+        #levelPopup {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #ffe01b;
+            text-shadow: 2px 2px #000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #levelPopup.show {
+            opacity: 1;
+        }
+        .skill-row {
+            margin-bottom: 6px;
+        }
         /* Character creator styles */
         #creatorParts { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:10px; }
         .creator-part { background:#1a1b1e; border-radius:7px; padding:7px 10px; margin:2px; }
@@ -251,11 +283,24 @@
             </div>
         </div>
 
+        <div id="skillsMenu" class="overlay">
+            <div class="menu-box">
+                <h2>COMPÉTENCES</h2>
+                <div id="skillPointsInfo" style="margin-bottom:10px"></div>
+                <div class="skill-row" data-skill="strength">Force: <span class="value"></span> <button data-inc="strength">+</button></div>
+                <div class="skill-row" data-skill="agility">Agilité: <span class="value"></span> <button data-inc="agility">+</button></div>
+                <div class="skill-row" data-skill="vitality">Vitalité: <span class="value"></span> <button data-inc="vitality">+</button></div>
+                <button data-action="closeSkills">FERMER</button>
+            </div>
+        </div>
+
         <div id="hud" class="overlay">
             <div class="hud-info">
                 <span id="lives"></span>
             </div>
             <div id="toolbar"></div>
+            <div id="xpContainer"><div id="xpFill"></div></div>
+            <div id="levelPopup"></div>
         </div>
 
         <div id="gameover" class="overlay">

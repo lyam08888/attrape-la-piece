@@ -69,9 +69,9 @@ class Enemy {
         }
     }
 
-    takeDamage(game) {
+    takeDamage(game, dmg = 1) {
         game.sound?.playHit();
-        this.health--;
+        this.health -= dmg;
         if (this.health <= 0 && !this.isDying) {
             this.isDying = true;
             this.vx = 0;
