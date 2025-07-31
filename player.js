@@ -62,9 +62,24 @@ export class Player {
         if (this.posture === 'crouching') speed *= 0.5;
         if (this.posture === 'prone') speed *= 0.3;
 
-         if (keys.left) { this.vx = -speed; this.dir = -1; }
-         else if (keys.right) { this.vx = speed; this.dir = 1; }
-         else { this.vx *= physics.friction; }
+        if (physics.realistic) {
+            const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
+            if (keys.left) {
+                this.vx = Math.max(this.vx - accel, -speed);
+                this.dir = -1;
+            } else if (keys.right) {
+                this.vx = Math.min(this.vx + accel, speed);
+                this.dir = 1;
+            } else {
+                const drag = this.grounded ? physics.friction : physics.airResistance;
+                this.vx *= drag;
+                if (Math.abs(this.vx) < 0.01) this.vx = 0;
+            }
+        } else {
+            if (keys.left) { this.vx = -speed; this.dir = -1; }
+            else if (keys.right) { this.vx = speed; this.dir = 1; }
+            else { this.vx *= physics.friction; }
+        }
  
          if (this.grounded && Math.abs(this.vx) > 0.1) {
              if (this.stepTimer <= 0) {
@@ -92,11 +107,17 @@ export class Player {
              keys.jump = false;
          }
  
-         if (keys.fly) {
-             this.vy = -physics.jumpForce * 0.3;
-         }
- 
-         this.vy += physics.gravity;
+        if (keys.fly) {
+            this.vy = -physics.jumpForce * 0.3;
+        }
+
+        this.vy += physics.gravity;
+        if (physics.realistic && this.vy > physics.maxFallSpeed) {
+            this.vy = physics.maxFallSpeed;
+        }
+        if (physics.realistic) {
+            this.vy *= physics.airResistance;
+        }
  
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);

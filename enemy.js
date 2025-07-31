@@ -26,7 +26,14 @@ class Enemy {
             return;
         }
 
-        this.vy += this.config.physics.gravity;
+        const phys = this.config.physics;
+        this.vy += phys.gravity;
+        if (phys.realistic && this.vy > phys.maxFallSpeed) {
+            this.vy = phys.maxFallSpeed;
+        }
+        if (phys.realistic) {
+            this.vy *= phys.airResistance;
+        }
         
         this.handleTileCollisions(game);
     }
