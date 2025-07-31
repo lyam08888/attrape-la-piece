@@ -5,7 +5,8 @@ import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
 import { randomItem } from './survivalItems.js';
-import { getItemIcon, getChestIcon } from './itemIcons.js';
+import { getItemIcon } from './itemIcons.js';
+import { getChestImage } from './chestGenerator.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
@@ -66,7 +67,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function setupMenus(_assets) {
         assets = _assets;
-        assets.chest = getChestIcon();
         if (!ui.mainMenu) { initGame(); return; }
         ui.skinlist.innerHTML = '';
         config.skins.forEach((_, i) => {
@@ -498,7 +498,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function drawChests(ctx, assets) {
         game.chests.forEach(ch => {
-            const img = assets.chest || assets.bonus;
+            const img = getChestImage(ch.type);
             ctx.drawImage(img, ch.x, ch.y, ch.w, ch.h);
         });
     }

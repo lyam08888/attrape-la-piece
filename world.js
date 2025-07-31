@@ -1,4 +1,5 @@
 import { Slime, Frog, Golem } from './enemy.js';
+import { randomChestType } from './chestGenerator.js';
 
 const Perlin = {
     rand_vect: function(){ let theta = Math.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
@@ -124,7 +125,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
         const x = Math.floor(Math.random() * worldWidthInTiles);
         const y = surfaceLevel + 5 + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 10));
         if (game.tileMap[y]?.[x] === TILE.AIR) {
-            game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [] });
+            game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [], type: randomChestType() });
         }
     }
 
