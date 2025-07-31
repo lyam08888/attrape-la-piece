@@ -14,28 +14,19 @@ class LogMessage {
 
     draw(ctx, x, y, index) {
         const opacity = Math.min(1, this.life / 60); // Fondu en sortie
-        let color = '#fff';
-        if (this.type === 'error') color = '#e74c3c';
-        if (this.type === 'warning') color = '#f1c40f';
+        let color = '#FFFFFF'; // Blanc pour info
+        if (this.type === 'error') color = '#e74c3c'; // Rouge pour erreur
+        if (this.type === 'warning') color = '#f1c40f'; // Jaune pour avertissement
 
+        // Convertit la couleur hexadécimale en RGBA avec l'opacité calculée
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        
         ctx.font = '12px "Press Start 2P"';
-        ctx.fillStyle = `rgba(${this.hexToRgb(color)}, ${opacity})`;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
         ctx.textAlign = 'right';
         ctx.fillText(this.text, x, y - (index * 20));
-    }
-
-    hexToRgb(hex) {
-        let r = 0, g = 0, b = 0;
-        if (hex.length == 4) {
-            r = "0x" + hex[1] + hex[1];
-            g = "0x" + hex[2] + hex[2];
-            b = "0x" + hex[3] + hex[3];
-        } else if (hex.length == 7) {
-            r = "0x" + hex[1] + hex[2];
-            g = "0x" + hex[3] + hex[4];
-            b = "0x" + hex[5] + hex[6];
-        }
-        return `${+r},${+g},${+b}`;
     }
 }
 
@@ -45,6 +36,7 @@ export class Logger {
     }
 
     log(text) {
+        console.log(text);
         this.messages.unshift(new LogMessage(text, 'info'));
         if (this.messages.length > 5) this.messages.pop();
     }
