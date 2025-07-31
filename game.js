@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         levelPopup: document.getElementById('levelPopup'),
         levelDisplay: document.getElementById('levelDisplay'),
         timeDisplay: document.getElementById('timeDisplay'),
+        debugOverlay: document.getElementById('debugOverlay'),
         calendarMenu: document.getElementById('calendarMenu'),
         calendarDate: document.getElementById('calendarDate'),
         calendarTime: document.getElementById('calendarTime'),
@@ -71,6 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let assets = {}; // Pour stocker les images chargées
     let worldAnimator;
     let timeSystem;
+    let debugMode = false;
+    let fps = 0;
+    let lastFrame = performance.now();
 
     // --- Définition de TOUTES les fonctions de logique du jeu ---
     // CORRECTION: Toutes les fonctions sont maintenant définies ici avant d'être utilisées.
@@ -220,6 +224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function update(keys, mouse) {
         logger.update();
+        const now = performance.now();
+        fps = Math.round(1000 / Math.max(16, now - lastFrame));
+        lastFrame = now;
         if (!game.player || game.over || game.paused) {
             if (ui.calendarMenu && ui.calendarMenu.classList.contains('active')) {
                 updateCalendarUI(timeSystem, { date: ui.calendarDate, time: ui.calendarTime, stage: ui.calendarStage });
@@ -264,14 +271,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             game.enemies.forEach(e => e.draw(ctx, assets));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
+            if (debugMode) {
+                ctx.save();
+                ctx.strokeStyle = 'red';
+                ctx.strokeRect(game.player.x, game.player.y, game.player.w, game.player.h);
+                ctx.strokeStyle = 'yellow';
+                game.enemies.forEach(en => {
+                    ctx.strokeRect(en.x, en.y, en.w, en.h);
+                });
+                ctx.restore();
+            }
             if (gameSettings.showParticles) drawParticles(ctx);
             drawMiningEffect(ctx);
             ctx.restore();
 
             updateHUD();
             updateToolbarUI();
+            updateDebug();
         }
-        
+
         logger.draw(ctx, canvas);
     }
 
@@ -360,11 +378,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const slot = document.createElement('div');
             slot.className = 'toolbar-slot';
             slot.dataset.index = index;
-            
+
             const img = document.createElement('img');
             img.src = assets[`tool_${toolName}`]?.src || '';
             slot.appendChild(img);
-            
+            slot.onclick = () => {
+                game.player.selectedToolIndex = index;
+                updateToolbarUI();
+            };
+
             ui.toolbar.appendChild(slot);
         });
     }
@@ -413,6 +435,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (ui.timeDisplay && timeSystem) {
             ui.timeDisplay.textContent = timeSystem.formatDateTime();
         }
+    }
+
+    function updateDebug() {
+        if (!ui.debugOverlay) return;
+        if (!debugMode) { ui.debugOverlay.style.display = 'none'; return; }
+        ui.debugOverlay.style.display = 'block';
+        const p = game.player || {x:0,y:0};
+        ui.debugOverlay.innerHTML = `FPS: ${fps}<br>x:${Math.round(p.x)} y:${Math.round(p.y)}`;
     }
 
     function loseLife() { 
@@ -770,6 +800,7 @@ if (physics.realistic) {
         toggleSkills: () => toggleSkillsMenu(),
         toggleCalendar: () => toggleCalendarMenu(),
         openChest: (ch) => openChestMenu(ch),
+        toggleDebug: () => { debugMode = !debugMode; updateDebug(); },
         showError: (error) => {
             logger.error(error.message);
             if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;

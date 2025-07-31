@@ -207,6 +207,19 @@
         .inventory-slot img { width:80%; height:80%; image-rendering:pixelated; }
         .inventory-slot .tooltip { display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#000; border:1px solid #ffe01b; padding:2px 4px; font-size:0.6em; white-space:nowrap; }
         .inventory-slot:hover .tooltip { display:block; }
+        #debugOverlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #0f0;
+            font-family: monospace;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 6px;
+            font-size: 0.8em;
+            pointer-events: none;
+            z-index: 15;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -326,6 +339,7 @@
             <div id="toolbar"></div>
             <div id="xpContainer"><div id="xpFill"></div></div>
             <div id="levelPopup"></div>
+            <div id="debugOverlay"></div>
         </div>
 
         <div id="gameover" class="overlay">

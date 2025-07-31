@@ -61,3 +61,5 @@ Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dé
 Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne.
 
 Jouez ! Le jeu chargera les assets depuis votre GitHub et sera prêt à jouer.
+
+Astuce : appuyez sur **F3** en jeu pour activer le mode debug (FPS et hitbox).
