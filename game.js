@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function toggleMenu(show, menuType) {
-        if (!game || !gameSettings.showParticles) return;
+        if (!game) return;
         game.paused = show;
         let menuToToggle = menuType === 'options' ? ui.optionsMenu : ui.controlsMenu;
         if (show) {
