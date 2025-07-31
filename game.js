@@ -127,6 +127,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 }
 
+        }
+        
+        createToolbar();
+    } catch (error) {
+        logger.error(`Erreur init: ${error.message}`);
+    }
+}
+
 
     function update(keys, mouse) {
         logger.update();
