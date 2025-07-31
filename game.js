@@ -531,6 +531,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.player.selectedToolIndex = index;
             }
         },
+        cycleTool: (dir) => {
+            if (game.player) {
+                const len = game.player.tools.length;
+                game.player.selectedToolIndex = (game.player.selectedToolIndex + dir + len) % len;
+            }
+        },
         showError: (error) => {
             logger.error(error.message);
             if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;
