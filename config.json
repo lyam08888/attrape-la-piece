@@ -32,8 +32,8 @@
   },
    "player": {
      "maxLives": 5,
-    "width": 24,
-    "height": 24,
+    "width": 64,
+    "height": 64,
      "reach": 4,
      "attackRange": 20
    },
