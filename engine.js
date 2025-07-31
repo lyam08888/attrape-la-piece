@@ -141,7 +141,7 @@
             .then(() => {
                 this.setupInput();
                 if (this.gameLogic.init) {
-                    this.gameLogic.init();
+                    this.gameLogic.init(this.assets);
                 }
                 const loop = (time) => {
                     if (!this.gameLogic.isPaused || !this.gameLogic.isPaused()) {
