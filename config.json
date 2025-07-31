@@ -31,6 +31,7 @@
     "player3.png"
   ],
   "assets": {
+    "cloud": "https://placehold.co/128x64/FFFFFF/FFFFFF?text=",
     "tile_grass": "assets/tile_grass.png",
     "tile_dirt": "assets/tile_dirt.png",
     "tile_stone": "assets/tile_stone.png",
@@ -43,6 +44,7 @@
     "enemy_golem": "assets/enemy_golem.png",
     "tool_pickaxe": "assets/tool_pickaxe.png",
     "tool_shovel": "assets/tool_shovel.png",
+    "tool_axe": "assets/tool_axe.png",
     "tool_sword": "assets/tool_sword.png",
     "tool_bow": "assets/tool_bow.png",
     "tool_fishing_rod": "assets/tool_fishing_rod.png",
