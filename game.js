@@ -90,9 +90,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (ui.gameTitle) ui.gameTitle.style.display = 'none';
             game = {
                 player: null, camera: { x: 0, y: 0 },
-                tileMap: [], enemies: [], particles: [], fallingBlocks: [], collectibles: [],
-                lives: config.player.maxLives, over: false, paused: false,
+                tileMap: [],
+                enemies: [],
+                particles: [],
+                fallingBlocks: [],
+                collectibles: [],
+                decorations: [],
+                coins: [],
+                bonuses: [],
+                checkpoints: [],
+                lives: config.player.maxLives,
+                over: false,
+                paused: false,
                 config: config,
+                settings: gameSettings,
                 propagateTreeCollapse: propagateTreeCollapse,
                 miningEffect: null,
                 createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
@@ -188,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                return { x: spawnX * tileSize, y: (y - 2) * tileSize };
+                return { x: spawnX * tileSize, y: Math.max(0, (y - 4) * tileSize) };
             }
         }
         return { x: worldWidth / 2, y: 100 };
