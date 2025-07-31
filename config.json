@@ -28,7 +28,8 @@
      "maxLives": 5,
     "width": 12,
     "height": 24,
-     "reach": 4
+     "reach": 4,
+     "attackRange": 20
    },
    "skins": [
      "player1.png",
