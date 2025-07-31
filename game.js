@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initGame() {
+function initGame() {
     try {
         if (ui.gameTitle) ui.gameTitle.style.display = 'none';
         game = {
@@ -119,6 +120,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(ui.mainMenu) {
             [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
             ui.hud?.classList.add('active');
+        }
+        
+        createToolbar();
+    } catch (error) {
+        logger.error(`Erreur init: ${error.message}`);
+    }
+}
+
         }
         
         createToolbar();
