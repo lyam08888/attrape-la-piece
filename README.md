@@ -12,7 +12,7 @@ Cycle Jour/Nuit : Regardez le ciel changer de couleur, du lever au coucher du so
 
 Décors Multi-couches : Le monde a gagné en profondeur grâce à un système de parallaxe.
 
-Physique Réaliste : Le moteur physique a été amélioré avec une gestion de la friction, une physique aquatique et des collisions plus précises.
+Physique Réaliste : Le moteur gère maintenant l'inertie, la résistance de l'air et une vitesse terminale pour des sauts plus crédibles. La friction et les collisions restent plus précises, y compris sous l'eau.
 
 Gameplay Approfondi :
 
@@ -53,6 +53,7 @@ Appuyez sur **A** ou cliquez avec la souris pour utiliser l'outil sélectionné.
 ### Physique des blocs
 
 Les blocs soumis à la gravité tombent désormais si leur support est détruit. Ils accélèrent avec la gravité, rebondissent légèrement (paramètre `blockBounce` dans `config.json`) puis se replacent au sol. Les chutes peuvent blesser le joueur ou les ennemis.
+Le fichier `config.json` propose aussi un mode `realistic` qui ajoute inertie et vitesse terminale aux objets soumis à la gravité.
 
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
