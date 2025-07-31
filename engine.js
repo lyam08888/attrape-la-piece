@@ -17,10 +17,17 @@ export class GameEngine {
         const baseUrl = this.config.githubRepoUrl || '';
 
         for (const [key, path] of Object.entries(this.config.assets)) {
-            allAssetPaths[key] = path.startsWith('http') ? path : baseUrl + path;
+            // CORRECTION: On rend le chemin explicitement relatif pour éviter les problèmes de résolution
+            if (path.startsWith('http')) {
+                allAssetPaths[key] = path;
+            } else {
+                allAssetPaths[key] = baseUrl ? baseUrl + path : './' + path;
+            }
         }
         this.config.skins.forEach((fileName, i) => {
-            allAssetPaths[`player${i+1}`] = baseUrl + 'assets/' + fileName;
+            const skinPath = 'assets/' + fileName;
+            // CORRECTION: On rend aussi ce chemin explicitement relatif
+            allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : './' + skinPath;
         });
 
         for (const [key, path] of Object.entries(allAssetPaths)) {
