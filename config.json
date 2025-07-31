@@ -31,7 +31,7 @@
     "player3.png"
   ],
   "assets": {
-    "cloud": "https://placehold.co/128x64/FFFFFF/FFFFFF?text=",
+    "cloud": "assets/cloud.png",
     "tile_grass": "assets/tile_grass.png",
     "tile_dirt": "assets/tile_dirt.png",
     "tile_stone": "assets/tile_stone.png",
@@ -48,6 +48,13 @@
     "tool_sword": "assets/tool_sword.png",
     "tool_bow": "assets/tool_bow.png",
     "tool_fishing_rod": "assets/tool_fishing_rod.png",
-    "tool_knife": "assets/tool_knife.png"
+    "tool_knife": "assets/tool_knife.png",
+    "bonus": "assets/bonus.png",
+    "checkpoint_off": "assets/checkpoint_off.png",
+    "checkpoint_on": "assets/checkpoint_on.png",
+    "coin": "assets/coin.png",
+    "decoration_bush": "assets/decoration_bush.png",
+    "flag": "assets/flag.png",
+    "heart": "assets/heart.png"
   }
 }
