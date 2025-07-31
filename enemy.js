@@ -34,6 +34,7 @@ if (phys.realistic) {
     }
     this.vy *= phys.airResistance;
 }
+
         
         this.handleTileCollisions(game);
     }

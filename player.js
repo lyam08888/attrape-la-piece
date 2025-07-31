@@ -118,6 +118,7 @@ if (physics.realistic) {
     }
     this.vy *= physics.airResistance;
 }
+
  
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);

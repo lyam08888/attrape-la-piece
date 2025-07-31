@@ -485,6 +485,7 @@ if (physics.realistic) {
     }
     block.vy *= physics.airResistance;
 }
+
             block.y += block.vy;
 
             const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
