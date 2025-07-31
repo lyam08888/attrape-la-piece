@@ -3,11 +3,13 @@ import { Player } from './player.js';
 import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
+import { SoundManager } from './sound.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
     const config = await (await fetch('config.json')).json();
     const logger = new Logger();
+    const sound = new SoundManager(config.soundVolume);
 
     const ui = {
         canvas: canvas,
@@ -27,13 +29,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDistanceValue: document.getElementById('renderDistanceValue'),
         zoomSlider: document.getElementById('zoomSlider'),
         zoomValue: document.getElementById('zoomValue'),
+        particlesCheckbox: document.getElementById('particlesCheckbox'),
+        weatherCheckbox: document.getElementById('weatherCheckbox'),
+        lightingCheckbox: document.getElementById('lightingCheckbox'),
+        soundSlider: document.getElementById('soundSlider'),
+        volumeValue: document.getElementById('volumeValue'),
     };
 
     let game = {};
     let currentSkin = 0;
     let gameSettings = {
         renderDistance: config.renderDistance,
-        zoom: config.zoom
+        zoom: config.zoom,
+        showParticles: config.showParticles,
+        weatherEffects: config.weatherEffects,
+        dynamicLighting: config.dynamicLighting,
+        soundVolume: config.soundVolume
     };
     let assets = {}; // Pour stocker les images chargées
     let worldAnimator;
@@ -72,6 +83,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             ui.zoomSlider.oninput = (e) => {
                 gameSettings.zoom = parseFloat(e.target.value);
                 ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+                updateCamera(true);
+            };
+        }
+
+        if (ui.particlesCheckbox) {
+            ui.particlesCheckbox.checked = gameSettings.showParticles;
+            ui.particlesCheckbox.onchange = (e) => {
+                gameSettings.showParticles = e.target.checked;
+            };
+        }
+        if (ui.weatherCheckbox) {
+            ui.weatherCheckbox.checked = gameSettings.weatherEffects;
+            ui.weatherCheckbox.onchange = (e) => {
+                gameSettings.weatherEffects = e.target.checked;
+            };
+        }
+        if (ui.lightingCheckbox) {
+            ui.lightingCheckbox.checked = gameSettings.dynamicLighting;
+            ui.lightingCheckbox.onchange = (e) => {
+                gameSettings.dynamicLighting = e.target.checked;
+            };
+        }
+        if (ui.soundSlider) {
+            ui.soundSlider.value = gameSettings.soundVolume;
+            ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
+            ui.soundSlider.oninput = (e) => {
+                gameSettings.soundVolume = parseFloat(e.target.value);
+                ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
+                sound.setVolume(gameSettings.soundVolume);
             };
         }
 
@@ -107,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             paused: false,
             config: config,
             settings: gameSettings,
+            sound: sound,
             propagateTreeCollapse: propagateTreeCollapse,
             miningEffect: null,
             createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
@@ -115,9 +156,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         generateLevel(game, config, {});
         const spawnPoint = findSpawnPoint();
-        game.player = new Player(spawnPoint.x, spawnPoint.y, config);
+        game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
         worldAnimator = new WorldAnimator(config, assets);
         updateCamera(true);
+        sound.startAmbient();
 
         if(ui.mainMenu) {
             [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
@@ -136,6 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger.update();
         if (!game.player || game.over || game.paused) return;
         try {
+            sound.update();
             game.player.update(keys, mouse, game);
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
@@ -169,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             game.enemies.forEach(e => e.draw(ctx, assets));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
-            drawParticles(ctx);
+            if (gameSettings.showParticles) drawParticles(ctx);
             drawMiningEffect(ctx);
             ctx.restore();
 
@@ -181,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function toggleMenu(show, menuType) {
-        if (!game) return;
+        if (!game || !gameSettings.showParticles) return;
         game.paused = show;
         let menuToToggle = menuType === 'options' ? ui.optionsMenu : ui.controlsMenu;
         if (show) {
@@ -317,6 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
         ui.hud?.classList.remove('active');
         ui.gameover?.classList.add('active');
+        sound.stopAmbient();
     }
 
     function updateParticles() {

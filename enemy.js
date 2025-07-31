@@ -70,6 +70,7 @@ class Enemy {
     }
 
     takeDamage(game) {
+        game.sound?.playHit();
         this.health--;
         if (this.health <= 0 && !this.isDying) {
             this.isDying = true;
