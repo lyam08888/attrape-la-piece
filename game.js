@@ -5,6 +5,7 @@ import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
 import { updateMining } from './miningEngine.js';
+import { TimeSystem } from './timeSystem.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         xpFill: document.getElementById('xpFill'),
         levelPopup: document.getElementById('levelPopup'),
         levelDisplay: document.getElementById('levelDisplay'),
+        timeDisplay: document.getElementById('timeDisplay'),
         skillsMenu: document.getElementById('skillsMenu'),
         skillPointsInfo: document.getElementById('skillPointsInfo'),
         skillRows: document.querySelectorAll('.skill-row'),
@@ -63,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     let assets = {}; // Pour stocker les images chargées
     let worldAnimator;
+    let timeSystem;
 
     // --- Définition de TOUTES les fonctions de logique du jeu ---
     // CORRECTION: Toutes les fonctions sont maintenant définies ici avant d'être utilisées.
@@ -192,6 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.player.survivalItems = randomItem(5);
         game.chests.forEach(ch => { ch.items = randomItem(3); });
         worldAnimator = new WorldAnimator(config, assets);
+        timeSystem = new TimeSystem();
         updateCamera(true);
         sound.startAmbient();
 
@@ -212,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger.update();
         if (!game.player || game.over || game.paused) return;
         try {
+            if (timeSystem) timeSystem.update();
             sound.update();
             game.player.update(keys, mouse, game);
             game.enemies.forEach(e => e.update(game));
@@ -362,14 +367,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function drawSky(ctx) {
+        if (!timeSystem) return;
+        const { hour, minute } = timeSystem.getTime();
+        const t = (hour * 60 + minute) / (24 * 60);
+        let c1 = '#87CEEB', c2 = '#5C94FC';
+        if (t > 0.75 || t < 0.25) { c1 = '#0a0a2e'; c2 = '#1e1e4e'; }
+        else if (t >= 0.25 && t < 0.3) { c1 = '#ff6b6b'; c2 = '#ffa500'; }
+        else if (t >= 0.7 && t <= 0.75) { c1 = '#4a5a8e'; c2 = '#f4a460'; }
+
         const grad = ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
-        grad.addColorStop(0, '#87CEEB');
-        grad.addColorStop(1, '#5C94FC');
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+
+        const sun = timeSystem.getSunPosition(ui.canvas.width, ui.canvas.height);
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.arc(ui.canvas.width - 80, 80, 40, 0, Math.PI * 2);
+        ctx.arc(sun.x, sun.y, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        const moon = timeSystem.getMoonPosition(ui.canvas.width, ui.canvas.height);
+        ctx.fillStyle = '#F0EAD6';
+        ctx.beginPath();
+        ctx.arc(moon.x, moon.y, 30, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -382,6 +403,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (ui.levelDisplay && game.player) {
             ui.levelDisplay.textContent = `Lvl ${game.player.level}`;
+        }
+        if (ui.timeDisplay && timeSystem) {
+            ui.timeDisplay.textContent = timeSystem.formatDateTime();
         }
     }
 
