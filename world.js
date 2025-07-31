@@ -30,6 +30,15 @@ export function generateLevel(game, levelConfig, gameSettings) {
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
+    // Ensure runtime arrays exist
+    game.decorations = game.decorations || [];
+    game.coins = game.coins || [];
+    game.bonuses = game.bonuses || [];
+    game.checkpoints = game.checkpoints || [];
+    game.enemies = game.enemies || [];
+    game.fallingBlocks = game.fallingBlocks || [];
+    game.collectibles = game.collectibles || [];
+
     game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(worldWidthInTiles).fill(TILE.AIR));
     
     const surfaceLevel = Math.floor(worldHeightInTiles / 2.5);
