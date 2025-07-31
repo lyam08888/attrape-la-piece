@@ -179,6 +179,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             propagateTreeCollapse: propagateTreeCollapse,
             miningEffect: null,
             createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
+            startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
+            checkBlockSupport: (x, y) => checkBlockSupport(x, y),
             loseLife: () => loseLife(),
             addXP: (amount) => addXP(amount),
             showLevelPopup: (lvl) => showLevelPopup(lvl),
@@ -454,20 +456,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function startFallingBlock(x, y, tileType) {
+        const { tileSize } = config;
+        game.tileMap[y][x] = TILE.AIR;
+        game.fallingBlocks.push({ x: x * tileSize, y: y * tileSize, vy: 0, tileType });
+    }
+
+    function checkBlockSupport(x, y) {
+        if (y < 0) return;
+        const tile = game.tileMap[y]?.[x];
+        if (!tile || tile === TILE.AIR) return;
+        const tileBelow = game.tileMap[y + 1]?.[x];
+        if (tileBelow === TILE.AIR || tileBelow === undefined) {
+            startFallingBlock(x, y, tile);
+            if (game.checkBlockSupport) game.checkBlockSupport(x, y - 1);
+        }
+    }
+
     function updateFallingBlocks() {
         if (!game) return;
-        const { tileSize } = config;
-        game.fallingBlocks.forEach((block, index) => {
-            block.vy += config.physics.gravity;
+        const { tileSize, physics } = config;
+        for (let i = game.fallingBlocks.length - 1; i >= 0; i--) {
+            const block = game.fallingBlocks[i];
+            block.vy += physics.gravity;
             block.y += block.vy;
 
             const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
             const tileY = Math.floor((block.y + tileSize) / tileSize);
 
-            if (game.tileMap[tileY]?.[tileX] > 0) {
-                game.fallingBlocks.splice(index, 1);
+            if (tileY >= game.tileMap.length) {
+                game.fallingBlocks.splice(i, 1);
+                continue;
             }
-        });
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                block.y = tileY * tileSize - tileSize;
+                block.vy *= -physics.blockBounce;
+                if (Math.abs(block.vy) < 0.5) {
+                    if (game.tileMap[tileY - 1]?.[tileX] === TILE.AIR) {
+                        game.tileMap[tileY - 1][tileX] = block.tileType;
+                        if (game.checkBlockSupport) game.checkBlockSupport(tileX, tileY - 2);
+                    } else {
+                        game.collectibles.push({
+                            x: block.x,
+                            y: block.y,
+                            w: tileSize,
+                            h: tileSize,
+                            vy: -2,
+                            tileType: block.tileType
+                        });
+                    }
+                    game.fallingBlocks.splice(i, 1);
+                }
+            }
+        }
     }
 
     function drawFallingBlocks(ctx, assets) {
@@ -554,13 +596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
 
             if (!isSupported) {
-                game.fallingBlocks.push({
-                    x: x * config.tileSize,
-                    y: y * config.tileSize,
-                    vy: 0,
-                    tileType: tile
-                });
-                game.tileMap[y][x] = TILE.AIR;
+                startFallingBlock(x, y, tile);
 
                 const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
                 for (const [nx, ny] of neighbors) {
