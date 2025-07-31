@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         skinlist: document.getElementById('skinlist'),
         hud: document.getElementById('hud'),
         lives: document.getElementById('lives'),
-        score: document.getElementById('score'),
         gameover: document.getElementById('gameover'),
         message: document.getElementById('message'),
         btnRestart: document.getElementById('btnRestart'),
@@ -35,81 +34,73 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDistance: config.renderDistance,
         zoom: config.zoom
     };
+    let assets = {}; // Pour stocker les images chargées
 
-    const gameLogic = {
-        init: (assets) => {
-            setupMenus(assets);
-        },
-        update: (keys, mouse) => {
-            logger.update();
-            if (!game.player || game.over || game.paused) return;
-            try {
-                game.player.update(keys, mouse, game);
-                game.enemies.forEach(e => e.update(game));
-                game.enemies = game.enemies.filter(e => !e.isDead);
-                updateParticles();
-                updateFallingBlocks();
-                updateCollectibles();
-                updateCamera(false);
-                if (keys.action) keys.action = false;
-                mouse.left = false; mouse.right = false;
-            } catch (error) {
-                logger.error(`Erreur update: ${error.message}`);
-                game.over = true;
-            }
-        },
-        draw: (ctx, assets) => {
-            drawSky(ctx);
-            
-            if (game.player) {
-                ctx.save();
-                ctx.scale(gameSettings.zoom, gameSettings.zoom);
-                ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
+    // --- Définition de toutes les fonctions de logique du jeu ---
 
-                drawTileMap(ctx, assets);
-                drawFallingBlocks(ctx, assets);
-                drawCollectibles(ctx, assets);
-                
-                game.decorations.forEach(d => ctx.drawImage(assets.decoration_bush, d.x, d.y, d.w, d.h));
-                game.coins.forEach(c => ctx.drawImage(assets.coin, c.x, c.y, c.w, c.h));
-                game.bonuses.forEach(b => ctx.drawImage(assets.bonus, b.x, b.y, b.w, b.h));
-                game.checkpoints.forEach(c => ctx.drawImage(c.activated ? assets.checkpoint_on : assets.checkpoint_off, c.x, c.y, c.w, c.h));
-                if (game.flag) ctx.drawImage(assets.flag, game.flag.x, game.flag.y, game.flag.w, game.flag.h);
+    function setupMenus(_assets) {
+        assets = _assets; // On stocke les assets chargés pour les utiliser plus tard
+        if (!ui.mainMenu) { initGame(); return; }
+        ui.skinlist.innerHTML = '';
+        config.skins.forEach((_, i) => {
+            const img = assets[`player${i+1}`].cloneNode();
+            img.onclick = () => selectSkin(i);
+            if (i === currentSkin) img.classList.add("selected");
+            ui.skinlist.appendChild(img);
+        });
+        
+        document.body.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            if (action) handleMenuAction(action);
+        });
 
-                game.enemies.forEach(e => e.draw(ctx, assets));
-                game.player.draw(ctx, assets, `player${currentSkin + 1}`);
-                drawParticles(ctx);
-                drawMiningEffect(ctx);
-                ctx.restore();
-            }
-            
-            updateHUD();
-            updateToolbarUI();
-            logger.draw(ctx, canvas);
-        },
-        // ... (autres fonctions de logique de jeu)
-    };
-    
-    const engine = new GameEngine(canvas, config);
-    engine.start(gameLogic);
+        if (ui.renderDistanceSlider) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
+            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
 
-    function initGame(assets) {
+        if (ui.zoomSlider) {
+            ui.zoomSlider.value = gameSettings.zoom;
+            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            };
+        }
+
+        if(ui.btnRestart) ui.btnRestart.onclick = initGame;
+    }
+
+    function handleMenuAction(action) {
+        switch(action) {
+            case 'start': initGame(); break;
+            case 'options': showMenu(ui.optionsMenu); break;
+            case 'backToMain': showMenu(ui.mainMenu); break;
+            case 'closeMenu': toggleMenu(false, 'controls'); break;
+        }
+    }
+
+    function initGame() {
         try {
             if (ui.gameTitle) ui.gameTitle.style.display = 'none';
             game = {
                 player: null, camera: { x: 0, y: 0 },
                 tileMap: [], enemies: [], particles: [], fallingBlocks: [], collectibles: [],
-                decorations: [], coins: [], bonuses: [], checkpoints: [], flag: null,
-                score: 0, lives: config.player.maxLives, over: false, paused: false,
-                lastCheckpoint: null,
+                lives: config.player.maxLives, over: false, paused: false,
                 config: config,
-                // ... (autres propriétés)
+                propagateTreeCollapse: propagateTreeCollapse,
+                miningEffect: null,
+                createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
+                loseLife: () => loseLife(),
             };
             
             generateLevel(game, config, {});
             const spawnPoint = findSpawnPoint();
             game.player = new Player(spawnPoint.x, spawnPoint.y, config);
-            game.lastCheckpoint = { x: spawnPoint.x, y: spawnPoint.y };
             updateCamera(true); 
 
             if(ui.mainMenu) {
@@ -117,30 +108,115 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ui.hud?.classList.add('active');
             }
             
-            createToolbar(assets);
+            createToolbar();
         } catch (error) {
             logger.error(`Erreur init: ${error.message}`);
         }
     }
 
-    function loseLife() { 
-        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
-        game.lives--; 
-        updateHUD();
-        if(game.lives <= 0) {
-            endGame(false);
-        } else {
-            game.player.x = game.lastCheckpoint.x;
-            game.player.y = game.lastCheckpoint.y;
-            game.player.invulnerable = 120; 
+    function update(keys, mouse) {
+        logger.update();
+        if (!game.player || game.over || game.paused) return;
+        try {
+            game.player.update(keys, mouse, game);
+            game.enemies.forEach(e => e.update(game));
+            game.enemies = game.enemies.filter(e => !e.isDead);
+            updateParticles();
+            updateFallingBlocks();
+            updateCollectibles();
+            updateCamera(false);
+            if (keys.action) keys.action = false;
+            mouse.left = false; mouse.right = false;
+        } catch (error) {
+            logger.error(`Erreur update: ${error.message}`);
+            game.over = true;
         }
     }
 
-    function updateHUD() {
-        if(!game || !ui.hud) return; 
-        ui.lives.textContent = '❤'.repeat(game.lives);
-        ui.score.textContent = `SCORE: ${game.score || 0}`;
+    function draw(ctx, _assets) {
+        assets = _assets;
+        drawSky(ctx);
+        
+        if (game.player) {
+            ctx.save();
+            ctx.scale(gameSettings.zoom, gameSettings.zoom);
+            ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
+
+            drawTileMap(ctx, assets);
+            drawFallingBlocks(ctx, assets);
+            drawCollectibles(ctx, assets);
+            
+            game.enemies.forEach(e => e.draw(ctx, assets));
+            game.player.draw(ctx, assets, `player${currentSkin + 1}`);
+            drawParticles(ctx);
+            drawMiningEffect(ctx);
+            ctx.restore();
+
+            updateHUD();
+            updateToolbarUI();
+        }
+        
+        logger.draw(ctx, canvas);
+    }
+
+    function toggleMenu(show, menuType) {
+        if (!game) return;
+        game.paused = show;
+        let menuToToggle = menuType === 'options' ? ui.optionsMenu : ui.controlsMenu;
+        if (show) {
+            showMenu(menuToToggle);
+        } else {
+            showMenu(null);
+        }
+    }
+
+    function showMenu(menuToShow) {
+        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(m => m?.classList.remove('active'));
+        menuToShow?.classList.add('active');
+    }
+
+    function selectSkin(i) {
+        currentSkin = i;
+        [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
+    }
+
+    function findSpawnPoint() {
+        const { tileSize, worldWidth } = config;
+        const worldWidthInTiles = Math.floor(worldWidth / tileSize);
+        const spawnX = Math.floor(worldWidthInTiles / 2);
+
+        for (let y = 0; y < game.tileMap.length; y++) {
+            if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
+                return { x: spawnX * tileSize, y: (y - 2) * tileSize };
+            }
+        }
+        return { x: worldWidth / 2, y: 100 };
     }
     
-    // ... (le reste des fonctions de game.js reste ici)
+    // ... (toutes les autres fonctions de logique de jeu comme updateCamera, drawTileMap, etc. sont ici)
+
+    // --- Lancement du moteur ---
+
+    const gameLogic = {
+        init: setupMenus,
+        update: update,
+        draw: draw,
+        isPaused: () => game.paused,
+        toggleMenu: (menu) => {
+            if (menu === 'options') toggleMenu(!game.paused, 'options');
+            else if (menu === 'controls') toggleMenu(!game.paused, 'controls');
+        },
+        selectTool: (index) => {
+            if (game.player && index >= 0 && index < game.player.tools.length) {
+                game.player.selectedToolIndex = index;
+            }
+        },
+        showError: (error) => {
+            logger.error(error.message);
+            if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;
+        }
+    };
+    
+    const engine = new GameEngine(canvas, config);
+    engine.start(gameLogic);
 });
