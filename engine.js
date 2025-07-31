@@ -17,17 +17,17 @@ export class GameEngine {
         const baseUrl = this.config.githubRepoUrl || '';
 
         for (const [key, path] of Object.entries(this.config.assets)) {
-            // CORRECTION: On rend le chemin explicitement relatif pour éviter les problèmes de résolution
+            // CORRECTION: On utilise le chemin relatif simple, sans le './'
             if (path.startsWith('http')) {
                 allAssetPaths[key] = path;
             } else {
-                allAssetPaths[key] = baseUrl ? baseUrl + path : './' + path;
+                allAssetPaths[key] = baseUrl ? baseUrl + path : path;
             }
         }
         this.config.skins.forEach((fileName, i) => {
             const skinPath = 'assets/' + fileName;
-            // CORRECTION: On rend aussi ce chemin explicitement relatif
-            allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : './' + skinPath;
+            // CORRECTION: On utilise aussi le chemin relatif simple ici
+            allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : skinPath;
         });
 
         for (const [key, path] of Object.entries(allAssetPaths)) {
