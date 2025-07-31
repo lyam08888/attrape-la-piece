@@ -143,22 +143,22 @@ export class Player {
              }
          }
  
-         if (isAction) {
-             this.swingTimer = 15;
-             const target = this.getTargetTile(mouse, game);
-             if (target) {
-                 if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
-                     this.miningTarget = { x: target.x, y: target.y, type: target.type };
-                     this.miningProgress = 0;
-                 }
- 
-         });
-         game.checkpoints.forEach(cp => {
-             if (!cp.activated && this.rectCollide(cp)) {
-                 cp.activated = true;
-                 game.lastCheckpoint = { x: cp.x, y: cp.y };
-             }
-         });
+        if (isAction) {
+            this.swingTimer = 15;
+            const target = this.getTargetTile(mouse, game);
+            if (target) {
+                if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
+                    this.miningTarget = { x: target.x, y: target.y, type: target.type };
+                    this.miningProgress = 0;
+                }
+            }
+        }
+        game.checkpoints.forEach(cp => {
+            if (!cp.activated && this.rectCollide(cp)) {
+                cp.activated = true;
+                game.lastCheckpoint = { x: cp.x, y: cp.y };
+            }
+        });
      }
  
      addXP(amount, game) {
