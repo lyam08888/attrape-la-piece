@@ -36,10 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     let assets = {}; // Pour stocker les images chargées
 
-    // --- Définition de toutes les fonctions de logique du jeu ---
+    // --- Définition de TOUTES les fonctions de logique du jeu ---
+    // CORRECTION: Toutes les fonctions sont maintenant définies ici avant d'être utilisées.
 
     function setupMenus(_assets) {
-        assets = _assets; // On stocke les assets chargés pour les utiliser plus tard
+        assets = _assets;
         if (!ui.mainMenu) { initGame(); return; }
         ui.skinlist.innerHTML = '';
         config.skins.forEach((_, i) => {
@@ -402,17 +403,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function toggleMenu(show, menuType) {
-        if (!game) return;
-        game.paused = show;
-        let menuToToggle = menuType === 'options' ? ui.optionsMenu : ui.controlsMenu;
-        if (show) {
-            showMenu(menuToToggle);
-        } else {
-            showMenu(null);
+    function propagateTreeCollapse(startX, startY) {
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
+
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
+            
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
+
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
+
+            if (!isSupported) {
+                game.fallingBlocks.push({
+                    x: x * config.tileSize,
+                    y: y * config.tileSize,
+                    vy: 0,
+                    tileType: tile
+                });
+                game.tileMap[y][x] = TILE.AIR;
+
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
+                }
+            }
         }
     }
-    
+
     // --- Lancement du moteur ---
 
     const gameLogic = {
