@@ -1,8 +1,4 @@
-diff --git a/config.json b/config.json
-index 4caccf6aa625a2088b7fe3b44028011d632f9ab3..77e57366796f40e9f75bc55e4f70edc38fcfb092 100644
---- a/config.json
-+++ b/config.json
-@@ -8,62 +8,89 @@
+{
    "tileSize": 16,
    "zoom": 1,
    "chunkSize": 16,
@@ -28,10 +24,8 @@ index 4caccf6aa625a2088b7fe3b44028011d632f9ab3..77e57366796f40e9f75bc55e4f70edc3
    },
    "player": {
      "maxLives": 5,
--    "width": 16,
--    "height": 28,
-+    "width": 12,
-+    "height": 24,
+    "width": 12,
+    "height": 24,
      "reach": 4
    },
    "skins": [
@@ -64,34 +58,33 @@ index 4caccf6aa625a2088b7fe3b44028011d632f9ab3..77e57366796f40e9f75bc55e4f70edc3
      "coin": "assets/coin.png",
      "decoration_bush": "assets/decoration_bush.png",
      "flag": "assets/flag.png",
--    "heart": "assets/heart.png"
-+    "heart": "assets/heart.png",
-+    "player_idle1": "assets/player_idle1.png",
-+    "player_idle2": "assets/player_idle2.png",
-+    "player_walk1": "assets/player_walk1.png",
-+    "player_walk2": "assets/player_walk2.png",
-+    "player_run1": "assets/player_run1.png",
-+    "player_run2": "assets/player_run2.png",
-+    "player_jump": "assets/player_jump.png",
-+    "player_doublejump": "assets/player_doublejump.png",
-+    "player_fly": "assets/player_fly.png",
-+    "player_crouch": "assets/player_crouch.png",
-+    "player_crouch_walk1": "assets/player_crouch_walk1.png",
-+    "player_crouch_walk2": "assets/player_crouch_walk2.png",
-+    "player_prone": "assets/player_prone.png",
-+    "player_prone_walk1": "assets/player_prone_walk1.png",
-+    "player_prone_walk2": "assets/player_prone_walk2.png"
-+  },
-+  "playerAnimations": {
-+    "idle": ["player_idle1", "player_idle2"],
-+    "walking": ["player_walk1", "player_walk2"],
-+    "running": ["player_run1", "player_run2"],
-+    "jumping": ["player_jump"],
-+    "doubleJump": ["player_doublejump"],
-+    "flying": ["player_fly"],
-+    "crouching": ["player_crouch"],
-+    "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
-+    "prone": ["player_prone"],
-+    "proneWalking": ["player_prone_walk1", "player_prone_walk2"]
+    "heart": "assets/heart.png",
+    "player_idle1": "assets/player_idle1.png",
+    "player_idle2": "assets/player_idle2.png",
+    "player_walk1": "assets/player_walk1.png",
+    "player_walk2": "assets/player_walk2.png",
+    "player_run1": "assets/player_run1.png",
+    "player_run2": "assets/player_run2.png",
+    "player_jump": "assets/player_jump.png",
+    "player_doublejump": "assets/player_doublejump.png",
+    "player_fly": "assets/player_fly.png",
+    "player_crouch": "assets/player_crouch.png",
+    "player_crouch_walk1": "assets/player_crouch_walk1.png",
+    "player_crouch_walk2": "assets/player_crouch_walk2.png",
+    "player_prone": "assets/player_prone.png",
+    "player_prone_walk1": "assets/player_prone_walk1.png",
+    "player_prone_walk2": "assets/player_prone_walk2.png"
+  },
+  "playerAnimations": {
+    "idle": ["player_idle1", "player_idle2"],
+    "walking": ["player_walk1", "player_walk2"],
+    "running": ["player_run1", "player_run2"],
+    "jumping": ["player_jump"],
+    "doubleJump": ["player_doublejump"],
+    "flying": ["player_fly"],
+    "crouching": ["player_crouch"],
+    "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
+    "prone": ["player_prone"],
+    "proneWalking": ["player_prone_walk1", "player_prone_walk2"]
    }
  }
