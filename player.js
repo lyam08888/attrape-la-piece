@@ -88,7 +88,7 @@ export class Player {
         }
 
         if (keys.fly) {
-            this.vy = -physics.jumpForce;
+            this.vy = -physics.jumpForce * 0.3;
         }
 
         this.vy += physics.gravity;
