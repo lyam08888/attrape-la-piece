@@ -1,5 +1,6 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
+import { Slime, Frog, Golem } from './enemy.js';
 import { generateLevel, TILE } from './world.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -7,6 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const config = await (await fetch('config.json')).json();
 
     const ui = {
+        canvas: canvas,
+        ctx: canvas.getContext('2d'),
         gameTitle: document.getElementById('gameTitle'),
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
@@ -37,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupMenus(assets);
         },
         update: (keys, mouse) => {
-            if (!game.player || game.over) return;
+            if (!game.player || game.over || game.paused) return;
             try {
                 game.player.update(keys, mouse, game);
                 game.enemies.forEach(e => e.update(game));
@@ -106,19 +109,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (action) handleMenuAction(action, assets);
         });
 
-        ui.renderDistanceSlider.value = gameSettings.renderDistance;
-        ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-        ui.renderDistanceSlider.oninput = (e) => {
-            gameSettings.renderDistance = parseInt(e.target.value);
+        if (ui.renderDistanceSlider) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
             ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-        };
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
 
-        ui.zoomSlider.value = gameSettings.zoom;
-        ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-        ui.zoomSlider.oninput = (e) => {
-            gameSettings.zoom = parseFloat(e.target.value);
+        if (ui.zoomSlider) {
+            ui.zoomSlider.value = gameSettings.zoom;
             ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-        };
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            };
+        }
 
         if(ui.btnRestart) ui.btnRestart.onclick = () => initGame(assets);
     }
@@ -186,8 +193,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // ... (toutes les autres fonctions de logique de jeu comme findSpawnPoint, updateHUD, etc. viennent ici)
-    // J'ai inclus les plus importantes pour la lisibilité
     function updateCamera(isInstant = false) {
         const targetX = game.player.x - (ui.canvas.width / gameSettings.zoom) / 2;
         const targetY = game.player.y - (ui.canvas.height / gameSettings.zoom) / 2;
@@ -234,4 +239,162 @@ document.addEventListener('DOMContentLoaded', async () => {
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
     }
+
+    function findSpawnPoint() {
+        const { tileSize, worldWidth } = config;
+        const worldWidthInTiles = Math.floor(worldWidth / tileSize);
+        const spawnX = Math.floor(worldWidthInTiles / 2);
+
+        for (let y = 0; y < game.tileMap.length; y++) {
+            if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
+                return { x: spawnX * tileSize, y: (y - 2) * tileSize };
+            }
+        }
+        return { x: worldWidth / 2, y: 100 };
+    }
+
+    function updateHUD() {
+        if(!game || !ui.hud) return; 
+        ui.lives.textContent = '❤'.repeat(game.lives);
+    }
+
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
+
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over �`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+    }
+
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
+
+    function drawParticles(ctx) {
+        if (!game) return;
+        ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+    }
+
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+
+    function updateFallingBlocks() {
+        if (!game) return;
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
+            }
+        });
+    }
+
+    function drawFallingBlocks(ctx, assets) {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function updateCollectibles() {
+        if (!game) return;
+        game.collectibles.forEach((item, index) => {
+            item.vy += config.physics.gravity;
+            item.y += item.vy;
+
+            const { tileSize } = config;
+            const tileY = Math.floor((item.y + tileSize) / tileSize);
+            const tileX = Math.floor((item.x + tileSize / 2) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                item.y = tileY * tileSize - tileSize;
+                item.vy = 0;
+            }
+        });
+    }
+
+    function drawCollectibles(ctx, assets) {
+        const TILE_ASSETS = { [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+        game.collectibles.forEach(item => {
+            const asset = TILE_ASSETS[item.tileType];
+            if (asset) {
+                ctx.drawImage(asset, item.x, item.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawMiningEffect(ctx) {
+        if (game && game.miningEffect) {
+            const { x, y, progress } = game.miningEffect;
+            const { tileSize } = config;
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = 'white';
+            const crackWidth = tileSize * Math.min(1, progress * 2);
+            const crackHeight = 2;
+            ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
+            if (progress > 0.5) {
+                const crackWidth2 = tileSize * Math.min(1, (progress - 0.5) * 2);
+                const crackHeight2 = 2;
+                ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function toggleMenu(show) {
+        if (!game) return;
+        if (show) {
+            game.paused = true;
+            ui.controlsMenu.classList.add('active');
+        } else {
+            game.paused = false;
+            ui.controlsMenu.classList.remove('active');
+        }
+    }
 });
+�
