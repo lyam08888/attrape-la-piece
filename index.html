@@ -193,7 +193,11 @@
             image-rendering:pixelated;
         }
         #creatorDownload { margin-top:12px; background:#ffe01b; color:#181b2a; font-weight:bold; border-radius:8px; border:none; padding:8px 20px; font-size:1em; cursor:pointer; }
-        #inventoryList, #chestList { list-style:none; padding-left:0; margin:10px 0; }
+        .inv-grid { display:grid; grid-template-columns:repeat(4,60px); gap:6px; margin:10px 0; }
+        .inventory-slot { width:60px; height:60px; border:2px solid #888; background:rgba(0,0,0,0.5); border-radius:4px; position:relative; display:flex; align-items:center; justify-content:center; }
+        .inventory-slot img { width:80%; height:80%; image-rendering:pixelated; }
+        .inventory-slot .tooltip { display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#000; border:1px solid #ffe01b; padding:2px 4px; font-size:0.6em; white-space:nowrap; }
+        .inventory-slot:hover .tooltip { display:block; }
     </style>
 </head>
 <body>
@@ -270,7 +274,7 @@
         <div id="inventoryMenu" class="overlay">
             <div class="menu-box">
                 <h2>INVENTAIRE</h2>
-                <ul id="inventoryList" style="text-align:left;font-size:0.8em"></ul>
+                <div id="inventoryGrid" class="inv-grid"></div>
                 <button data-action="closeInventory">FERMER</button>
             </div>
         </div>
@@ -278,7 +282,7 @@
         <div id="chestMenu" class="overlay">
             <div class="menu-box">
                 <h2>COFFRE</h2>
-                <ul id="chestList" style="text-align:left;font-size:0.8em"></ul>
+                <div id="chestGrid" class="inv-grid"></div>
                 <button data-action="closeChest">FERMER</button>
             </div>
         </div>
@@ -312,6 +316,7 @@
     </div>
     
     <script src="engine.js" type="module"></script>
+    <script src="itemIcons.js" type="module"></script>
     <script src="game.js" type="module"></script>
     <script src="creator.js" type="module"></script>
 </body>
