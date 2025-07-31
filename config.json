@@ -6,7 +6,7 @@
   "worldWidth": 4000,
   "worldHeight": 2000,
   "tileSize": 16,
-  "zoom": 1.5,
+  "zoom": 1,
   "chunkSize": 16,
   "renderDistance": 8,
   "showParticles": true,
