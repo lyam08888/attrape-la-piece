@@ -18,6 +18,9 @@ Gameplay Approfondi :
 
 Ennemis Variés : Affrontez 3 types d'ennemis avec des comportements uniques.
 
+Animations Dynamiques : le héros adopte maintenant des postures
+différentes lorsqu'il marche, saute ou vole, offrant un rendu plus vivant.
+
 Checkpoints : Votre progression est sauvegardée à des points clés du niveau.
 
 🚀 Comment Lancer le Jeu

@@ -37,6 +37,9 @@ export class Player {
         this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
+        this.state = 'idle';
+        this.animTimer = 0;
+        this.animFrame = 0;
         // Tool list (axe reintroduced for tree cutting)
         this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
@@ -95,6 +98,22 @@ export class Player {
         this.checkEnemyCollisions(game);
         this.checkCollectibleCollisions(game);
         this.checkObjectCollisions(game);
+
+        if (keys.fly) this.state = 'flying';
+        else if (!this.grounded) this.state = 'jumping';
+        else if (keys.left || keys.right) this.state = 'walking';
+        else this.state = 'idle';
+
+        if (this.state === 'walking') {
+            this.animTimer++;
+            if (this.animTimer > 10) {
+                this.animFrame = (this.animFrame + 1) % 2;
+                this.animTimer = 0;
+            }
+        } else {
+            this.animTimer = 0;
+            this.animFrame = 0;
+        }
 
         if (this.invulnerable > 0) this.invulnerable--;
         if (this.swingTimer > 0) this.swingTimer--;
@@ -379,6 +398,22 @@ return null;
 
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         if (this.dir === -1) ctx.scale(-1, 1);
+
+        let offsetY = 0;
+        let rotation = 0;
+        if (this.state === 'walking') {
+            offsetY = Math.sin(this.animFrame * Math.PI) * 1;
+        } else if (this.state === 'jumping') {
+            rotation = -this.dir * 0.2;
+        } else if (this.state === 'flying') {
+            rotation = -this.dir * Math.PI / 2;
+        } else if (this.state === 'idle') {
+            offsetY = Math.sin(Date.now() / 500) * 0.5;
+        }
+
+        ctx.translate(0, offsetY);
+        ctx.rotate(rotation);
+
         if (this.swingTimer > 0) {
             const progress = (15 - this.swingTimer) / 15;
             const angle = Math.sin(progress * Math.PI) * 0.2;
