@@ -141,7 +141,16 @@
             .then(() => {
                 this.setupInput();
                 if (this.gameLogic.init) {
-                    this.gameLogic.init(this.assets);
+                                            try {
+                        this.gameLogic.init(this.assets);
+                    } catch (error) {
+                        console.error("Erreur lors de l'initialisation du jeu:", error);
+                        if (this.gameLogic.showError) {
+                            this.gameLogic.showError(error);
+                        }
+                        // Prevent the game loop from starting if initialization fails.
+                        return;
+                    }
                 }
                 const loop = (time) => {
                     if (!this.gameLogic.isPaused || !this.gameLogic.isPaused()) {
