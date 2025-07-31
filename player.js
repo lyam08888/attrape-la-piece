@@ -97,11 +97,11 @@ export class Player {
  
          this.vy += physics.gravity;
  
-         this.handleActions(keys, mouse, game);
-         this.handleTileCollisions(game);
-         this.checkEnemyCollisions(game);
-         this.checkCollectibleCollisions(game);
-         this.checkObjectCollisions(game);
+        this.handleActions(keys, mouse, game);
+        this.handleTileCollisions(game);
+        this.checkEnemyCollisions(game);
+        this.checkCollectibleCollisions(game);
+        this.checkObjectCollisions(game);
  
         // state selection for animations
          if (keys.fly) this.state = 'flying';
@@ -191,14 +191,131 @@ export class Player {
         this.posture = p;
     }
 
-     rectCollide(other) {
-         return (
-             this.x < other.x + other.w &&
-             this.x + this.w > other.x &&
-             this.y < other.y + other.h &&
-             this.y + this.h > other.y
-         );
-     }
+    rectCollide(other) {
+        return (
+            this.x < other.x + other.w &&
+            this.x + this.w > other.x &&
+            this.y < other.y + other.h &&
+            this.y + this.h > other.y
+        );
+    }
+
+    handleTileCollisions(game) {
+        const { tileSize } = this.config;
+        const map = game.tileMap;
+
+        this.x += this.vx;
+        const startY = Math.floor(this.y / tileSize);
+        const endY = Math.floor((this.y + this.h - 1) / tileSize);
+        if (this.vx !== 0) {
+            const dir = Math.sign(this.vx);
+            const checkX = dir > 0 ? Math.floor((this.x + this.w) / tileSize) : Math.floor(this.x / tileSize);
+            for (let y = startY; y <= endY; y++) {
+                if (map[y]?.[checkX] > 0) {
+                    if (dir > 0) this.x = checkX * tileSize - this.w;
+                    else this.x = (checkX + 1) * tileSize;
+                    this.vx = 0;
+                    break;
+                }
+            }
+        }
+
+        this.y += this.vy;
+        this.grounded = false;
+        const startX = Math.floor(this.x / tileSize);
+        const endX = Math.floor((this.x + this.w - 1) / tileSize);
+
+        if (this.vy > 0) {
+            const checkY = Math.floor((this.y + this.h) / tileSize);
+            for (let x = startX; x <= endX; x++) {
+                if (map[checkY]?.[x] > 0) {
+                    this.y = checkY * tileSize - this.h;
+                    this.vy = 0;
+                    this.grounded = true;
+                    break;
+                }
+            }
+        } else if (this.vy < 0) {
+            const checkY = Math.floor(this.y / tileSize);
+            for (let x = startX; x <= endX; x++) {
+                if (map[checkY]?.[x] > 0) {
+                    this.y = (checkY + 1) * tileSize;
+                    this.vy = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+    checkEnemyCollisions(game) {
+        for (const enemy of game.enemies) {
+            if (enemy.isDead) continue;
+            if (this.rectCollide(enemy)) {
+                if (this.vy > 0 && this.y + this.h - enemy.y < this.h * 0.5) {
+                    enemy.takeDamage(game);
+                    this.vy = -this.config.physics.jumpForce * 0.5;
+                    this.grounded = false;
+                } else {
+                    game.loseLife();
+                }
+            }
+        }
+    }
+
+    checkCollectibleCollisions(game) {
+        const collect = (arr, cb) => {
+            for (let i = arr.length - 1; i >= 0; i--) {
+                if (this.rectCollide(arr[i])) {
+                    cb(arr[i]);
+                    arr.splice(i, 1);
+                }
+            }
+        };
+
+        collect(game.coins, () => {
+            game.addXP(5);
+        });
+
+        collect(game.bonuses, () => {
+            if (game.lives < game.config.player.maxLives) {
+                game.lives++;
+            }
+        });
+
+        collect(game.collectibles, item => {
+            const key = item.tileType;
+            this.inventory[key] = (this.inventory[key] || 0) + 1;
+        });
+    }
+
+    checkObjectCollisions(game) {
+        const tileSize = this.config.tileSize || this.config.player.width;
+        for (const block of game.fallingBlocks) {
+            if (this.rectCollide({ x: block.x, y: block.y, w: tileSize, h: tileSize })) {
+                game.loseLife();
+            }
+        }
+
+        if (game.flag && this.rectCollide(game.flag)) {
+            if (game.addXP) game.addXP(50);
+        }
+    }
+
+    getTargetTile(mouse, game) {
+        const { tileSize, player } = this.config;
+        const worldX = mouse.x / game.settings.zoom + game.camera.x;
+        const worldY = mouse.y / game.settings.zoom + game.camera.y;
+        const tileX = Math.floor(worldX / tileSize);
+        const tileY = Math.floor(worldY / tileSize);
+        const dx = tileX * tileSize + tileSize / 2 - (this.x + this.w / 2);
+        const dy = tileY * tileSize + tileSize / 2 - (this.y + this.h / 2);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= player.reach * tileSize) {
+            const type = game.tileMap[tileY]?.[tileX];
+            if (type !== undefined) return { x: tileX, y: tileY, type };
+        }
+        return null;
+    }
  
      drawTool(ctx, assets) {
          ctx.save();
