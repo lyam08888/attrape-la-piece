@@ -24,27 +24,34 @@ export class GameEngine {
         });
 
         for (const [key, path] of Object.entries(allAssetPaths)) {
-            promises.push(new Promise((resolve, reject) => {
+            promises.push(new Promise((resolve) => { // On utilise resolve dans tous les cas
                 const img = new Image();
                 img.crossOrigin = "Anonymous";
                 img.src = path;
-                img.onload = () => { this.assets[key] = img; resolve(); };
-                img.onerror = () => reject(`Impossible de charger l'asset: ${path}`);
+                img.onload = () => {
+                    this.assets[key] = img;
+                    resolve({ status: 'fulfilled', value: key });
+                };
+                img.onerror = () => {
+                    console.warn(`Impossible de charger l'asset: ${path}`); // Affiche une alerte mais ne bloque pas
+                    resolve({ status: 'rejected', reason: key });
+                };
             }));
         }
-        await Promise.all(promises);
+        await Promise.all(promises); // Attend que toutes les tentatives de chargement soient terminées
     }
 
     // Configure les écouteurs d'événements pour le clavier et la souris
     setupInput() {
         document.addEventListener('keydown', e => {
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && e.code !== 'KeyC') return;
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && e.code !== 'KeyC' && e.code !== 'KeyO') return;
 
             if (e.code === 'ArrowLeft') this.keys.left = true;
             if (e.code === 'ArrowRight') this.keys.right = true;
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = true;
             if (e.code === 'KeyA') this.keys.action = true;
-            if (e.code === 'KeyC' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu();
+            if (e.code === 'KeyC' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('controls');
+            if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
 
             if (e.code.startsWith('Digit')) {
                 const index = parseInt(e.code.replace('Digit', '')) - 1;
