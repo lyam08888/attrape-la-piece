@@ -17,8 +17,9 @@ export class Player {
          this.state = 'idle';
          this.animTimer = 0;
          this.animFrame = 0;
-         // Tool list (axe reintroduced for tree cutting)
-         this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'bow', 'fishing_rod'];
+        // Tool list including the basic weapons that can be used for mining
+        // Tools correspond to the icons located in assets/tool_*.png
+        this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
          this.selectedToolIndex = 0;
          this.inventory = {};
          this.miningTarget = null;

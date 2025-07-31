@@ -34,6 +34,18 @@ Interface enrichie :
 
 Le module `miningEngine.js` gère la destruction des tuiles. Maintenez l'action sur un bloc pour remplir la jauge de minage. Une fois pleine, le bloc se transforme en objet collectable qui rejoint l'inventaire au contact du joueur (`player.inventory`). Intégrez simplement le moteur en appelant `updateMining(game, keys, mouse)` à chaque frame.
 
+### Outils disponibles
+
+Les outils utilisables pour casser les blocs disposent chacun de leur icône dans le dossier `assets`. La barre d'outils affiche par défaut :
+
+- la pioche (`tool_pickaxe.png`)
+- la pelle (`tool_shovel.png`)
+- la hache (`tool_axe.png`)
+- le couteau (`tool_knife.png`)
+- l'épée (`tool_sword.png`)
+- l'arc (`tool_bow.png`)
+- la canne à pêche (`tool_fishing_rod.png`)
+
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
 
