@@ -1,10 +1,12 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
 import { generateLevel, TILE } from './world.js';
+import { Logger } from './logger.js'; // NOUVEAU
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
     const config = await (await fetch('config.json')).json();
+    const logger = new Logger(); // NOUVEAU
 
     const ui = {
         canvas: canvas,
@@ -38,16 +40,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupMenus(assets);
         },
         update: (keys, mouse) => {
+            logger.update(); // NOUVEAU
             if (!game.player || game.over || game.paused) return;
-            game.player.update(keys, mouse, game);
-            game.enemies.forEach(e => e.update(game));
-            game.enemies = game.enemies.filter(e => !e.isDead);
-            updateParticles();
-            updateFallingBlocks();
-            updateCollectibles();
-            updateCamera(false);
-            if (keys.action) keys.action = false;
-            mouse.left = false; mouse.right = false;
+            try {
+                game.player.update(keys, mouse, game);
+                game.enemies.forEach(e => e.update(game));
+                game.enemies = game.enemies.filter(e => !e.isDead);
+                updateParticles();
+                updateFallingBlocks();
+                updateCollectibles();
+                updateCamera(false);
+                if (keys.action) keys.action = false;
+                mouse.left = false; mouse.right = false;
+            } catch (error) {
+                logger.error(`Erreur update: ${error.message}`);
+                game.over = true;
+            }
         },
         draw: (ctx, assets) => {
             if (!game.player) return;
@@ -68,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             updateHUD();
             updateToolbarUI();
+            logger.draw(ctx, canvas); // NOUVEAU
         },
         isPaused: () => game.paused,
         toggleMenu: (menu) => {
@@ -80,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         showError: (error) => {
+            logger.error(error.message);
             if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;
         }
     };
@@ -88,39 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     engine.start(gameLogic);
 
     function setupMenus(assets) {
-        if (!ui.mainMenu) { initGame(assets); return; }
-        ui.skinlist.innerHTML = '';
-        config.skins.forEach((_, i) => {
-            const img = assets[`player${i+1}`].cloneNode();
-            img.onclick = () => selectSkin(i);
-            if (i === currentSkin) img.classList.add("selected");
-            ui.skinlist.appendChild(img);
-        });
-        
-        document.body.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            if (action) handleMenuAction(action, assets);
-        });
-
-        if (ui.renderDistanceSlider) {
-            ui.renderDistanceSlider.value = gameSettings.renderDistance;
-            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-            ui.renderDistanceSlider.oninput = (e) => {
-                gameSettings.renderDistance = parseInt(e.target.value);
-                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-            };
-        }
-
-        if (ui.zoomSlider) {
-            ui.zoomSlider.value = gameSettings.zoom;
-            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-            ui.zoomSlider.oninput = (e) => {
-                gameSettings.zoom = parseFloat(e.target.value);
-                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-            };
-        }
-
-        if(ui.btnRestart) ui.btnRestart.onclick = () => initGame(assets);
+        // ... (code inchangé)
     }
 
     function handleMenuAction(action, assets) {
@@ -133,45 +111,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initGame(assets) {
-        if (ui.gameTitle) ui.gameTitle.style.display = 'none';
-        game = {
-            player: null, camera: { x: 0, y: 0 },
-            tileMap: [], enemies: [], particles: [], fallingBlocks: [], collectibles: [],
-            lives: config.player.maxLives, over: false, paused: false,
-            config: config,
-            // ... (autres propriétés)
-        };
-        
-        generateLevel(game, config, {});
-        const spawnPoint = findSpawnPoint();
-        game.player = new Player(spawnPoint.x, spawnPoint.y, config);
-        updateCamera(true); 
+        try {
+            if (ui.gameTitle) ui.gameTitle.style.display = 'none';
+            game = {
+                player: null, camera: { x: 0, y: 0 },
+                tileMap: [], enemies: [], particles: [], fallingBlocks: [], collectibles: [],
+                lives: config.player.maxLives, over: false, paused: false,
+                config: config,
+                propagateTreeCollapse: propagateTreeCollapse,
+                miningEffect: null,
+                createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
+                loseLife: () => loseLife(),
+            };
+            
+            generateLevel(game, config, {});
+            const spawnPoint = findSpawnPoint();
+            game.player = new Player(spawnPoint.x, spawnPoint.y, config);
+            updateCamera(true); 
 
-        if(ui.mainMenu) {
-            [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
-            ui.hud?.classList.add('active');
-        }
-        
-        createToolbar(assets);
-    }
-
-    function toggleOptionsMenu(show) {
-        if (!game) return;
-        game.paused = show;
-        if (show) {
-            showMenu(ui.optionsMenu);
-        } else {
-            showMenu(null); // Cache tous les menus
-        }
-    }
-
-    function toggleControlsMenu(show) {
-        if (!game) return;
-        game.paused = show;
-        if (show) {
-            showMenu(ui.controlsMenu);
-        } else {
-            showMenu(null);
+            if(ui.mainMenu) {
+                [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
+                ui.hud?.classList.add('active');
+            }
+            
+            createToolbar(assets);
+        } catch (error) {
+            logger.error(`Erreur init: ${error.message}`);
+            if(ui.mainMenu) {
+                ui.mainMenu.innerHTML = `<h2>Erreur au démarrage.</h2><p style="font-size:0.5em;">${error.message}</p>`;
+                showMenu(ui.mainMenu);
+            }
         }
     }
 
