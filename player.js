@@ -114,7 +114,8 @@ export class Player {
         const { tileSize } = this.config;
         let tileX, tileY;
 
-        // Use mouse if pressed, otherwise check blocks around the player
+// Use mouse if pressed, otherwise check blocks around/in front of the player
+
         if (mouse.left) {
             const worldMouseX = mouse.x / game.settings.zoom + game.camera.x;
             const worldMouseY = mouse.y / game.settings.zoom + game.camera.y;
@@ -126,23 +127,24 @@ export class Player {
             const dist = Math.hypot(px - worldMouseX, py - worldMouseY);
             if (dist > this.config.player.reach * tileSize) return null;
         } else {
-            const offsets = [
-                [this.dir, 0],      // front
-                [0, -1],            // above
-                [0, 1],             // below
-                [-this.dir, 0]      // behind
-            ];
-            for (const [ox, oy] of offsets) {
-                const checkX = this.x + this.w / 2 + ox * (this.w / 2 + 8);
-                const checkY = this.y + this.h / 2 + oy * (this.h / 2);
-                const cx = Math.floor(checkX / tileSize);
-                const cy = Math.floor(checkY / tileSize);
-                const tile = game.tileMap[cy]?.[cx];
-                if (tile > 0) {
-                    return { x: cx, y: cy, type: tile };
-                }
-            }
-            return null;
+const offsets = [
+    [this.dir, 0],      // front
+    [0, -1],            // above
+    [0, 1],             // below
+    [-this.dir, 0]      // behind
+];
+for (const [ox, oy] of offsets) {
+    const checkX = this.x + this.w / 2 + ox * (this.w / 2 + 8);
+    const checkY = this.y + this.h / 2 + oy * (this.h / 2);
+    const cx = Math.floor(checkX / tileSize);
+    const cy = Math.floor(checkY / tileSize);
+    const tile = game.tileMap[cy]?.[cx];
+    if (tile > 0) {
+        return { x: cx, y: cy, type: tile };
+    }
+}
+return null;
+
         }
 
         const tile = game.tileMap[tileY]?.[tileX];
