@@ -227,13 +227,16 @@ if (physics.realistic) {
     handleTileCollisions(game) {
         const { tileSize } = this.config;
         const map = game.tileMap;
+        const worldH = map.length;
+        const worldW = map[0].length;
 
         this.x += this.vx;
-        const startY = Math.floor(this.y / tileSize);
-        const endY = Math.floor((this.y + this.h - 1) / tileSize);
+        let startY = Math.max(0, Math.floor(this.y / tileSize));
+        let endY = Math.min(worldH - 1, Math.floor((this.y + this.h - 1) / tileSize));
         if (this.vx !== 0) {
             const dir = Math.sign(this.vx);
-            const checkX = dir > 0 ? Math.floor((this.x + this.w) / tileSize) : Math.floor(this.x / tileSize);
+            const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((this.x + this.w) / tileSize))
+                                   : Math.max(0, Math.floor(this.x / tileSize));
             for (let y = startY; y <= endY; y++) {
                 if (map[y]?.[checkX] > 0) {
                     if (dir > 0) this.x = checkX * tileSize - this.w;
@@ -246,11 +249,11 @@ if (physics.realistic) {
 
         this.y += this.vy;
         this.grounded = false;
-        const startX = Math.floor(this.x / tileSize);
-        const endX = Math.floor((this.x + this.w - 1) / tileSize);
+        let startX = Math.max(0, Math.floor(this.x / tileSize));
+        let endX = Math.min(worldW - 1, Math.floor((this.x + this.w - 1) / tileSize));
 
         if (this.vy > 0) {
-            const checkY = Math.floor((this.y + this.h) / tileSize);
+            const checkY = Math.min(worldH - 1, Math.floor((this.y + this.h) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
                     this.y = checkY * tileSize - this.h;
@@ -260,7 +263,7 @@ if (physics.realistic) {
                 }
             }
         } else if (this.vy < 0) {
-            const checkY = Math.floor(this.y / tileSize);
+            const checkY = Math.max(0, Math.floor(this.y / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
                     this.y = (checkY + 1) * tileSize;
@@ -268,6 +271,18 @@ if (physics.realistic) {
                     break;
                 }
             }
+        }
+
+        // Keep player within world bounds
+        if (this.x < 0) { this.x = 0; this.vx = 0; }
+        if (this.x + this.w > worldW * tileSize) {
+            this.x = worldW * tileSize - this.w;
+            this.vx = 0;
+        }
+        if (this.y + this.h > worldH * tileSize) {
+            this.y = worldH * tileSize - this.h;
+            this.vy = 0;
+            this.grounded = true;
         }
     }
 
