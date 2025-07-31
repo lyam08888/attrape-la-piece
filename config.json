@@ -1,69 +1,97 @@
-{
-  "gameTitle": "Super Pixel Adventure 2",
-  "githubRepoUrl": "",
-  "canvasWidth": 960,
-  "canvasHeight": 540,
-  "worldWidth": 4000,
-  "worldHeight": 2000,
-  "tileSize": 16,
-  "zoom": 1,
-  "chunkSize": 16,
-  "renderDistance": 8,
-  "showParticles": true,
-  "weatherEffects": true,
-  "dynamicLighting": true,
-  "soundVolume": 0.8,
-  "generation": {
-    "enemyCount": 50,
-    "treeCount": 40,
-    "bushCount": 100,
-    "coinVeinCount": 80,
-    "bonusBoxCount": 20,
-    "chestCount": 10,
-    "checkpointCount": 5
-  },
-  "physics": {
-    "gravity": 0.35,
-    "jumpForce": 7,
-    "playerSpeed": 2.5,
-    "friction": 0.88
-  },
-  "player": {
-    "maxLives": 5,
-    "width": 16,
-    "height": 28,
-    "reach": 4
-  },
-  "skins": [
-    "player1.png",
-    "player2.png",
-    "player3.png"
-  ],
-  "assets": {
-    "cloud": "assets/cloud.png",
-    "tile_grass": "assets/tile_grass.png",
-    "tile_dirt": "assets/tile_dirt.png",
-    "tile_stone": "assets/tile_stone.png",
-    "tile_wood": "assets/tile_wood.png",
-    "tile_leaves": "assets/tile_leaves.png",
-    "tile_coal": "assets/tile_coal.png",
-    "tile_iron": "assets/tile_iron.png",
-    "enemy_slime": "assets/enemy_slime.png",
-    "enemy_frog": "assets/enemy_frog.png",
-    "enemy_golem": "assets/enemy_golem.png",
-    "tool_pickaxe": "assets/tool_pickaxe.png",
-    "tool_shovel": "assets/tool_shovel.png",
-    "tool_axe": "assets/tool_axe.png",
-    "tool_sword": "assets/tool_sword.png",
-    "tool_bow": "assets/tool_bow.png",
-    "tool_fishing_rod": "assets/tool_fishing_rod.png",
-    "tool_knife": "assets/tool_knife.png",
-    "bonus": "assets/bonus.png",
-    "checkpoint_off": "assets/checkpoint_off.png",
-    "checkpoint_on": "assets/checkpoint_on.png",
-    "coin": "assets/coin.png",
-    "decoration_bush": "assets/decoration_bush.png",
-    "flag": "assets/flag.png",
-    "heart": "assets/heart.png"
-  }
-}
+diff --git a/config.json b/config.json
+index 4caccf6aa625a2088b7fe3b44028011d632f9ab3..77e57366796f40e9f75bc55e4f70edc38fcfb092 100644
+--- a/config.json
++++ b/config.json
+@@ -8,62 +8,89 @@
+   "tileSize": 16,
+   "zoom": 1,
+   "chunkSize": 16,
+   "renderDistance": 8,
+   "showParticles": true,
+   "weatherEffects": true,
+   "dynamicLighting": true,
+   "soundVolume": 0.8,
+   "generation": {
+     "enemyCount": 50,
+     "treeCount": 40,
+     "bushCount": 100,
+     "coinVeinCount": 80,
+     "bonusBoxCount": 20,
+     "chestCount": 10,
+     "checkpointCount": 5
+   },
+   "physics": {
+     "gravity": 0.35,
+     "jumpForce": 7,
+     "playerSpeed": 2.5,
+     "friction": 0.88
+   },
+   "player": {
+     "maxLives": 5,
+-    "width": 16,
+-    "height": 28,
++    "width": 12,
++    "height": 24,
+     "reach": 4
+   },
+   "skins": [
+     "player1.png",
+     "player2.png",
+     "player3.png"
+   ],
+   "assets": {
+     "cloud": "assets/cloud.png",
+     "tile_grass": "assets/tile_grass.png",
+     "tile_dirt": "assets/tile_dirt.png",
+     "tile_stone": "assets/tile_stone.png",
+     "tile_wood": "assets/tile_wood.png",
+     "tile_leaves": "assets/tile_leaves.png",
+     "tile_coal": "assets/tile_coal.png",
+     "tile_iron": "assets/tile_iron.png",
+     "enemy_slime": "assets/enemy_slime.png",
+     "enemy_frog": "assets/enemy_frog.png",
+     "enemy_golem": "assets/enemy_golem.png",
+     "tool_pickaxe": "assets/tool_pickaxe.png",
+     "tool_shovel": "assets/tool_shovel.png",
+     "tool_axe": "assets/tool_axe.png",
+     "tool_sword": "assets/tool_sword.png",
+     "tool_bow": "assets/tool_bow.png",
+     "tool_fishing_rod": "assets/tool_fishing_rod.png",
+     "tool_knife": "assets/tool_knife.png",
+     "bonus": "assets/bonus.png",
+     "checkpoint_off": "assets/checkpoint_off.png",
+     "checkpoint_on": "assets/checkpoint_on.png",
+     "coin": "assets/coin.png",
+     "decoration_bush": "assets/decoration_bush.png",
+     "flag": "assets/flag.png",
+-    "heart": "assets/heart.png"
++    "heart": "assets/heart.png",
++    "player_idle1": "assets/player_idle1.png",
++    "player_idle2": "assets/player_idle2.png",
++    "player_walk1": "assets/player_walk1.png",
++    "player_walk2": "assets/player_walk2.png",
++    "player_run1": "assets/player_run1.png",
++    "player_run2": "assets/player_run2.png",
++    "player_jump": "assets/player_jump.png",
++    "player_doublejump": "assets/player_doublejump.png",
++    "player_fly": "assets/player_fly.png",
++    "player_crouch": "assets/player_crouch.png",
++    "player_crouch_walk1": "assets/player_crouch_walk1.png",
++    "player_crouch_walk2": "assets/player_crouch_walk2.png",
++    "player_prone": "assets/player_prone.png",
++    "player_prone_walk1": "assets/player_prone_walk1.png",
++    "player_prone_walk2": "assets/player_prone_walk2.png"
++  },
++  "playerAnimations": {
++    "idle": ["player_idle1", "player_idle2"],
++    "walking": ["player_walk1", "player_walk2"],
++    "running": ["player_run1", "player_run2"],
++    "jumping": ["player_jump"],
++    "doubleJump": ["player_doublejump"],
++    "flying": ["player_fly"],
++    "crouching": ["player_crouch"],
++    "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
++    "prone": ["player_prone"],
++    "proneWalking": ["player_prone_walk1", "player_prone_walk2"]
+   }
+ }
