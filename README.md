@@ -17,6 +17,7 @@ Physique Réaliste : Le moteur physique a été amélioré avec une gestion de l
 Gameplay Approfondi :
 
 Ennemis Variés : Affrontez 3 types d'ennemis avec des comportements uniques.
+Moteur de minage : cassez les blocs du terrain avec vos outils et récoltez les ressources.
 
 Animations Dynamiques : le héros adopte maintenant des postures
 différentes lorsqu'il marche, saute ou vole, offrant un rendu plus vivant.
@@ -28,6 +29,10 @@ Interface enrichie :
 - Inventaire complet (touche **I**).
 - Menu des compétences (touche **P**).
 - Menu des commandes remis à jour.
+
+## Cassage de blocs
+
+Le module `miningEngine.js` gère la destruction des tuiles. Maintenez l'action sur un bloc pour remplir la jauge de minage. Une fois pleine, le bloc se transforme en objet collectable qui rejoint l'inventaire au contact du joueur (`player.inventory`). Intégrez simplement le moteur en appelant `updateMining(game, keys, mouse)` à chaque frame.
 
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.

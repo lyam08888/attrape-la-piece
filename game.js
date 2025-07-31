@@ -4,6 +4,7 @@ import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
+import { updateMining } from './miningEngine.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
@@ -216,6 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
+            updateMining(game, keys, mouse);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             if (keys.action) keys.action = false;
