@@ -96,12 +96,13 @@
             if (e.code === 'KeyI' && this.gameLogic.toggleInventory) this.gameLogic.toggleInventory();
             if (e.code === 'KeyC' && this.gameLogic.toggleCalendar) this.gameLogic.toggleCalendar();
             if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
-             if (e.code === 'Escape' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
- 
-             if (e.code.startsWith('Digit')) {
-                 const index = parseInt(e.code.replace('Digit', '')) - 1;
-                 if (this.gameLogic.selectTool) this.gameLogic.selectTool(index);
-             }
+            if (e.code === 'Escape' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
+            if (e.code === 'F3' && this.gameLogic.toggleDebug) this.gameLogic.toggleDebug();
+
+            if (e.code.startsWith('Digit')) {
+                const index = parseInt(e.code.replace('Digit', '')) - 1;
+                if (this.gameLogic.selectTool) this.gameLogic.selectTool(index);
+            }
          });
          document.addEventListener('keyup', e => {
              if (e.code === 'ArrowLeft') this.keys.left = false;
