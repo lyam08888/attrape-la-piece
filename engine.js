@@ -51,7 +51,7 @@ export class GameEngine {
     // Configure les écouteurs d'événements pour le clavier et la souris
     setupInput() {
         document.addEventListener('keydown', e => {
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && e.code !== 'KeyC' && e.code !== 'KeyO') return;
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && e.code !== 'KeyC' && e.code !== 'KeyO' && e.code !== 'Escape') return;
 
             if (e.code === 'ArrowLeft') this.keys.left = true;
             if (e.code === 'ArrowRight') this.keys.right = true;
@@ -59,6 +59,7 @@ export class GameEngine {
             if (e.code === 'KeyA') this.keys.action = true;
             if (e.code === 'KeyC' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('controls');
             if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
+            if (e.code === 'Escape' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
 
             if (e.code.startsWith('Digit')) {
                 const index = parseInt(e.code.replace('Digit', '')) - 1;

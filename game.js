@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'options': showMenu(ui.optionsMenu); break;
             case 'backToMain': showMenu(ui.mainMenu); break;
             case 'closeMenu': toggleMenu(false, 'controls'); break;
+            case 'closeOptions': toggleMenu(false, 'options'); break;
         }
     }
 

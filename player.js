@@ -13,9 +13,12 @@ const TILE_HARDNESS = {
 
 // Tools effective against certain block types
 const TOOL_EFFECTIVENESS = {
-    'shovel': [TILE.GRASS, TILE.DIRT],
-    'axe': [TILE.WOOD, TILE.LEAVES],
-    'pickaxe': [TILE.STONE, TILE.COAL, TILE.IRON]
+    shovel: [TILE.GRASS, TILE.DIRT],
+    axe: [TILE.WOOD, TILE.LEAVES],
+    pickaxe: [TILE.STONE, TILE.COAL, TILE.IRON],
+    sword: [TILE.LEAVES],
+    bow: [TILE.GRASS],
+    fishing_rod: [TILE.WOOD, TILE.LEAVES]
 };
 
 export class Player {
