@@ -86,45 +86,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function initGame() {
-        try {
-            if (ui.gameTitle) ui.gameTitle.style.display = 'none';
-            game = {
-                player: null, camera: { x: 0, y: 0 },
-                tileMap: [],
-                enemies: [],
-                particles: [],
-                fallingBlocks: [],
-                collectibles: [],
-                decorations: [],
-                coins: [],
-                bonuses: [],
-                checkpoints: [],
-                lives: config.player.maxLives,
-                over: false,
-                paused: false,
-                config: config,
-                settings: gameSettings,
-                propagateTreeCollapse: propagateTreeCollapse,
-                miningEffect: null,
-                createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
-                loseLife: () => loseLife(),
-            };
-            
-            generateLevel(game, config, {});
-            const spawnPoint = findSpawnPoint();
-            game.player = new Player(spawnPoint.x, spawnPoint.y, config);
-            updateCamera(true); 
+    try {
+        if (ui.gameTitle) ui.gameTitle.style.display = 'none';
+        game = {
+            player: null, 
+            camera: { x: 0, y: 0 },
+            tileMap: [],
+            enemies: [],
+            particles: [],
+            fallingBlocks: [],
+            collectibles: [],
+            decorations: [],
+            coins: [],
+            bonuses: [],
+            checkpoints: [],
+            lives: config.player.maxLives,
+            over: false,
+            paused: false,
+            config: config,
+            settings: gameSettings,
+            propagateTreeCollapse: propagateTreeCollapse,
+            miningEffect: null,
+            createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
+            loseLife: () => loseLife(),
+        };
+        
+        generateLevel(game, config, {});
+        const spawnPoint = findSpawnPoint();
+        game.player = new Player(spawnPoint.x, spawnPoint.y, config);
+        updateCamera(true); 
 
-            if(ui.mainMenu) {
-                [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
-                ui.hud?.classList.add('active');
-            }
-            
-            createToolbar();
-        } catch (error) {
-            logger.error(`Erreur init: ${error.message}`);
+        if(ui.mainMenu) {
+            [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
+            ui.hud?.classList.add('active');
         }
+        
+        createToolbar();
+    } catch (error) {
+        logger.error(`Erreur init: ${error.message}`);
     }
+}
+
 
     function update(keys, mouse) {
         logger.update();
