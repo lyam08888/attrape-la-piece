@@ -76,6 +76,10 @@ export class Player {
             keys.jump = false;
         }
 
+        if (keys.fly) {
+            this.vy = -physics.jumpForce;
+        }
+
         this.vy += physics.gravity;
 
         this.handleActions(keys, mouse, game);
@@ -91,6 +95,16 @@ export class Player {
     handleActions(keys, mouse, game) {
         const isAction = keys.action || mouse.left || mouse.right;
         const selectedTool = this.tools[this.selectedToolIndex];
+
+        if (keys.action) {
+            for (const chest of game.chests) {
+                if (this.rectCollide(chest)) {
+                    if (game.openChest) game.openChest(chest);
+                    keys.action = false;
+                    return;
+                }
+            }
+        }
 
         if (isAction) {
             this.swingTimer = 15;

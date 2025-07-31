@@ -19,6 +19,7 @@
     "bushCount": 100,
     "coinVeinCount": 80,
     "bonusBoxCount": 20,
+    "chestCount": 10,
     "checkpointCount": 5
   },
   "physics": {

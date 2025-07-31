@@ -34,6 +34,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     game.decorations = game.decorations || [];
     game.coins = game.coins || [];
     game.bonuses = game.bonuses || [];
+    game.chests = game.chests || [];
     game.checkpoints = game.checkpoints || [];
     game.enemies = game.enemies || [];
     game.fallingBlocks = game.fallingBlocks || [];
@@ -116,6 +117,14 @@ export function generateLevel(game, levelConfig, gameSettings) {
         const y = surfaceLevel + 10 + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 20));
         if (game.tileMap[y]?.[x] === TILE.AIR) {
             game.bonuses.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16 });
+        }
+    }
+
+    for (let i = 0; i < (generation.chestCount || 0); i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        const y = surfaceLevel + 5 + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 10));
+        if (game.tileMap[y]?.[x] === TILE.AIR) {
+            game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [] });
         }
     }
 
