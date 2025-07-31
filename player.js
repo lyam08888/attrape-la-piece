@@ -19,7 +19,7 @@ const TOOL_EFFECTIVENESS = {
 };
 
 export class Player {
-    constructor(x, y, config) {
+    constructor(x, y, config, sound) {
         this.x = x;
         this.y = y;
         this.vx = 0;
@@ -27,6 +27,8 @@ export class Player {
         this.w = config.player.width;
         this.h = config.player.height;
         this.config = config;
+        this.sound = sound;
+        this.stepTimer = 0;
         this.grounded = false;
         this.canDoubleJump = true;
         this.dir = 1;
@@ -47,12 +49,25 @@ export class Player {
         else if (keys.right) { this.vx = physics.playerSpeed; this.dir = 1; }
         else { this.vx *= physics.friction; }
 
+        if (this.grounded && Math.abs(this.vx) > 0.1) {
+            if (this.stepTimer <= 0) {
+                this.sound?.playStep();
+                this.stepTimer = 10;
+            } else {
+                this.stepTimer--;
+            }
+        } else {
+            this.stepTimer = 0;
+        }
+
         if (keys.jump) {
             if (this.grounded) {
                 this.vy = -physics.jumpForce;
+                this.sound?.playJump();
                 this.canDoubleJump = true;
             } else if (this.canDoubleJump) {
                 this.vy = -physics.jumpForce * 0.8;
+                this.sound?.playJump();
                 this.canDoubleJump = false;
             }
             keys.jump = false;
@@ -155,6 +170,7 @@ return null;
     }
 
     mineBlock(tileX, tileY, tile, game) {
+        this.sound?.playBreak();
         game.tileMap[tileY][tileX] = TILE.AIR;
 
         game.collectibles.push({

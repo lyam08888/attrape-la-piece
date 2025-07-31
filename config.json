@@ -9,6 +9,10 @@
   "zoom": 1.5,
   "chunkSize": 16,
   "renderDistance": 8,
+  "showParticles": true,
+  "weatherEffects": true,
+  "dynamicLighting": true,
+  "soundVolume": 0.8,
   "generation": {
     "enemyCount": 50,
     "treeCount": 40,
