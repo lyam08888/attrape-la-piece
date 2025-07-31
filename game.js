@@ -71,7 +71,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!ui.mainMenu) { initGame(); return; }
         ui.skinlist.innerHTML = '';
         config.skins.forEach((_, i) => {
-            const img = assets[`player${i+1}`].cloneNode();
+            const asset = assets[`player${i+1}`];
+            if (!asset) {
+                logger.error(`Skin player${i+1} manquant`);
+                return;
+            }
+            const img = asset.cloneNode();
             img.onclick = () => selectSkin(i);
             if (i === currentSkin) img.classList.add("selected");
             ui.skinlist.appendChild(img);
