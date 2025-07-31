@@ -2,6 +2,8 @@
    "tileSize": 16,
    "zoom": 1,
    "chunkSize": 16,
+   "worldWidth": 3000,
+   "worldHeight": 540,
    "renderDistance": 8,
    "showParticles": true,
    "weatherEffects": true,
