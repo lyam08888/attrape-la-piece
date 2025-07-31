@@ -1,12 +1,12 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
 import { generateLevel, TILE } from './world.js';
-import { Logger } from './logger.js'; // NOUVEAU
+import { Logger } from './logger.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
     const config = await (await fetch('config.json')).json();
-    const logger = new Logger(); // NOUVEAU
+    const logger = new Logger();
 
     const ui = {
         canvas: canvas,
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setupMenus(assets);
         },
         update: (keys, mouse) => {
-            logger.update(); // NOUVEAU
+            logger.update();
             if (!game.player || game.over || game.paused) return;
             try {
                 game.player.update(keys, mouse, game);
@@ -58,25 +58,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
         draw: (ctx, assets) => {
-            if (!game.player) return;
+            // Le dessin du ciel se fait en premier
             drawSky(ctx);
-            ctx.save();
-            ctx.scale(gameSettings.zoom, gameSettings.zoom);
-            ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
-
-            drawTileMap(ctx, assets);
-            drawFallingBlocks(ctx, assets);
-            drawCollectibles(ctx, assets);
             
-            game.enemies.forEach(e => e.draw(ctx, assets));
-            game.player.draw(ctx, assets, `player${currentSkin + 1}`);
-            drawParticles(ctx);
-            drawMiningEffect(ctx);
-            ctx.restore();
+            if (game.player) {
+                ctx.save();
+                ctx.scale(gameSettings.zoom, gameSettings.zoom);
+                ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
 
-            updateHUD();
-            updateToolbarUI();
-            logger.draw(ctx, canvas); // NOUVEAU
+                drawTileMap(ctx, assets);
+                drawFallingBlocks(ctx, assets);
+                drawCollectibles(ctx, assets);
+                
+                game.enemies.forEach(e => e.draw(ctx, assets));
+                game.player.draw(ctx, assets, `player${currentSkin + 1}`);
+                drawParticles(ctx);
+                drawMiningEffect(ctx);
+                ctx.restore();
+
+                updateHUD();
+                updateToolbarUI();
+            }
+            
+            // Le logger est dessiné en dernier, par-dessus tout
+            logger.draw(ctx, canvas);
         },
         isPaused: () => game.paused,
         toggleMenu: (menu) => {
@@ -98,7 +103,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     engine.start(gameLogic);
 
     function setupMenus(assets) {
-        // ... (code inchangé)
+        if (!ui.mainMenu) { initGame(assets); return; }
+        ui.skinlist.innerHTML = '';
+        config.skins.forEach((_, i) => {
+            const img = assets[`player${i+1}`].cloneNode();
+            img.onclick = () => selectSkin(i);
+            if (i === currentSkin) img.classList.add("selected");
+            ui.skinlist.appendChild(img);
+        });
+        
+        document.body.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            if (action) handleMenuAction(action, assets);
+        });
+
+        if (ui.renderDistanceSlider) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
+            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
+
+        if (ui.zoomSlider) {
+            ui.zoomSlider.value = gameSettings.zoom;
+            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            };
+        }
+
+        if(ui.btnRestart) ui.btnRestart.onclick = () => initGame(assets);
     }
 
     function handleMenuAction(action, assets) {
