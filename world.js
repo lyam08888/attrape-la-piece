@@ -1,6 +1,5 @@
 import { Slime, Frog, Golem } from './enemy.js';
 
-// Générateur de bruit de Perlin pour un terrain plus naturel
 const Perlin = {
     rand_vect: function(){ let theta = Math.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
     dot_prod_grid: function(x, y, vx, vy){
@@ -24,7 +23,6 @@ const Perlin = {
 };
 Perlin.seed();
 
-// ID des tuiles pour une meilleure lisibilité
 export const TILE = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, WOOD: 4, LEAVES: 5, COAL: 6, IRON: 7 };
 
 export function generateLevel(game, levelConfig, gameSettings) {
@@ -34,7 +32,6 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(worldWidthInTiles).fill(TILE.AIR));
     
-    // 1. Génération du terrain de surface
     const surfaceLevel = Math.floor(worldHeightInTiles / 2.5);
     for (let x = 0; x < worldWidthInTiles; x++) {
         const height = Math.floor(Perlin.get(x * 0.05, 0) * 10);
@@ -46,7 +43,6 @@ export function generateLevel(game, levelConfig, gameSettings) {
         }
     }
 
-    // 2. Génération des grottes et des minerais
     const caveNoiseScale = 0.07;
     for (let x = 0; x < worldWidthInTiles; x++) {
         for (let y = surfaceLevel + 6; y < worldHeightInTiles; y++) {
@@ -58,7 +54,6 @@ export function generateLevel(game, levelConfig, gameSettings) {
         }
     }
 
-    // 3. Génération des arbres
     for (let i = 0; i < generation.treeCount; i++) {
         const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
         for (let y = 0; y < worldHeightInTiles - 1; y++) {
@@ -85,7 +80,48 @@ export function generateLevel(game, levelConfig, gameSettings) {
         }
     }
 
-    // 4. Placement des ennemis
+    // NOUVEAU: Placement des buissons, pièces, bonus, etc.
+    for (let i = 0; i < generation.bushCount; i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        for (let y = 0; y < worldHeightInTiles - 1; y++) {
+            if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
+                game.decorations.push({ x: x * tileSize, y: (y - 1) * tileSize, w: 16, h: 16, type: 'bush' });
+                break;
+            }
+        }
+    }
+
+    for (let i = 0; i < generation.coinVeinCount; i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        const y = surfaceLevel + 10 + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 20));
+        if (game.tileMap[y]?.[x] === TILE.AIR) {
+            const veinSize = 2 + Math.floor(Math.random() * 4);
+            for (let j = 0; j < veinSize; j++) {
+                game.coins.push({ x: (x + j) * tileSize, y: y * tileSize, w: 16, h: 16 });
+            }
+        }
+    }
+
+    for (let i = 0; i < generation.bonusBoxCount; i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        const y = surfaceLevel + 10 + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 20));
+        if (game.tileMap[y]?.[x] === TILE.AIR) {
+            game.bonuses.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16 });
+        }
+    }
+
+    for (let i = 1; i <= generation.checkpointCount; i++) {
+        const x = Math.floor(i * (worldWidthInTiles / (generation.checkpointCount + 1)));
+        for (let y = 0; y < worldHeightInTiles - 1; y++) {
+            if (game.tileMap[y][x] > 0 && game.tileMap[y - 1][x] === TILE.AIR) {
+                game.checkpoints.push({ x: x * tileSize, y: (y - 2) * tileSize, w: 16, h: 32, activated: false });
+                break;
+            }
+        }
+    }
+
+    game.flag = { x: (worldWidthInTiles - 10) * tileSize, y: (surfaceLevel - 4) * tileSize, w: 32, h: 64 };
+
     for (let i = 0; i < generation.enemyCount; i++) {
         const x = Math.floor(Math.random() * worldWidthInTiles);
         const y = surfaceLevel + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 5));
