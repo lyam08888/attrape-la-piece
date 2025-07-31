@@ -5,7 +5,7 @@ export class GameEngine {
         this.ctx = canvas.getContext('2d');
         this.config = config;
         this.assets = {};
-        this.keys = { left: false, right: false, jump: false, action: false };
+        this.keys = { left: false, right: false, jump: false, action: false, fly: false };
         this.mouse = { x: 0, y: 0, left: false, right: false };
         this.gameLogic = {}; // Fonctions spécifiques au jeu (init, update, draw)
     }
@@ -61,6 +61,8 @@ export class GameEngine {
             if (e.code === 'ArrowRight') this.keys.right = true;
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = true;
             if (e.code === 'KeyA') this.keys.action = true;
+            if (e.code === 'KeyV') this.keys.fly = true;
+            if (e.code === 'KeyI' && this.gameLogic.toggleInventory) this.gameLogic.toggleInventory();
             if (e.code === 'KeyC' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('controls');
             if (e.code === 'KeyO' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
             if (e.code === 'Escape' && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
@@ -75,6 +77,7 @@ export class GameEngine {
             if (e.code === 'ArrowRight') this.keys.right = false;
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = false;
             if (e.code === 'KeyA') this.keys.action = false;
+            if (e.code === 'KeyV') this.keys.fly = false;
         });
         
         this.canvas.addEventListener('mousemove', e => {

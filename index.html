@@ -161,6 +161,7 @@
             image-rendering:pixelated;
         }
         #creatorDownload { margin-top:12px; background:#ffe01b; color:#181b2a; font-weight:bold; border-radius:8px; border:none; padding:8px 20px; font-size:1em; cursor:pointer; }
+        #inventoryList, #chestList { list-style:none; padding-left:0; margin:10px 0; }
     </style>
 </head>
 <body>
@@ -231,6 +232,22 @@
                 <button id="creatorDownload">Télécharger PNG</button>
                 <button id="creatorSave">Utiliser ce personnage</button>
                 <button data-action="backToMain">RETOUR</button>
+            </div>
+        </div>
+
+        <div id="inventoryMenu" class="overlay">
+            <div class="menu-box">
+                <h2>INVENTAIRE</h2>
+                <ul id="inventoryList" style="text-align:left;font-size:0.8em"></ul>
+                <button data-action="closeInventory">FERMER</button>
+            </div>
+        </div>
+
+        <div id="chestMenu" class="overlay">
+            <div class="menu-box">
+                <h2>COFFRE</h2>
+                <ul id="chestList" style="text-align:left;font-size:0.8em"></ul>
+                <button data-action="closeChest">FERMER</button>
             </div>
         </div>
 

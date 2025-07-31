@@ -4,6 +4,7 @@ import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
+import { randomItem } from './survivalItems.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
@@ -26,6 +27,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         message: document.getElementById('message'),
         btnRestart: document.getElementById('btnRestart'),
         toolbar: document.getElementById('toolbar'),
+        inventoryMenu: document.getElementById('inventoryMenu'),
+        chestMenu: document.getElementById('chestMenu'),
+        inventoryList: document.getElementById('inventoryList'),
+        chestList: document.getElementById('chestList'),
         renderDistanceSlider: document.getElementById('renderDistanceSlider'),
         renderDistanceValue: document.getElementById('renderDistanceValue'),
         zoomSlider: document.getElementById('zoomSlider'),
@@ -127,6 +132,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'backToMain': showMenu(ui.mainMenu); break;
             case 'closeMenu': toggleMenu(false, 'controls'); break;
             case 'closeOptions': toggleMenu(false, 'options'); break;
+            case 'closeInventory': toggleInventoryMenu(); break;
+            case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
         }
     }
 
@@ -145,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             coins: [],
             bonuses: [],
             checkpoints: [],
+            chests: [],
             lives: config.player.maxLives,
             over: false,
             paused: false,
@@ -160,6 +168,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         generateLevel(game, config, {});
         const spawnPoint = findSpawnPoint();
         game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
+        game.player.survivalItems = randomItem(5);
+        game.chests.forEach(ch => { ch.items = randomItem(3); });
         worldAnimator = new WorldAnimator(config, assets);
         updateCamera(true);
         sound.startAmbient();
@@ -212,6 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawDecorations(ctx, assets);
             drawFallingBlocks(ctx, assets);
             drawCollectibles(ctx, assets);
+            drawChests(ctx, assets);
             
             game.enemies.forEach(e => e.draw(ctx, assets));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
@@ -456,6 +467,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    function drawChests(ctx, assets) {
+        game.chests.forEach(ch => {
+            ctx.drawImage(assets.bonus, ch.x, ch.y, ch.w, ch.h);
+        });
+    }
+
     function drawDecorations(ctx, assets) {
         game.decorations.forEach(dec => {
             if (dec.type === 'bush') {
@@ -515,6 +532,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function openChestMenu(chest) {
+        if (!chest || !ui.chestMenu) return;
+        ui.chestList.innerHTML = chest.items.map(i => `<li>${i}</li>`).join('');
+        ui.chestMenu.classList.add('active');
+        game.paused = true;
+    }
+
+    function toggleInventoryMenu() {
+        if (!ui.inventoryMenu) return;
+        if (ui.inventoryMenu.classList.contains('active')) {
+            ui.inventoryMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            ui.inventoryList.innerHTML = game.player.survivalItems.map(i => `<li>${i}</li>`).join('');
+            ui.inventoryMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
+
     // --- Lancement du moteur ---
 
     const gameLogic = {
@@ -537,6 +573,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.player.selectedToolIndex = (game.player.selectedToolIndex + dir + len) % len;
             }
         },
+        toggleInventory: () => toggleInventoryMenu(),
+        openChest: (ch) => openChestMenu(ch),
         showError: (error) => {
             logger.error(error.message);
             if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;
