@@ -378,7 +378,7 @@ return null;
         }
 
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-        if (this.dir === 1) ctx.scale(-1, 1);
+        if (this.dir === -1) ctx.scale(-1, 1);
         if (this.swingTimer > 0) {
             const progress = (15 - this.swingTimer) / 15;
             const angle = Math.sin(progress * Math.PI) * 0.2;

@@ -5,6 +5,7 @@ import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
 import { randomItem } from './survivalItems.js';
+import { getItemIcon, getChestIcon } from './itemIcons.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
@@ -29,8 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         toolbar: document.getElementById('toolbar'),
         inventoryMenu: document.getElementById('inventoryMenu'),
         chestMenu: document.getElementById('chestMenu'),
-        inventoryList: document.getElementById('inventoryList'),
-        chestList: document.getElementById('chestList'),
+        inventoryGrid: document.getElementById('inventoryGrid'),
+        chestGrid: document.getElementById('chestGrid'),
         renderDistanceSlider: document.getElementById('renderDistanceSlider'),
         renderDistanceValue: document.getElementById('renderDistanceValue'),
         zoomSlider: document.getElementById('zoomSlider'),
@@ -65,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function setupMenus(_assets) {
         assets = _assets;
+        assets.chest = getChestIcon();
         if (!ui.mainMenu) { initGame(); return; }
         ui.skinlist.innerHTML = '';
         config.skins.forEach((_, i) => {
@@ -496,7 +498,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function drawChests(ctx, assets) {
         game.chests.forEach(ch => {
-            ctx.drawImage(assets.bonus, ch.x, ch.y, ch.w, ch.h);
+            const img = assets.chest || assets.bonus;
+            ctx.drawImage(img, ch.x, ch.y, ch.w, ch.h);
         });
     }
 
@@ -561,7 +564,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function openChestMenu(chest) {
         if (!chest || !ui.chestMenu) return;
-        ui.chestList.innerHTML = chest.items.map(i => `<li>${i}</li>`).join('');
+        ui.chestGrid.innerHTML = '';
+        chest.items.forEach((item, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'inventory-slot';
+            slot.dataset.index = idx;
+            const img = getItemIcon(item);
+            slot.appendChild(img.cloneNode());
+            const tip = document.createElement('div');
+            tip.className = 'tooltip';
+            tip.textContent = item;
+            slot.appendChild(tip);
+            slot.onclick = () => {
+                if (game.player.survivalItems.length < 16) {
+                    game.player.survivalItems.push(item);
+                    chest.items.splice(idx,1);
+                    openChestMenu(chest);
+                }
+            };
+            ui.chestGrid.appendChild(slot);
+        });
         ui.chestMenu.classList.add('active');
         game.paused = true;
         game.addXP(15);
@@ -603,7 +625,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             ui.inventoryMenu.classList.remove('active');
             game.paused = false;
         } else {
-            ui.inventoryList.innerHTML = game.player.survivalItems.map(i => `<li>${i}</li>`).join('');
+            ui.inventoryGrid.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                const item = game.player.survivalItems[i];
+                if (item) {
+                    slot.appendChild(getItemIcon(item).cloneNode());
+                    const tip = document.createElement('div');
+                    tip.className = 'tooltip';
+                    tip.textContent = item;
+                    slot.appendChild(tip);
+                }
+                ui.inventoryGrid.appendChild(slot);
+            }
             ui.inventoryMenu.classList.add('active');
             game.paused = true;
         }
