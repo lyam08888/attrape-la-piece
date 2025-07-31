@@ -118,11 +118,19 @@
              this.mouse.x = e.clientX - rect.left;
              this.mouse.y = e.clientY - rect.top;
          });
-         this.canvas.addEventListener('mousedown', e => {
-             if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
-             if (e.button === 0) this.mouse.left = true;
-             if (e.button === 2) this.mouse.right = true;
-         });
+        this.canvas.addEventListener('mousedown', e => {
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
+            if (e.button === 0) this.mouse.left = true;
+            if (e.button === 2) this.mouse.right = true;
+        });
+        this.canvas.addEventListener('mouseup', e => {
+            if (e.button === 0) this.mouse.left = false;
+            if (e.button === 2) this.mouse.right = false;
+        });
+        this.canvas.addEventListener('mouseleave', () => {
+            this.mouse.left = false;
+            this.mouse.right = false;
+        });
          this.canvas.addEventListener('wheel', e => {
              if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
              if (this.gameLogic.cycleTool) {
@@ -158,8 +166,6 @@
                     }
                     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                     this.gameLogic.draw && this.gameLogic.draw(this.ctx, this.assets);
-                    this.mouse.left = false;
-                    this.mouse.right = false;
                     requestAnimationFrame(loop);
                 };
                 requestAnimationFrame(loop);
