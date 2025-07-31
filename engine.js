@@ -26,9 +26,13 @@ export class GameEngine {
         }
         this.config.skins.forEach((fileName, i) => {
             const skinPath = 'assets/' + fileName;
-            // CORRECTION: On utilise aussi le chemin relatif simple ici
             allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : skinPath;
         });
+
+        const custom = localStorage.getItem('customPlayer1');
+        if (custom) {
+            allAssetPaths['player1'] = custom;
+        }
 
         for (const [key, path] of Object.entries(allAssetPaths)) {
             promises.push(new Promise((resolve) => { // On utilise resolve dans tous les cas
