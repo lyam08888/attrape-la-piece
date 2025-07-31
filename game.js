@@ -193,8 +193,226 @@ document.addEventListener('DOMContentLoaded', async () => {
         return { x: worldWidth / 2, y: 100 };
     }
     
-    // ... (toutes les autres fonctions de logique de jeu comme updateCamera, drawTileMap, etc. sont ici)
+    function updateCamera(isInstant = false) {
+        if (!game.player) return;
+        const targetX = game.player.x - (ui.canvas.width / gameSettings.zoom) / 2;
+        const targetY = game.player.y - (ui.canvas.height / gameSettings.zoom) / 2;
+        
+        if (isInstant) {
+            game.camera.x = targetX;
+            game.camera.y = targetY;
+        } else {
+            game.camera.x += (targetX - game.camera.x) * 0.1;
+            game.camera.y += (targetY - game.camera.y) * 0.1;
+        }
+        
+        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.width / gameSettings.zoom)));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.height / gameSettings.zoom)));
+    }
 
+    function drawTileMap(ctx, assets) {
+        const { tileSize, chunkSize } = config;
+        const playerChunkX = Math.floor(game.player.x / (chunkSize * tileSize));
+        const playerChunkY = Math.floor(game.player.y / (chunkSize * tileSize));
+        
+        const startChunkX = Math.max(0, playerChunkX - gameSettings.renderDistance);
+        const endChunkX = playerChunkX + gameSettings.renderDistance;
+        const startChunkY = Math.max(0, playerChunkY - gameSettings.renderDistance);
+        const endChunkY = playerChunkY + gameSettings.renderDistance;
+
+        const TILE_ASSETS = { [TILE.GRASS]: assets.tile_grass, [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+
+        for (let cy = startChunkY; cy <= endChunkY; cy++) {
+            for (let cx = startChunkX; cx <= endChunkX; cx++) {
+                for (let y = 0; y < chunkSize; y++) {
+                    for (let x = 0; x < chunkSize; x++) {
+                        const tileX = cx * chunkSize + x;
+                        const tileY = cy * chunkSize + y;
+                        if (game.tileMap[tileY]?.[tileX] > 0) {
+                            const asset = TILE_ASSETS[game.tileMap[tileY][tileX]];
+                            if (asset) ctx.drawImage(asset, tileX * tileSize, tileY * tileSize, tileSize, tileSize);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function createToolbar() {
+        ui.toolbar.innerHTML = '';
+        game.player.tools.forEach((toolName, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'toolbar-slot';
+            slot.dataset.index = index;
+            
+            const img = document.createElement('img');
+            img.src = assets[`tool_${toolName}`]?.src || '';
+            slot.appendChild(img);
+            
+            ui.toolbar.appendChild(slot);
+        });
+    }
+
+    function updateToolbarUI() {
+        if (!game || !ui.toolbar) return;
+        const slots = ui.toolbar.children;
+        for (let i = 0; i < slots.length; i++) {
+            slots[i].classList.toggle('selected', i === game.player.selectedToolIndex);
+        }
+    }
+
+    function drawSky(ctx) {
+        const grad = ctx.createLinearGradient(0, 0, 0, ui.canvas.height);
+        grad.addColorStop(0, '#87CEEB');
+        grad.addColorStop(1, '#5C94FC');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+    }
+
+    function updateHUD() {
+        if(!game || !ui.hud) return; 
+        ui.lives.textContent = '❤'.repeat(game.lives);
+    }
+
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
+
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+    }
+
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
+
+    function drawParticles(ctx) {
+        if (!game) return;
+        ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+    }
+
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+
+    function updateFallingBlocks() {
+        if (!game) return;
+        const { tileSize } = config;
+        game.fallingBlocks.forEach((block, index) => {
+            block.vy += config.physics.gravity;
+            block.y += block.vy;
+
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                game.fallingBlocks.splice(index, 1);
+            }
+        });
+    }
+
+    function drawFallingBlocks(ctx, assets) {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function updateCollectibles() {
+        if (!game) return;
+        game.collectibles.forEach((item, index) => {
+            item.vy += config.physics.gravity;
+            item.y += item.vy;
+
+            const { tileSize } = config;
+            const tileY = Math.floor((item.y + tileSize) / tileSize);
+            const tileX = Math.floor((item.x + tileSize / 2) / tileSize);
+
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                item.y = tileY * tileSize - tileSize;
+                item.vy = 0;
+            }
+        });
+    }
+
+    function drawCollectibles(ctx, assets) {
+        const TILE_ASSETS = { [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+        game.collectibles.forEach(item => {
+            const asset = TILE_ASSETS[item.tileType];
+            if (asset) {
+                ctx.drawImage(asset, item.x, item.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawMiningEffect(ctx) {
+        if (game && game.miningEffect) {
+            const { x, y, progress } = game.miningEffect;
+            const { tileSize } = config;
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = 'white';
+            const crackWidth = tileSize * Math.min(1, progress * 2);
+            const crackHeight = 2;
+            ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
+            if (progress > 0.5) {
+                const crackWidth2 = tileSize * Math.min(1, (progress - 0.5) * 2);
+                const crackHeight2 = 2;
+                ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function toggleMenu(show, menuType) {
+        if (!game) return;
+        game.paused = show;
+        let menuToToggle = menuType === 'options' ? ui.optionsMenu : ui.controlsMenu;
+        if (show) {
+            showMenu(menuToToggle);
+        } else {
+            showMenu(null);
+        }
+    }
+    
     // --- Lancement du moteur ---
 
     const gameLogic = {
