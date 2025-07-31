@@ -146,6 +146,13 @@
             width: 80%;
             height: 80%;
         }
+        /* Character creator styles */
+        #creatorParts { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:10px; }
+        .creator-part { background:#1a1b1e; border-radius:7px; padding:7px 10px; margin:2px; }
+        #creatorMenu label { font-size:.95em; color:#ffe01b; }
+        #creatorMenu select, #creatorMenu input[type=color] { margin-top:3px; margin-bottom:2px; }
+        #creatorPreview { background:#191b22; border:2px solid #ffe01b; margin:14px auto; image-rendering:pixelated; }
+        #creatorDownload { margin-top:12px; background:#ffe01b; color:#181b2a; font-weight:bold; border-radius:8px; border:none; padding:8px 20px; font-size:1em; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -158,6 +165,7 @@
                 <h2 id="menuTitle">Choisissez un héros</h2>
                 <div id="skinlist"></div>
                 <button data-action="start">START GAME</button>
+                <button data-action="creator">CRÉER JOUEUR</button>
                 <button data-action="options">OPTIONS</button>
             </div>
         </div>
@@ -207,6 +215,16 @@
             </div>
         </div>
 
+        <div id="creatorMenu" class="overlay">
+            <div class="menu-box">
+                <h2>CRÉER SON JOUEUR</h2>
+                <div id="creatorParts"></div>
+                <canvas id="creatorPreview" width="48" height="48"></canvas><br>
+                <button id="creatorDownload">Télécharger PNG</button>
+                <button data-action="backToMain">RETOUR</button>
+            </div>
+        </div>
+
         <div id="hud" class="overlay">
             <div class="hud-info">
                 <span id="lives"></span>
@@ -224,5 +242,6 @@
     
     <script src="engine.js" type="module"></script>
     <script src="game.js" type="module"></script>
+    <script src="creator.js" type="module"></script>
 </body>
 </html>

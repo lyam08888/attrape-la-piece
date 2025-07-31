@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
         controlsMenu: document.getElementById('controlsMenu'),
+        creatorMenu: document.getElementById('creatorMenu'),
         skinlist: document.getElementById('skinlist'),
         hud: document.getElementById('hud'),
         lives: document.getElementById('lives'),
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleMenuAction(action) {
         switch(action) {
             case 'start': initGame(); break;
+            case 'creator': showMenu(ui.creatorMenu); break;
             case 'options': showMenu(ui.optionsMenu); break;
             case 'backToMain': showMenu(ui.mainMenu); break;
             case 'closeMenu': toggleMenu(false, 'controls'); break;
@@ -236,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function showMenu(menuToShow) {
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(m => m?.classList.remove('active'));
+        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.creatorMenu].forEach(m => m?.classList.remove('active'));
         menuToShow?.classList.add('active');
     }
 
