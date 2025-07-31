@@ -11,7 +11,11 @@
   "renderDistance": 8,
   "generation": {
     "enemyCount": 50,
-    "treeCount": 40
+    "treeCount": 40,
+    "bushCount": 100,
+    "coinVeinCount": 80,
+    "bonusBoxCount": 20,
+    "checkpointCount": 5
   },
   "physics": {
     "gravity": 0.35,
