@@ -1,16 +1,29 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
 import { generateLevel, TILE } from './world.js';
-import { ParticleSystem } from './fx.js';
-import { WorldAnimator } from './worldAnimator.js';
-import { LightingSystem } from './lighting.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
     const config = await (await fetch('config.json')).json();
 
     const ui = {
-        // ... (références UI inchangées)
+        canvas: canvas,
+        ctx: canvas.getContext('2d'),
+        gameTitle: document.getElementById('gameTitle'),
+        mainMenu: document.getElementById('mainMenu'),
+        optionsMenu: document.getElementById('optionsMenu'),
+        controlsMenu: document.getElementById('controlsMenu'),
+        skinlist: document.getElementById('skinlist'),
+        hud: document.getElementById('hud'),
+        lives: document.getElementById('lives'),
+        gameover: document.getElementById('gameover'),
+        message: document.getElementById('message'),
+        btnRestart: document.getElementById('btnRestart'),
+        toolbar: document.getElementById('toolbar'),
+        renderDistanceSlider: document.getElementById('renderDistanceSlider'),
+        renderDistanceValue: document.getElementById('renderDistanceValue'),
+        zoomSlider: document.getElementById('zoomSlider'),
+        zoomValue: document.getElementById('zoomValue'),
     };
 
     let game = {};
@@ -20,7 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         zoom: config.zoom
     };
 
-    // Logique spécifique à notre jeu
     const gameLogic = {
         init: (assets) => {
             setupMenus(assets);
@@ -30,11 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.player.update(keys, mouse, game);
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
-            
-            game.particleSystem.update();
-            game.worldAnimator.update(game.camera, canvas, gameSettings.zoom);
-            game.lightingSystem.update();
-
+            updateParticles();
             updateFallingBlocks();
             updateCollectibles();
             updateCamera(false);
@@ -43,46 +51,96 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         draw: (ctx, assets) => {
             if (!game.player) return;
-            game.lightingSystem.drawSky(ctx, canvas);
+            drawSky(ctx);
             ctx.save();
             ctx.scale(gameSettings.zoom, gameSettings.zoom);
             ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
 
-            game.worldAnimator.draw(ctx);
             drawTileMap(ctx, assets);
             drawFallingBlocks(ctx, assets);
             drawCollectibles(ctx, assets);
             
             game.enemies.forEach(e => e.draw(ctx, assets));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
-            game.particleSystem.draw(ctx);
+            drawParticles(ctx);
             drawMiningEffect(ctx);
-
-            game.lightingSystem.drawLightOverlay(ctx, game.player, game.camera, gameSettings.zoom);
             ctx.restore();
 
             updateHUD();
             updateToolbarUI();
         },
-        // ... (autres fonctions de logique de jeu)
+        isPaused: () => game.paused,
+        toggleMenu: (menu) => {
+            if (menu === 'options') toggleOptionsMenu(!game.paused);
+            else if (menu === 'controls') toggleControlsMenu(!game.paused);
+        },
+        selectTool: (index) => {
+            if (game.player && index >= 0 && index < game.player.tools.length) {
+                game.player.selectedToolIndex = index;
+            }
+        },
+        showError: (error) => {
+            if(ui.mainMenu) ui.mainMenu.innerHTML = `<h2>Erreur de chargement.</h2><p style="font-size:0.5em;">${error}</p>`;
+        }
     };
     
     const engine = new GameEngine(canvas, config);
     engine.start(gameLogic);
 
+    function setupMenus(assets) {
+        if (!ui.mainMenu) { initGame(assets); return; }
+        ui.skinlist.innerHTML = '';
+        config.skins.forEach((_, i) => {
+            const img = assets[`player${i+1}`].cloneNode();
+            img.onclick = () => selectSkin(i);
+            if (i === currentSkin) img.classList.add("selected");
+            ui.skinlist.appendChild(img);
+        });
+        
+        document.body.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            if (action) handleMenuAction(action, assets);
+        });
+
+        if (ui.renderDistanceSlider) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
+            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
+
+        if (ui.zoomSlider) {
+            ui.zoomSlider.value = gameSettings.zoom;
+            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            };
+        }
+
+        if(ui.btnRestart) ui.btnRestart.onclick = () => initGame(assets);
+    }
+
+    function handleMenuAction(action, assets) {
+        switch(action) {
+            case 'start': initGame(assets); break;
+            case 'options': showMenu(ui.optionsMenu); break;
+            case 'backToMain': showMenu(ui.mainMenu); break;
+            case 'closeMenu': toggleControlsMenu(false); break;
+        }
+    }
+
     function initGame(assets) {
         if (ui.gameTitle) ui.gameTitle.style.display = 'none';
         game = {
             player: null, camera: { x: 0, y: 0 },
-            tileMap: [], enemies: [], fallingBlocks: [], collectibles: [],
+            tileMap: [], enemies: [], particles: [], fallingBlocks: [], collectibles: [],
             lives: config.player.maxLives, over: false, paused: false,
             config: config,
-            particleSystem: new ParticleSystem(),
-            worldAnimator: new WorldAnimator(config, assets),
-            lightingSystem: new LightingSystem(config),
             // ... (autres propriétés)
         };
-        game.createParticles = (x, y, count, color, options) => game.particleSystem.create(x, y, count, color, options);
         
         generateLevel(game, config, {});
         const spawnPoint = findSpawnPoint();
@@ -96,5 +154,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         createToolbar(assets);
     }
-    // ... (le reste des fonctions de game.js reste ici, mais sans la logique qui a été déplacée)
+
+    function toggleOptionsMenu(show) {
+        if (!game) return;
+        game.paused = show;
+        if (show) {
+            showMenu(ui.optionsMenu);
+        } else {
+            showMenu(null); // Cache tous les menus
+        }
+    }
+
+    function toggleControlsMenu(show) {
+        if (!game) return;
+        game.paused = show;
+        if (show) {
+            showMenu(ui.controlsMenu);
+        } else {
+            showMenu(null);
+        }
+    }
+
+    // ... (le reste des fonctions de game.js reste ici)
 });
