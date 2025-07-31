@@ -2,6 +2,7 @@ import { GameEngine } from './engine.js';
 import { Player } from './player.js';
 import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
+import { WorldAnimator } from './worldAnimator.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         zoom: config.zoom
     };
     let assets = {}; // Pour stocker les images chargées
+    let worldAnimator;
 
     // --- Définition de TOUTES les fonctions de logique du jeu ---
     // CORRECTION: Toutes les fonctions sont maintenant définies ici avant d'être utilisées.
@@ -114,7 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         generateLevel(game, config, {});
         const spawnPoint = findSpawnPoint();
         game.player = new Player(spawnPoint.x, spawnPoint.y, config);
-        updateCamera(true); 
+        worldAnimator = new WorldAnimator(config, assets);
+        updateCamera(true);
 
         if(ui.mainMenu) {
             [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
@@ -140,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateFallingBlocks();
             updateCollectibles();
             updateCamera(false);
+            if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             if (keys.action) keys.action = false;
             mouse.left = false; mouse.right = false;
         } catch (error) {
@@ -157,7 +161,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             ctx.scale(gameSettings.zoom, gameSettings.zoom);
             ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
 
+            if (worldAnimator) worldAnimator.draw(ctx);
             drawTileMap(ctx, assets);
+            drawDecorations(ctx, assets);
             drawFallingBlocks(ctx, assets);
             drawCollectibles(ctx, assets);
             
@@ -282,6 +288,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         grad.addColorStop(1, '#5C94FC');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(ui.canvas.width - 80, 80, 40, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     function updateHUD() {
@@ -395,6 +405,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             const asset = TILE_ASSETS[item.tileType];
             if (asset) {
                 ctx.drawImage(asset, item.x, item.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawDecorations(ctx, assets) {
+        game.decorations.forEach(dec => {
+            if (dec.type === 'bush') {
+                ctx.drawImage(assets.decoration_bush, dec.x, dec.y, dec.w, dec.h);
             }
         });
     }

@@ -307,7 +307,7 @@ return null;
                 const angle = Math.sin(progress * Math.PI) * 1.5;
                 ctx.rotate(angle);
             }
-            ctx.drawImage(toolAsset, -12, -12, 24, 24);
+            ctx.drawImage(toolAsset, -6, -6, 12, 12);
         }
         ctx.restore();
     }
@@ -320,6 +320,11 @@ return null;
 
         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
         if (this.dir === 1) ctx.scale(-1, 1);
+        if (this.swingTimer > 0) {
+            const progress = (15 - this.swingTimer) / 15;
+            const angle = Math.sin(progress * Math.PI) * 0.2;
+            ctx.rotate(angle);
+        }
 
         const skinAsset = assets[skinKey];
         if (skinAsset) {
