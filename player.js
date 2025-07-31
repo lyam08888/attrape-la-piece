@@ -1,9 +1,10 @@
-diff --git a/player.js b/player.js
-index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029524527a6 100644
---- a/player.js
-+++ b/player.js
-@@ -30,115 +30,148 @@ export class Player {
-         this.w = config.player.width;
+export class Player {
+    constructor(x, y, config, sound) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.w = config.player.width;
          this.h = config.player.height;
          this.config = config;
          this.sound = sound;
@@ -28,39 +29,38 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
          this.xpToNext = 100;
          this.skillPoints = 0;
          this.attributes = { strength: 0, agility: 0, vitality: 0 };
-+
-+        this.posture = 'standing';
-+        this.doubleJumped = false;
-+        this.animations = config.playerAnimations || {};
+
+        this.posture = 'standing';
+        this.doubleJumped = false;
+        this.animations = config.playerAnimations || {};
      }
  
      update(keys, mouse, game) {
          const { physics } = this.config;
--        const speed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
-+        const baseSpeed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
-+        const runSpeed = baseSpeed * 1.5;
+        const baseSpeed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
+        const runSpeed = baseSpeed * 1.5;
          const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
  
-+        // posture management
-+        if (this.posture !== 'standing' && keys.jump) {
-+            this.setPosture('standing');
-+            keys.jump = false;
-+        }
-+
-+        if (keys.doubleDown && this.grounded) {
-+            this.setPosture('prone');
-+            keys.doubleDown = false;
-+        } else if (keys.down && this.posture === 'standing' && this.grounded) {
-+            this.setPosture('crouching');
-+        } else if (!keys.down && this.posture === 'crouching') {
-+            this.setPosture('standing');
-+        }
-+
-+        let speed = baseSpeed;
-+        if (keys.run && this.posture === 'standing') speed = runSpeed;
-+        if (this.posture === 'crouching') speed *= 0.5;
-+        if (this.posture === 'prone') speed *= 0.3;
-+
+        // posture management
+        if (this.posture !== 'standing' && keys.jump) {
+            this.setPosture('standing');
+            keys.jump = false;
+        }
+
+        if (keys.doubleDown && this.grounded) {
+            this.setPosture('prone');
+            keys.doubleDown = false;
+        } else if (keys.down && this.posture === 'standing' && this.grounded) {
+            this.setPosture('crouching');
+        } else if (!keys.down && this.posture === 'crouching') {
+            this.setPosture('standing');
+        }
+
+        let speed = baseSpeed;
+        if (keys.run && this.posture === 'standing') speed = runSpeed;
+        if (this.posture === 'crouching') speed *= 0.5;
+        if (this.posture === 'prone') speed *= 0.3;
+
          if (keys.left) { this.vx = -speed; this.dir = -1; }
          else if (keys.right) { this.vx = speed; this.dir = 1; }
          else { this.vx *= physics.friction; }
@@ -76,18 +76,17 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
              this.stepTimer = 0;
          }
  
--        if (keys.jump) {
-+        if (keys.jump && this.posture === 'standing') {
+        if (keys.jump && this.posture === 'standing') {
              if (this.grounded) {
                  this.vy = -jumpForce;
                  this.sound?.playJump();
                  this.canDoubleJump = true;
-+                this.doubleJumped = false;
+                this.doubleJumped = false;
              } else if (this.canDoubleJump) {
                  this.vy = -jumpForce * 0.8;
                  this.sound?.playJump();
                  this.canDoubleJump = false;
-+                this.doubleJumped = true;
+                this.doubleJumped = true;
              }
              keys.jump = false;
          }
@@ -104,24 +103,20 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
          this.checkCollectibleCollisions(game);
          this.checkObjectCollisions(game);
  
-+        // state selection for animations
+        // state selection for animations
          if (keys.fly) this.state = 'flying';
--        else if (!this.grounded) this.state = 'jumping';
--        else if (keys.left || keys.right) this.state = 'walking';
-+        else if (!this.grounded) this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
-+        else if (this.posture === 'prone') this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
-+        else if (this.posture === 'crouching') this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
-+        else if (Math.abs(this.vx) > baseSpeed + 0.1) this.state = 'running';
-+        else if (Math.abs(this.vx) > 0.1) this.state = 'walking';
+        else if (!this.grounded) this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
+        else if (this.posture === 'prone') this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
+        else if (this.posture === 'crouching') this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
+        else if (Math.abs(this.vx) > baseSpeed + 0.1) this.state = 'running';
+        else if (Math.abs(this.vx) > 0.1) this.state = 'walking';
          else this.state = 'idle';
  
--        if (this.state === 'walking') {
-+        const frames = this.animations[this.state] || [];
-+        if (frames.length > 1) {
+        const frames = this.animations[this.state] || [];
+        if (frames.length > 1) {
              this.animTimer++;
              if (this.animTimer > 10) {
--                this.animFrame = (this.animFrame + 1) % 2;
-+                this.animFrame = (this.animFrame + 1) % frames.length;
+                this.animFrame = (this.animFrame + 1) % frames.length;
                  this.animTimer = 0;
              }
          } else {
@@ -131,7 +126,7 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
  
          if (this.invulnerable > 0) this.invulnerable--;
          if (this.swingTimer > 0) this.swingTimer--;
-+        keys.doubleDown = false;
+        keys.doubleDown = false;
      }
  
      handleActions(keys, mouse, game) {
@@ -157,11 +152,6 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
                      this.miningProgress = 0;
                  }
  
-diff --git a/player.js b/player.js
-index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029524527a6 100644
---- a/player.js
-+++ b/player.js
-@@ -342,93 +375,94 @@ return null;
          });
          game.checkpoints.forEach(cp => {
              if (!cp.activated && this.rectCollide(cp)) {
@@ -187,20 +177,20 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
          return 1 + this.attributes.strength * 0.2;
      }
  
-+    setPosture(p) {
-+        if (this.posture === p) return;
-+        const oldH = this.h;
-+        if (p === 'crouching') {
-+            this.h = Math.floor(this.config.player.height * 0.6);
-+        } else if (p === 'prone') {
-+            this.h = Math.floor(this.config.player.height * 0.3);
-+        } else {
-+            this.h = this.config.player.height;
-+        }
-+        this.y += oldH - this.h;
-+        this.posture = p;
-+    }
-+
+    setPosture(p) {
+        if (this.posture === p) return;
+        const oldH = this.h;
+        if (p === 'crouching') {
+            this.h = Math.floor(this.config.player.height * 0.6);
+        } else if (p === 'prone') {
+            this.h = Math.floor(this.config.player.height * 0.3);
+        } else {
+            this.h = this.config.player.height;
+        }
+        this.y += oldH - this.h;
+        this.posture = p;
+    }
+
      rectCollide(other) {
          return (
              this.x < other.x + other.w &&
@@ -236,37 +226,17 @@ index 2ccad251185f745af1073c0fc7859840fc7c8f09..e043a1b9c1a7d5abcf559b730b582029
          ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
          if (this.dir === -1) ctx.scale(-1, 1);
  
--        let offsetY = 0;
          let rotation = 0;
--        if (this.state === 'walking') {
--            offsetY = Math.sin(this.animFrame * Math.PI) * 1;
--        } else if (this.state === 'jumping') {
--            rotation = -this.dir * 0.2;
--        } else if (this.state === 'flying') {
--            rotation = -this.dir * Math.PI / 2;
--        } else if (this.state === 'idle') {
--            offsetY = Math.sin(Date.now() / 500) * 0.5;
--        }
--
--        ctx.translate(0, offsetY);
-+        if (this.state === 'jumping') rotation = -this.dir * 0.2;
-+        if (this.state === 'flying') rotation = -this.dir * Math.PI / 2;
+        if (this.state === 'jumping') rotation = -this.dir * 0.2;
+        if (this.state === 'flying') rotation = -this.dir * Math.PI / 2;
          ctx.rotate(rotation);
  
--        if (this.swingTimer > 0) {
--            const progress = (15 - this.swingTimer) / 15;
--            const angle = Math.sin(progress * Math.PI) * 0.2;
--            ctx.rotate(angle);
--        }
-+        const frames = this.animations[this.state] || [];
-+        const frameKey = frames[this.animFrame] || skinKey;
-+        const img = assets[frameKey];
+        const frames = this.animations[this.state] || [];
+        const frameKey = frames[this.animFrame] || skinKey;
+        const img = assets[frameKey];
  
--        const skinAsset = assets[skinKey];
--        if (skinAsset) {
--            ctx.drawImage(skinAsset, -this.w / 2, -this.h / 2, this.w, this.h);
-+        if (img) {
-+            ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h);
+        if (img) {
+            ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h);
          } else {
              ctx.fillStyle = '#ea4335';
              ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);

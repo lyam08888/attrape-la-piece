@@ -1,8 +1,3 @@
-diff --git a/engine.js b/engine.js
-index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c435b5142 100644
---- a/engine.js
-+++ b/engine.js
-@@ -1,104 +1,134 @@
  // Moteur de jeu générique
  export class GameEngine {
      constructor(canvas, config) {
@@ -10,18 +5,17 @@ index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c
          this.ctx = canvas.getContext('2d');
          this.config = config;
          this.assets = {};
--        this.keys = { left: false, right: false, jump: false, action: false, fly: false };
-+        this.keys = {
-+            left: false,
-+            right: false,
-+            jump: false,
-+            action: false,
-+            fly: false,
-+            down: false,
-+            doubleDown: false,
-+            run: false,
-+            _lastDown: 0
-+        };
+        this.keys = {
+            left: false,
+            right: false,
+            jump: false,
+            action: false,
+            fly: false,
+            down: false,
+            doubleDown: false,
+            run: false,
+            _lastDown: 0
+        };
          this.mouse = { x: 0, y: 0, left: false, right: false };
          this.gameLogic = {}; // Fonctions spécifiques au jeu (init, update, draw)
      }
@@ -40,16 +34,16 @@ index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c
                  allAssetPaths[key] = baseUrl ? baseUrl + path : path;
              }
          }
-+        if (this.config.playerAnimations) {
-+            for (const frames of Object.values(this.config.playerAnimations)) {
-+                frames.forEach(key => {
-+                    const path = this.config.assets[key];
-+                    if (path) {
-+                        allAssetPaths[key] = baseUrl ? baseUrl + path : path;
-+                    }
-+                });
-+            }
-+        }
+        if (this.config.playerAnimations) {
+            for (const frames of Object.values(this.config.playerAnimations)) {
+                frames.forEach(key => {
+                    const path = this.config.assets[key];
+                    if (path) {
+                        allAssetPaths[key] = baseUrl ? baseUrl + path : path;
+                    }
+                });
+            }
+        }
          this.config.skins.forEach((fileName, i) => {
              const skinPath = 'assets/' + fileName;
              allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : skinPath;
@@ -86,14 +80,14 @@ index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c
              if (e.code === 'ArrowLeft') this.keys.left = true;
              if (e.code === 'ArrowRight') this.keys.right = true;
              if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = true;
-+            if (e.code === 'ArrowDown') {
-+                if (this.keys.down && Date.now() - this.keys._lastDown < 250) {
-+                    this.keys.doubleDown = true;
-+                }
-+                this.keys.down = true;
-+                this.keys._lastDown = Date.now();
-+            }
-+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
+            if (e.code === 'ArrowDown') {
+                if (this.keys.down && Date.now() - this.keys._lastDown < 250) {
+                    this.keys.doubleDown = true;
+                }
+                this.keys.down = true;
+                this.keys._lastDown = Date.now();
+            }
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
              if (e.code === 'KeyA') this.keys.action = true;
              if (e.code === 'KeyV') this.keys.fly = true;
              if (e.code === 'KeyP' && this.gameLogic.toggleSkills) this.gameLogic.toggleSkills();
@@ -111,8 +105,8 @@ index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c
              if (e.code === 'ArrowLeft') this.keys.left = false;
              if (e.code === 'ArrowRight') this.keys.right = false;
              if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = false;
-+            if (e.code === 'ArrowDown') this.keys.down = false;
-+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = false;
+            if (e.code === 'ArrowDown') this.keys.down = false;
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = false;
              if (e.code === 'KeyA') this.keys.action = false;
              if (e.code === 'KeyV') this.keys.fly = false;
          });
@@ -138,3 +132,29 @@ index 2e21c84d3326e8879296549d53a8f96f1c2afb2c..ef313a848c31b7d03f388a7e1e32fa8c
          this.canvas.addEventListener('contextmenu', e => e.preventDefault());
      }
  
+
+    start(gameLogic) {
+        this.gameLogic = gameLogic;
+        this.loadAssets()
+            .then(() => {
+                this.setupInput();
+                if (this.gameLogic.init) {
+                    this.gameLogic.init();
+                }
+                const loop = (time) => {
+                    if (!this.gameLogic.isPaused || !this.gameLogic.isPaused()) {
+                        this.gameLogic.update && this.gameLogic.update(this.keys, this.mouse);
+                    }
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.gameLogic.draw && this.gameLogic.draw(this.ctx, this.assets);
+                    this.mouse.left = false;
+                    this.mouse.right = false;
+                    requestAnimationFrame(loop);
+                };
+                requestAnimationFrame(loop);
+            })
+            .catch(err => {
+                if (this.gameLogic.showError) this.gameLogic.showError(err);
+            });
+    }
+}

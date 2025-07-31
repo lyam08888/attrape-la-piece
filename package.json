@@ -1,10 +1,5 @@
-diff --git a//dev/null b/package.json
-index 0000000000000000000000000000000000000000..d6a80e0c917cc7e9a5fb03c04ae04f6cb0fe3184 100644
---- a//dev/null
-+++ b/package.json
-@@ -0,0 +1,5 @@
-+{
-+  "dependencies": {
-+    "pngjs": "^7.0.0"
-+  }
-+}
+{
+  "dependencies": {
+    "pngjs": "^7.0.0"
+  }
+}
