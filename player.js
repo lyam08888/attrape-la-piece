@@ -112,12 +112,13 @@ export class Player {
         }
 
         this.vy += physics.gravity;
-        if (physics.realistic && this.vy > physics.maxFallSpeed) {
-            this.vy = physics.maxFallSpeed;
-        }
-        if (physics.realistic) {
-            this.vy *= physics.airResistance;
-        }
+if (physics.realistic) {
+    if (this.vy > physics.maxFallSpeed) {
+        this.vy = physics.maxFallSpeed;
+    }
+    this.vy *= physics.airResistance;
+}
+
  
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);

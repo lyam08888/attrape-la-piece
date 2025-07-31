@@ -479,12 +479,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (let i = game.fallingBlocks.length - 1; i >= 0; i--) {
             const block = game.fallingBlocks[i];
             block.vy += physics.gravity;
-            if (physics.realistic && block.vy > physics.maxFallSpeed) {
-                block.vy = physics.maxFallSpeed;
-            }
-            if (physics.realistic) {
-                block.vy *= physics.airResistance;
-            }
+if (physics.realistic) {
+    if (block.vy > physics.maxFallSpeed) {
+        block.vy = physics.maxFallSpeed;
+    }
+    block.vy *= physics.airResistance;
+}
+
             block.y += block.vy;
 
             const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
