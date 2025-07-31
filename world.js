@@ -67,7 +67,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     for (let i = 0; i < generation.treeCount; i++) {
         const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
-        for (let y = 0; y < worldHeightInTiles - 1; y++) {
+        for (let y = 1; y < worldHeightInTiles - 1; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
                 const treeHeight = 5 + Math.floor(Math.random() * 5);
                 for (let j = 1; j <= treeHeight; j++) {
@@ -94,7 +94,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     // NOUVEAU: Placement des buissons, pièces, bonus, etc.
     for (let i = 0; i < generation.bushCount; i++) {
         const x = Math.floor(Math.random() * worldWidthInTiles);
-        for (let y = 0; y < worldHeightInTiles - 1; y++) {
+        for (let y = 1; y < worldHeightInTiles - 1; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
                 game.decorations.push({ x: x * tileSize, y: (y - 1) * tileSize, w: 16, h: 16, type: 'bush' });
                 break;
@@ -131,7 +131,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     for (let i = 1; i <= generation.checkpointCount; i++) {
         const x = Math.floor(i * (worldWidthInTiles / (generation.checkpointCount + 1)));
-        for (let y = 0; y < worldHeightInTiles - 1; y++) {
+        for (let y = 1; y < worldHeightInTiles - 1; y++) {
             if (game.tileMap[y][x] > 0 && game.tileMap[y - 1][x] === TILE.AIR) {
                 game.checkpoints.push({ x: x * tileSize, y: (y - 2) * tileSize, w: 16, h: 32, activated: false });
                 break;
@@ -144,8 +144,8 @@ export function generateLevel(game, levelConfig, gameSettings) {
     for (let i = 0; i < generation.enemyCount; i++) {
         const x = Math.floor(Math.random() * worldWidthInTiles);
         const y = surfaceLevel + Math.floor(Math.random() * (worldHeightInTiles - surfaceLevel - 5));
-        
-        if (game.tileMap[y] && game.tileMap[y][x] !== TILE.AIR && game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR) {
+
+        if (y > 0 && game.tileMap[y] && game.tileMap[y][x] !== TILE.AIR && game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR) {
             const enemyType = ['slime', 'frog', 'golem'][Math.floor(Math.random() * 3)];
             let enemyClass;
             if (enemyType === 'slime') enemyClass = Slime;
