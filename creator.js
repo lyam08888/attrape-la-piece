@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const partsContainer = document.getElementById('creatorParts');
   const previewCanvas = document.getElementById('creatorPreview');
   const downloadBtn = document.getElementById('creatorDownload');
-  if (!partsContainer || !previewCanvas || !downloadBtn) return;
+  const saveBtn = document.getElementById('creatorSave');
+  if (!partsContainer || !previewCanvas || !downloadBtn || !saveBtn) return;
 
   const PARTS = [
     { key: 'head',      label: 'T\u00eate',       styles: ['Classique','Carr\u00e9e','Ronde'], defaultColor: '#ffe0b0' },
@@ -140,5 +141,13 @@ document.addEventListener('DOMContentLoaded', () => {
     link.href = previewCanvas.toDataURL();
     link.download = 'pixel_personnage.png';
     link.click();
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const data = previewCanvas.toDataURL();
+    try {
+      localStorage.setItem('customPlayer1', data);
+    } catch(e) {}
+    location.reload();
   });
 });
