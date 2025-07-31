@@ -7,6 +7,8 @@
   "worldHeight": 2000,
   "tileSize": 16,
   "chunkSize": 16,
+  "zoom": 2,
+  "renderDistance": 8,
   "generation": {
     "enemyCount": 50,
     "treeCount": 40
