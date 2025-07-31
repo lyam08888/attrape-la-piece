@@ -52,10 +52,7 @@ Appuyez sur **A** ou cliquez avec la souris pour utiliser l'outil sélectionné.
 
 ### Physique des blocs
 
-Les blocs soumis à la gravité tombent désormais si leur support est détruit. Ils
-accélèrent avec la gravité, rebondissent légèrement (paramètre `blockBounce` dans
-`config.json`) puis se replacent au sol. Les chutes peuvent blesser le joueur ou
-les ennemis.
+Les blocs soumis à la gravité tombent désormais si leur support est détruit. Ils accélèrent avec la gravité, rebondissent légèrement (paramètre `blockBounce` dans `config.json`) puis se replacent au sol. Les chutes peuvent blesser le joueur ou les ennemis.
 
 🚀 Comment Lancer le Jeu
 Vérifiez votre dépôt GitHub : Assurez-vous que le dossier assets de votre dépôt GitHub contient bien tous les fichiers images listés.
