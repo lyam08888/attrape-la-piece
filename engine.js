@@ -75,12 +75,12 @@ export class GameEngine {
     setupInput() {
         document.addEventListener('keydown', e => {
             // Ne pas traiter les entrées si le jeu est en pause (sauf pour les touches de menu)
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'KeyI', 'KeyP', 'KeyC'].includes(e.code)) return;
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'KeyI', 'KeyP', 'KeyC', 'KeyJ'].includes(e.code)) return;
 
-            // --- CORRECTIONS DES COMMANDES ---
+            // Commandes de mouvement et d'action
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
-            if (e.code === 'KeyE') this.keys.action = true; // 'E' est maintenant pour l'action/interaction
+            if (e.code === 'KeyE') this.keys.action = true; 
 
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = true;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') {
@@ -91,11 +91,12 @@ export class GameEngine {
                 this.keys._lastDown = Date.now();
             }
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
-            if (e.code === 'KeyV') this.keys.fly = !this.keys.fly; // Activer/désactiver le vol
+            if (e.code === 'KeyV') this.keys.fly = !this.keys.fly;
 
             // Touches de menu
             if (e.code === 'KeyP' && this.gameLogic.toggleSkills) this.gameLogic.toggleSkills();
             if (e.code === 'KeyI' && this.gameLogic.toggleInventory) this.gameLogic.toggleInventory();
+            if (e.code === 'KeyJ' && this.gameLogic.toggleQuestLog) this.gameLogic.toggleQuestLog();
             if (e.code === 'KeyC' && this.gameLogic.toggleCalendar) this.gameLogic.toggleCalendar();
             if ((e.code === 'KeyO' || e.code === 'Escape') && this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
             if (e.code === 'F3' && this.gameLogic.toggleDebug) this.gameLogic.toggleDebug();
@@ -108,15 +109,12 @@ export class GameEngine {
         });
 
         document.addEventListener('keyup', e => {
-            // --- CORRECTIONS DES COMMANDES ---
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
             if (e.code === 'KeyE') this.keys.action = false;
-
             if (e.code === 'Space' || e.code === 'ArrowUp') this.keys.jump = false;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = false;
-            // La touche de vol 'V' est un interrupteur, donc pas de keyup
         });
         
         this.canvas.addEventListener('mousemove', e => {
@@ -166,7 +164,7 @@ export class GameEngine {
                     }
                 }
                 const loop = (time) => {
-                    if (!this.gameLogic.isPaused || !this.gameLogic.isPaused()) {
+                    if (!this.gameLogic.isPaused()) {
                         this.gameLogic.update && this.gameLogic.update(this.keys, this.mouse);
                     }
                     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
