@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastFrame = performance.now();
     let cameraShake = { intensity: 0, duration: 0 };
     let stars = [];
-    const CAMERA_SMOOTHING = 1;
+    const CAMERA_SMOOTHING = 0.5;
     const defaultGravity = config.physics.gravity;
 
     const TOOL_DATA = {
