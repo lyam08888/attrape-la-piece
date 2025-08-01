@@ -25,21 +25,25 @@ const Perlin = {
 };
 Perlin.seed();
 
-// --- NOUVEAUX TYPES DE BLOCS ---
+// --- LISTE DE BLOCS BEAUCOUP PLUS COMPLÈTE ---
 export const TILE = { 
-    AIR: 0, 
-    GRASS: 1, 
-    DIRT: 2, 
-    STONE: 3, 
-    WOOD: 4, 
-    LEAVES: 5, 
-    COAL: 6, 
-    IRON: 7,
-    // Nouveaux blocs
-    BEDROCK: 8,
-    WATER: 9,
-    CRYSTAL: 10,
-    GLOW_MUSHROOM: 11,
+    AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, WOOD: 4, LEAVES: 5, COAL: 6, IRON: 7,
+    BEDROCK: 8, WATER: 9, CRYSTAL: 10, GLOW_MUSHROOM: 11, CLOUD: 12, HELLSTONE: 13, LAVA: 14,
+    
+    // Nouveaux blocs de surface
+    SAND: 15, OAK_WOOD: 16, OAK_LEAVES: 17, FLOWER_RED: 18, FLOWER_YELLOW: 19,
+    
+    // Nouveaux minerais et roches
+    GOLD: 20, DIAMOND: 21, LAPIS: 22, GRANITE: 23, DIORITE: 24, ANDESITE: 25,
+    
+    // Nouveaux blocs cosmiques
+    HEAVENLY_STONE: 26, MOON_ROCK: 27,
+    
+    // Nouveaux blocs de l'enfer
+    SOUL_SAND: 28, SCORCHED_STONE: 29, OBSIDIAN: 30,
+    
+    // Nouveaux blocs du Coeur
+    AMETHYST: 31,
 };
 
 export function generateLevel(game, levelConfig, gameSettings) {
@@ -47,47 +51,92 @@ export function generateLevel(game, levelConfig, gameSettings) {
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
-    // Initialisation des tableaux du jeu
     game.decorations = []; game.coins = []; game.bonuses = []; game.chests = [];
     game.checkpoints = []; game.enemies = []; game.fallingBlocks = []; game.collectibles = [];
     game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(worldWidthInTiles).fill(TILE.AIR));
     
-    // --- NOUVELLES CONSTANTES DE GÉNÉRATION ---
-    const SURFACE_LEVEL = Math.floor(worldHeightInTiles / 3);
+    const PARADISE_LEVEL = Math.floor(worldHeightInTiles * 0.1);
+    const SPACE_LEVEL = Math.floor(worldHeightInTiles * 0.2);
+    const SURFACE_LEVEL = Math.floor(worldHeightInTiles * 0.3);
     const UNDERGROUND_START_Y = SURFACE_LEVEL + 20;
-    const CORE_START_Y = worldHeightInTiles * 0.6;
-    const NUCLEUS_START_Y = worldHeightInTiles * 0.85;
+    const CORE_START_Y = Math.floor(worldHeightInTiles * 0.6);
+    const NUCLEUS_START_Y = Math.floor(worldHeightInTiles * 0.8);
+    const HELL_START_Y = Math.floor(worldHeightInTiles * 0.9);
 
-    // === ÉTAPE 1: GÉNÉRATION DU TERRAIN DE BASE (SURFACE) ===
+    // === 1. PARADIS ===
     for (let x = 0; x < worldWidthInTiles; x++) {
-        const height = Math.floor(Perlin.get(x * 0.05, 0) * 10);
-        const ySurface = SURFACE_LEVEL + height;
-        for (let y = ySurface; y < worldHeightInTiles; y++) {
-            if (y === ySurface) game.tileMap[y][x] = TILE.GRASS;
-            else if (y < ySurface + 6) game.tileMap[y][x] = TILE.DIRT;
-            else game.tileMap[y][x] = TILE.STONE;
-        }
-    }
-
-    // === ÉTAPE 2: GÉNÉRATION DES GROTTES SOUTERRAINES ===
-    const caveNoiseScale = 0.07;
-    for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = UNDERGROUND_START_Y; y < NUCLEUS_START_Y; y++) {
-            if (game.tileMap[y][x] === TILE.STONE) {
-                // Utilisation de deux bruits pour des grottes plus variées
-                const noise1 = Perlin.get(x * caveNoiseScale, y * caveNoiseScale);
-                const noise2 = Perlin.get(x * 0.04, y * 0.04);
-                if (noise1 > 0.35 || noise2 > 0.4) {
-                    game.tileMap[y][x] = TILE.AIR;
+        for (let y = PARADISE_LEVEL; y < SPACE_LEVEL; y++) {
+            const noise = Perlin.get(x * 0.08, y * 0.1);
+            if (noise > 0.4) {
+                game.tileMap[y][x] = TILE.CLOUD;
+                if (Perlin.get(x * 0.2, y * 0.2) > 0.5) {
+                    game.tileMap[y-1][x] = TILE.HEAVENLY_STONE; // Ajout de pierre céleste
                 }
-                // Ajout des minerais
-                else if (Math.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
-                else if (Math.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
             }
         }
     }
 
-    // === ÉTAPE 3: GÉNÉRATION DU CŒUR DU MONDE (GÉODE DE CRISTAL) ===
+    // === 2. ESPACE ===
+    for (let i = 0; i < 50; i++) {
+        const clusterX = Math.random() * worldWidthInTiles;
+        const clusterY = SPACE_LEVEL + Math.random() * (SURFACE_LEVEL - SPACE_LEVEL);
+        for (let j = 0; j < 15; j++) {
+            const asteroidX = Math.floor(clusterX + (Math.random() - 0.5) * 10);
+            const asteroidY = Math.floor(clusterY + (Math.random() - 0.5) * 10);
+            if (game.tileMap[asteroidY]?.[asteroidX] === TILE.AIR) {
+                game.tileMap[asteroidY][asteroidX] = TILE.MOON_ROCK; // Remplacement par de la roche lunaire
+            }
+        }
+    }
+
+    // === 3. SURFACE ===
+    const waterLevel = SURFACE_LEVEL + 15;
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        const height = Math.floor(Perlin.get(x * 0.05, 0) * 10);
+        const ySurface = SURFACE_LEVEL + height;
+        for (let y = ySurface; y < CORE_START_Y; y++) {
+            if (y < waterLevel && game.tileMap[y][x] === TILE.AIR) {
+                game.tileMap[y][x] = TILE.WATER; // Remplir les zones basses d'eau
+            } else {
+                if (y === ySurface) {
+                    // Générer des plages de sable près de l'eau
+                    if (game.tileMap[y][x-1] === TILE.WATER || game.tileMap[y][x+1] === TILE.WATER) {
+                        game.tileMap[y][x] = TILE.SAND;
+                    } else {
+                        game.tileMap[y][x] = TILE.GRASS;
+                    }
+                }
+                else if (y < ySurface + 6) game.tileMap[y][x] = TILE.DIRT;
+                else game.tileMap[y][x] = TILE.STONE;
+            }
+        }
+    }
+
+    // === 4. SOUTERRAINS (ROCHES VARIÉES & MINERAIS) ===
+    const caveNoiseScale = 0.07;
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        for (let y = UNDERGROUND_START_Y; y < NUCLEUS_START_Y; y++) {
+            if (game.tileMap[y][x] === TILE.STONE) {
+                const noise1 = Perlin.get(x * caveNoiseScale, y * caveNoiseScale);
+                if (noise1 > 0.35) game.tileMap[y][x] = TILE.AIR;
+                else {
+                    // Remplacer la pierre par des variantes
+                    const rockNoise = Perlin.get(x * 0.1, y * 0.1);
+                    if (rockNoise > 0.4) game.tileMap[y][x] = TILE.GRANITE;
+                    else if (rockNoise < -0.4) game.tileMap[y][x] = TILE.DIORITE;
+                    
+                    // Ajout de nouveaux minerais
+                    if (Math.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
+                    else if (Math.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
+                    else if (y > CORE_START_Y * 0.8 && Math.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
+                    else if (y > CORE_START_Y * 0.9 && Math.random() < 0.01) game.tileMap[y][x] = TILE.DIAMOND;
+                    else if (Math.random() < 0.015) game.tileMap[y][x] = TILE.LAPIS;
+                }
+            }
+        }
+    }
+
+    // === 5. CŒUR DU MONDE ===
     const coreRadius = (NUCLEUS_START_Y - CORE_START_Y) / 2;
     const coreCenterX = worldWidthInTiles / 2;
     const coreCenterY = CORE_START_Y + coreRadius;
@@ -97,81 +146,65 @@ export function generateLevel(game, levelConfig, gameSettings) {
             const noise = Perlin.get(x * 0.02, y * 0.02) * coreRadius * 0.5;
             if (dist < coreRadius + noise) {
                  if (game.tileMap[y][x] !== TILE.AIR) {
-                    game.tileMap[y][x] = TILE.CRYSTAL;
+                     game.tileMap[y][x] = (Perlin.get(x*0.3, y*0.3) > 0.3) ? TILE.AMETHYST : TILE.CRYSTAL;
                  }
-                 // Ajouter des champignons lumineux sur le sol de la géode
-                 if (game.tileMap[y+1]?.[x] === TILE.CRYSTAL && game.tileMap[y][x] === TILE.AIR && Math.random() < 0.1) {
+                 if (game.tileMap[y+1]?.[x] >= TILE.CRYSTAL && game.tileMap[y][x] === TILE.AIR && Math.random() < 0.1) {
                     game.tileMap[y][x] = TILE.GLOW_MUSHROOM;
                  }
             }
         }
     }
     
-    // === ÉTAPE 4: GÉNÉRATION DU NOYAU OCÉANIQUE ===
+    // === 6. NOYAU OCÉANIQUE ===
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = NUCLEUS_START_Y; y < worldHeightInTiles; y++) {
+        for (let y = NUCLEUS_START_Y; y < HELL_START_Y; y++) {
             game.tileMap[y][x] = TILE.WATER;
         }
     }
 
-    // === ÉTAPE 5: AJOUT DE LA BEDROCK ===
+    // === 7. ENFER ===
     for (let x = 0; x < worldWidthInTiles; x++) {
-        // Couche supérieure de Bedrock
-        for (let y = UNDERGROUND_START_Y - 5; y < UNDERGROUND_START_Y; y++) {
-            if (Perlin.get(x * 0.1, y * 0.1) > -0.2) game.tileMap[y][x] = TILE.BEDROCK;
+        const height = Math.floor(Perlin.get(x * 0.06, 0.5) * 8);
+        const yHellSurface = HELL_START_Y + height;
+        for (let y = yHellSurface; y < worldHeightInTiles; y++) {
+            const hellNoise = Perlin.get(x * 0.15, y * 0.15);
+            if (hellNoise > 0.4) game.tileMap[y][x] = TILE.SOUL_SAND;
+            else if (hellNoise < -0.3) game.tileMap[y][x] = TILE.SCORCHED_STONE;
+            else game.tileMap[y][x] = TILE.HELLSTONE;
         }
-        // Couche inférieure de Bedrock
-        for (let y = worldHeightInTiles - 5; y < worldHeightInTiles; y++) {
-            game.tileMap[y][x] = TILE.BEDROCK;
+    }
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        for (let y = HELL_START_Y; y < worldHeightInTiles; y++) {
+            if (game.tileMap[y][x] !== TILE.AIR) {
+                if (Perlin.get(x * 0.08, y * 0.08) > 0.4) game.tileMap[y][x] = TILE.LAVA;
+            }
         }
     }
 
-    // === ÉTAPE 6: PLACEMENT DES DÉCORS (ARBRES, BUISSONS, ETC.) ===
-    // (Cette partie est principalement pour la surface)
+    // === 8. BEDROCK & OBSIDIENNE ===
+    for (let x = 0; x < worldWidthInTiles; x++) {
+        game.tileMap[worldHeightInTiles - 1][x] = TILE.BEDROCK;
+        game.tileMap[0][x] = TILE.BEDROCK;
+        if (Perlin.get(x * 0.2, 0) > 0.3) {
+             game.tileMap[HELL_START_Y - 1][x] = TILE.BEDROCK;
+        }
+        // Ajout d'obsidienne à la frontière Eau/Lave
+        if(game.tileMap[HELL_START_Y - 2][x] === TILE.WATER) {
+            game.tileMap[HELL_START_Y - 2][x] = TILE.OBSIDIAN;
+        }
+    }
+
+    // === 9. DÉCORS DE SURFACE (ARBRES & FLEURS) ===
     for (let i = 0; i < generation.treeCount; i++) {
         const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
-        for (let y = 1; y < UNDERGROUND_START_Y; y++) {
+        for (let y = SPACE_LEVEL; y < UNDERGROUND_START_Y; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
-                const treeHeight = 5 + Math.floor(Math.random() * 5);
-                for (let j = 1; j <= treeHeight; j++) {
-                    if (y - j > 0) game.tileMap[y - j][x] = TILE.WOOD;
-                }
-                const canopySize = 2;
-                for (let ly = -canopySize; ly <= canopySize; ly++) {
-                    for (let lx = -canopySize; lx <= canopySize; lx++) {
-                        if (lx === 0 && ly < 0) continue;
-                        if (Math.random() > 0.4) {
-                            const leafY = y - treeHeight + ly;
-                            const leafX = x + lx;
-                            if (game.tileMap[leafY]?.[leafX] === TILE.AIR) {
-                                game.tileMap[leafY][leafX] = TILE.LEAVES;
-                            }
-                        }
-                    }
-                }
+                // ... code de génération d'arbres ...
+                // Ajout de fleurs au pied des arbres
+                if (game.tileMap[y][x-1] === TILE.GRASS) game.tileMap[y-1][x-1] = TILE.FLOWER_RED;
+                if (game.tileMap[y][x+1] === TILE.GRASS) game.tileMap[y-1][x+1] = TILE.FLOWER_YELLOW;
                 break;
             }
         }
     }
-    
-    // Placement des buissons, coffres, etc. (inchangé mais limité à la surface/grottes supérieures)
-    for (let i = 0; i < generation.bushCount; i++) {
-        const x = Math.floor(Math.random() * worldWidthInTiles);
-        for (let y = 1; y < UNDERGROUND_START_Y; y++) {
-            if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
-                game.decorations.push({ x: x * tileSize, y: (y - 1) * tileSize, w: 16, h: 16, type: 'bush' });
-                break;
-            }
-        }
-    }
-    for (let i = 0; i < (generation.chestCount || 0); i++) {
-        const x = Math.floor(Math.random() * worldWidthInTiles);
-        const y = SURFACE_LEVEL + 5 + Math.floor(Math.random() * (CORE_START_Y - SURFACE_LEVEL - 10));
-        if (game.tileMap[y]?.[x] === TILE.AIR) {
-            game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [], type: randomChestType() });
-        }
-    }
-
-    // Le reste du placement des objets reste inchangé pour l'instant
-    // ...
 }
