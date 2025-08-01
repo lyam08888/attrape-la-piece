@@ -119,7 +119,7 @@ export class GameEngine {
                         lastTime = time;
 
                         if (!this.gameLogic.isPaused()) {
-                            // Appel corrigé avec tous les arguments nécessaires
+                            // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
                             this.gameLogic.update(delta, this.keys, this.mouse);
                         }
                         this.gameLogic.draw(this.ctx, this.assets);
