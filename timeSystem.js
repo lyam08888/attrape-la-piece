@@ -75,10 +75,32 @@ export class TimeSystem {
         return { x, y };
     }
 
+    getSkyGradient() {
+        const { hour } = this.getTime();
+        if (hour < 5 || hour >= 19) return ['#0f2027', '#203a43']; // Nuit
+        if (hour < 7) return ['#2c5364', '#f2994a']; // Aube
+        if (hour < 17) return ['#87CEEB', '#4682B4']; // Jour
+        return ['#f2994a', '#d66d75']; // Soir
+    }
+
     formatDateTime() {
         const { year, month, day } = this.getDate();
         const { hour, minute } = this.getTime();
         const pad = n => n.toString().padStart(2, '0');
         return `${day}/${month}/${year} ${pad(hour)}:${pad(minute)}`;
     }
+}
+
+export function updateCalendarUI(timeSystem, uiElements) {
+    if (!timeSystem || !uiElements) return;
+
+    const { date, time, stage } = uiElements;
+    const dateInfo = timeSystem.getDate();
+    const timeInfo = timeSystem.getTime();
+    const stageInfo = timeSystem.getStage();
+    const pad = n => n.toString().padStart(2, '0');
+
+    if (date) date.textContent = `Jour ${dateInfo.day}, Mois ${dateInfo.month}, Année ${dateInfo.year}`;
+    if (time) time.textContent = `Heure: ${pad(timeInfo.hour)}:${pad(timeInfo.minute)}`;
+    if (stage) stage.textContent = `Phase: ${stageInfo.charAt(0).toUpperCase() + stageInfo.slice(1)}`;
 }
