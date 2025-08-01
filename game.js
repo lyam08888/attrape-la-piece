@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const ui = {
         canvas: canvas,
-        ctx: canvas.getContext('2d'),
+        ctx: ctx,
         gameTitle: document.getElementById('gameTitle'),
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
