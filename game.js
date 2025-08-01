@@ -1,5 +1,6 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
+import { generateFlatWorld } from './world.js';
 
 // Charge la configuration du jeu
 async function loadConfig() {
@@ -105,7 +106,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const gameLogic = {
         init(assets) {
-            game.player = new Player(50, 50, config, null);
+            generateFlatWorld(game, config);
+            const groundTiles = Math.floor(config.worldHeight / config.tileSize);
+            const startY = (groundTiles - 3) * config.tileSize - config.player.height;
+            game.player = new Player(50, startY, config, null);
         },
         update(keys, mouse) {
             if (!game.player) return;
