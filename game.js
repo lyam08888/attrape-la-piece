@@ -107,6 +107,15 @@ class Monster {
         }
     }
 
+    rectCollide(other) {
+        return (
+            this.x < other.x + other.w &&
+            this.x + this.w > other.x &&
+            this.y < other.y + other.h &&
+            this.y + this.h > other.y
+        );
+    }
+
     draw(ctx) {
         if (this.image.complete) {
             ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
