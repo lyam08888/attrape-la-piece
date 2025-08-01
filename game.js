@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         canvas.width = Math.floor(window.innerWidth * DPR);
         canvas.height = Math.floor(window.innerHeight * DPR);
         const ctx = canvas.getContext('2d');
-        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+ctx?.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
