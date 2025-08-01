@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawChests(ctx, assets);
             
             game.animals.forEach(a => a.draw(ctx));
-            game.enemies.forEach(e => e.draw(ctx));
+            game.enemies.forEach(e => e.draw(ctx, assets));
             game.pnjs.forEach(p => p.draw(ctx)); // NOUVEAU: Dessin des PNJ
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {

@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawChests(ctx, assets);
             
             game.animals.forEach(a => a.draw(ctx)); // NOUVEAU: Dessin des animaux
-            game.enemies.forEach(e => e.draw(ctx));
+            game.enemies.forEach(e => e.draw(ctx, assets));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
                 ctx.save();
