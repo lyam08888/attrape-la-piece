@@ -158,6 +158,45 @@ document.addEventListener('DOMContentLoaded', async () => {
             const inc = e.target.dataset.inc;
             if (inc) { increaseSkill(inc); }
         });
+        if (ui.renderDistanceSlider) {
+            ui.renderDistanceSlider.value = gameSettings.renderDistance;
+            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            ui.renderDistanceSlider.oninput = (e) => {
+                gameSettings.renderDistance = parseInt(e.target.value);
+                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
+            };
+        }
+        if (ui.zoomSlider) {
+            ui.zoomSlider.value = gameSettings.zoom;
+            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+            ui.zoomSlider.oninput = (e) => {
+                gameSettings.zoom = parseFloat(e.target.value);
+                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
+                updateCamera(true);
+            };
+        }
+        if (ui.particlesCheckbox) {
+            ui.particlesCheckbox.checked = gameSettings.showParticles;
+            ui.particlesCheckbox.onchange = (e) => { gameSettings.showParticles = e.target.checked; };
+        }
+        if (ui.weatherCheckbox) {
+            ui.weatherCheckbox.checked = gameSettings.weatherEffects;
+            ui.weatherCheckbox.onchange = (e) => { gameSettings.weatherEffects = e.target.checked; };
+        }
+        if (ui.lightingCheckbox) {
+            ui.lightingCheckbox.checked = gameSettings.dynamicLighting;
+            ui.lightingCheckbox.onchange = (e) => { gameSettings.dynamicLighting = e.target.checked; };
+        }
+        if (ui.soundSlider) {
+            ui.soundSlider.value = gameSettings.soundVolume;
+            ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
+            ui.soundSlider.oninput = (e) => {
+                gameSettings.soundVolume = parseFloat(e.target.value);
+                ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
+                sound.setVolume(gameSettings.soundVolume);
+            };
+        }
+        if(ui.btnRestart) ui.btnRestart.onclick = initGame;
     }
 
     function handleMenuAction(action) {
@@ -188,6 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 playerBiome: 'surface',
                 lavaDamageTimer: 0,
                 interactingPNJ: null,
+                worldLayers: {},
                 createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
                 startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
                 checkBlockSupport: (x, y) => checkBlockSupport(x, y),
@@ -196,6 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             
             generateLevel(game, config, {});
+            game.worldLayers = WORLD_LAYERS;
 
             const CHEST_TYPE = { WOOD: 0, METAL: 1, GOLD: 2, DIAMOND: 3 };
             game.chests.forEach(chest => {
@@ -298,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { tileSize } = config;
             const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
             const spawnTileX = Math.floor(spawnX / tileSize);
-            for (let y = WORLD_LAYERS.SURFACE_LEVEL; y < WORLD_LAYERS.UNDERGROUND_START_Y; y++) {
+            for (let y = game.worldLayers.SURFACE_LEVEL; y < game.worldLayers.UNDERGROUND_START_Y; y++) {
                 if (game.tileMap[y+1]?.[spawnTileX] > TILE.AIR && game.tileMap[y]?.[spawnTileX] === TILE.AIR) {
                     const newPNJ = new PNJ(spawnTileX * tileSize, y * tileSize, config, pnjData);
                     game.pnjs.push(newPNJ);
@@ -310,12 +351,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getBiomeAt(y) {
         const yInTiles = y / config.tileSize;
-        if (yInTiles < WORLD_LAYERS.SPACE_END_Y) return 'paradise';
-        if (yInTiles < WORLD_LAYERS.SURFACE_LEVEL) return 'space';
-        if (y > WORLD_LAYERS.HELL_START_Y * config.tileSize) return 'hell';
-        if (y > WORLD_LAYERS.NUCLEUS_START_Y * config.tileSize) return 'nucleus';
-        if (y > WORLD_LAYERS.CORE_START_Y * config.tileSize) return 'core';
-        if (y > WORLD_LAYERS.UNDERGROUND_START_Y * config.tileSize) return 'underground';
+        if (yInTiles < game.worldLayers.PARADISE_END_Y) return 'paradise';
+        if (yInTiles < game.worldLayers.SPACE_END_Y) return 'space';
+        if (y > game.worldLayers.HELL_START_Y * config.tileSize) return 'hell';
+        if (y > game.worldLayers.NUCLEUS_START_Y * config.tileSize) return 'nucleus';
+        if (y > game.worldLayers.CORE_START_Y * config.tileSize) return 'core';
+        if (y > game.worldLayers.SURFACE_LEVEL * config.tileSize + 20 * config.tileSize) return 'underground';
         return 'surface';
     }
     
