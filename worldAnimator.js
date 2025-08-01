@@ -31,7 +31,6 @@ export class WorldAnimator {
     }
 
     init() {
-        // La graine est déjà initialisée dans world.js, on continue la séquence
         for (let i = 0; i < 15; i++) {
             const x = SeededRandom.random() * this.config.worldWidth;
             const y = SeededRandom.random() * (this.config.worldHeight / 3);
@@ -45,7 +44,7 @@ export class WorldAnimator {
     update(camera, canvas, zoom) {
         this.clouds.forEach(cloud => {
             cloud.update();
-            // Fait réapparaître les nuages de l'autre côté de l'écran
+            // CORRECTION: Utiliser clientWidth pour la taille visible
             if (cloud.x > camera.x + (canvas.clientWidth / zoom)) {
                 cloud.x = camera.x - cloud.width;
             }
