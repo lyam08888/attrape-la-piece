@@ -460,19 +460,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function handlePNJInteraction(keys) {
-        if (!keys.action || game.interactingPNJ) return;
-        
-        const { player, pnjs } = game;
-        for (const pnj of pnjs) {
-            const dist = Math.hypot(player.x - pnj.x, player.y - pnj.y);
-            if (dist < config.tileSize * 2) {
-                startDialogue(pnj);
-                break;
-            }
-        }
-    }
-
     function startDialogue(pnj) {
         game.paused = true;
         game.interactingPNJ = pnj;
@@ -585,15 +572,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateCollectibles();
             handleMining(game, keys, mouse);
             handleBiomeDamage(game);
-            handlePNJInteraction(keys);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
             spawnMonsters();
             spawnAnimals();
             spawnPNJ();
-
-            if (keys.action) keys.action = false;
 
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
