@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         [TILE.HELLSTONE]: { resistance: 450, tool: 'pickaxe', requiredTier: 3, drops: TILE.HELLSTONE },
         [TILE.SCORCHED_STONE]: { resistance: 500, tool: 'pickaxe', requiredTier: 3, drops: TILE.SCORCHED_STONE },
         [TILE.SOUL_SAND]: { resistance: 30, tool: 'shovel', requiredTier: 0, drops: TILE.SOUL_SAND },
-        [TILE.OBSIDIAN]: { resistance: 1200, tool: 'pickaxe', requiredTier: 4, drops: TILE.OBSIDIAN }, // Tier 4 = pioche en diamant
+        [TILE.OBSIDIAN]: { resistance: 1200, tool: 'pickaxe', requiredTier: 4, drops: TILE.OBSIDIAN },
         [TILE.BEDROCK]: { resistance: 99999, tool: 'none', requiredTier: 99, drops: null },
     };
 
@@ -363,18 +363,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     function spawnAnimals() {
-        if (!game || !game.player || game.playerBiome !== 'surface') return;
-        const MAX_ANIMALS = 8;
-        if (game.animals.length >= MAX_ANIMALS) return;
+        if (!game || !game.player) return;
+        const biome = game.playerBiome;
+        const MAX_ANIMALS = { paradise: 5, surface: 8, nucleus: 10, space: 0, underground: 0, core: 0, hell: 0 }[biome];
+        if (game.animals.length >= MAX_ANIMALS || MAX_ANIMALS === 0) return;
 
         if (Math.random() < 0.015) {
-            const animalData = generateAnimal();
+            const animalData = generateAnimal({ biome: biome });
             const { tileSize } = config;
             const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
             const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.clientHeight / gameSettings.zoom);
             
-            if (animalData.movement === 'fly') {
-                const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
+            if (animalData.movement === 'fly' || animalData.movement === 'swim') {
+                const newAnimal = new Animal(spawnX, spawnY, config, animalData);
                 game.animals.push(newAnimal);
             } else {
                 const spawnTileX = Math.floor(spawnX / tileSize);
@@ -822,7 +823,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.fallingBlocks.splice(i, 1);
                 continue;
             }
-            if (game.tileMap[tileY]?.[tileX] > 0) {
+            if (game.tileMap[tileY]?.[tileX] > TILE.AIR) {
                 block.y = tileY * tileSize - tileSize;
                 block.vy *= -physics.blockBounce;
                 if (Math.abs(block.vy) < 0.5) {
