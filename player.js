@@ -10,10 +10,9 @@ export class Player {
         this.h = config.player.height;
         this.margin = config.player.collisionMargin || 0;
         
-        // --- CORRECTION: Réduction de la hitbox pour les passages étroits ---
-        const hitboxWidth = 14; // Moins de 16 (taille d'une tuile) pour passer dans les chemins étroits
+        const hitboxWidth = 14;
         this.hitbox = {
-            offsetX: (this.w - hitboxWidth) / 2, // Centrer la hitbox réduite
+            offsetX: (this.w - hitboxWidth) / 2,
             offsetY: config.player.hitbox?.offsetY || 3,
             width: hitboxWidth,
             height: config.player.hitbox?.height || 18
@@ -31,6 +30,7 @@ export class Player {
         this.animTimer = 0;
         this.animFrame = 0;
         
+        // --- CORRECTION: Utiliser des noms d'outils valides ---
         this.tools = ['stone_pickaxe', 'stone_shovel', 'stone_axe', 'knife', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
@@ -385,11 +385,12 @@ export class Player {
         ctx.restore();
 
         const selectedToolName = this.tools[this.selectedToolIndex];
-        if (selectedToolName && this.state !== 'swimming') { // Ne pas montrer l'outil en nageant
+        if (selectedToolName && this.state !== 'swimming') {
             const toolAsset = assets[`tool_${selectedToolName}`];
             if (toolAsset) {
                 ctx.save();
                 
+                // --- CORRECTION: Rétablir une taille d'outil visible ---
                 const toolSize = this.w * 0.8;
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
                 const handOffsetY = this.h * 0.6;
