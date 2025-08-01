@@ -1,8 +1,10 @@
 import { randomChestType } from './chestGenerator.js';
+import { Slime, Frog, Golem } from './enemy.js';
+import { SeededRandom } from './seededRandom.js'; // Import du générateur
 
 // Perlin Noise Generator (maintenant déterministe)
 const Perlin = {
-    rand_vect: function(){ let theta = Math.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
+    rand_vect: function(){ let theta = SeededRandom.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
     dot_prod_grid: function(x, y, vx, vy){
         let g_vect; let d_vect = {x:x-vx, y:y-vy};
         if (this.gradients[[vx,vy]]){ g_vect = this.gradients[[vx,vy]]; }
@@ -22,33 +24,24 @@ const Perlin = {
         return v;
     }
 };
-Perlin.seed();
 
 // --- LISTE DE BLOCS BEAUCOUP PLUS COMPLÈTE ---
 export const TILE = { 
     AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, WOOD: 4, LEAVES: 5, COAL: 6, IRON: 7,
     BEDROCK: 8, WATER: 9, CRYSTAL: 10, GLOW_MUSHROOM: 11, CLOUD: 12, HELLSTONE: 13, LAVA: 14,
-    
-    // Nouveaux blocs de surface
     SAND: 15, OAK_WOOD: 16, OAK_LEAVES: 17, FLOWER_RED: 18, FLOWER_YELLOW: 19,
-    
-    // Nouveaux minerais et roches
     GOLD: 20, DIAMOND: 21, LAPIS: 22, GRANITE: 23, DIORITE: 24, ANDESITE: 25,
-    
-    // Nouveaux blocs cosmiques
     HEAVENLY_STONE: 26, MOON_ROCK: 27,
-    
-    // Nouveaux blocs de l'enfer
     SOUL_SAND: 28, SCORCHED_STONE: 29, OBSIDIAN: 30,
-    
-    // Nouveaux blocs du Coeur
     AMETHYST: 31,
 };
 
 export const WORLD_LAYERS = {};
 
 export function generateLevel(game, levelConfig, gameSettings) {
+    SeededRandom.setSeed(12345); // Réinitialise la graine pour la cohérence
     Perlin.seed();
+    
     const { worldWidth, worldHeight, tileSize, generation } = levelConfig;
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
@@ -80,11 +73,11 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     // === 2. ESPACE ===
     for (let i = 0; i < 50; i++) {
-        const clusterX = Math.random() * worldWidthInTiles;
-        const clusterY = WORLD_LAYERS.SPACE_LEVEL + Math.random() * (WORLD_LAYERS.SURFACE_LEVEL - WORLD_LAYERS.SPACE_LEVEL);
+        const clusterX = SeededRandom.random() * worldWidthInTiles;
+        const clusterY = WORLD_LAYERS.SPACE_LEVEL + SeededRandom.random() * (WORLD_LAYERS.SURFACE_LEVEL - WORLD_LAYERS.SPACE_LEVEL);
         for (let j = 0; j < 15; j++) {
-            const asteroidX = Math.floor(clusterX + (Math.random() - 0.5) * 10);
-            const asteroidY = Math.floor(clusterY + (Math.random() - 0.5) * 10);
+            const asteroidX = Math.floor(clusterX + (SeededRandom.random() - 0.5) * 10);
+            const asteroidY = Math.floor(clusterY + (SeededRandom.random() - 0.5) * 10);
             if (game.tileMap[asteroidY]?.[asteroidX] === TILE.AIR) {
                 game.tileMap[asteroidY][asteroidX] = TILE.MOON_ROCK;
             }
@@ -125,11 +118,11 @@ export function generateLevel(game, levelConfig, gameSettings) {
                     if (rockNoise > 0.4) game.tileMap[y][x] = TILE.GRANITE;
                     else if (rockNoise < -0.4) game.tileMap[y][x] = TILE.DIORITE;
                     
-                    if (Math.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
-                    else if (Math.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
-                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.8 && Math.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
-                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.9 && Math.random() < 0.01) game.tileMap[y][x] = TILE.DIAMOND;
-                    else if (Math.random() < 0.015) game.tileMap[y][x] = TILE.LAPIS;
+                    if (SeededRandom.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
+                    else if (SeededRandom.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
+                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.8 && SeededRandom.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
+                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.9 && SeededRandom.random() < 0.01) game.tileMap[y][x] = TILE.DIAMOND;
+                    else if (SeededRandom.random() < 0.015) game.tileMap[y][x] = TILE.LAPIS;
                 }
             }
         }
@@ -147,7 +140,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
                  if (game.tileMap[y][x] !== TILE.AIR) {
                      game.tileMap[y][x] = (Perlin.get(x*0.3, y*0.3) > 0.3) ? TILE.AMETHYST : TILE.CRYSTAL;
                  }
-                 if (game.tileMap[y+1]?.[x] >= TILE.CRYSTAL && game.tileMap[y][x] === TILE.AIR && Math.random() < 0.1) {
+                 if (game.tileMap[y+1]?.[x] >= TILE.CRYSTAL && game.tileMap[y][x] === TILE.AIR && SeededRandom.random() < 0.1) {
                     game.tileMap[y][x] = TILE.GLOW_MUSHROOM;
                  }
             }
@@ -194,10 +187,10 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     // === 9. DÉCORS DE SURFACE (ARBRES & FLEURS) ===
     for (let i = 0; i < generation.treeCount; i++) {
-        const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
+        const x = Math.floor(SeededRandom.random() * (worldWidthInTiles - 20)) + 10;
         for (let y = WORLD_LAYERS.SPACE_LEVEL; y < WORLD_LAYERS.UNDERGROUND_START_Y; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
-                const treeHeight = 5 + Math.floor(Math.random() * 5);
+                const treeHeight = 5 + Math.floor(SeededRandom.random() * 5);
                 for (let j = 1; j <= treeHeight; j++) {
                     if (y - j > 0) game.tileMap[y - j][x] = TILE.OAK_WOOD;
                 }
@@ -205,7 +198,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
                 for (let ly = -canopySize; ly <= canopySize; ly++) {
                     for (let lx = -canopySize; lx <= canopySize; lx++) {
                         if (lx === 0 && ly < 0) continue;
-                        if (Math.random() > 0.4) {
+                        if (SeededRandom.random() > 0.4) {
                             const leafY = y - treeHeight + ly;
                             const leafX = x + lx;
                             if (game.tileMap[leafY]?.[leafX] === TILE.AIR) {
@@ -223,8 +216,8 @@ export function generateLevel(game, levelConfig, gameSettings) {
 
     // === 10. PLACEMENT DES COFFRES ET AUTRES OBJETS (RÉINTÉGRÉ) ===
     for (let i = 0; i < (generation.chestCount || 0); i++) {
-        const x = Math.floor(Math.random() * worldWidthInTiles);
-        const y = WORLD_LAYERS.SURFACE_LEVEL + 5 + Math.floor(Math.random() * (WORLD_LAYERS.CORE_START_Y - WORLD_LAYERS.SURFACE_LEVEL - 10));
+        const x = Math.floor(SeededRandom.random() * worldWidthInTiles);
+        const y = WORLD_LAYERS.SURFACE_LEVEL + 5 + Math.floor(SeededRandom.random() * (WORLD_LAYERS.CORE_START_Y - WORLD_LAYERS.SURFACE_LEVEL - 10));
         if (game.tileMap[y]?.[x] === TILE.AIR) {
             game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [], type: randomChestType() });
         }
