@@ -635,8 +635,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.camera.y += (targetY - game.camera.y) * 0.1;
         }
         
-        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.clientWidth / gameSettings.zoom)));
-        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.clientHeight / gameSettings.zoom)));
+game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.offsetWidth / gameSettings.zoom)));
+game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.offsetHeight / gameSettings.zoom)));
     }
 
     function drawTileMap(ctx, assets) {
