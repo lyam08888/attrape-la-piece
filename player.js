@@ -4,9 +4,16 @@ export class Player {
     constructor(x, y, config, sound) {
         this.x = x; this.y = y;
         this.vx = 0; this.vy = 0;
-        this.w = config.player.width;
-        this.h = config.player.height;
-        this.hitbox = config.player.hitbox;
+        // Increase the player size by a factor of 10 while keeping
+        // the original proportions defined in config.json
+        this.w = config.player.width * 10;
+        this.h = config.player.height * 10;
+        this.hitbox = {
+            offsetX: config.player.hitbox.offsetX * 10,
+            offsetY: config.player.hitbox.offsetY * 10,
+            width:   config.player.hitbox.width * 10,
+            height:  config.player.hitbox.height * 10
+        };
         this.config = config;
         this.sound = sound;
         this.grounded = false;
