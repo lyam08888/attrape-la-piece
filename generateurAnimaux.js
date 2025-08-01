@@ -9,8 +9,35 @@ import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
 import { generateMonster } from './generateurMonstres.js';
-// NOUVEAU: Importation du générateur d'animaux
-import { generateAnimal } from './generateurAnimaux.js';
+// NOUVEAU: Générateur d'animaux
+const ANIMAL_COLORS = ['#FFD700', '#ADFF2F', '#FFB6C1', '#87CEEB'];
+const MOVEMENTS = ['walk', 'fly', 'swim'];
+const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+export function generateAnimal() {
+    const movement = randomChoice(MOVEMENTS);
+    const color = randomChoice(ANIMAL_COLORS);
+    let svgString = '';
+    if (movement === 'fly') {
+        svgString = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="40" rx="20" ry="12" fill="${color}" stroke="#000" stroke-width="2"/>
+            <polygon points="30,40 10,30 10,50" fill="${color}" stroke="#000" stroke-width="2"/>
+            <polygon points="70,40 90,30 90,50" fill="${color}" stroke="#000" stroke-width="2"/>
+        </svg>`;
+    } else if (movement === 'swim') {
+        svgString = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="50" rx="25" ry="15" fill="${color}" stroke="#000" stroke-width="2"/>
+            <polygon points="70,50 90,40 90,60" fill="${color}" stroke="#000" stroke-width="2"/>
+        </svg>`;
+    } else {
+        svgString = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="30" y="40" width="40" height="25" fill="${color}" stroke="#000" stroke-width="2"/>
+            <rect x="35" y="65" width="10" height="15" fill="${color}" stroke="#000" stroke-width="2"/>
+            <rect x="55" y="65" width="10" height="15" fill="${color}" stroke="#000" stroke-width="2"/>
+        </svg>`;
+    }
+    return { movement, svgString };
+}
 
 // --- CLASSE MONSTER (INCHANGÉE) ---
 class Monster {
