@@ -1,6 +1,6 @@
 {
   "tileSize": 16,
-  "zoom": 3,
+  "zoom": 2,
   "chunkSize": 16,
   "worldWidth": 3008,
   "worldHeight": 4096,
