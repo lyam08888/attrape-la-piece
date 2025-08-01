@@ -380,8 +380,8 @@ export class Player {
             if (toolAsset) {
                 ctx.save();
                 
-                // Tools are now scaled down for better proportions
-                const toolSize = this.w * 0.2;
+                // Tools are now much smaller for better proportions
+                const toolSize = this.w * 0.05;
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
                 const handOffsetY = this.h * 0.6;
                 const pivotX = this.x + handOffsetX;
