@@ -75,7 +75,7 @@ class Monster {
         const player = game.player;
 
         if (this.rectCollide(player)) {
-             if (player.vy > 0 && (player.y + player.h) < (this.y + this.h * 0.5)) {
+            if (player.vy > 0 && (player.y + player.h) < (this.y + this.h * 0.5)) {
                 this.takeDamage(game, 100);
                 player.vy = -player.config.physics.jumpForce * 0.6;
             } else if (!player.invulnerable) {
@@ -176,15 +176,15 @@ class Animal {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
-    const DPR = window.devicePixelRatio || 1;
-    // Match canvas resolution with the window size to avoid blurring
+    const ctx = canvas.getContext('2d');
+    
     function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
         canvas.style.width = window.innerWidth + 'px';
         canvas.style.height = window.innerHeight + 'px';
-        canvas.width = Math.floor(window.innerWidth * DPR);
-        canvas.height = Math.floor(window.innerHeight * DPR);
-        const ctx = canvas.getContext('2d');
-ctx?.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
@@ -249,79 +249,138 @@ ctx?.setTransform(DPR, 0, 0, DPR, 0, 0);
     let debugMode = false;
     let fps = 0;
     let lastFrame = performance.now();
-
-    const TOOL_EFFECTIVENESS = {
-        pickaxe: { [TILE.STONE]: 5, [TILE.COAL]: 5, [TILE.IRON]: 6 },
-        axe: { [TILE.WOOD]: 5 },
-        shovel: { [TILE.DIRT]: 5, [TILE.GRASS]: 5 }
+    let cameraShake = {
+        intensity: 0,
+        duration: 0
     };
 
-    const BLOCK_RESISTANCE = {
-        [TILE.DIRT]: 10,
-        [TILE.GRASS]: 12,
-        [TILE.WOOD]: 30,
-        [TILE.STONE]: 50,
-        [TILE.COAL]: 60,
-        [TILE.IRON]: 80,
-        [TILE.LEAVES]: 5,
+    // =========================================================================
+    // NOUVELLE LOGIQUE DE MINAGE AMÉLIORÉE
+    // =========================================================================
+
+    // Données des outils : puissance, type et niveau requis pour l'utiliser
+    const TOOL_DATA = {
+        'hand':          { power: 1, type: 'hand', tier: 0 },
+        'wood_axe':      { power: 2, type: 'axe', tier: 1 },
+        'stone_axe':     { power: 3, type: 'axe', tier: 2 },
+        'iron_axe':      { power: 5, type: 'axe', tier: 3 },
+        'wood_shovel':   { power: 2, type: 'shovel', tier: 1 },
+        'stone_shovel':  { power: 3, type: 'shovel', tier: 2 },
+        'iron_shovel':   { power: 5, type: 'shovel', tier: 3 },
+        'wood_pickaxe':  { power: 2, type: 'pickaxe', tier: 1 },
+        'stone_pickaxe': { power: 4, type: 'pickaxe', tier: 2 },
+        'iron_pickaxe':  { power: 6, type: 'pickaxe', tier: 3 },
     };
 
-    function getToolDamage(toolName, tileType) {
-        if (TOOL_EFFECTIVENESS[toolName] && TOOL_EFFECTIVENESS[toolName][tileType]) {
-            return TOOL_EFFECTIVENESS[toolName][tileType];
-        }
-        return 1;
-    }
+    // Données des blocs : résistance, outil correct et niveau d'outil requis pour miner
+    const BLOCK_DATA = {
+        [TILE.DIRT]:   { resistance: 20, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
+        [TILE.GRASS]:  { resistance: 25, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
+        [TILE.WOOD]:   { resistance: 80, tool: 'axe', requiredTier: 0, drops: TILE.WOOD },
+        [TILE.LEAVES]: { resistance: 10, tool: 'any', requiredTier: 0, drops: null }, // Ne drop rien
+        [TILE.STONE]:  { resistance: 200, tool: 'pickaxe', requiredTier: 1, drops: TILE.STONE },
+        [TILE.COAL]:   { resistance: 250, tool: 'pickaxe', requiredTier: 1, drops: TILE.COAL },
+        [TILE.IRON]:   { resistance: 400, tool: 'pickaxe', requiredTier: 2, drops: TILE.IRON },
+    };
 
-    function getBlockResistance(tileType) {
-        return BLOCK_RESISTANCE[tileType] || 100;
-    }
-    
     function handleMining(game, keys, mouse) {
         const { tileSize } = game.config;
         const { player } = game;
+
+        // Coordonnées du curseur dans le monde
         const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
         const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
         const tileX = Math.floor(mouseWorldX / tileSize);
         const tileY = Math.floor(mouseWorldY / tileSize);
+
+        // Vérifier la distance entre le joueur et le bloc
         const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
-        if (dist > tileSize * 4) {
+        if (dist > tileSize * 5) { // Augmentation légère de la portée
             game.miningEffect = null;
             return;
         }
+
         const tileType = game.tileMap[tileY]?.[tileX];
-        const isMining = mouse.left || keys.action;
+        const isMining = mouse.left; // Utiliser uniquement le clic gauche pour miner
+
+        // Si on ne mine pas ou si le bloc est de l'air, on arrête tout
         if (!isMining || !tileType || tileType === TILE.AIR) {
             game.miningEffect = null;
             return;
         }
+        
+        // Initialiser l'effet de minage si on change de bloc
         if (!game.miningEffect || game.miningEffect.x !== tileX || game.miningEffect.y !== tileY) {
+            const blockInfo = BLOCK_DATA[tileType] || { resistance: 1000, tool: 'none', requiredTier: 99 };
             game.miningEffect = {
                 x: tileX,
                 y: tileY,
                 progress: 0,
-                resistance: getBlockResistance(tileType)
+                resistance: blockInfo.resistance,
+                blockInfo: blockInfo,
             };
         }
-        const selectedToolName = player.tools[player.selectedToolIndex];
-        const damage = getToolDamage(selectedToolName, tileType);
-        game.miningEffect.progress += damage;
-        if (game.miningEffect.progress >= game.miningEffect.resistance) {
-            game.collectibles.push({
-                x: tileX * tileSize, y: tileY * tileSize,
-                w: tileSize, h: tileSize, vy: -2, tileType: tileType
-            });
+
+        const miningData = game.miningEffect;
+        const blockInfo = miningData.blockInfo;
+        const selectedToolName = player.tools[player.selectedToolIndex] || 'hand';
+        const toolInfo = TOOL_DATA[selectedToolName] || TOOL_DATA['hand'];
+
+        // Vérifier si l'outil est assez puissant
+        if (toolInfo.tier < blockInfo.requiredTier) {
+            // On pourrait afficher un message "Outil trop faible"
+            sound.play('hit_fail', { volume: 0.4 });
+            return; // Ne fait aucun dégât
+        }
+
+        // Calcul des dégâts
+        let damage = 1; // Dégâts de base si mauvais outil
+        if (blockInfo.tool === 'any' || blockInfo.tool === toolInfo.type) {
+            damage = toolInfo.power;
+        }
+        
+        // Bonus de force du joueur
+        damage += Math.floor(player.attributes.strength / 5);
+
+        // Chance de coup critique
+        if (Math.random() < 0.05) { // 5% de chance
+            damage *= 2;
+            createParticles(tileX * tileSize + tileSize/2, tileY * tileSize + tileSize/2, 5, '#FFD700');
+        }
+
+        miningData.progress += damage;
+        
+        // Jouer un son de frappe
+        sound.play('hit_block', { volume: 0.3, rate: 0.8 + (miningData.progress / miningData.resistance) * 1.2 });
+
+        // Si le bloc est cassé
+        if (miningData.progress >= miningData.resistance) {
+            if (blockInfo.drops !== null) {
+                game.collectibles.push({
+                    x: tileX * tileSize, y: tileY * tileSize,
+                    w: tileSize, h: tileSize, vy: -2, tileType: blockInfo.drops
+                });
+            }
+            
             game.tileMap[tileY][tileX] = TILE.AIR;
-            game.sound.play('break_block', { volume: 0.5 });
-            game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 10, '#8B4513');
-            game.addXP(5);
+            sound.play('break_block', { volume: 0.6 });
+            createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 15, '#8B4513');
+            addXP(10);
+            triggerCameraShake(4, 15); // Tremblement de caméra !
+            
             game.miningEffect = null;
-            game.checkBlockSupport(tileX, tileY - 1);
-            game.checkBlockSupport(tileX - 1, tileY);
-            game.checkBlockSupport(tileX + 1, tileY);
+            
+            // Vérifier si les blocs adjacents doivent tomber
+            checkBlockSupport(tileX, tileY - 1);
+            checkBlockSupport(tileX - 1, tileY);
+            checkBlockSupport(tileX + 1, tileY);
         }
     }
 
+    // =========================================================================
+    // FIN DE LA NOUVELLE LOGIQUE DE MINAGE
+    // =========================================================================
+    
     function setupMenus(_assets) {
         assets = _assets;
         if (!ui.mainMenu) { initGame(); return; }
@@ -393,61 +452,61 @@ ctx?.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
 
     function initGame() {
-    try {
-        if (ui.gameTitle) ui.gameTitle.style.display = 'none';
-        game = {
-            player: null,
-            camera: { x: 0, y: 0 },
-            tileMap: [],
-            enemies: [],
-            animals: [],
-            pnjs: [],
-            particles: [],
-            fallingBlocks: [],
-            collectibles: [],
-            decorations: [],
-            coins: [],
-            bonuses: [],
-            checkpoints: [],
-            chests: [],
-            lives: config.player.maxLives,
-            over: false,
-            paused: false,
-            config: config,
-            settings: gameSettings,
-            sound: sound,
-            propagateTreeCollapse: propagateTreeCollapse,
-            miningEffect: null,
-            createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
-            startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
-            checkBlockSupport: (x, y) => checkBlockSupport(x, y),
-            loseLife: () => loseLife(),
-            addXP: (amount) => addXP(amount),
-            showLevelPopup: (lvl) => showLevelPopup(lvl),
-        };
-        
-        generateLevel(game, config, {});
-        const spawnPoint = findSpawnPoint();
-        game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
-        game.player.survivalItems = randomItem(5);
-        game.chests.forEach(ch => { ch.items = randomItem(3); });
-       worldAnimator = new WorldAnimator(config, assets);
-       timeSystem = new TimeSystem();
-        updateCamera(true);
-        sound.stopMusic();
-        sound.startAmbient();
-        sound.startMusic();
+        try {
+            if (ui.gameTitle) ui.gameTitle.style.display = 'none';
+            game = {
+                player: null,
+                camera: { x: 0, y: 0 },
+                tileMap: [],
+                enemies: [],
+                animals: [],
+                pnjs: [],
+                particles: [],
+                fallingBlocks: [],
+                collectibles: [],
+                decorations: [],
+                coins: [],
+                bonuses: [],
+                checkpoints: [],
+                chests: [],
+                lives: config.player.maxLives,
+                over: false,
+                paused: false,
+                config: config,
+                settings: gameSettings,
+                sound: sound,
+                propagateTreeCollapse: propagateTreeCollapse,
+                miningEffect: null,
+                createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
+                startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
+                checkBlockSupport: (x, y) => checkBlockSupport(x, y),
+                loseLife: () => loseLife(),
+                addXP: (amount) => addXP(amount),
+                showLevelPopup: (lvl) => showLevelPopup(lvl),
+            };
+            
+            generateLevel(game, config, {});
+            const spawnPoint = findSpawnPoint();
+            game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
+            game.player.survivalItems = randomItem(5);
+            game.chests.forEach(ch => { ch.items = randomItem(3); });
+            worldAnimator = new WorldAnimator(config, assets);
+            timeSystem = new TimeSystem();
+            updateCamera(true);
+            sound.stopMusic();
+            sound.startAmbient();
+            sound.startMusic();
 
-        if(ui.mainMenu) {
-            [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
-            ui.hud?.classList.add('active');
+            if(ui.mainMenu) {
+                [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
+                ui.hud?.classList.add('active');
+            }
+            
+            createToolbar();
+        } catch (error) {
+            logger.error(`Erreur init: ${error.message}`);
         }
-        
-        createToolbar();
-    } catch (error) {
-        logger.error(`Erreur init: ${error.message}`);
     }
-}
 
     function spawnMonsters() {
         if (!game || !game.player) return;
@@ -456,7 +515,7 @@ ctx?.setTransform(DPR, 0, 0, DPR, 0, 0);
         if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
-const screenRightEdge = game.camera.x + ui.canvas.offsetWidth / gameSettings.zoom + tileSize * 5;
+            const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
             for (let i = 0; i < 10; i++) {
@@ -480,12 +539,12 @@ const screenRightEdge = game.camera.x + ui.canvas.offsetWidth / gameSettings.zoo
         if (Math.random() < 0.015) {
             const animalData = generateAnimal();
             const { tileSize } = config;
-const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.offsetWidth / gameSettings.zoom);
-const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight / gameSettings.zoom);
+            const spawnX = game.player.x + (Math.random() - 0.5) * (canvas.width / gameSettings.zoom);
+            const spawnY = game.player.y + (Math.random() - 0.5) * (canvas.height / gameSettings.zoom);
             
             if (animalData.movement === 'fly') {
-                 const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
-                 game.animals.push(newAnimal);
+                const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
+                game.animals.push(newAnimal);
             } else {
                 const spawnTileX = Math.floor(spawnX / tileSize);
                 const spawnTileY = Math.floor(spawnY / tileSize);
@@ -538,7 +597,7 @@ const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight /
             spawnAnimals();
             spawnPNJ();
 
-            if (keys.action) keys.action = false;
+            // La ligne `if (keys.action) keys.action = false;` a été supprimée d'ici.
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
             game.over = true;
@@ -551,8 +610,20 @@ const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight /
         
         if (game.player) {
             ctx.save();
+            
+            // Appliquer le tremblement de la caméra
+            let shakeX = 0;
+            let shakeY = 0;
+            if (cameraShake.duration > 0) {
+                shakeX = (Math.random() - 0.5) * cameraShake.intensity;
+                shakeY = (Math.random() - 0.5) * cameraShake.intensity;
+                cameraShake.duration--;
+            } else {
+                cameraShake.intensity = 0;
+            }
+
             ctx.scale(gameSettings.zoom, gameSettings.zoom);
-            ctx.translate(-Math.round(game.camera.x), -Math.round(game.camera.y));
+            ctx.translate(-Math.round(game.camera.x + shakeX), -Math.round(game.camera.y + shakeY));
 
             if (worldAnimator) worldAnimator.draw(ctx);
             drawTileMap(ctx, assets);
@@ -590,6 +661,11 @@ const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight /
         logger.draw(ctx, canvas);
     }
 
+    function triggerCameraShake(intensity, duration) {
+        cameraShake.intensity = intensity;
+        cameraShake.duration = duration;
+    }
+
     function toggleMenu(show, menuType) {
         if (!game) return;
         game.paused = show;
@@ -612,7 +688,7 @@ const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight /
         const spawnX = Math.floor(worldWidthInTiles / 2);
 
         const playerTiles = Math.ceil(config.player.height / tileSize);
-        const extraOffset = 10; // spawn higher so the player falls onto the ground
+        const extraOffset = 10;
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
                 const offset = playerTiles + 1 + extraOffset;
@@ -624,8 +700,8 @@ const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight /
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.offsetWidth / gameSettings.zoom) / 2;
-const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.offsetHeight / gameSettings.zoom) / 2;
+        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.width / gameSettings.zoom) / 2;
+        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.height / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
@@ -635,8 +711,8 @@ const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.offsetHeight / 
             game.camera.y += (targetY - game.camera.y) * 0.1;
         }
         
-game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.offsetWidth / gameSettings.zoom)));
-game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.offsetHeight / gameSettings.zoom)));
+        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.width / gameSettings.zoom)));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.height / gameSettings.zoom)));
     }
 
     function drawTileMap(ctx, assets) {
@@ -756,11 +832,11 @@ game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.can
         game.over = true;
         if (ui.gameTitle) ui.gameTitle.style.display = 'block';
         if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
-       ui.hud?.classList.remove('active');
-       ui.gameover?.classList.add('active');
-       sound.stopAmbient();
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+        sound.stopAmbient();
         sound.stopMusic();
-   }
+    }
 
     function updateParticles() {
         if (!game) return;
@@ -835,12 +911,12 @@ game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.can
         for (let i = game.fallingBlocks.length - 1; i >= 0; i--) {
             const block = game.fallingBlocks[i];
             block.vy += physics.gravity;
-if (physics.realistic) {
-    if (block.vy > physics.maxFallSpeed) {
-        block.vy = physics.maxFallSpeed;
-    }
-    block.vy *= physics.airResistance;
-}
+            if (physics.realistic) {
+                if (block.vy > physics.maxFallSpeed) {
+                    block.vy = physics.maxFallSpeed;
+                }
+                block.vy *= physics.airResistance;
+            }
 
             block.y += block.vy;
 
@@ -931,20 +1007,18 @@ if (physics.realistic) {
         if (game && game.miningEffect) {
             const { x, y, progress, resistance } = game.miningEffect;
             const { tileSize } = config;
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = 'white';
+            
             const progressRatio = progress / resistance;
+            const crackStage = Math.floor(progressRatio * 10); // 10 étapes de fissures
             
-            const crackWidth = tileSize * Math.min(1, progressRatio * 2);
-            const crackHeight = 2;
-            ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
-            
-            if (progressRatio > 0.5) {
-                const crackWidth2 = tileSize * Math.min(1, (progressRatio - 0.5) * 2);
-                const crackHeight2 = 2;
-                ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
+            if (crackStage > 0) {
+                const crackAsset = assets[`crack_${crackStage}`];
+                if (crackAsset) {
+                    ctx.globalAlpha = 0.7;
+                    ctx.drawImage(crackAsset, x * tileSize, y * tileSize, tileSize, tileSize);
+                    ctx.globalAlpha = 1.0;
+                }
             }
-            ctx.globalAlpha = 1.0;
         }
     }
 
