@@ -45,7 +45,6 @@
             width: 100%;
             height: 100%;
         }
-        /* Le canvas du jeu occupe tout l'espace */
         #gameCanvas {
             display: block;
             width: 100%;
@@ -81,7 +80,7 @@
             text-align: center;
             width: 90%;
             max-width: 450px;
-            font-family: 'Press Start 2P', cursive; /* Assure que la police est appliquée partout */
+            font-family: 'Press Start 2P', cursive;
         }
         .menu-box h2 {
             font-size: 1.5em;
@@ -203,6 +202,21 @@
             z-index: 15;
             display: none;
         }
+        /* NOUVEAUX STYLES POUR LES QUÊTES ET DIALOGUES */
+        #dialogueOptions button {
+            margin-top: 15px;
+        }
+        #questList {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .quest-item {
+            padding: 5px;
+            border-bottom: 1px solid #444;
+        }
+        .quest-item:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -300,6 +314,28 @@
                 <button data-action="closeCalendar" id="closeCalendar">FERMER</button>
             </div>
         </div>
+
+        <!-- NOUVEAUX ÉLÉMENTS POUR LES QUÊTES -->
+        <div id="dialogueBox" class="overlay">
+            <div class="menu-box" style="width: 80%; max-width: 600px;">
+                <h2 id="dialoguePnjName">Nom du PNJ</h2>
+                <p id="dialogueText" style="margin-bottom: 20px; font-size: 0.8em;"></p>
+                <div id="dialogueOptions">
+                    <!-- Les options de dialogue seront ajoutées ici par le code -->
+                </div>
+            </div>
+        </div>
+
+        <div id="questLogMenu" class="overlay">
+            <div class="menu-box">
+                <h2>Journal de Quêtes</h2>
+                <div id="questList" style="text-align: left; font-size: 0.7em; margin-bottom: 20px;">
+                    <!-- La liste des quêtes sera ajoutée ici -->
+                </div>
+                <button data-action="closeQuestLog">FERMER</button>
+            </div>
+        </div>
+        <!-- FIN DES NOUVEAUX ÉLÉMENTS -->
 
         <div id="hud" class="overlay">
             <div class="hud-info">
