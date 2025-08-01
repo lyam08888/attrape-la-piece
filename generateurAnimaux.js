@@ -567,9 +567,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const spawnX = Math.floor(worldWidthInTiles / 2);
 
         const playerTiles = Math.ceil(config.player.height / tileSize);
+        const extraOffset = 10; // spawn higher so the player falls onto the ground
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                const offset = playerTiles + 1;
+                const offset = playerTiles + 1 + extraOffset;
                 return { x: spawnX * tileSize, y: Math.max(0, (y - offset) * tileSize) };
             }
         }
