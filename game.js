@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastFrame = performance.now();
     let cameraShake = { intensity: 0, duration: 0 };
     let stars = [];
+    const CAMERA_SMOOTHING = 0.5;
     const defaultGravity = config.physics.gravity;
 
     const TOOL_DATA = {
@@ -721,8 +722,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.camera.x = targetX;
             game.camera.y = targetY;
         } else {
-            game.camera.x += (targetX - game.camera.x) * 0.1;
-            game.camera.y += (targetY - game.camera.y) * 0.1;
+            game.camera.x += (targetX - game.camera.x) * CAMERA_SMOOTHING;
+            game.camera.y += (targetY - game.camera.y) * CAMERA_SMOOTHING;
         }
         game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (canvas.clientWidth / gameSettings.zoom)));
         game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (canvas.clientHeight / gameSettings.zoom)));
