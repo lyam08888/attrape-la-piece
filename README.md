@@ -29,7 +29,7 @@ Interface enrichie :
 - Inventaire complet (touche **I**).
 - Menu des compétences (touche **P**).
 - Menu des commandes remis à jour.
-- Mode mobile activable depuis les options.
+- Mode mobile activable depuis les options avec commandes tactiles.
 
 ## Cassage de blocs
 
@@ -64,6 +64,9 @@ Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne.
 Jouez ! Le jeu chargera les assets depuis votre GitHub et sera prêt à jouer.
 
 Astuce : appuyez sur **F3** en jeu pour activer le mode debug (FPS et hitbox).
+
+### Mode Mobile
+Activez le mode mobile dans le menu Options pour afficher des boutons tactiles (gauche, droite, saut et action) et jouer confortablement sur smartphone.
 
 ### Nouveautés graphiques
 - Le canvas ajuste maintenant automatiquement sa taille à la fenêtre pour un affichage net.
