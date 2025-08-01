@@ -170,9 +170,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.timeSystem.update();
             game.logger.update();
             
-            // Caméra suit le joueur
-            game.camera.x = game.player.x - (canvas.clientWidth / 2 / config.zoom);
-            game.camera.y = game.player.y - (canvas.clientHeight / 2 / config.zoom);
+            // =================================================================
+            // === CORRECTION DE LA CAMÉRA ===
+            // =================================================================
+            const { zoom, worldWidth, worldHeight } = config;
+            const canvasWidth = canvas.clientWidth;
+            const canvasHeight = canvas.clientHeight;
+
+            // 1. Position cible de la caméra (centrée sur le joueur)
+            let targetX = game.player.x + game.player.w / 2 - canvasWidth / 2 / zoom;
+            let targetY = game.player.y + game.player.h / 2 - canvasHeight / 2 / zoom;
+
+            // 2. Limites du monde en pixels
+            const worldPixelWidth = worldWidth;
+            const worldPixelHeight = worldHeight;
+
+            // 3. Limites de la caméra pour ne pas sortir du monde
+            const minCameraX = 0;
+            const maxCameraX = worldPixelWidth - (canvasWidth / zoom);
+            const minCameraY = 0;
+            const maxCameraY = worldPixelHeight - (canvasHeight / zoom);
+
+            // 4. Appliquer les contraintes (clamping)
+            game.camera.x = Math.max(minCameraX, Math.min(targetX, maxCameraX));
+            game.camera.y = Math.max(minCameraY, Math.min(targetY, maxCameraY));
+            // =================================================================
+            // === FIN DE LA CORRECTION DE LA CAMÉRA ===
+            // =================================================================
         },
 
         draw(ctx, assets) {
