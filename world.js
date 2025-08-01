@@ -1,16 +1,7 @@
 import { randomChestType } from './chestGenerator.js';
+import { SeededRandom } from './seededRandom.js';
 
-// --- Générateur de nombres pseudo-aléatoires (intégré pour éviter les erreurs 404) ---
-const SeededRandom = {
-    seed: 12345,
-    setSeed(newSeed) { this.seed = newSeed; },
-    random: function() {
-        var x = Math.sin(this.seed++) * 10000;
-        return x - Math.floor(x);
-    }
-};
-
-// --- Générateur de Bruit de Perlin (maintenant déterministe) ---
+// Perlin Noise Generator (déterministe)
 const Perlin = {
     rand_vect: function(){ let theta = SeededRandom.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
     dot_prod_grid: function(x, y, vx, vy){
@@ -44,7 +35,7 @@ export const TILE = {
     AMETHYST: 31,
 };
 
-// --- NIVEAUX DU MONDE (EXPORTÉS CORRECTEMENT) ---
+// --- NIVEAUX DU MONDE ---
 export const WORLD_LAYERS = {};
 
 export function generateLevel(game, levelConfig, gameSettings) {
@@ -55,7 +46,6 @@ export function generateLevel(game, levelConfig, gameSettings) {
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
-    // Remplir l'objet WORLD_LAYERS pour l'exportation
     WORLD_LAYERS.PARADISE_END_Y = Math.floor(worldHeightInTiles * 0.15);
     WORLD_LAYERS.SPACE_END_Y = Math.floor(worldHeightInTiles * 0.25);
     WORLD_LAYERS.SURFACE_LEVEL = Math.floor(worldHeightInTiles * 0.35);
@@ -151,7 +141,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
             }
         }
         game.tileMap[worldHeightInTiles - 1][x] = TILE.BEDROCK;
-        game.tileMap[0][x] = TILE.BEDROCK;
+        // La ligne `game.tileMap[0][x] = TILE.BEDROCK;` a été supprimée.
     }
 
     // 7. Placer les arbres, fleurs, etc.
