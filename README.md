@@ -2,7 +2,7 @@ Super Pixel Adventure 2
 Bienvenue dans Super Pixel Adventure 2, une refonte technique et visuelle majeure du jeu de plateforme classique. Ce projet a été entièrement reconstruit pour offrir une expérience plus riche, plus dynamique et visuellement impressionnante.
 
 🌟 Évolutions Techniques Majeures
-Moteur Modulaire : Le code est maintenant divisé en fichiers spécialisés (player.js, enemy.js, world.js) pour une meilleure organisation et des performances accrues.
+Moteur Modulaire : Le code est maintenant divisé en fichiers spécialisés (player.js, game.js, world.js) pour une meilleure organisation et des performances accrues.
 
 Monde Procédural : Chaque partie génère un monde unique avec des plateformes, des pièges et des secrets, offrant une rejouabilité infinie.
 
