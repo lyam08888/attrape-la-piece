@@ -1,3 +1,5 @@
+import { TILE } from './world.js';
+
 export class Player {
     constructor(x, y, config, sound) {
         this.x = x;
@@ -28,7 +30,8 @@ export class Player {
         this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
-        this.quests = []; // NOUVEAU: Journal de quêtes
+        this.quests = [];
+        this.isSwimming = false; // Pour la physique de l'eau
 
         this.level = 1;
         this.xp = 0;
@@ -85,7 +88,16 @@ export class Player {
 
         const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
 
-        if (this.flying) {
+        if (this.isSwimming) {
+            this.vy *= 0.9; // Ralentissement dans l'eau
+            this.vx *= 0.9;
+            if (keys.jump) this.vy -= 0.4; // Nager vers le haut
+            if (keys.down) this.vy += 0.2;
+
+            if (keys.left) { this.vx = Math.max(this.vx - accel * 0.5, -speed * 0.7); this.dir = -1; } 
+            else if (keys.right) { this.vx = Math.min(this.vx + accel * 0.5, speed * 0.7); this.dir = 1; }
+
+        } else if (this.flying) {
             if (keys.left) { this.vx = -speed; this.dir = -1; }
             else if (keys.right) { this.vx = speed; this.dir = 1; }
             else { this.vx = 0; }
@@ -137,7 +149,9 @@ export class Player {
     }
     
     updateStateAndAnimation() {
-        if (this.flying) {
+        if (this.isSwimming) {
+            this.state = 'swimming'; // Vous devrez ajouter une animation 'swimming'
+        } else if (this.flying) {
             this.state = 'flying';
         } else if (!this.grounded) {
             this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
@@ -167,32 +181,26 @@ export class Player {
     }
 
     handleActions(keys, mouse, game) {
-        const isAction = keys.action || mouse.left;
-        
-        // NOUVEAU: Logique d'interaction avec les PNJ
-        if (keys.interact) {
+        // Interaction avec l'environnement (PNJ, Coffres)
+        if (keys.action) {
             for (const pnj of game.pnjs) {
                 if (this.rectCollide(pnj)) {
                     game.startDialogue(pnj);
-                    break; // Interagir avec un seul PNJ à la fois
+                    return; 
                 }
             }
-            keys.interact = false; // Consommer l'action
-        }
-
-        if (keys.action) {
             for (const chest of game.chests) {
                 if (this.rectCollide(chest)) {
                     if (game.openChest) game.openChest(chest);
-                    keys.action = false;
                     return;
                 }
             }
         }
 
+        // Attaque
         const attackTools = ['sword', 'knife', 'axe', 'pickaxe'];
         const selectedTool = this.tools[this.selectedToolIndex];
-        if (isAction && attackTools.includes(selectedTool) && this.swingTimer <= 0) {
+        if (mouse.left && attackTools.includes(selectedTool) && this.swingTimer <= 0) {
             this.swingTimer = 30;
             this.attackNearbyEnemies(game);
         }
@@ -380,7 +388,6 @@ export class Player {
             if (toolAsset) {
                 ctx.save();
                 
-                // Tools are now much smaller for better proportions
                 const toolSize = this.w * 0.05;
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
                 const handOffsetY = this.h * 0.6;
