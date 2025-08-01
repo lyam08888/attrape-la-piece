@@ -15,7 +15,9 @@ const MONSTERS = {
     hell: [{ id: 'monster_hell', name: 'Démon' }],
 };
 
-const TOOLS = [{ id: 'stone_pickaxe', name: 'Pioche en Pierre' }, { id: 'iron_axe', name: 'Hache en Fer' }];
+// Les quêtes doivent référencer les mêmes identifiants d'outils que le joueur.
+// On retire le préfixe "stone_" pour rester cohérent avec les assets.
+const TOOLS = [{ id: 'pickaxe', name: 'Pioche en Pierre' }, { id: 'iron_axe', name: 'Hache en Fer' }];
 
 // --- MODÈLES DE QUÊTES PAR ARCHÉTYPE ---
 

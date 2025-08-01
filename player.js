@@ -31,7 +31,10 @@ export class Player {
         this.animFrame = 0;
         
         // --- CORRECTION: Utiliser des noms d'outils valides ---
-        this.tools = ['stone_pickaxe', 'stone_shovel', 'stone_axe', 'knife', 'sword', 'bow', 'fishing_rod'];
+        // Les noms doivent correspondre aux clés d'asset et aux outils
+        // utilisés dans miningEngine.js. Les préfixes "stone_" empêchaient
+        // de charger les bonnes icônes et rendait le minage moins efficace.
+        this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
         this.quests = [];
@@ -200,7 +203,8 @@ export class Player {
             }
         }
 
-        const attackTools = ['sword', 'knife', 'stone_axe', 'stone_pickaxe'];
+        // Les noms doivent rester cohérents avec this.tools
+        const attackTools = ['sword', 'knife', 'axe', 'pickaxe'];
         const selectedTool = this.tools[this.selectedToolIndex];
         if (mouse.left && attackTools.some(t => selectedTool.includes(t)) && this.swingTimer <= 0) {
             this.swingTimer = 30;
