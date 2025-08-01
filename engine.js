@@ -144,6 +144,48 @@ export class GameEngine {
             e.preventDefault();
         });
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Support tactile pour le mobile
+        const touchMap = [
+            ['btnLeft', 'left'],
+            ['btnRight', 'right'],
+            ['btnJump', 'jump'],
+            ['btnAction', 'action']
+        ];
+        touchMap.forEach(([id, key]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('touchstart', e => {
+                this.keys[key] = true;
+                e.preventDefault();
+            });
+            el.addEventListener('touchend', e => {
+                this.keys[key] = false;
+                e.preventDefault();
+            });
+            el.addEventListener('touchcancel', e => {
+                this.keys[key] = false;
+                e.preventDefault();
+            });
+        });
+        this.canvas.addEventListener('touchstart', e => {
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            this.mouse.x = touch.clientX - rect.left;
+            this.mouse.y = touch.clientY - rect.top;
+            this.mouse.left = true;
+            e.preventDefault();
+        });
+        this.canvas.addEventListener('touchmove', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            this.mouse.x = touch.clientX - rect.left;
+            this.mouse.y = touch.clientY - rect.top;
+        });
+        this.canvas.addEventListener('touchend', e => {
+            this.mouse.left = false;
+        });
     }
 
 

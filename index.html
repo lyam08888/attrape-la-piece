@@ -52,6 +52,34 @@
             font-size: 1.2em;
         }
 
+        #mobileControls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            display: none;
+            z-index: 5;
+            padding: 0 20px;
+            box-sizing: border-box;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        body.mobile-mode #mobileControls { display: flex; }
+        #mobileControls .left-controls, #mobileControls .right-controls {
+            display: flex;
+            gap: 10px;
+        }
+        #mobileControls button {
+            width: 60px;
+            height: 60px;
+            pointer-events: auto;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 1.2em;
+        }
+
         /* --- NOUVEL ÉCRAN TITRE AMÉLIORÉ --- */
         @keyframes ken-burns {
             0% { transform: scale(1.0) translate(0, 0); }
@@ -400,6 +428,16 @@
 <body>
     <div id="gameWrapper">
         <canvas id="gameCanvas"></canvas>
+        <div id="mobileControls">
+            <div class="left-controls">
+                <button id="btnLeft">◀</button>
+                <button id="btnRight">▶</button>
+            </div>
+            <div class="right-controls">
+                <button id="btnJump">⬆</button>
+                <button id="btnAction">⨀</button>
+            </div>
+        </div>
         
         <div id="titleScreen">
             <div id="art-pane">
