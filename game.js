@@ -10,6 +10,8 @@ import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
 import { generateMonster } from './generateurMonstres.js';
 import { generateAnimal } from './generateurAnimaux.js';
+import { generatePNJ } from './generateurPNJ.js';
+import { PNJ } from './PNJ.js';
 
 // --- CLASSE MONSTER (MISE À JOUR) ---
 class Monster {
@@ -26,15 +28,14 @@ class Monster {
         this.direction = Math.random() < 0.5 ? 1 : -1;
         this.actionTimer = 60 + Math.random() * 120;
         this.isGrounded = false;
-        this.health = 50; // NOUVEAU: Points de vie
-        this.isDying = false; // NOUVEAU: État pour l'animation de mort
+        this.health = 50;
+        this.isDying = false;
 
         this.image = new Image();
         const svg64 = btoa(monsterData.svgString);
         this.image.src = 'data:image/svg+xml;base64,' + svg64;
     }
 
-    // NOUVEAU: Méthode pour recevoir des dégâts
     takeDamage(game, amount) {
         if (this.isDying) return;
         this.health -= amount;
@@ -45,12 +46,10 @@ class Monster {
             game.sound.play('enemy_die', { volume: 0.7 });
             game.addXP(25);
             game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
-            // Le monstre sera retiré de la liste des ennemis après un court délai
             setTimeout(() => { this.isDead = true; }, 300);
         }
     }
     
-    // NOUVEAU: Méthode de collision rectangulaire
     rectCollide(other) {
         return (
             this.x < other.x + other.w &&
@@ -75,14 +74,11 @@ class Monster {
         this.handleCollisions(game, tileSize);
         const player = game.player;
 
-        // Collision avec le joueur (le monstre blesse le joueur)
         if (this.rectCollide(player)) {
              if (player.vy > 0 && (player.y + player.h) < (this.y + this.h * 0.5)) {
-                // Le joueur a sauté sur le monstre
-                this.takeDamage(game, 100); // Dégâts massifs pour tuer en un coup
-                player.vy = -player.config.physics.jumpForce * 0.6; // Rebond
+                this.takeDamage(game, 100);
+                player.vy = -player.config.physics.jumpForce * 0.6;
             } else if (!player.invulnerable) {
-                // Le monstre touche le joueur
                 game.loseLife();
             }
         }
@@ -392,6 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tileMap: [],
             enemies: [],
             animals: [],
+            pnjs: [], // NOUVEAU: Tableau pour les PNJ
             particles: [],
             fallingBlocks: [],
             collectibles: [],
@@ -487,6 +484,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // NOUVEAU: Logique d'apparition des PNJ
+    function spawnPNJ() {
+        if (!game || game.pnjs.length > 0) return; // Un seul PNJ pour l'instant
+        const pnjData = generatePNJ();
+        const { tileSize } = config;
+        const spawnX = game.player.x + 100;
+        const spawnY = game.player.y - 50;
+        const newPNJ = new PNJ(spawnX, spawnY, config, pnjData);
+        game.pnjs.push(newPNJ);
+    }
+
 
     function update(keys, mouse) {
         logger.update();
@@ -506,6 +514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
             game.animals.forEach(a => a.update(game));
+            game.pnjs.forEach(p => p.update(game)); // NOUVEAU: Mise à jour des PNJ
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
@@ -515,6 +524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             spawnMonsters();
             spawnAnimals();
+            spawnPNJ(); // NOUVEAU: Appel à la logique d'apparition des PNJ
 
             if (keys.action) keys.action = false;
         } catch (error) {
@@ -541,6 +551,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             game.animals.forEach(a => a.draw(ctx));
             game.enemies.forEach(e => e.draw(ctx));
+            game.pnjs.forEach(p => p.draw(ctx)); // NOUVEAU: Dessin des PNJ
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
                 ctx.save();
@@ -551,6 +562,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.enemies.forEach(en => ctx.strokeRect(en.x, en.y, en.w, en.h));
                 ctx.strokeStyle = 'cyan';
                 game.animals.forEach(an => ctx.strokeRect(an.x, an.y, an.w, an.h));
+                ctx.strokeStyle = 'magenta';
+                game.pnjs.forEach(p => ctx.strokeRect(p.x, p.y, p.w, p.h));
                 ctx.restore();
             }
             if (gameSettings.showParticles) drawParticles(ctx);
