@@ -29,6 +29,7 @@ Interface enrichie :
 - Inventaire complet (touche **I**).
 - Menu des compétences (touche **P**).
 - Menu des commandes remis à jour.
+- Mode mobile activable depuis les options.
 
 ## Cassage de blocs
 
