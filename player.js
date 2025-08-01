@@ -6,13 +6,13 @@ export class Player {
         this.vx = 0; this.vy = 0;
         // Increase the player size by a factor of 10 while keeping
         // the original proportions defined in config.json
-        this.w = config.player.width * 10;
-        this.h = config.player.height * 10;
+        this.w = config.player.width * 3;
+        this.h = config.player.height * 3;
         this.hitbox = {
-            offsetX: config.player.hitbox.offsetX * 10,
-            offsetY: config.player.hitbox.offsetY * 10,
-            width:   config.player.hitbox.width * 10,
-            height:  config.player.hitbox.height * 10
+            offsetX: config.player.hitbox.offsetX * 3,
+            offsetY: config.player.hitbox.offsetY * 3,
+            width:   config.player.hitbox.width * 3,
+            height:  config.player.hitbox.height * 3
         };
         this.config = config;
         this.sound = sound;
