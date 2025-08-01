@@ -9,6 +9,36 @@ import { TimeSystem, updateCalendarUI } from './calendar.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
+// NOUVEAU: Importation du générateur de monstres
+import { generateMonster } from './generateurMonstres.js';
+
+// NOUVEAU: Classe pour gérer les monstres
+class Monster {
+    constructor(x, y, config, monsterData) {
+        this.x = x;
+        this.y = y;
+        this.w = config.tileSize;
+        this.h = config.tileSize;
+        this.properties = monsterData.properties;
+        this.isDead = false;
+
+        // Créer une image à partir du SVG pour le dessin sur le canvas
+        this.image = new Image();
+        const svg64 = btoa(monsterData.svgString); // Encoder le SVG en Base64
+        this.image.src = 'data:image/svg+xml;base64,' + svg64;
+    }
+
+    update(game) {
+        // Logique de l'IA du monstre (mouvement, attaque, etc.) à ajouter ici
+    }
+
+    draw(ctx) {
+        if (this.image.complete) {
+            ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
+        }
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
@@ -191,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.chests.forEach(ch => { ch.items = randomItem(3); });
        worldAnimator = new WorldAnimator(config, assets);
        timeSystem = new TimeSystem();
-       updateCamera(true);
+        updateCamera(true);
         sound.stopMusic();
         sound.startAmbient();
         sound.startMusic();
@@ -207,6 +237,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 }
 
+    // NOUVEAU: Fonction pour faire apparaître les monstres
+    function spawnMonsters() {
+        if (!game || !game.player) return;
+
+        const MAX_MONSTERS = 5; // Nombre maximum de monstres à l'écran
+        if (game.enemies.length >= MAX_MONSTERS) {
+            return;
+        }
+        
+        // Tente de faire apparaître un monstre (faible probabilité à chaque frame)
+        if (Math.random() < 0.005) {
+            const { tileSize } = config;
+            const playerPos = {
+                x: Math.floor(game.player.x / tileSize),
+                y: Math.floor(game.player.y / tileSize)
+            };
+
+            // Cherche une position de spawn valide autour du joueur
+            for (let i = 0; i < 10; i++) { // 10 tentatives
+                const offsetX = (Math.random() - 0.5) * 20; // Apparition jusqu'à 10 tuiles de distance
+                const spawnTileX = playerPos.x + Math.floor(offsetX);
+                
+                // Trouve le sol à cette coordonnée X
+                for (let y = 0; y < game.tileMap.length - 1; y++) {
+                    if (game.tileMap[y+1]?.[spawnTileX] > TILE.AIR && game.tileMap[y]?.[spawnTileX] === TILE.AIR) {
+                        const monsterData = generateMonster();
+                        const newMonster = new Monster(spawnTileX * tileSize, y * tileSize, config, monsterData);
+                        game.enemies.push(newMonster);
+                        return; // Un seul monstre par appel
+                    }
+                }
+            }
+        }
+    }
 
 
     function update(keys, mouse) {
@@ -224,7 +288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (timeSystem) timeSystem.update();
             sound.update();
             game.player.update(keys, mouse, game);
-            game.enemies.forEach(e => e.update(game));
+            game.enemies.forEach(e => e.update(game)); // MODIFIÉ: Mise à jour des monstres
             game.enemies = game.enemies.filter(e => !e.isDead);
             updateParticles();
             updateFallingBlocks();
@@ -232,6 +296,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateMining(game, keys, mouse);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
+            
+            spawnMonsters(); // NOUVEAU: Appel à la logique d'apparition des monstres
+
             if (keys.action) keys.action = false;
             mouse.left = false; mouse.right = false;
         } catch (error) {
@@ -256,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawCollectibles(ctx, assets);
             drawChests(ctx, assets);
             
-            game.enemies.forEach(e => e.draw(ctx, assets));
+            game.enemies.forEach(e => e.draw(ctx)); // MODIFIÉ: Dessin des monstres
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
                 ctx.save();
