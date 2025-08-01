@@ -1,14 +1,14 @@
-// player.js - Gère le joueur, ses mouvements, ses animations et ses interactions
 import { TILE } from './world.js';
 
 export class Player {
-    constructor(x, y, config) {
+    constructor(x, y, config, sound) {
         this.x = x; this.y = y;
         this.vx = 0; this.vy = 0;
         this.w = config.player.width;
         this.h = config.player.height;
         this.hitbox = config.player.hitbox;
         this.config = config;
+        this.sound = sound;
         this.grounded = false;
         this.dir = 1;
         this.swingTimer = 0;
@@ -18,22 +18,27 @@ export class Player {
         this.miningTarget = null;
         this.miningProgress = 0;
 
-        // États d'animation
         this.state = 'idle';
         this.animTimer = 0;
         this.animFrame = 0;
     }
 
     getHitbox() {
-        return {
-            x: this.x + this.hitbox.offsetX,
-            y: this.y + this.hitbox.offsetY,
-            w: this.hitbox.width,
-            h: this.hitbox.height
-        };
+        return { x: this.x + this.hitbox.offsetX, y: this.y + this.hitbox.offsetY, w: this.hitbox.width, h: this.hitbox.height };
     }
 
-    update(keys, mouse, game) {
+    rectCollide(other) {
+        if (!other) return false;
+        const box = this.getHitbox();
+        return (
+            box.x < other.x + other.w &&
+            box.x + box.w > other.x &&
+            box.y < other.y + other.h &&
+            box.y + box.h > other.y
+        );
+    }
+
+    update(keys, mouse, game, delta) {
         const { physics } = this.config;
         const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
         const speed = keys.run ? physics.playerSpeed * 1.5 : physics.playerSpeed;
@@ -51,19 +56,35 @@ export class Player {
 
         if (keys.jump && this.grounded) {
             this.vy = -physics.jumpForce;
+            this.sound?.play('jump');
         }
 
         this.vy += physics.gravity;
         if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
 
         this.handleCollisions(game);
+        this.checkCollectibleCollisions(game);
         this.updateMiningTarget(mouse, game);
         this.updateStateAndAnimation();
         
         if (this.swingTimer > 0) this.swingTimer--;
-        if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20; // Swing plus rapide
+        if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
     }
     
+    checkCollectibleCollisions(game) {
+        if (!game.collectibles) return;
+        for (let i = game.collectibles.length - 1; i >= 0; i--) {
+            const item = game.collectibles[i];
+            if (this.rectCollide(item)) {
+                const key = item.tileType;
+                this.inventory[key] = (this.inventory[key] || 0) + 1;
+                const tileName = Object.keys(TILE).find(k=>TILE[k]===key) || "Objet";
+                game.logger.log(`+1 ${tileName}`);
+                game.collectibles.splice(i, 1);
+            }
+        }
+    }
+
     updateStateAndAnimation() {
         if (!this.grounded) {
             this.state = 'jumping';
@@ -89,6 +110,7 @@ export class Player {
     }
 
     updateMiningTarget(mouse, game) {
+        if (!game.camera) return; // Sécurité pour éviter le crash au démarrage
         const { tileSize, zoom } = game.config;
         const reach = (this.config.player.reach || 4) * tileSize;
         const mouseWorldX = game.camera.x + mouse.x / zoom;
@@ -116,7 +138,8 @@ export class Player {
     handleCollisions(game) {
         const { tileSize } = this.config;
         const map = game.tileMap;
-        
+        if (!map || map.length === 0) return;
+
         // Collision X
         this.x += this.vx;
         let hb = this.getHitbox();
@@ -163,12 +186,14 @@ export class Player {
     }
 
     draw(ctx, assets, playerAnimations) {
-        const anim = playerAnimations[this.state] || ['player_idle1'];
+        if (!playerAnimations) return;
+        const anim = playerAnimations[this.state] || playerAnimations['idle'];
+        if (!anim) return;
         const frameKey = anim[this.animFrame % anim.length];
         const img = assets[frameKey];
         
         if (!img) {
-            ctx.fillStyle = 'red'; // Fallback si l'asset n'est pas trouvé
+            ctx.fillStyle = 'red';
             ctx.fillRect(this.x, this.y, this.w, this.h);
             return;
         }
@@ -182,7 +207,6 @@ export class Player {
         }
         ctx.restore();
 
-        // Dessin de l'outil
         const selectedToolName = this.tools[this.selectedToolIndex];
         if (selectedToolName) {
             const toolAsset = assets[`tool_${selectedToolName}`];
