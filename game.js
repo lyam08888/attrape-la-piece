@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return BLOCK_RESISTANCE[tileType] || 100;
     }
     
-    function handleMining(game, mouse) {
+    function handleMining(game, keys, mouse) {
         const { tileSize } = game.config;
         const { player } = game;
         const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
@@ -278,7 +278,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         const tileType = game.tileMap[tileY]?.[tileX];
-        if (!mouse.left || !tileType || tileType === TILE.AIR) {
+        const isMining = mouse.left || keys.action;
+        if (!isMining || !tileType || tileType === TILE.AIR) {
             game.miningEffect = null;
             return;
         }
@@ -517,7 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
-            handleMining(game, mouse);
+            handleMining(game, keys, mouse);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
@@ -599,9 +600,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const spawnX = Math.floor(worldWidthInTiles / 2);
 
         const playerTiles = Math.ceil(config.player.height / tileSize);
+        const extraOffset = 10; // spawn higher so the player falls onto the ground
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                const offset = playerTiles + 1;
+                const offset = playerTiles + 1 + extraOffset;
                 return { x: spawnX * tileSize, y: Math.max(0, (y - offset) * tileSize) };
             }
         }
