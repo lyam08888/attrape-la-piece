@@ -18,18 +18,47 @@ export class PNJ {
         this.actionTimer = 120 + Math.random() * 120; // Temps avant de changer de direction
         this.isGrounded = false;
         
-        this.image = this.createImage(pnjData.appearance);
+        this.image = this.createImage(pnjData.appearance, pnjData.archetype);
     }
 
-    createImage(appearance) {
+    createImage(appearance, archetype) {
+        let clothesSvg = '';
+        const bodyColor = appearance.bodyColor;
+
+        // --- Vêtements spécifiques à l'archétype ---
+        switch (archetype) {
+            case 'Forgeron':
+                clothesSvg = `<rect x="25" y="60" width="50" height="70" fill="#6B4422" stroke="#44290c" stroke-width="2"/>`; // Tablier en cuir
+                break;
+            case 'Chasseur':
+                clothesSvg = `<rect x="20" y="50" width="60" height="80" fill="#228B22" />`; // Tunique verte
+                break;
+            case 'Herboriste':
+                clothesSvg = `<rect x="15" y="50" width="70" height="90" fill="#A0522D" />`; // Robe marron
+                break;
+        }
+
         const svg = `
             <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-                <rect x="10" y="50" width="80" height="100" fill="${appearance.bodyColor}" stroke="#1E1E1E" stroke-width="2"/>
+                <!-- Corps (couleur de peau) -->
+                <rect x="10" y="50" width="80" height="100" fill="#F0D2B6" />
+                
+                <!-- Vêtements -->
+                ${clothesSvg}
+
+                <!-- Tête -->
                 ${
                     appearance.headShape === "circle"
-                        ? `<circle cx="50" cy="25" r="25" fill="${appearance.bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
-                        : `<rect x="25" y="0" width="50" height="50" fill="${appearance.bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
+                        ? `<circle cx="50" cy="25" r="25" fill="${bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
+                        : `<rect x="25" y="0" width="50" height="50" fill="${bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
                 }
+                
+                <!-- Yeux -->
+                <circle cx="40" cy="25" r="4" fill="white" /><circle cx="40" cy="25" r="2" fill="black" />
+                <circle cx="60" cy="25" r="4" fill="white" /><circle cx="60" cy="25" r="2" fill="black" />
+
+                <!-- Bouche -->
+                <path d="M 40 40 Q 50 45 60 40" stroke="black" stroke-width="2" fill="none"/>
             </svg>
         `;
         const image = new Image();
@@ -40,20 +69,21 @@ export class PNJ {
     update(game) {
         const { tileSize, physics } = game.config;
         
-        // --- Logique de mouvement simple ---
+        // --- Logique de mouvement améliorée ---
         this.actionTimer--;
+        // Change de direction s'il atteint sa limite de patrouille ou après un certain temps
         if (this.actionTimer <= 0 || this.x > this.spawnX + 50 || this.x < this.spawnX - 50) {
             this.direction *= -1;
-            this.actionTimer = 180 + Math.random() * 240; // Attend avant de repartir
+            this.actionTimer = 300 + Math.random() * 300; // Pause plus longue avant de repartir
         }
 
-        if (this.actionTimer < 180) { // Ne bouge que s'il n'est pas en pause
+        // Ne bouge que pendant une partie de son cycle
+        if (this.actionTimer < 180) {
              this.vx = this.speed * this.direction;
         } else {
-            this.vx = 0;
+            this.vx = 0; // Fait une pause
         }
 
-        // Appliquer la gravité
         this.vy += physics.gravity;
         if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
 
@@ -75,15 +105,27 @@ export class PNJ {
     }
     
     handleCollisions(game, tileSize) {
-        this.x += this.vx;
-        // (Collision horizontale simplifiée pour éviter que le PNJ ne se bloque)
+        const map = game.tileMap;
+
+        // --- Collision Horizontale ---
+        let nextX = this.x + this.vx;
+        const xTile = Math.floor((nextX + (this.vx > 0 ? this.w : 0)) / tileSize);
+        const yTileTop = Math.floor(this.y / tileSize);
+        const yTileBottom = Math.floor((this.y + this.h - 1) / tileSize);
+        if (map[yTileTop]?.[xTile] > TILE.AIR || map[yTileBottom]?.[xTile] > TILE.AIR) {
+            nextX = this.x;
+            this.direction *= -1;
+            this.actionTimer = 300 + Math.random() * 300;
+        }
+        this.x = nextX;
         
+        // --- Collision Verticale ---
         this.y += this.vy;
         const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
         const xTileLeft = Math.floor(this.x / tileSize);
         const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
 
-        if (game.tileMap[yTile]?.[xTileLeft] > TILE.AIR || game.tileMap[yTile]?.[xTileRight] > TILE.AIR) {
+        if (map[yTile]?.[xTileLeft] > TILE.AIR || map[yTile]?.[xTileRight] > TILE.AIR) {
             if (this.vy > 0) {
                 this.y = yTile * tileSize - this.h;
                 this.vy = 0;
