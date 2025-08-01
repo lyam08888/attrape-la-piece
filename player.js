@@ -7,6 +7,12 @@ export class Player {
         this.w = config.player.width;
         this.h = config.player.height;
         this.margin = config.player.collisionMargin || 0;
+        this.hitbox = {
+            offsetX: config.player.hitbox?.offsetX || 0,
+            offsetY: config.player.hitbox?.offsetY || 0,
+            width: config.player.hitbox?.width || this.w,
+            height: config.player.hitbox?.height || this.h
+        };
          this.config = config;
          this.sound = sound;
          this.stepTimer = 0;
@@ -36,6 +42,15 @@ export class Player {
         this.doubleJumped = false;
         this.animations = config.playerAnimations || {};
      }
+
+    getHitbox() {
+        return {
+            x: this.x + this.hitbox.offsetX,
+            y: this.y + this.hitbox.offsetY,
+            w: this.hitbox.width,
+            h: this.hitbox.height
+        };
+    }
  
      update(keys, mouse, game) {
          const { physics } = this.config;
@@ -217,12 +232,12 @@ export class Player {
     }
 
     rectCollide(other) {
-        const m = this.margin || 0;
+        const box = this.getHitbox();
         return (
-            this.x + m < other.x + other.w &&
-            this.x + this.w - m > other.x &&
-            this.y + m < other.y + other.h &&
-            this.y + this.h - m > other.y
+            box.x < other.x + other.w &&
+            box.x + box.w > other.x &&
+            box.y < other.y + other.h &&
+            box.y + box.h > other.y
         );
     }
 
@@ -234,17 +249,20 @@ export class Player {
         const m = this.margin;
 
         this.x += this.vx;
-        let startY = Math.max(0, Math.floor((this.y + m) / tileSize));
-        let endY = Math.min(worldH - 1, Math.floor((this.y + this.h - m - 1) / tileSize));
+        let hbX = this.x + this.hitbox.offsetX;
+        let hbY = this.y + this.hitbox.offsetY;
+        let startY = Math.max(0, Math.floor((hbY + m) / tileSize));
+        let endY = Math.min(worldH - 1, Math.floor((hbY + this.hitbox.height - m - 1) / tileSize));
         if (this.vx !== 0) {
             const dir = Math.sign(this.vx);
-            const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((this.x + this.w - m) / tileSize))
-                                   : Math.max(0, Math.floor((this.x + m) / tileSize));
+            const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((hbX + this.hitbox.width - m) / tileSize))
+                                   : Math.max(0, Math.floor((hbX + m) / tileSize));
             for (let y = startY; y <= endY; y++) {
                 if (map[y]?.[checkX] > 0) {
-                    if (dir > 0) this.x = checkX * tileSize - this.w;
-                    else this.x = (checkX + 1) * tileSize;
+                    if (dir > 0) this.x = checkX * tileSize - this.hitbox.width - this.hitbox.offsetX;
+                    else this.x = (checkX + 1) * tileSize - this.hitbox.offsetX;
                     this.vx = 0;
+                    hbX = this.x + this.hitbox.offsetX;
                     break;
                 }
             }
@@ -252,38 +270,42 @@ export class Player {
 
         this.y += this.vy;
         this.grounded = false;
-        let startX = Math.max(0, Math.floor((this.x + m) / tileSize));
-        let endX = Math.min(worldW - 1, Math.floor((this.x + this.w - m - 1) / tileSize));
+        hbX = this.x + this.hitbox.offsetX;
+        hbY = this.y + this.hitbox.offsetY;
+        let startX = Math.max(0, Math.floor((hbX + m) / tileSize));
+        let endX = Math.min(worldW - 1, Math.floor((hbX + this.hitbox.width - m - 1) / tileSize));
 
         if (this.vy > 0) {
-            const checkY = Math.min(worldH - 1, Math.floor((this.y + this.h - m) / tileSize));
+            const checkY = Math.min(worldH - 1, Math.floor((hbY + this.hitbox.height - m) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = checkY * tileSize - this.h + m;
+                    this.y = checkY * tileSize - this.hitbox.height - this.hitbox.offsetY + m;
                     this.vy = 0;
                     this.grounded = true;
+                    hbY = this.y + this.hitbox.offsetY;
                     break;
                 }
             }
         } else if (this.vy < 0) {
-            const checkY = Math.max(0, Math.floor((this.y + m) / tileSize));
+            const checkY = Math.max(0, Math.floor((hbY + m) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = (checkY + 1) * tileSize - m;
+                    this.y = (checkY + 1) * tileSize - m - this.hitbox.offsetY;
                     this.vy = 0;
+                    hbY = this.y + this.hitbox.offsetY;
                     break;
                 }
             }
         }
 
         // Keep player within world bounds
-        if (this.x < 0) { this.x = 0; this.vx = 0; }
-        if (this.x + this.w > worldW * tileSize) {
-            this.x = worldW * tileSize - this.w;
+        if (this.x + this.hitbox.offsetX < 0) { this.x = -this.hitbox.offsetX; this.vx = 0; }
+        if (this.x + this.hitbox.offsetX + this.hitbox.width > worldW * tileSize) {
+            this.x = worldW * tileSize - this.hitbox.width - this.hitbox.offsetX;
             this.vx = 0;
         }
-        if (this.y + this.h > worldH * tileSize) {
-            this.y = worldH * tileSize - this.h;
+        if (this.y + this.hitbox.offsetY + this.hitbox.height > worldH * tileSize) {
+            this.y = worldH * tileSize - this.hitbox.height - this.hitbox.offsetY;
             this.vy = 0;
             this.grounded = true;
         }
@@ -345,11 +367,12 @@ export class Player {
 
     attackNearbyEnemies(game) {
         const range = this.config.player.attackRange || this.config.tileSize;
+        const hb = this.getHitbox();
         const attackBox = {
-            x: this.dir === 1 ? this.x + this.w : this.x - range,
-            y: this.y,
+            x: this.dir === 1 ? hb.x + hb.w : hb.x - range,
+            y: hb.y,
             w: range,
-            h: this.h
+            h: hb.h
         };
         for (const enemy of game.enemies) {
             if (enemy.isDead || enemy.isDying) continue;
@@ -365,8 +388,9 @@ export class Player {
         const worldY = mouse.y / game.settings.zoom + game.camera.y;
         const tileX = Math.floor(worldX / tileSize);
         const tileY = Math.floor(worldY / tileSize);
-        const dx = tileX * tileSize + tileSize / 2 - (this.x + this.w / 2);
-        const dy = tileY * tileSize + tileSize / 2 - (this.y + this.h / 2);
+        const hb = this.getHitbox();
+        const dx = tileX * tileSize + tileSize / 2 - (hb.x + hb.w / 2);
+        const dy = tileY * tileSize + tileSize / 2 - (hb.y + hb.h / 2);
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist <= player.reach * tileSize) {
             const type = game.tileMap[tileY]?.[tileX];

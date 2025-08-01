@@ -34,7 +34,13 @@
      "maxLives": 5,
     "width": 24,
     "height": 24,
-    "collisionMargin": 1,
+    "collisionMargin": 0,
+    "hitbox": {
+      "offsetX": 16,
+      "offsetY": 12,
+      "width": 64,
+      "height": 72
+    },
      "reach": 4,
      "attackRange": 20
    },

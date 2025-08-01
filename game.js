@@ -274,7 +274,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (debugMode) {
                 ctx.save();
                 ctx.strokeStyle = 'red';
-                ctx.strokeRect(game.player.x, game.player.y, game.player.w, game.player.h);
+                const hb = game.player.getHitbox();
+                ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
                 ctx.strokeStyle = 'yellow';
                 game.enemies.forEach(en => {
                     ctx.strokeRect(en.x, en.y, en.w, en.h);
@@ -331,8 +332,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-        const targetX = game.player.x - (ui.canvas.width / gameSettings.zoom) / 2;
-        const targetY = game.player.y - (ui.canvas.height / gameSettings.zoom) / 2;
+        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.width / gameSettings.zoom) / 2;
+        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.height / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
