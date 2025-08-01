@@ -16,6 +16,22 @@ export const TILE = {
 // --- NIVEAUX DU MONDE ---
 export const WORLD_LAYERS = {};
 
+// Simple helper to build a flat world so the player doesn't fall indefinitely
+export function generateFlatWorld(game, config) {
+    const width = Math.floor(config.worldWidth / config.tileSize);
+    const height = Math.floor(config.worldHeight / config.tileSize);
+
+    game.tileMap = Array.from({ length: height }, () => Array(width).fill(TILE.AIR));
+
+    const groundY = height - 2;
+    for (let x = 0; x < width; x++) {
+        game.tileMap[groundY][x] = TILE.GRASS;
+        for (let y = groundY + 1; y < height; y++) {
+            game.tileMap[y][x] = TILE.DIRT;
+        }
+    }
+}
+
 export function generateLevel(game, levelConfig, gameSettings) {
     SeededRandom.setSeed(12345);
     Perlin.seed();
