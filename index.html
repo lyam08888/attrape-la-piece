@@ -584,11 +584,11 @@
             });
             
             newOptionsBtn.addEventListener('click', () => {
-                optionsMenu.classList.add('active');
+                if (window.openOptionsMenu) window.openOptionsMenu();
             });
 
             closeOptionsBtn.addEventListener('click', () => {
-                optionsMenu.classList.remove('active');
+                if (window.closeOptionsMenu) window.closeOptionsMenu();
             });
 
             const observer = new MutationObserver((mutations) => {
