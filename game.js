@@ -766,35 +766,437 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function createToolbar() { /* ... */ }
-    function updateToolbarUI() { /* ... */ }
-    function createStars(count) { /* ... */ }
-    function drawSky(ctx) { /* ... */ }
-    function updateHUD() { /* ... */ }
-    function updateDebug() { /* ... */ }
-    function loseLife() { /* ... */ }
-    function endGame(win) { /* ... */ }
-    function updateParticles() { /* ... */ }
-    function showLevelPopup(level) { /* ... */ }
-    function addXP(amount) { /* ... */ }
-    function drawParticles(ctx) { /* ... */ }
-    function createParticles(x, y, count, color, options = {}) { /* ... */ }
-    function startFallingBlock(x, y, tileType) { /* ... */ }
-    function checkBlockSupport(x, y) { /* ... */ }
-    function updateFallingBlocks() { /* ... */ }
-    function drawFallingBlocks(ctx, assets) { /* ... */ }
-    function updateCollectibles() { /* ... */ }
-    function drawCollectibles(ctx, assets) { /* ... */ }
-    function drawChests(ctx, assets) { /* ... */ }
-    function drawDecorations(ctx, assets) { /* ... */ }
-    function drawMiningEffect(ctx) { /* ... */ }
-    function propagateTreeCollapse(startX, startY) { /* ... */ }
-    function openChestMenu(chest) { /* ... */ }
-    function increaseSkill(skill) { /* ... */ }
-    function toggleSkillsMenu() { /* ... */ }
-    function updateSkillsUI() { /* ... */ }
-    function toggleInventoryMenu() { /* ... */ }
-    function toggleCalendarMenu() { /* ... */ }
+    function createToolbar() {
+        ui.toolbar.innerHTML = '';
+        game.player.tools.forEach((toolName, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'toolbar-slot';
+            slot.dataset.index = index;
+            const img = document.createElement('img');
+            img.src = assets[`tool_${toolName}`]?.src || '';
+            slot.appendChild(img);
+            slot.onclick = () => {
+                game.player.selectedToolIndex = index;
+                updateToolbarUI();
+            };
+            ui.toolbar.appendChild(slot);
+        });
+    }
+
+    function updateToolbarUI() {
+        if (!game || !ui.toolbar) return;
+        const slots = ui.toolbar.children;
+        for (let i = 0; i < slots.length; i++) {
+            slots[i].classList.toggle('selected', i === game.player.selectedToolIndex);
+        }
+    }
+
+    function createStars(count) {
+        stars = [];
+        for (let i = 0; i < count; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5 + 0.5,
+                opacity: Math.random() * 0.5 + 0.5
+            });
+        }
+    }
+
+    function drawSky(ctx) {
+        switch (game.playerBiome) {
+            case 'paradise':
+                const paradiseGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
+                paradiseGrad.addColorStop(0, '#FFD700');
+                paradiseGrad.addColorStop(1, '#FFFFFF');
+                ctx.fillStyle = paradiseGrad;
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                break;
+            case 'space':
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                stars.forEach(star => {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(star.x / gameSettings.zoom, star.y / gameSettings.zoom, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                break;
+            case 'surface':
+                if (!timeSystem) return;
+                const [c1, c2] = timeSystem.getSkyGradient();
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
+                grad.addColorStop(0, c1); grad.addColorStop(1, c2);
+                ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                const sun = timeSystem.getSunPosition(canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(sun.x, sun.y, 40, 0, Math.PI * 2); ctx.fill();
+                const moon = timeSystem.getMoonPosition(canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                ctx.fillStyle = '#F0EAD6'; ctx.beginPath(); ctx.arc(moon.x, moon.y, 30, 0, Math.PI * 2); ctx.fill();
+                break;
+            case 'underground':
+                ctx.fillStyle = '#252020';
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                break;
+            case 'core':
+                const coreGrad = ctx.createRadialGradient(canvas.clientWidth / (2 * gameSettings.zoom), canvas.clientHeight / (2 * gameSettings.zoom), 50, canvas.clientWidth / (2 * gameSettings.zoom), canvas.clientHeight / (2 * gameSettings.zoom), canvas.clientWidth / gameSettings.zoom);
+                coreGrad.addColorStop(0, '#4a004a');
+                coreGrad.addColorStop(1, '#1a001a');
+                ctx.fillStyle = coreGrad;
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                break;
+            case 'nucleus':
+                const oceanGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
+                oceanGrad.addColorStop(0, '#000030');
+                oceanGrad.addColorStop(1, '#000010');
+                ctx.fillStyle = oceanGrad;
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                break;
+            case 'hell':
+                const hellGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
+                hellGrad.addColorStop(0, '#4d0000');
+                hellGrad.addColorStop(1, '#1a0000');
+                ctx.fillStyle = hellGrad;
+                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
+                if (Math.random() < 0.5) {
+                    createParticles(Math.random() * canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom, 1, 'orange', { speed: 1, gravity: -0.05 });
+                }
+                break;
+        }
+    }
+
+    function updateHUD() {
+        if(!game || !ui.hud) return;
+        ui.lives.textContent = '❤'.repeat(game.lives);
+        if (ui.xpFill && game.player) {
+            const pct = (game.player.xp / game.player.xpToNext) * 100;
+            ui.xpFill.style.width = pct + '%';
+        }
+        if (ui.levelDisplay && game.player) {
+            ui.levelDisplay.textContent = `Lvl ${game.player.level}`;
+        }
+        if (ui.timeDisplay && timeSystem) {
+            ui.timeDisplay.textContent = timeSystem.formatDateTime();
+        }
+    }
+
+    function updateDebug() {
+        if (!ui.debugOverlay) return;
+        if (!debugMode) { ui.debugOverlay.style.display = 'none'; return; }
+        ui.debugOverlay.style.display = 'block';
+        const p = game.player || {x:0,y:0};
+        ui.debugOverlay.innerHTML = `FPS: ${fps}<br>x:${Math.round(p.x)} y:${Math.round(p.y)}<br>Biome: ${game.playerBiome}`;
+    }
+
+    function loseLife() { 
+        if(!game || game.over || (game.player && game.player.invulnerable > 0)) return; 
+        game.lives--; 
+        updateHUD();
+        if(game.lives <= 0) {
+            endGame(false);
+        } else {
+            game.player.invulnerable = 120; 
+        }
+    }
+
+    function endGame(win) {
+        if (!game || game.over) return;
+        game.over = true;
+        if (ui.gameTitle) ui.gameTitle.style.display = 'block';
+        if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
+        ui.hud?.classList.remove('active');
+        ui.gameover?.classList.add('active');
+        sound.stopAmbient();
+        sound.stopMusic();
+    }
+
+    function updateParticles() {
+        if (!game) return;
+        game.particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+            if (p.life <= 0) game.particles.splice(index, 1);
+        });
+    }
+
+    function showLevelPopup(level) {
+        if (!ui.levelPopup) return;
+        ui.levelPopup.textContent = `Niveau ${level}!`;
+        ui.levelPopup.classList.add('show');
+        setTimeout(() => ui.levelPopup.classList.remove('show'), 1500);
+    }
+
+    function addXP(amount) {
+        if (!game.player) return;
+        game.player.addXP(amount, game);
+        updateHUD();
+    }
+
+    function drawParticles(ctx) {
+        if (!game) return;
+        ctx.globalAlpha = 1.0;
+        game.particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / p.maxLife;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+    }
+
+    function createParticles(x, y, count, color, options = {}) {
+        if (!game) return;
+        for (let i = 0; i < count; i++) {
+            game.particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * (options.speed || 4),
+                vy: (Math.random() - 0.5) * (options.speed || 4) - 2,
+                life: 30 + Math.random() * 30,
+                maxLife: 60,
+                size: 1 + Math.random() * 2,
+                gravity: options.gravity || 0.1,
+                color: color
+            });
+        }
+    }
+
+    function startFallingBlock(x, y, tileType) {
+        const { tileSize } = config;
+        game.tileMap[y][x] = TILE.AIR;
+        game.fallingBlocks.push({ x: x * tileSize, y: y * tileSize, vy: 0, tileType });
+    }
+
+    function checkBlockSupport(x, y) {
+        if (y < 0) return;
+        const tile = game.tileMap[y]?.[x];
+        if (!tile || tile === TILE.AIR) return;
+        const tileBelow = game.tileMap[y + 1]?.[x];
+        if (tileBelow === TILE.AIR || tileBelow === undefined) {
+            startFallingBlock(x, y, tile);
+            if (game.checkBlockSupport) game.checkBlockSupport(x, y - 1);
+        }
+    }
+
+    function updateFallingBlocks() {
+        if (!game) return;
+        const { tileSize, physics } = config;
+        for (let i = game.fallingBlocks.length - 1; i >= 0; i--) {
+            const block = game.fallingBlocks[i];
+            block.vy += physics.gravity;
+            if (physics.realistic) {
+                if (block.vy > physics.maxFallSpeed) block.vy = physics.maxFallSpeed;
+                block.vy *= physics.airResistance;
+            }
+            block.y += block.vy;
+            const tileX = Math.floor((block.x + tileSize / 2) / tileSize);
+            const tileY = Math.floor((block.y + tileSize) / tileSize);
+            if (tileY >= game.tileMap.length) {
+                game.fallingBlocks.splice(i, 1);
+                continue;
+            }
+            if (game.tileMap[tileY]?.[tileX] > TILE.AIR) {
+                block.y = tileY * tileSize - tileSize;
+                block.vy *= -physics.blockBounce;
+                if (Math.abs(block.vy) < 0.5) {
+                    if (game.tileMap[tileY - 1]?.[tileX] === TILE.AIR) {
+                        game.tileMap[tileY - 1][tileX] = block.tileType;
+                        if (game.checkBlockSupport) game.checkBlockSupport(tileX, tileY - 2);
+                    } else {
+                        game.collectibles.push({
+                            x: block.x, y: block.y, w: tileSize, h: tileSize, vy: -2, tileType: block.tileType
+                        });
+                    }
+                    game.fallingBlocks.splice(i, 1);
+                }
+            }
+        }
+    }
+
+    function drawFallingBlocks(ctx, assets) {
+        const TILE_ASSETS = { [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves };
+        game.fallingBlocks.forEach(block => {
+            const asset = TILE_ASSETS[block.tileType];
+            if (asset) {
+                ctx.drawImage(asset, block.x, block.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function updateCollectibles() {
+        if (!game) return;
+        game.collectibles.forEach((item, index) => {
+            item.vy += config.physics.gravity;
+            item.y += item.vy;
+            const { tileSize } = config;
+            const tileY = Math.floor((item.y + tileSize) / tileSize);
+            const tileX = Math.floor((item.x + tileSize / 2) / tileSize);
+            if (game.tileMap[tileY]?.[tileX] > 0) {
+                item.y = tileY * tileSize - tileSize;
+                item.vy = 0;
+            }
+        });
+    }
+
+    function drawCollectibles(ctx, assets) {
+        const TILE_ASSETS = { [TILE.DIRT]: assets.tile_dirt, [TILE.STONE]: assets.tile_stone, [TILE.WOOD]: assets.tile_wood, [TILE.LEAVES]: assets.tile_leaves, [TILE.COAL]: assets.tile_coal, [TILE.IRON]: assets.tile_iron };
+        game.collectibles.forEach(item => {
+            const asset = TILE_ASSETS[item.tileType];
+            if (asset) {
+                ctx.drawImage(asset, item.x, item.y, config.tileSize, config.tileSize);
+            }
+        });
+    }
+
+    function drawChests(ctx, assets) {
+        game.chests.forEach(ch => {
+            const img = getChestImage(ch.type);
+            ctx.drawImage(img, ch.x, ch.y, ch.w, ch.h);
+        });
+    }
+
+    function drawDecorations(ctx, assets) {
+        game.decorations.forEach(dec => {
+            if (dec.type === 'bush') {
+                ctx.drawImage(assets.decoration_bush, dec.x, dec.y, dec.w, dec.h);
+            }
+        });
+    }
+
+    function drawMiningEffect(ctx) {
+        if (game && game.miningEffect) {
+            const { x, y, progress, resistance } = game.miningEffect;
+            const { tileSize } = config;
+            const progressRatio = progress / resistance;
+            const crackStage = Math.floor(progressRatio * 10);
+            if (crackStage > 0) {
+                const crackAsset = assets[`crack_${crackStage}`];
+                if (crackAsset) {
+                    ctx.globalAlpha = 0.7;
+                    ctx.drawImage(crackAsset, x * tileSize, y * tileSize, tileSize, tileSize);
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+    }
+
+    function propagateTreeCollapse(startX, startY) {
+        const checkQueue = [[startX, startY]];
+        const visited = new Set([`${startX},${startY}`]);
+        while(checkQueue.length > 0) {
+            const [x, y] = checkQueue.shift();
+            const tile = game.tileMap[y]?.[x];
+            if (!tile || (tile !== TILE.WOOD && tile !== TILE.LEAVES)) continue;
+            const tileBelow = game.tileMap[y + 1]?.[x];
+            const isSupported = tileBelow > 0 && tileBelow !== TILE.LEAVES;
+            if (!isSupported) {
+                startFallingBlock(x, y, tile);
+                const neighbors = [[x, y - 1], [x - 1, y], [x + 1, y]];
+                for (const [nx, ny] of neighbors) {
+                    if (!visited.has(`${nx},${ny}`)) {
+                        checkQueue.push([nx, ny]);
+                        visited.add(`${nx},${ny}`);
+                    }
+                }
+            }
+        }
+    }
+
+    function openChestMenu(chest) {
+        if (!chest || !ui.chestMenu) return;
+        ui.chestGrid.innerHTML = '';
+        chest.items.forEach((item, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'inventory-slot';
+            slot.dataset.index = idx;
+            const img = getItemIcon(item);
+            slot.appendChild(img.cloneNode());
+            const tip = document.createElement('div');
+            tip.className = 'tooltip';
+            tip.textContent = item;
+            slot.appendChild(tip);
+            slot.onclick = () => {
+                if (game.player.survivalItems.length < 16) {
+                    game.player.survivalItems.push(item);
+                    chest.items.splice(idx,1);
+                    openChestMenu(chest);
+                }
+            };
+            ui.chestGrid.appendChild(slot);
+        });
+        ui.chestMenu.classList.add('active');
+        game.paused = true;
+        game.addXP(15);
+    }
+
+    function increaseSkill(skill) {
+        if (!game.player || game.player.skillPoints <= 0) return;
+        if (game.player.attributes[skill] !== undefined) {
+            game.player.attributes[skill]++;
+            game.player.skillPoints--;
+            updateSkillsUI();
+        }
+    }
+
+    function toggleSkillsMenu() {
+        if (!ui.skillsMenu) return;
+        if (ui.skillsMenu.classList.contains('active')) {
+            ui.skillsMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            updateSkillsUI();
+            ui.skillsMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
+
+    function updateSkillsUI() {
+        if (!game.player) return;
+        if (ui.skillPointsInfo) ui.skillPointsInfo.textContent = `Points: ${game.player.skillPoints}`;
+        ui.skillRows.forEach(row => {
+            const skill = row.dataset.skill;
+            row.querySelector('.value').textContent = game.player.attributes[skill];
+        });
+    }
+
+    function toggleInventoryMenu() {
+        if (!ui.inventoryMenu) return;
+        if (ui.inventoryMenu.classList.contains('active')) {
+            ui.inventoryMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            ui.inventoryGrid.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                const item = game.player.survivalItems[i];
+                if (item) {
+                    slot.appendChild(getItemIcon(item).cloneNode());
+                    const tip = document.createElement('div');
+                    tip.className = 'tooltip';
+                    tip.textContent = item;
+                    slot.appendChild(tip);
+                }
+                ui.inventoryGrid.appendChild(slot);
+            }
+            ui.inventoryMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
+
+    function toggleCalendarMenu() {
+        if (!ui.calendarMenu) return;
+        if (ui.calendarMenu.classList.contains('active')) {
+            ui.calendarMenu.classList.remove('active');
+            game.paused = false;
+        } else {
+            updateCalendarUI(timeSystem, {
+                date: ui.calendarDate,
+                time: ui.calendarTime,
+                stage: ui.calendarStage
+            });
+            ui.calendarMenu.classList.add('active');
+            game.paused = true;
+        }
+    }
 
     const gameLogic = {
         init: setupMenus, update: update, draw: draw, isPaused: () => game.paused,
