@@ -1,4 +1,5 @@
 // worldAnimator.js - Gère les animations de l'environnement (nuages, vent, etc.)
+import { SeededRandom } from './seededRandom.js';
 
 class Cloud {
     constructor(x, y, speed, asset) {
@@ -6,8 +7,8 @@ class Cloud {
         this.y = y;
         this.speed = speed;
         this.asset = asset;
-        this.width = asset.width * (1 + Math.random());
-        this.height = asset.height * (1 + Math.random());
+        this.width = asset.width * (1 + SeededRandom.random());
+        this.height = asset.height * (1 + SeededRandom.random());
     }
 
     update() {
@@ -30,11 +31,14 @@ export class WorldAnimator {
     }
 
     init() {
+        // La graine est déjà initialisée dans world.js, on continue la séquence
         for (let i = 0; i < 15; i++) {
-            const x = Math.random() * this.config.worldWidth;
-            const y = Math.random() * (this.config.worldHeight / 3);
-            const speed = 0.1 + Math.random() * 0.2;
-            this.clouds.push(new Cloud(x, y, speed, this.assets.cloud));
+            const x = SeededRandom.random() * this.config.worldWidth;
+            const y = SeededRandom.random() * (this.config.worldHeight / 3);
+            const speed = 0.1 + SeededRandom.random() * 0.2;
+            if (this.assets.cloud) {
+                this.clouds.push(new Cloud(x, y, speed, this.assets.cloud));
+            }
         }
     }
 
@@ -42,7 +46,7 @@ export class WorldAnimator {
         this.clouds.forEach(cloud => {
             cloud.update();
             // Fait réapparaître les nuages de l'autre côté de l'écran
-            if (cloud.x > camera.x + (canvas.width / zoom)) {
+            if (cloud.x > camera.x + (canvas.clientWidth / zoom)) {
                 cloud.x = camera.x - cloud.width;
             }
         });
