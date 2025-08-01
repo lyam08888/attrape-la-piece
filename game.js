@@ -22,6 +22,15 @@ class Monster {
         this.properties = monsterData.properties;
         this.isDead = false;
 
+        // Propriétés de mouvement et IA
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = config.tileSize * (0.01 + Math.random() * 0.02); // Vitesse variable
+        this.direction = Math.random() < 0.5 ? 1 : -1; // 1 pour droite, -1 pour gauche
+        this.actionTimer = 60 + Math.random() * 120; // Change d'action toutes les 1-3 secondes
+        this.isGrounded = false;
+        this.health = 100;
+
         // Créer une image à partir du SVG pour le dessin sur le canvas
         this.image = new Image();
         const svg64 = btoa(monsterData.svgString); // Encoder le SVG en Base64
@@ -29,7 +38,80 @@ class Monster {
     }
 
     update(game) {
-        // Logique de l'IA du monstre (mouvement, attaque, etc.) à ajouter ici
+        if (this.isDead) return;
+
+        const { tileSize, physics } = game.config;
+
+        // --- IA & Mouvement ---
+        this.actionTimer--;
+        if (this.actionTimer <= 0) {
+            this.direction *= -1; // Change de direction
+            this.actionTimer = 120 + Math.random() * 180; // Réinitialise le timer (2-5 secondes)
+        }
+        this.vx = this.speed * this.direction;
+
+        // --- Physique (Gravité) ---
+        this.vy += physics.gravity;
+        if (this.vy > physics.maxFallSpeed) {
+            this.vy = physics.maxFallSpeed;
+        }
+
+        // --- Détection de collision ---
+        this.handleCollisions(game, tileSize);
+
+        // --- Interaction avec le joueur ---
+        const player = game.player;
+        // Vérification de collision AABB (Axis-Aligned Bounding Box)
+        if (this.x < player.x + player.w &&
+            this.x + this.w > player.x &&
+            this.y < player.y + player.h &&
+            this.y + this.h > player.y) {
+
+            // Si le joueur tombe sur le monstre
+            if (player.vy > 0 && (player.y + player.h) < (this.y + this.h / 2)) {
+                this.isDead = true;
+                player.vy = -player.config.jumpForce * 0.6; // Petit rebond
+                game.sound.play('enemy_die', { volume: 0.7 }); // Joue un son (si défini)
+                game.addXP(25);
+                game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
+            } else {
+                // Sinon, le joueur est blessé
+                game.loseLife();
+            }
+        }
+    }
+
+    handleCollisions(game, tileSize) {
+        // Collision horizontale
+        let nextX = this.x + this.vx;
+        const xTile = Math.floor((nextX + (this.vx > 0 ? this.w : 0)) / tileSize);
+        const yTileTop = Math.floor(this.y / tileSize);
+        const yTileBottom = Math.floor((this.y + this.h - 1) / tileSize);
+
+        if (game.tileMap[yTileTop]?.[xTile] > TILE.AIR || game.tileMap[yTileBottom]?.[xTile] > TILE.AIR) {
+            nextX = this.x;
+            this.direction *= -1; // Touche un mur, demi-tour
+        }
+        this.x = nextX;
+
+        // Collision verticale
+        this.y += this.vy;
+        const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
+        const xTileLeft = Math.floor(this.x / tileSize);
+        const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
+        
+        if (game.tileMap[yTile]?.[xTileLeft] > TILE.AIR || game.tileMap[yTile]?.[xTileRight] > TILE.AIR) {
+            if (this.vy > 0) { // Tombe sur le sol
+                this.y = yTile * tileSize - this.h;
+                this.vy = 0;
+                this.isGrounded = true;
+            } else if (this.vy < 0) { // Touche un plafond
+                this.y = yTile * tileSize + tileSize;
+                this.vy = 0;
+            }
+        } else {
+            this.isGrounded = false;
+        }
     }
 
     draw(ctx) {
@@ -247,26 +329,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Tente de faire apparaître un monstre (faible probabilité à chaque frame)
-        if (Math.random() < 0.005) {
+        if (Math.random() < 0.01) { // Probabilité augmentée pour le test
             const { tileSize } = config;
-            const playerPos = {
-                x: Math.floor(game.player.x / tileSize),
-                y: Math.floor(game.player.y / tileSize)
-            };
+            const screenLeftEdge = game.camera.x - tileSize * 5;
+            const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
 
-            // Cherche une position de spawn valide autour du joueur
+            const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
+            const spawnTileX = Math.floor(spawnX / tileSize);
+
+            // Cherche une position de spawn valide (sur le sol)
             for (let i = 0; i < 10; i++) { // 10 tentatives
-                const offsetX = (Math.random() - 0.5) * 20; // Apparition jusqu'à 10 tuiles de distance
-                const spawnTileX = playerPos.x + Math.floor(offsetX);
-                
-                // Trouve le sol à cette coordonnée X
-                for (let y = 0; y < game.tileMap.length - 1; y++) {
-                    if (game.tileMap[y+1]?.[spawnTileX] > TILE.AIR && game.tileMap[y]?.[spawnTileX] === TILE.AIR) {
-                        const monsterData = generateMonster();
-                        const newMonster = new Monster(spawnTileX * tileSize, y * tileSize, config, monsterData);
-                        game.enemies.push(newMonster);
-                        return; // Un seul monstre par appel
-                    }
+                const y = game.player.y + (Math.random() - 0.5) * 10 * tileSize;
+                const spawnTileY = Math.floor(y / tileSize);
+
+                if (game.tileMap[spawnTileY+1]?.[spawnTileX] > TILE.AIR && game.tileMap[spawnTileY]?.[spawnTileX] === TILE.AIR) {
+                    const monsterData = generateMonster();
+                    const newMonster = new Monster(spawnTileX * tileSize, spawnTileY * tileSize, config, monsterData);
+                    game.enemies.push(newMonster);
+                    return; // Un seul monstre par appel
                 }
             }
         }
@@ -288,7 +368,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (timeSystem) timeSystem.update();
             sound.update();
             game.player.update(keys, mouse, game);
-            game.enemies.forEach(e => e.update(game)); // MODIFIÉ: Mise à jour des monstres
+            game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
             updateParticles();
             updateFallingBlocks();
@@ -297,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
-            spawnMonsters(); // NOUVEAU: Appel à la logique d'apparition des monstres
+            spawnMonsters();
 
             if (keys.action) keys.action = false;
             mouse.left = false; mouse.right = false;
@@ -323,7 +403,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawCollectibles(ctx, assets);
             drawChests(ctx, assets);
             
-            game.enemies.forEach(e => e.draw(ctx)); // MODIFIÉ: Dessin des monstres
+            game.enemies.forEach(e => e.draw(ctx));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
                 ctx.save();
