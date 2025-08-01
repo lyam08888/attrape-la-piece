@@ -8,6 +8,7 @@ export class SoundManager {
         this.volume = volume;
         this.stepCooldown = 0;
         this.ambient = null;
+        this.musicInterval = null;
     }
 
     setVolume(v) {
@@ -55,6 +56,23 @@ export class SoundManager {
         if (this.ambient) {
             this.ambient.osc.stop();
             this.ambient = null;
+        }
+    }
+
+    startMusic() {
+        if (this.musicInterval) return;
+        const notes = [261.63, 329.63, 392.0, 523.25];
+        let index = 0;
+        this.musicInterval = setInterval(() => {
+            this.playTone(notes[index % notes.length], 0.3, 'square', 0.05);
+            index++;
+        }, 400);
+    }
+
+    stopMusic() {
+        if (this.musicInterval) {
+            clearInterval(this.musicInterval);
+            this.musicInterval = null;
         }
     }
 
