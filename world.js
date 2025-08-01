@@ -1,4 +1,3 @@
-import { Slime, Frog, Golem } from './enemy.js';
 import { randomChestType } from './chestGenerator.js';
 
 // Perlin Noise Generator (inchangé)
