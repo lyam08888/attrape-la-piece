@@ -32,14 +32,14 @@
   },
    "player": {
      "maxLives": 5,
-    "width": 96,
-    "height": 96,
+    "width": 64,
+    "height": 64,
     "collisionMargin": 0,
     "hitbox": {
-      "offsetX": 16,
-      "offsetY": 12,
-      "width": 64,
-      "height": 72
+      "offsetX": 10,
+      "offsetY": 8,
+      "width": 44,
+      "height": 48
     },
      "reach": 4,
      "attackRange": 20
