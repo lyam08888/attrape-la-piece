@@ -29,10 +29,8 @@ class Monster {
             this.isDying = true; game.sound.play('enemy_die', { volume: 0.7 }); game.addXP(25);
             game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
             
-            // --- GESTION DE QUÊTE ---
             game.player.quests.forEach(quest => {
                 if (quest.status === 'active' && quest.type === 'hunt') {
-                    // Ici, on pourrait vérifier le type de monstre si c'était plus spécifique
                     quest.objective.currentAmount++;
                 }
             });
@@ -293,6 +291,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             
             generateLevel(game, config, {});
+
+            const CHEST_TYPE = { WOOD: 0, METAL: 1, GOLD: 2, DIAMOND: 3 };
+            game.chests.forEach(chest => {
+                const biome = getBiomeAt(chest.y);
+                switch(biome) {
+                    case 'surface':
+                    case 'underground':
+                        chest.type = Math.random() < 0.7 ? CHEST_TYPE.WOOD : CHEST_TYPE.METAL;
+                        break;
+                    case 'core':
+                        chest.type = CHEST_TYPE.GOLD;
+                        break;
+                    case 'hell':
+                        chest.type = CHEST_TYPE.DIAMOND;
+                        break;
+                    default:
+                        chest.type = CHEST_TYPE.WOOD;
+                }
+            });
+
             const spawnPoint = findSpawnPoint();
             game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
             game.player.quests = [];
