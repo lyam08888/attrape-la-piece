@@ -220,13 +220,22 @@ export class Player {
     setPosture(p) {
         if (this.posture === p) return;
         const oldH = this.h;
+        const baseHeight = this.config.player.height;
+        const baseHitboxHeight = this.config.player.hitbox.height;
+        const bottomMargin = baseHeight - (this.config.player.hitbox.offsetY + baseHitboxHeight);
+
         if (p === 'crouching') {
-            this.h = Math.floor(this.config.player.height * 0.6);
+            this.h = Math.floor(baseHeight * 0.6);
+            this.hitbox.height = Math.floor(baseHitboxHeight * 0.6);
         } else if (p === 'prone') {
-            this.h = Math.floor(this.config.player.height * 0.3);
+            this.h = Math.floor(baseHeight * 0.3);
+            this.hitbox.height = Math.floor(baseHitboxHeight * 0.3);
         } else {
-            this.h = this.config.player.height;
+            this.h = baseHeight;
+            this.hitbox.height = baseHitboxHeight;
         }
+
+        this.hitbox.offsetY = this.h - this.hitbox.height - bottomMargin;
         this.y += oldH - this.h;
         this.posture = p;
     }
