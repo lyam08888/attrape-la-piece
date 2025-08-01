@@ -45,7 +45,7 @@
             filter: blur(4px) grayscale(50%);
         }
 
-        /* --- NOUVEL ÉCRAN TITRE AMÉLIORÉ --- */
+        /* --- NOUVEL ÉCRAN TITRE ÉPIQUE --- */
         #titleScreen {
             position: absolute;
             top: 0; left: 0;
@@ -64,12 +64,12 @@
             position: relative;
             overflow: hidden;
             background: linear-gradient(to top, #3a6ea5 0%, #173753 50%, #0f2027 100%);
-            animation: sky-cycle 120s linear infinite;
+            animation: sky-cycle 120s linear infinite alternate;
         }
 
         @keyframes sky-cycle {
-            0%, 100% { background: linear-gradient(to top, #3a6ea5 0%, #173753 50%, #0f2027 100%); }
-            50% { background: linear-gradient(to top, #f08c00 0%, #a15c1e 50%, #1c2e4a 100%); }
+            0% { background: linear-gradient(to top, #1e3c72 0%, #2a5298 50%, #0d1117 100%); }
+            100% { background: linear-gradient(to top, #f08c00 0%, #a15c1e 50%, #1c2e4a 100%); }
         }
 
         .parallax-layer {
@@ -82,17 +82,18 @@
         }
         
         #stars {
-            position: absolute;
             width: 100%; height: 100%;
-            background-image: radial-gradient(white 1px, transparent 1px);
-            background-size: 50px 50px;
+            background-image: 
+                radial-gradient(white 1px, transparent 1px),
+                radial-gradient(white 1px, transparent 1px);
+            background-size: 100px 100px, 150px 150px;
+            background-position: 0 0, 75px 75px;
             opacity: 0;
-            animation: stars-fade 120s linear infinite;
+            animation: stars-fade 120s linear infinite alternate;
         }
         @keyframes stars-fade {
-            25% { opacity: 0; }
-            50% { opacity: 0.8; }
-            75% { opacity: 0; }
+            0% { opacity: 0.8; }
+            50%, 100% { opacity: 0; }
         }
         
         #sun {
@@ -101,62 +102,65 @@
             width: 80px; height: 80px;
             background: #f9a825;
             border-radius: 50%;
-            box-shadow: 0 0 40px #f9a825, 0 0 80px #f9a825;
-            animation: sun-path 120s linear infinite;
+            box-shadow: 0 0 40px #f9a825, 0 0 80px #f9a825, 0 0 120px #f9a825;
+            animation: sun-path 120s linear infinite alternate;
         }
         @keyframes sun-path {
-            0%, 100% { top: 10%; left: 10%; opacity: 1; }
-            25% { top: 5%; left: 45%; opacity: 1; }
-            50% { top: 10%; left: 80%; opacity: 1; }
-            75% { top: 50%; left: 110%; opacity: 0; }
+            from { transform: translate(0, 0); opacity: 1; }
+            to { transform: translate(400px, 200px); opacity: 0.8; }
         }
-
+        
+        #bg-ruins {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"><path fill="%23101820" d="M10 100 V50 L20 40 L30 50 V100 Z M40 100 V30 L50 20 L60 30 V100 Z M70 100 V60 L80 55 L90 60 V100 Z M120 100 V20 L130 10 L140 20 V100 Z M150 100 V40 L160 35 L170 40 V100 Z"/></svg>') 0 100% / auto 300px;
+            z-index: 1;
+            opacity: 0.3;
+            animation-duration: 240s;
+        }
         #bg-mountains-far {
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><polygon fill="%23173753" points="0,20 20,5 40,15 60,2 80,18 100,20"/></svg>') 0 100% / auto 150px;
-            z-index: 1;
+            z-index: 2;
             opacity: 0.8;
             animation-duration: 180s;
         }
         #bg-mountains-mid {
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30"><polygon fill="%232c5364" points="0,30 15,10 30,25 50,5 75,28 85,15 100,30"/></svg>') 0 100% / auto 200px;
-            z-index: 2;
+            z-index: 3;
             animation-duration: 100s;
         }
         #bg-forest {
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><polygon fill="%230f2027" points="0,50 10,20 20,50"/><polygon fill="%230f2027" points="15,50 25,10 35,50"/><polygon fill="%230f2027" points="30,50 40,25 50,50"/></svg>') 0 100% / auto 100px;
-            z-index: 3;
+            z-index: 4;
             bottom: -10px;
             animation-duration: 60s;
         }
         #pixel-hero {
             position: absolute;
-            left: 50%;
-            bottom: 5%;
-            transform: translateX(-50%);
+            left: 25%;
+            bottom: 10%;
             width: 150px;
-            height: 225px;
-            z-index: 4;
+            height: 240px; /* Taller for cape */
+            z-index: 5;
         }
-        .pixel {
-            position: absolute;
-            width: 15px;
-            height: 15px;
+        .pixel { position: absolute; width: 15px; height: 15px; }
+        .skin { background-color: #f2d2b1; } .hair { background-color: #4a2e1f; } .shirt { background-color: #d64040; } .pants { background-color: #3a59a7; } .boots { background-color: #3d2e27; } .cape { background-color: #8c2d2d; animation: cape-flutter 3s ease-in-out infinite; }
+        @keyframes cape-flutter {
+            0%, 100% { transform: skewX(0deg); }
+            50% { transform: skewX(5deg); }
         }
-        .skin { background-color: #f2d2b1; } .hair { background-color: #4a2e1f; } .shirt { background-color: #d64040; } .pants { background-color: #3a59a7; } .boots { background-color: #3d2e27; }
 
         #light-shaft {
             position: absolute;
             top: -10%; right: 20%;
             width: 100px;
             height: 150%;
-            background: linear-gradient(to bottom, rgba(255, 230, 180, 0.2) 0%, rgba(255,255,255,0) 80%);
+            background: linear-gradient(to bottom, rgba(255, 230, 180, 0.15) 0%, rgba(255,255,255,0) 80%);
             transform: rotate(25deg);
-            z-index: 5;
+            z-index: 6;
             animation: gentle-sway 15s ease-in-out infinite;
         }
         @keyframes gentle-sway {
-            0%, 100% { transform: rotate(20deg) scale(1); opacity: 0.8; }
-            50% { transform: rotate(30deg) scale(1.05); opacity: 1; }
+            0%, 100% { transform: rotate(20deg) scale(1.1); opacity: 0.6; }
+            50% { transform: rotate(30deg) scale(1.15); opacity: 0.8; }
         }
         @keyframes slide {
             from { transform: translateX(0); }
@@ -175,7 +179,7 @@
         #gameTitle {
             font-size: 2em;
             color: white;
-            text-shadow: 3px 3px 0px var(--secondary-color);
+            text-shadow: 3px 3px 0px var(--secondary-color), 0 0 20px var(--primary-color);
             margin-bottom: 40px;
         }
 
@@ -194,6 +198,7 @@
             border-radius: 10px;
             margin-top: 20px;
             overflow: hidden;
+            border: 2px solid var(--border-color);
         }
         #loading-bar {
             width: 0%;
@@ -418,6 +423,7 @@
             <div id="art-pane">
                 <div id="stars"></div>
                 <div id="sun"></div>
+                <div class="parallax-layer" id="bg-ruins"></div>
                 <div class="parallax-layer" id="bg-mountains-far"></div>
                 <div class="parallax-layer" id="bg-mountains-mid"></div>
                 <div class="parallax-layer" id="bg-forest"></div>
@@ -566,8 +572,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const heroContainer = document.getElementById('pixel-hero');
-            const heroGrid = [ "  HHHH  ", " HHHHHH ", " HHHHHH ", "  SKSK  ", "  SSSS  ", "RRRRRRRR", "RRRRRRRR", " RRRRRR ", " RRRRRR ", " PPPPPP ", " PPPPPP ", " PPPPPP ", " BB  BB ", " BB  BB ", " BB  BB " ];
-            const colorMap = { 'H': 'hair', 'S': 'skin', 'K': 'background-dark', 'R': 'shirt', 'P': 'pants', 'B': 'boots' };
+            const heroGrid = [ "  HHHH  "," HHHHHH "," HHHHHH ","  SKSK  ","  SSSS  ","RRRRRRRR","RRRRRRRR"," RRRRRR "," RRRRRR "," PPPPPP "," PPPPPP "," PPPPPP "," BB  BB "," BB  BB "," BB  BB ", "  C  C  ", " CCCCC ", " CCCCC "];
+            const colorMap = { 'H': 'hair', 'S': 'skin', 'K': 'background-dark', 'R': 'shirt', 'P': 'pants', 'B': 'boots', 'C': 'cape' };
 
             heroGrid.forEach((row, y) => {
                 row.split('').forEach((char, x) => {
