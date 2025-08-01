@@ -8,8 +8,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         :root {
-            --primary-color: #FC9838;
-            --secondary-color: #C84C0C;
+            --primary-color: #f9a825; /* Or plus riche */
+            --secondary-color: #a15c1e; /* Marron plus sombre */
             --text-light: #F0F0F0;
             --border-color: #4A4A4A;
             --background-dark: #1A1A1A;
@@ -39,6 +39,10 @@
             width: 100%;
             height: 100%;
             background: transparent;
+            transition: filter 0.3s ease-in-out;
+        }
+        #gameCanvas.paused {
+            filter: blur(4px) grayscale(50%);
         }
 
         /* --- NOUVEL ÉCRAN TITRE --- */
@@ -49,57 +53,83 @@
             display: flex;
             z-index: 20;
             background: linear-gradient(to top, #1c2e4a, #3a7bd5);
-            transition: opacity 0.5s ease-out;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        #titleScreen.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
         }
         #art-pane {
             flex: 3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
             overflow: hidden;
+            background: linear-gradient(to top, #2c5364, #203a43, #0f2027);
         }
+        .parallax-layer {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 200%; height: 100%;
+            background-repeat: repeat-x;
+            background-position: 0 100%;
+            animation: slide linear infinite;
+        }
+        #bg-mountains {
+            background-image: url(https://i.imgur.com/4l2M9xT.png); /* Montagnes pixel art */
+            z-index: 1;
+            opacity: 0.4;
+            animation-duration: 120s;
+        }
+        #bg-forest {
+            background-image: url(https://i.imgur.com/JOmg3mP.png); /* Forêt pixel art */
+            z-index: 2;
+            opacity: 0.6;
+            animation-duration: 80s;
+        }
+        #pixel-hero {
+            position: absolute;
+            left: 50%;
+            bottom: 10%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 225px;
+            z-index: 3;
+        }
+        .pixel {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+        }
+        .skin { background-color: #f2d2b1; } .hair { background-color: #4a2e1f; } .shirt { background-color: #d64040; } .pants { background-color: #3a59a7; } .boots { background-color: #3d2e27; }
+
+        #light-shaft {
+            position: absolute;
+            top: -10%; right: 20%;
+            width: 100px;
+            height: 150%;
+            background: linear-gradient(to bottom, rgba(255, 230, 180, 0.2) 0%, rgba(255,255,255,0) 80%);
+            transform: rotate(25deg);
+            z-index: 4;
+            animation: gentle-sway 15s ease-in-out infinite;
+        }
+        @keyframes gentle-sway {
+            0%, 100% { transform: rotate(20deg) scale(1); }
+            50% { transform: rotate(30deg) scale(1.05); }
+        }
+        @keyframes slide {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
         #menu-pane {
             flex: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.3);
             padding: 20px;
         }
-        #pixel-hero {
-            width: 150px;
-            height: 225px;
-            position: relative;
-        }
-        .pixel {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.2);
-        }
-        /* Couleurs du personnage */
-        .skin { background-color: #f2d2b1; }
-        .hair { background-color: #4a2e1f; }
-        .shirt { background-color: #d64040; }
-        .pants { background-color: #3a59a7; }
-        .boots { background-color: #3d2e27; }
-
-        /* Effet de lumière sur le personnage */
-        #art-pane::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle at center, rgba(255, 230, 180, 0.15) 0%, rgba(255,255,255,0) 60%);
-            animation: light-sweep 10s linear infinite;
-        }
-        @keyframes light-sweep {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         #gameTitle {
             font-size: 2em;
             color: white;
@@ -107,33 +137,35 @@
             margin-bottom: 40px;
         }
 
-        /* --- ANCIEN MENU (caché mais fonctionnel) --- */
         #mainMenu { display: none !important; }
 
-        /* --- NOUVEL ÉCRAN DE CHARGEMENT --- */
         #loading-overlay {
             z-index: 99;
             background: #0d1117;
+            flex-direction: column;
         }
-        #loader {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #333;
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        #loading-bar-container {
+            width: 80%;
+            max-width: 400px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        #loading-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* --- STYLES GÉNÉRAUX (légèrement ajustés) --- */
+        /* --- STYLES GÉNÉRAUX --- */
         .overlay {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             color: var(--text-light);
@@ -141,12 +173,19 @@
             backdrop-filter: blur(4px);
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.3s, visibility 0.3s;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
             z-index: 10;
         }
         .overlay.active {
             visibility: visible;
             opacity: 1;
+        }
+        .overlay .menu-box {
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .overlay.active .menu-box {
+            transform: scale(1);
         }
         .menu-box {
             background: #1e1e1e url('https://www.transparenttextures.com/patterns/rocky-wall.png');
@@ -333,12 +372,12 @@
     <div id="gameWrapper">
         <canvas id="gameCanvas"></canvas>
         
-        <!-- NOUVEL ÉCRAN TITRE VISUEL -->
         <div id="titleScreen">
             <div id="art-pane">
-                <div id="pixel-hero">
-                    <!-- Ce personnage est créé avec des divs pour un look pixel-art pur CSS -->
-                </div>
+                <div class="parallax-layer" id="bg-mountains"></div>
+                <div class="parallax-layer" id="bg-forest"></div>
+                <div id="pixel-hero"></div>
+                <div id="light-shaft"></div>
             </div>
             <div id="menu-pane">
                 <h1 id="gameTitle">Super Pixel Adventure 2</h1>
@@ -349,7 +388,6 @@
             </div>
         </div>
 
-        <!-- ANCIEN MENU, CACHÉ MAIS UTILISÉ PAR LE SCRIPT DU JEU -->
         <div id="mainMenu" class="overlay">
             <div class="menu-box">
                 <button data-action="start">START GAME</button>
@@ -357,9 +395,13 @@
             </div>
         </div>
 
-        <!-- ÉCRAN DE CHARGEMENT -->
         <div id="loading-overlay" class="overlay">
-            <div id="loader"></div>
+            <div class="menu-box">
+                <h2>CHARGEMENT...</h2>
+                <div id="loading-bar-container">
+                    <div id="loading-bar"></div>
+                </div>
+            </div>
         </div>
 
         <div id="optionsMenu" class="overlay">
@@ -477,27 +519,9 @@
     </div>
     
     <script>
-        // Script pour gérer le nouvel écran titre et le chargement
         document.addEventListener('DOMContentLoaded', () => {
             const heroContainer = document.getElementById('pixel-hero');
-            // Grille du personnage en pixel art
-            const heroGrid = [
-                "  HHHH  ",
-                " HHHHHH ",
-                " HHHHHH ",
-                "  SKSK  ",
-                "  SSSS  ",
-                "RRRRRRRR",
-                "RRRRRRRR",
-                " RRRRRR ",
-                " RRRRRR ",
-                " PPPPPP ",
-                " PPPPPP ",
-                " PPPPPP ",
-                " BB  BB ",
-                " BB  BB ",
-                " BB  BB ",
-            ];
+            const heroGrid = [ "  HHHH  ", " HHHHHH ", " HHHHHH ", "  SKSK  ", "  SSSS  ", "RRRRRRRR", "RRRRRRRR", " RRRRRR ", " RRRRRR ", " PPPPPP ", " PPPPPP ", " PPPPPP ", " BB  BB ", " BB  BB ", " BB  BB " ];
             const colorMap = { 'H': 'hair', 'S': 'skin', 'K': 'background-dark', 'R': 'shirt', 'P': 'pants', 'B': 'boots' };
 
             heroGrid.forEach((row, y) => {
@@ -516,27 +540,25 @@
             const newOptionsBtn = document.getElementById('new-options-button');
             const titleScreen = document.getElementById('titleScreen');
             const loadingScreen = document.getElementById('loading-overlay');
+            const loadingBar = document.getElementById('loading-bar');
             
             const originalStartBtn = document.querySelector('#mainMenu button[data-action="start"]');
-            const originalOptionsBtn = document.querySelector('#mainMenu button[data-action="options"]');
             const optionsMenu = document.getElementById('optionsMenu');
             const closeOptionsBtn = document.querySelector('#optionsMenu button[data-action="closeOptions"]');
+            const gameCanvas = document.getElementById('gameCanvas');
 
             newStartBtn.addEventListener('click', () => {
+                titleScreen.classList.add('hidden');
                 loadingScreen.classList.add('active');
-                titleScreen.style.opacity = '0';
+                
+                setTimeout(() => { loadingBar.style.width = '100%'; }, 100);
 
-                // Déclenche le vrai bouton de démarrage après une courte animation
                 setTimeout(() => {
                     originalStartBtn.click();
-                    // Le script game.js prendra le relais pour cacher le menu et afficher le HUD
-                    
-                    // Cache l'écran de chargement et l'écran titre après le chargement simulé
                     setTimeout(() => {
                         loadingScreen.classList.remove('active');
-                        titleScreen.style.display = 'none';
-                    }, 1500);
-                }, 500);
+                    }, 500);
+                }, 1600);
             });
             
             newOptionsBtn.addEventListener('click', () => {
@@ -545,6 +567,20 @@
 
             closeOptionsBtn.addEventListener('click', () => {
                 optionsMenu.classList.remove('active');
+            });
+
+            // Gérer l'effet de pause
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach(mutation => {
+                    if (mutation.attributeName === 'class') {
+                        const isAnyMenuActive = !!document.querySelector('.overlay.active:not(#hud):not(#loading-overlay)');
+                        gameCanvas.classList.toggle('paused', isAnyMenuActive);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.overlay').forEach(menu => {
+                observer.observe(menu, { attributes: true });
             });
         });
     </script>
