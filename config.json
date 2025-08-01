@@ -32,8 +32,8 @@
   },
    "player": {
      "maxLives": 5,
-    "width": 24,
-    "height": 24,
+    "width": 96,
+    "height": 96,
     "collisionMargin": 0,
     "hitbox": {
       "offsetX": 16,
