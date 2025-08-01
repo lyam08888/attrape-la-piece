@@ -5,7 +5,8 @@ export class Player {
         this.vx = 0;
         this.vy = 0;
         this.w = config.player.width;
-         this.h = config.player.height;
+        this.h = config.player.height;
+        this.margin = config.player.collisionMargin || 0;
          this.config = config;
          this.sound = sound;
          this.stepTimer = 0;
@@ -112,12 +113,12 @@ export class Player {
         }
 
         this.vy += physics.gravity;
-if (physics.realistic) {
-    if (this.vy > physics.maxFallSpeed) {
-        this.vy = physics.maxFallSpeed;
-    }
-    this.vy *= physics.airResistance;
-}
+        if (this.vy > physics.maxFallSpeed) {
+            this.vy = physics.maxFallSpeed;
+        }
+        if (physics.realistic) {
+            this.vy *= physics.airResistance;
+        }
 
  
         this.handleActions(keys, mouse, game);
@@ -216,11 +217,12 @@ if (physics.realistic) {
     }
 
     rectCollide(other) {
+        const m = this.margin || 0;
         return (
-            this.x < other.x + other.w &&
-            this.x + this.w > other.x &&
-            this.y < other.y + other.h &&
-            this.y + this.h > other.y
+            this.x + m < other.x + other.w &&
+            this.x + this.w - m > other.x &&
+            this.y + m < other.y + other.h &&
+            this.y + this.h - m > other.y
         );
     }
 
@@ -229,14 +231,15 @@ if (physics.realistic) {
         const map = game.tileMap;
         const worldH = map.length;
         const worldW = map[0].length;
+        const m = this.margin;
 
         this.x += this.vx;
-        let startY = Math.max(0, Math.floor(this.y / tileSize));
-        let endY = Math.min(worldH - 1, Math.floor((this.y + this.h - 1) / tileSize));
+        let startY = Math.max(0, Math.floor((this.y + m) / tileSize));
+        let endY = Math.min(worldH - 1, Math.floor((this.y + this.h - m - 1) / tileSize));
         if (this.vx !== 0) {
             const dir = Math.sign(this.vx);
-            const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((this.x + this.w) / tileSize))
-                                   : Math.max(0, Math.floor(this.x / tileSize));
+            const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((this.x + this.w - m) / tileSize))
+                                   : Math.max(0, Math.floor((this.x + m) / tileSize));
             for (let y = startY; y <= endY; y++) {
                 if (map[y]?.[checkX] > 0) {
                     if (dir > 0) this.x = checkX * tileSize - this.w;
@@ -249,24 +252,24 @@ if (physics.realistic) {
 
         this.y += this.vy;
         this.grounded = false;
-        let startX = Math.max(0, Math.floor(this.x / tileSize));
-        let endX = Math.min(worldW - 1, Math.floor((this.x + this.w - 1) / tileSize));
+        let startX = Math.max(0, Math.floor((this.x + m) / tileSize));
+        let endX = Math.min(worldW - 1, Math.floor((this.x + this.w - m - 1) / tileSize));
 
         if (this.vy > 0) {
-            const checkY = Math.min(worldH - 1, Math.floor((this.y + this.h) / tileSize));
+            const checkY = Math.min(worldH - 1, Math.floor((this.y + this.h - m) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = checkY * tileSize - this.h;
+                    this.y = checkY * tileSize - this.h + m;
                     this.vy = 0;
                     this.grounded = true;
                     break;
                 }
             }
         } else if (this.vy < 0) {
-            const checkY = Math.max(0, Math.floor(this.y / tileSize));
+            const checkY = Math.max(0, Math.floor((this.y + m) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = (checkY + 1) * tileSize;
+                    this.y = (checkY + 1) * tileSize - m;
                     this.vy = 0;
                     break;
                 }

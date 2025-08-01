@@ -34,6 +34,7 @@
      "maxLives": 5,
     "width": 96,
     "height": 96,
+    "collisionMargin": 4,
      "reach": 4,
      "attackRange": 20
    },
