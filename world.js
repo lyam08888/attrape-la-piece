@@ -1,6 +1,6 @@
 import { randomChestType } from './chestGenerator.js';
 
-// Perlin Noise Generator (inchangé)
+// Perlin Noise Generator (maintenant déterministe)
 const Perlin = {
     rand_vect: function(){ let theta = Math.random()*2*Math.PI; return {x:Math.cos(theta), y:Math.sin(theta)}; },
     dot_prod_grid: function(x, y, vx, vy){
@@ -45,26 +45,29 @@ export const TILE = {
     AMETHYST: 31,
 };
 
+export const WORLD_LAYERS = {};
+
 export function generateLevel(game, levelConfig, gameSettings) {
+    Perlin.seed();
     const { worldWidth, worldHeight, tileSize, generation } = levelConfig;
     const worldWidthInTiles = Math.floor(worldWidth / tileSize);
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
+
+    WORLD_LAYERS.PARADISE_LEVEL = Math.floor(worldHeightInTiles * 0.1);
+    WORLD_LAYERS.SPACE_LEVEL = Math.floor(worldHeightInTiles * 0.2);
+    WORLD_LAYERS.SURFACE_LEVEL = Math.floor(worldHeightInTiles * 0.3);
+    WORLD_LAYERS.UNDERGROUND_START_Y = WORLD_LAYERS.SURFACE_LEVEL + 20;
+    WORLD_LAYERS.CORE_START_Y = Math.floor(worldHeightInTiles * 0.6);
+    WORLD_LAYERS.NUCLEUS_START_Y = Math.floor(worldHeightInTiles * 0.8);
+    WORLD_LAYERS.HELL_START_Y = Math.floor(worldHeightInTiles * 0.9);
 
     game.decorations = []; game.coins = []; game.bonuses = []; game.chests = [];
     game.checkpoints = []; game.enemies = []; game.fallingBlocks = []; game.collectibles = [];
     game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(worldWidthInTiles).fill(TILE.AIR));
     
-    const PARADISE_LEVEL = Math.floor(worldHeightInTiles * 0.1);
-    const SPACE_LEVEL = Math.floor(worldHeightInTiles * 0.2);
-    const SURFACE_LEVEL = Math.floor(worldHeightInTiles * 0.3);
-    const UNDERGROUND_START_Y = SURFACE_LEVEL + 20;
-    const CORE_START_Y = Math.floor(worldHeightInTiles * 0.6);
-    const NUCLEUS_START_Y = Math.floor(worldHeightInTiles * 0.8);
-    const HELL_START_Y = Math.floor(worldHeightInTiles * 0.9);
-
     // === 1. PARADIS ===
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = PARADISE_LEVEL; y < SPACE_LEVEL; y++) {
+        for (let y = WORLD_LAYERS.PARADISE_LEVEL; y < WORLD_LAYERS.SPACE_LEVEL; y++) {
             const noise = Perlin.get(x * 0.08, y * 0.1);
             if (noise > 0.4) {
                 game.tileMap[y][x] = TILE.CLOUD;
@@ -78,7 +81,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     // === 2. ESPACE ===
     for (let i = 0; i < 50; i++) {
         const clusterX = Math.random() * worldWidthInTiles;
-        const clusterY = SPACE_LEVEL + Math.random() * (SURFACE_LEVEL - SPACE_LEVEL);
+        const clusterY = WORLD_LAYERS.SPACE_LEVEL + Math.random() * (WORLD_LAYERS.SURFACE_LEVEL - WORLD_LAYERS.SPACE_LEVEL);
         for (let j = 0; j < 15; j++) {
             const asteroidX = Math.floor(clusterX + (Math.random() - 0.5) * 10);
             const asteroidY = Math.floor(clusterY + (Math.random() - 0.5) * 10);
@@ -89,11 +92,11 @@ export function generateLevel(game, levelConfig, gameSettings) {
     }
 
     // === 3. SURFACE ===
-    const waterLevel = SURFACE_LEVEL + 15;
+    const waterLevel = WORLD_LAYERS.SURFACE_LEVEL + 15;
     for (let x = 0; x < worldWidthInTiles; x++) {
         const height = Math.floor(Perlin.get(x * 0.05, 0) * 10);
-        const ySurface = SURFACE_LEVEL + height;
-        for (let y = ySurface; y < CORE_START_Y; y++) {
+        const ySurface = WORLD_LAYERS.SURFACE_LEVEL + height;
+        for (let y = ySurface; y < WORLD_LAYERS.CORE_START_Y; y++) {
             if (y < waterLevel && game.tileMap[y][x] === TILE.AIR) {
                 game.tileMap[y][x] = TILE.WATER;
             } else {
@@ -113,7 +116,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     // === 4. SOUTERRAINS (ROCHES VARIÉES & MINERAIS) ===
     const caveNoiseScale = 0.07;
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = UNDERGROUND_START_Y; y < NUCLEUS_START_Y; y++) {
+        for (let y = WORLD_LAYERS.UNDERGROUND_START_Y; y < WORLD_LAYERS.NUCLEUS_START_Y; y++) {
             if (game.tileMap[y][x] === TILE.STONE) {
                 const noise1 = Perlin.get(x * caveNoiseScale, y * caveNoiseScale);
                 if (noise1 > 0.35) game.tileMap[y][x] = TILE.AIR;
@@ -124,8 +127,8 @@ export function generateLevel(game, levelConfig, gameSettings) {
                     
                     if (Math.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
                     else if (Math.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
-                    else if (y > CORE_START_Y * 0.8 && Math.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
-                    else if (y > CORE_START_Y * 0.9 && Math.random() < 0.01) game.tileMap[y][x] = TILE.DIAMOND;
+                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.8 && Math.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
+                    else if (y > WORLD_LAYERS.CORE_START_Y * 0.9 && Math.random() < 0.01) game.tileMap[y][x] = TILE.DIAMOND;
                     else if (Math.random() < 0.015) game.tileMap[y][x] = TILE.LAPIS;
                 }
             }
@@ -133,11 +136,11 @@ export function generateLevel(game, levelConfig, gameSettings) {
     }
 
     // === 5. CŒUR DU MONDE ===
-    const coreRadius = (NUCLEUS_START_Y - CORE_START_Y) / 2;
+    const coreRadius = (WORLD_LAYERS.NUCLEUS_START_Y - WORLD_LAYERS.CORE_START_Y) / 2;
     const coreCenterX = worldWidthInTiles / 2;
-    const coreCenterY = CORE_START_Y + coreRadius;
+    const coreCenterY = WORLD_LAYERS.CORE_START_Y + coreRadius;
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = CORE_START_Y; y < NUCLEUS_START_Y; y++) {
+        for (let y = WORLD_LAYERS.CORE_START_Y; y < WORLD_LAYERS.NUCLEUS_START_Y; y++) {
             const dist = Math.hypot(x - coreCenterX, y - coreCenterY);
             const noise = Perlin.get(x * 0.02, y * 0.02) * coreRadius * 0.5;
             if (dist < coreRadius + noise) {
@@ -153,7 +156,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     
     // === 6. NOYAU OCÉANIQUE ===
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = NUCLEUS_START_Y; y < HELL_START_Y; y++) {
+        for (let y = WORLD_LAYERS.NUCLEUS_START_Y; y < WORLD_LAYERS.HELL_START_Y; y++) {
             game.tileMap[y][x] = TILE.WATER;
         }
     }
@@ -161,7 +164,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
     // === 7. ENFER ===
     for (let x = 0; x < worldWidthInTiles; x++) {
         const height = Math.floor(Perlin.get(x * 0.06, 0.5) * 8);
-        const yHellSurface = HELL_START_Y + height;
+        const yHellSurface = WORLD_LAYERS.HELL_START_Y + height;
         for (let y = yHellSurface; y < worldHeightInTiles; y++) {
             const hellNoise = Perlin.get(x * 0.15, y * 0.15);
             if (hellNoise > 0.4) game.tileMap[y][x] = TILE.SOUL_SAND;
@@ -170,7 +173,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
         }
     }
     for (let x = 0; x < worldWidthInTiles; x++) {
-        for (let y = HELL_START_Y; y < worldHeightInTiles; y++) {
+        for (let y = WORLD_LAYERS.HELL_START_Y; y < worldHeightInTiles; y++) {
             if (game.tileMap[y][x] !== TILE.AIR) {
                 if (Perlin.get(x * 0.08, y * 0.08) > 0.4) game.tileMap[y][x] = TILE.LAVA;
             }
@@ -182,17 +185,17 @@ export function generateLevel(game, levelConfig, gameSettings) {
         game.tileMap[worldHeightInTiles - 1][x] = TILE.BEDROCK;
         game.tileMap[0][x] = TILE.BEDROCK;
         if (Perlin.get(x * 0.2, 0) > 0.3) {
-             game.tileMap[HELL_START_Y - 1][x] = TILE.BEDROCK;
+             game.tileMap[WORLD_LAYERS.HELL_START_Y - 1][x] = TILE.BEDROCK;
         }
-        if(game.tileMap[HELL_START_Y - 2][x] === TILE.WATER) {
-            game.tileMap[HELL_START_Y - 2][x] = TILE.OBSIDIAN;
+        if(game.tileMap[WORLD_LAYERS.HELL_START_Y - 2][x] === TILE.WATER) {
+            game.tileMap[WORLD_LAYERS.HELL_START_Y - 2][x] = TILE.OBSIDIAN;
         }
     }
 
     // === 9. DÉCORS DE SURFACE (ARBRES & FLEURS) ===
     for (let i = 0; i < generation.treeCount; i++) {
         const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
-        for (let y = SPACE_LEVEL; y < UNDERGROUND_START_Y; y++) {
+        for (let y = WORLD_LAYERS.SPACE_LEVEL; y < WORLD_LAYERS.UNDERGROUND_START_Y; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
                 const treeHeight = 5 + Math.floor(Math.random() * 5);
                 for (let j = 1; j <= treeHeight; j++) {
@@ -215,6 +218,15 @@ export function generateLevel(game, levelConfig, gameSettings) {
                 if (game.tileMap[y][x+1] === TILE.GRASS) game.tileMap[y-1][x+1] = TILE.FLOWER_YELLOW;
                 break;
             }
+        }
+    }
+
+    // === 10. PLACEMENT DES COFFRES ET AUTRES OBJETS (RÉINTÉGRÉ) ===
+    for (let i = 0; i < (generation.chestCount || 0); i++) {
+        const x = Math.floor(Math.random() * worldWidthInTiles);
+        const y = WORLD_LAYERS.SURFACE_LEVEL + 5 + Math.floor(Math.random() * (WORLD_LAYERS.CORE_START_Y - WORLD_LAYERS.SURFACE_LEVEL - 10));
+        if (game.tileMap[y]?.[x] === TILE.AIR) {
+            game.chests.push({ x: x * tileSize, y: y * tileSize, w: 16, h: 16, items: [], type: randomChestType() });
         }
     }
 }
