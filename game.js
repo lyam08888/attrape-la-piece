@@ -319,9 +319,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const worldWidthInTiles = Math.floor(worldWidth / tileSize);
         const spawnX = Math.floor(worldWidthInTiles / 2);
 
+        const playerTiles = Math.ceil(config.player.height / tileSize);
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                return { x: spawnX * tileSize, y: Math.max(0, (y - 4) * tileSize) };
+                const offset = playerTiles + 1;
+                return { x: spawnX * tileSize, y: Math.max(0, (y - offset) * tileSize) };
             }
         }
         return { x: worldWidth / 2, y: 100 };
