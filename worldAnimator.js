@@ -31,6 +31,7 @@ export class WorldAnimator {
     }
 
     init() {
+        // La graine est déjà initialisée dans world.js, on continue la séquence
         for (let i = 0; i < 15; i++) {
             const x = SeededRandom.random() * this.config.worldWidth;
             const y = SeededRandom.random() * (this.config.worldHeight / 3);
