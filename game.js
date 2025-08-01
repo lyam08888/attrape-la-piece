@@ -93,16 +93,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ctx = canvas.getContext('2d');
     
     function resizeCanvas() {
-
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.floor(window.innerWidth * dpr);
-        canvas.height = Math.floor(window.innerHeight * dpr);
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+
     const config = await (await fetch('config.json')).json();
     const logger = new Logger();
     const sound = new SoundManager(config.soundVolume);
@@ -191,8 +187,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleMining(game, keys, mouse) {
         const { tileSize } = game.config;
         const { player } = game;
-        const mouseWorldX = (mouse.x) / game.settings.zoom + game.camera.x;
-        const mouseWorldY = (mouse.y) / game.settings.zoom + game.camera.y;
+        const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
+        const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
         const tileX = Math.floor(mouseWorldX / tileSize);
         const tileY = Math.floor(mouseWorldY / tileSize);
         const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
@@ -770,104 +766,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function createToolbar() {
-        ui.toolbar.innerHTML = '';
-        game.player.tools.forEach((toolName, index) => {
-            const slot = document.createElement('div');
-            slot.className = 'toolbar-slot';
-            slot.dataset.index = index;
-            const img = document.createElement('img');
-            img.src = assets[`tool_${toolName}`]?.src || '';
-            slot.appendChild(img);
-            slot.onclick = () => {
-                game.player.selectedToolIndex = index;
-                updateToolbarUI();
-            };
-            ui.toolbar.appendChild(slot);
-        });
-    }
-
-    function updateToolbarUI() {
-        if (!game || !ui.toolbar) return;
-        const slots = ui.toolbar.children;
-        for (let i = 0; i < slots.length; i++) {
-            slots[i].classList.toggle('selected', i === game.player.selectedToolIndex);
-        }
-    }
-
-    function createStars(count) {
-        stars = [];
-        for (let i = 0; i < count; i++) {
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 1.5 + 0.5,
-                opacity: Math.random() * 0.5 + 0.5
-            });
-        }
-    }
-
-    function drawSky(ctx) {
-        switch (game.playerBiome) {
-            case 'paradise':
-                const paradiseGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
-                paradiseGrad.addColorStop(0, '#FFD700');
-                paradiseGrad.addColorStop(1, '#FFFFFF');
-                ctx.fillStyle = paradiseGrad;
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                break;
-            case 'space':
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                stars.forEach(star => {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-                    ctx.beginPath();
-                    ctx.arc(star.x / gameSettings.zoom, star.y / gameSettings.zoom, star.size, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-                break;
-            case 'surface':
-                if (!timeSystem) return;
-                const [c1, c2] = timeSystem.getSkyGradient();
-                const grad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
-                grad.addColorStop(0, c1); grad.addColorStop(1, c2);
-                ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                const sun = timeSystem.getSunPosition(canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(sun.x, sun.y, 40, 0, Math.PI * 2); ctx.fill();
-                const moon = timeSystem.getMoonPosition(canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                ctx.fillStyle = '#F0EAD6'; ctx.beginPath(); ctx.arc(moon.x, moon.y, 30, 0, Math.PI * 2); ctx.fill();
-                break;
-            case 'underground':
-                ctx.fillStyle = '#252020';
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                break;
-            case 'core':
-                const coreGrad = ctx.createRadialGradient(canvas.clientWidth / (2 * gameSettings.zoom), canvas.clientHeight / (2 * gameSettings.zoom), 50, canvas.clientWidth / (2 * gameSettings.zoom), canvas.clientHeight / (2 * gameSettings.zoom), canvas.clientWidth / gameSettings.zoom);
-                coreGrad.addColorStop(0, '#4a004a');
-                coreGrad.addColorStop(1, '#1a001a');
-                ctx.fillStyle = coreGrad;
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                break;
-            case 'nucleus':
-                const oceanGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
-                oceanGrad.addColorStop(0, '#000030');
-                oceanGrad.addColorStop(1, '#000010');
-                ctx.fillStyle = oceanGrad;
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                break;
-            case 'hell':
-                const hellGrad = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight / gameSettings.zoom);
-                hellGrad.addColorStop(0, '#4d0000');
-                hellGrad.addColorStop(1, '#1a0000');
-                ctx.fillStyle = hellGrad;
-                ctx.fillRect(0, 0, canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom);
-                if (Math.random() < 0.5) {
-                    createParticles(Math.random() * canvas.clientWidth / gameSettings.zoom, canvas.clientHeight / gameSettings.zoom, 1, 'orange', { speed: 1, gravity: -0.05 });
-                }
-                break;
-        }
-    }
-
+    function createToolbar() { /* ... */ }
+    function updateToolbarUI() { /* ... */ }
+    function createStars(count) { /* ... */ }
+    function drawSky(ctx) { /* ... */ }
     function updateHUD() { /* ... */ }
     function updateDebug() { /* ... */ }
     function loseLife() { /* ... */ }
