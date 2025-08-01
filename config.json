@@ -38,8 +38,8 @@
     "hitbox": {
       "offsetX": 3,
       "offsetY": 3,
-      "width": 0.0001,
-      "height": 0.0001
+      "width": 18,
+      "height": 18
     },
     "reach": 4,
     "attackRange": 20
