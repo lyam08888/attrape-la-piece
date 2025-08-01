@@ -149,8 +149,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function handleMining(game, keys, mouse) { /* ... */ }
     
-    function setupMenus(_assets) { /* ... */ }
-    function handleMenuAction(action) { /* ... */ }
+    function setupMenus(_assets) {
+        assets = _assets;
+        if (!ui.mainMenu) { initGame(); return; }
+        document.body.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            if (action) { handleMenuAction(action); return; }
+            const inc = e.target.dataset.inc;
+            if (inc) { increaseSkill(inc); }
+        });
+    }
+
+    function handleMenuAction(action) {
+        switch(action) {
+            case 'start': initGame(); break;
+            case 'options': showMenu(ui.optionsMenu); break;
+            case 'closeOptions': toggleMenu(false, 'options'); break;
+            case 'closeInventory': toggleInventoryMenu(); break;
+            case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
+            case 'closeSkills': toggleSkillsMenu(); break;
+            case 'closeCalendar': toggleCalendarMenu(); break;
+            case 'closeDialogue': closeDialogue(); break;
+            case 'acceptQuest': acceptQuest(); break;
+            case 'completeQuest': completeQuest(); break;
+            case 'closeQuestLog': toggleQuestLog(); break;
+        }
+    }
 
     function initGame() {
         try {
@@ -286,12 +310,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getBiomeAt(y) {
         const yInTiles = y / config.tileSize;
-        if (yInTiles < WORLD_LAYERS.PARADISE_END_Y) return 'paradise';
-        if (yInTiles < WORLD_LAYERS.SPACE_END_Y) return 'space';
+        if (yInTiles < WORLD_LAYERS.SPACE_END_Y) return 'paradise';
+        if (yInTiles < WORLD_LAYERS.SURFACE_LEVEL) return 'space';
         if (y > WORLD_LAYERS.HELL_START_Y * config.tileSize) return 'hell';
         if (y > WORLD_LAYERS.NUCLEUS_START_Y * config.tileSize) return 'nucleus';
         if (y > WORLD_LAYERS.CORE_START_Y * config.tileSize) return 'core';
-        if (y > WORLD_LAYERS.SURFACE_LEVEL * config.tileSize + 20 * config.tileSize) return 'underground';
+        if (y > WORLD_LAYERS.UNDERGROUND_START_Y * config.tileSize) return 'underground';
         return 'surface';
     }
     
