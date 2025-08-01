@@ -13,35 +13,35 @@ export class Player {
             width: config.player.hitbox?.width || this.w,
             height: config.player.hitbox?.height || this.h
         };
-         this.config = config;
-         this.sound = sound;
-         this.stepTimer = 0;
-         this.grounded = false;
-         this.canDoubleJump = true;
-         this.dir = 1;
-         this.invulnerable = 0;
-         this.swingTimer = 0;
-         this.state = 'idle';
-         this.animTimer = 0;
-         this.animFrame = 0;
-        // Tool list including the basic weapons that can be used for mining
-        // Tools correspond to the icons located in assets/tool_*.png
+        this.config = config;
+        this.sound = sound;
+        this.stepTimer = 0;
+        this.grounded = false;
+        this.canDoubleJump = true;
+        this.dir = 1; // 1 for right, -1 for left
+        this.invulnerable = 0;
+        this.swingTimer = 0;
+        this.state = 'idle';
+        this.animTimer = 0;
+        this.animFrame = 0;
+        
+        // Tool list
         this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
-         this.selectedToolIndex = 0;
-         this.inventory = {};
-         this.miningTarget = null;
-         this.miningProgress = 0;
- 
-         this.level = 1;
-         this.xp = 0;
-         this.xpToNext = 100;
-         this.skillPoints = 0;
-         this.attributes = { strength: 0, agility: 0, vitality: 0 };
+        this.selectedToolIndex = 0;
+        this.inventory = {};
 
+        // XP and Leveling
+        this.level = 1;
+        this.xp = 0;
+        this.xpToNext = 100;
+        this.skillPoints = 0;
+        this.attributes = { strength: 0, agility: 0, vitality: 0 };
+
+        // Posture and animations
         this.posture = 'standing';
         this.doubleJumped = false;
         this.animations = config.playerAnimations || {};
-     }
+    }
 
     getHitbox() {
         return {
@@ -51,19 +51,18 @@ export class Player {
             h: this.hitbox.height
         };
     }
- 
-     update(keys, mouse, game) {
-         const { physics } = this.config;
+
+    update(keys, mouse, game) {
+        const { physics } = this.config;
         const baseSpeed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
         const runSpeed = baseSpeed * 1.5;
-         const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
- 
-        // posture management
+        const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
+
+        // --- Posture Management ---
         if (this.posture !== 'standing' && keys.jump) {
             this.setPosture('standing');
             keys.jump = false;
         }
-
         if (keys.doubleDown && this.grounded) {
             this.setPosture('prone');
             keys.doubleDown = false;
@@ -73,150 +72,145 @@ export class Player {
             this.setPosture('standing');
         }
 
+        // --- Movement ---
         let speed = baseSpeed;
         if (keys.run && this.posture === 'standing') speed = runSpeed;
         if (this.posture === 'crouching') speed *= 0.5;
         if (this.posture === 'prone') speed *= 0.3;
 
-        if (physics.realistic) {
-            const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
-            if (keys.left) {
-                this.vx = Math.max(this.vx - accel, -speed);
-                this.dir = -1;
-            } else if (keys.right) {
-                this.vx = Math.min(this.vx + accel, speed);
-                this.dir = 1;
-            } else {
-                const drag = this.grounded ? physics.friction : physics.airResistance;
-                this.vx *= drag;
-                if (Math.abs(this.vx) < 0.01) this.vx = 0;
-            }
+        const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
+        if (keys.left) {
+            this.vx = Math.max(this.vx - accel, -speed);
+            this.dir = -1;
+        } else if (keys.right) {
+            this.vx = Math.min(this.vx + accel, speed);
+            this.dir = 1;
         } else {
-            if (keys.left) { this.vx = -speed; this.dir = -1; }
-            else if (keys.right) { this.vx = speed; this.dir = 1; }
-            else { this.vx *= physics.friction; }
+            const drag = this.grounded ? physics.friction : physics.airResistance;
+            this.vx *= drag;
+            if (Math.abs(this.vx) < 0.01) this.vx = 0;
         }
- 
-         if (this.grounded && Math.abs(this.vx) > 0.1) {
-             if (this.stepTimer <= 0) {
-                 this.sound?.playStep();
-                 this.stepTimer = 10;
-             } else {
-                 this.stepTimer--;
-             }
-         } else {
-             this.stepTimer = 0;
-         }
- 
+
+        // --- Jumping ---
         if (keys.jump && this.posture === 'standing') {
-             if (this.grounded) {
-                 this.vy = -jumpForce;
-                 this.sound?.playJump();
-                 this.canDoubleJump = true;
+            if (this.grounded) {
+                this.vy = -jumpForce;
+                this.sound?.playJump();
+                this.canDoubleJump = true;
                 this.doubleJumped = false;
-             } else if (this.canDoubleJump) {
-                 this.vy = -jumpForce * 0.8;
-                 this.sound?.playJump();
-                 this.canDoubleJump = false;
+            } else if (this.canDoubleJump) {
+                this.vy = -jumpForce * 0.8;
+                this.sound?.playJump();
+                this.canDoubleJump = false;
                 this.doubleJumped = true;
-             }
-             keys.jump = false;
-         }
- 
-        if (keys.fly) {
-            this.vy = -physics.jumpForce * 0.3;
+            }
+            keys.jump = false;
         }
-
+        
+        // --- Gravity ---
         this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) {
-            this.vy = physics.maxFallSpeed;
-        }
-        if (physics.realistic) {
-            this.vy *= physics.airResistance;
-        }
+        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
 
- 
+        // --- Update states and timers ---
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);
-        this.checkEnemyCollisions(game);
         this.checkCollectibleCollisions(game);
-        this.checkObjectCollisions(game);
- 
-        // state selection for animations
-         if (keys.fly) this.state = 'flying';
-        else if (!this.grounded) this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
-        else if (this.posture === 'prone') this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
-        else if (this.posture === 'crouching') this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
-        else if (Math.abs(this.vx) > baseSpeed + 0.1) this.state = 'running';
-        else if (Math.abs(this.vx) > 0.1) this.state = 'walking';
-         else this.state = 'idle';
- 
+        this.updateStateAndAnimation();
+        
+        if (this.invulnerable > 0) this.invulnerable--;
+        if (this.swingTimer > 0) this.swingTimer--;
+        keys.doubleDown = false;
+    }
+    
+    updateStateAndAnimation() {
+        if (!this.grounded) {
+            this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
+        } else if (this.posture === 'prone') {
+            this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
+        } else if (this.posture === 'crouching') {
+            this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
+        } else if (Math.abs(this.vx) > (this.config.physics.playerSpeed * 1.1)) {
+            this.state = 'running';
+        } else if (Math.abs(this.vx) > 0.1) {
+            this.state = 'walking';
+        } else {
+            this.state = 'idle';
+        }
+        
         const frames = this.animations[this.state] || [];
         if (frames.length > 1) {
-             this.animTimer++;
-             if (this.animTimer > 10) {
+            this.animTimer++;
+            if (this.animTimer > 10) {
                 this.animFrame = (this.animFrame + 1) % frames.length;
-                 this.animTimer = 0;
-             }
-         } else {
-             this.animTimer = 0;
-             this.animFrame = 0;
-         }
- 
-         if (this.invulnerable > 0) this.invulnerable--;
-         if (this.swingTimer > 0) this.swingTimer--;
-        keys.doubleDown = false;
-     }
- 
-     handleActions(keys, mouse, game) {
-         const isAction = keys.action || mouse.left || mouse.right;
-         const selectedTool = this.tools[this.selectedToolIndex];
- 
-         if (keys.action) {
-             for (const chest of game.chests) {
-                 if (this.rectCollide(chest)) {
-                     if (game.openChest) game.openChest(chest);
-                     keys.action = false;
-                     return;
-                 }
-             }
-         }
- 
-        if (isAction) {
-            this.swingTimer = 15;
-            this.attackNearbyEnemies(game);
-            const target = this.getTargetTile(mouse, game);
-            if (target) {
-                if (!this.miningTarget || this.miningTarget.x !== target.x || this.miningTarget.y !== target.y) {
-                    this.miningTarget = { x: target.x, y: target.y, type: target.type };
-                    this.miningProgress = 0;
+                this.animTimer = 0;
+            }
+        } else {
+            this.animTimer = 0;
+            this.animFrame = 0;
+        }
+    }
+
+    handleActions(keys, mouse, game) {
+        const isAction = keys.action || mouse.left;
+        
+        // Interaction avec les coffres
+        if (keys.action) {
+            for (const chest of game.chests) {
+                if (this.rectCollide(chest)) {
+                    if (game.openChest) game.openChest(chest);
+                    keys.action = false;
+                    return; // Une seule action à la fois
                 }
             }
         }
-        game.checkpoints.forEach(cp => {
-            if (!cp.activated && this.rectCollide(cp)) {
-                cp.activated = true;
-                game.lastCheckpoint = { x: cp.x, y: cp.y };
+
+        // Logique d'attaque (pas de minage ici)
+        const attackTools = ['sword', 'knife', 'axe', 'pickaxe'];
+        const selectedTool = this.tools[this.selectedToolIndex];
+        if (isAction && attackTools.includes(selectedTool) && this.swingTimer <= 0) {
+            this.swingTimer = 30; // Délai entre les attaques
+            this.attackNearbyEnemies(game);
+        }
+    }
+
+    attackNearbyEnemies(game) {
+        const range = this.config.player.attackRange || this.config.tileSize;
+        const hb = this.getHitbox();
+        const attackBox = {
+            x: this.dir === 1 ? hb.x + hb.w : hb.x - range,
+            y: hb.y,
+            w: range,
+            h: hb.h
+        };
+
+        for (const enemy of game.enemies) {
+            if (enemy.isDead || enemy.isDying) continue;
+            if (enemy.rectCollide(attackBox)) {
+                enemy.takeDamage(game, this.getDamage());
             }
-        });
-     }
- 
-     addXP(amount, game) {
-         this.xp += amount;
-         game.createParticles(this.x + this.w / 2, this.y, 5, '#ffff66');
-         while (this.xp >= this.xpToNext && this.level < 999) {
-             this.xp -= this.xpToNext;
-             this.level++;
-             this.skillPoints++;
-             this.xpToNext = Math.floor(this.xpToNext * 1.1 + 50);
-             game.showLevelPopup(this.level);
-         }
-     }
- 
-     getDamage() {
-         return 1 + this.attributes.strength * 0.2;
-     }
- 
+        }
+    }
+
+    addXP(amount, game) {
+        this.xp += amount;
+        game.createParticles(this.x + this.w / 2, this.y, 5, '#ffff66');
+        while (this.xp >= this.xpToNext && this.level < 999) {
+            this.xp -= this.xpToNext;
+            this.level++;
+            this.skillPoints++;
+            this.xpToNext = Math.floor(this.xpToNext * 1.1 + 50);
+            game.showLevelPopup(this.level);
+        }
+    }
+
+    getDamage() {
+        const tool = this.tools[this.selectedToolIndex];
+        let baseDamage = 1;
+        if (tool === 'sword') baseDamage = 10;
+        if (tool === 'knife') baseDamage = 5;
+        return baseDamage + this.attributes.strength * 2;
+    }
+
     setPosture(p) {
         if (this.posture === p) return;
         const oldH = this.h;
@@ -265,7 +259,7 @@ export class Player {
         if (this.vx !== 0) {
             const dir = Math.sign(this.vx);
             const checkX = dir > 0 ? Math.min(worldW - 1, Math.floor((hbX + this.hitbox.width - m) / tileSize))
-                                   : Math.max(0, Math.floor((hbX + m) / tileSize));
+                                     : Math.max(0, Math.floor((hbX + m) / tileSize));
             for (let y = startY; y <= endY; y++) {
                 if (map[y]?.[checkX] > 0) {
                     if (dir > 0) this.x = checkX * tileSize - this.hitbox.width - this.hitbox.offsetX;
@@ -285,21 +279,22 @@ export class Player {
         let endX = Math.min(worldW - 1, Math.floor((hbX + this.hitbox.width - m - 1) / tileSize));
 
         if (this.vy > 0) {
-            const checkY = Math.min(worldH - 1, Math.floor((hbY + this.hitbox.height - m) / tileSize));
+            const checkY = Math.min(worldH - 1, Math.floor((hbY + this.hitbox.height) / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = checkY * tileSize - this.hitbox.height - this.hitbox.offsetY + m;
+                    this.y = checkY * tileSize - this.hitbox.height - this.hitbox.offsetY;
                     this.vy = 0;
                     this.grounded = true;
+                    this.doubleJumped = false;
                     hbY = this.y + this.hitbox.offsetY;
                     break;
                 }
             }
         } else if (this.vy < 0) {
-            const checkY = Math.max(0, Math.floor((hbY + m) / tileSize));
+            const checkY = Math.max(0, Math.floor(hbY / tileSize));
             for (let x = startX; x <= endX; x++) {
                 if (map[checkY]?.[x] > 0) {
-                    this.y = (checkY + 1) * tileSize - m - this.hitbox.offsetY;
+                    this.y = (checkY + 1) * tileSize - this.hitbox.offsetY;
                     this.vy = 0;
                     hbY = this.y + this.hitbox.offsetY;
                     break;
@@ -307,31 +302,10 @@ export class Player {
             }
         }
 
-        // Keep player within world bounds
         if (this.x + this.hitbox.offsetX < 0) { this.x = -this.hitbox.offsetX; this.vx = 0; }
         if (this.x + this.hitbox.offsetX + this.hitbox.width > worldW * tileSize) {
             this.x = worldW * tileSize - this.hitbox.width - this.hitbox.offsetX;
             this.vx = 0;
-        }
-        if (this.y + this.hitbox.offsetY + this.hitbox.height > worldH * tileSize) {
-            this.y = worldH * tileSize - this.hitbox.height - this.hitbox.offsetY;
-            this.vy = 0;
-            this.grounded = true;
-        }
-    }
-
-    checkEnemyCollisions(game) {
-        for (const enemy of game.enemies) {
-            if (enemy.isDead) continue;
-            if (this.rectCollide(enemy)) {
-                if (this.vy > 0 && this.y + this.h - enemy.y < this.h * 0.5) {
-                    enemy.takeDamage(game);
-                    this.vy = -this.config.physics.jumpForce * 0.5;
-                    this.grounded = false;
-                } else {
-                    game.loseLife();
-                }
-            }
         }
     }
 
@@ -344,113 +318,63 @@ export class Player {
                 }
             }
         };
-
-        collect(game.coins, () => {
-            game.addXP(5);
-        });
-
+        collect(game.coins, () => game.addXP(5));
         collect(game.bonuses, () => {
-            if (game.lives < game.config.player.maxLives) {
-                game.lives++;
-            }
+            if (game.lives < game.config.player.maxLives) game.lives++;
         });
-
         collect(game.collectibles, item => {
             const key = item.tileType;
             this.inventory[key] = (this.inventory[key] || 0) + 1;
         });
     }
 
-    checkObjectCollisions(game) {
-        const tileSize = this.config.tileSize || this.config.player.width;
-        for (const block of game.fallingBlocks) {
-            if (this.rectCollide({ x: block.x, y: block.y, w: tileSize, h: tileSize })) {
-                game.loseLife();
-            }
+    draw(ctx, assets, skinKey) {
+        ctx.save();
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+            ctx.globalAlpha = 0.5;
         }
 
-        if (game.flag && this.rectCollide(game.flag)) {
-            if (game.addXP) game.addXP(50);
-        }
-    }
-
-    attackNearbyEnemies(game) {
-        const range = this.config.player.attackRange || this.config.tileSize;
-        const hb = this.getHitbox();
-        const attackBox = {
-            x: this.dir === 1 ? hb.x + hb.w : hb.x - range,
-            y: hb.y,
-            w: range,
-            h: hb.h
-        };
-        for (const enemy of game.enemies) {
-            if (enemy.isDead || enemy.isDying) continue;
-            if (enemy.rectCollide(attackBox)) {
-                enemy.takeDamage(game, this.getDamage());
-            }
-        }
-    }
-
-    getTargetTile(mouse, game) {
-        const { tileSize, player } = this.config;
-        const worldX = mouse.x / game.settings.zoom + game.camera.x;
-        const worldY = mouse.y / game.settings.zoom + game.camera.y;
-        const tileX = Math.floor(worldX / tileSize);
-        const tileY = Math.floor(worldY / tileSize);
-        const hb = this.getHitbox();
-        const dx = tileX * tileSize + tileSize / 2 - (hb.x + hb.w / 2);
-        const dy = tileY * tileSize + tileSize / 2 - (hb.y + hb.h / 2);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= player.reach * tileSize) {
-            const type = game.tileMap[tileY]?.[tileX];
-            if (type !== undefined) return { x: tileX, y: tileY, type };
-        }
-        return null;
-    }
- 
-     drawTool(ctx, assets) {
-         ctx.save();
-         const selectedTool = this.tools[this.selectedToolIndex];
-         const toolAsset = assets[`tool_${selectedTool}`];
- 
-         if (toolAsset) {
-             ctx.translate(this.w * 0.2, this.h * 0.3);
-             if (this.swingTimer > 0) {
-                 const progress = (15 - this.swingTimer) / 15;
-                 const angle = Math.sin(progress * Math.PI) * 1.5;
-                 ctx.rotate(angle);
-             }
-             ctx.drawImage(toolAsset, -6, -6, 12, 12);
-         }
-         ctx.restore();
-     }
- 
-     draw(ctx, assets, skinKey) {
-         ctx.save();
-         if (this.invulnerable > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-             ctx.globalAlpha = 0.5;
-         }
- 
-         ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-         if (this.dir === -1) ctx.scale(-1, 1);
- 
-         let rotation = 0;
-        if (this.state === 'jumping') rotation = -this.dir * 0.2;
-        if (this.state === 'flying') rotation = -this.dir * Math.PI / 2;
-         ctx.rotate(rotation);
- 
+        // --- Dessin du joueur ---
         const frames = this.animations[this.state] || [];
-        const frameKey = frames[this.animFrame] || skinKey;
+        const frameKey = frames[this.animFrame] || skinKey || 'player1';
         const img = assets[frameKey];
- 
-        if (img) {
-            ctx.drawImage(img, -this.w / 2, -this.h / 2, this.w, this.h);
-         } else {
-             ctx.fillStyle = '#ea4335';
-             ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
-         }
- 
-         this.drawTool(ctx, assets);
-         ctx.restore();
-     }
- }
+        
+        ctx.save();
+        if (this.dir === -1) {
+            ctx.scale(-1, 1);
+            if (img) ctx.drawImage(img, -this.x - this.w, this.y, this.w, this.h);
+        } else {
+            if (img) ctx.drawImage(img, this.x, this.y, this.w, this.h);
+        }
+        ctx.restore();
+
+        // --- Dessin de l'outil (logique corrigée) ---
+        const selectedToolName = this.tools[this.selectedToolIndex];
+        if (selectedToolName) {
+            const toolAsset = assets[`tool_${selectedToolName}`];
+            if (toolAsset) {
+                ctx.save();
+                
+                const toolSize = this.w * 0.8;
+                const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
+                const handOffsetY = this.h * 0.6;
+                const pivotX = this.x + handOffsetX;
+                const pivotY = this.y + handOffsetY;
+                
+                ctx.translate(pivotX, pivotY);
+
+                if (this.swingTimer > 0) {
+                    const progress = (30 - this.swingTimer) / 30;
+                    const angle = Math.sin(progress * Math.PI) * -this.dir * 1.5;
+                    ctx.rotate(angle);
+                } else {
+                    ctx.rotate(this.dir * 0.5);
+                }
+
+                ctx.drawImage(toolAsset, -toolSize / 2, -toolSize / 2, toolSize, toolSize);
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+    }
+}
