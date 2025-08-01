@@ -176,10 +176,16 @@ class Animal {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
-    // Match canvas resolution with the window size to avoid blurring
+    const ctx = canvas.getContext('2d');
+    // Match canvas resolution with the window size to avoid blurring,
+    // taking device pixel ratio into account for crisp rendering
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
@@ -189,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const ui = {
         canvas: canvas,
-        ctx: canvas.getContext('2d'),
+        ctx: ctx,
         gameTitle: document.getElementById('gameTitle'),
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
