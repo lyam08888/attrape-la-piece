@@ -2,7 +2,9 @@
  export class GameEngine {
      constructor(canvas, config) {
          this.canvas = canvas;
-         this.ctx = canvas.getContext('2d');
+        this.ctx = canvas.getContext('2d');
+        // Disable smoothing for crisp pixel art
+        this.ctx.imageSmoothingEnabled = false;
          this.config = config;
          this.assets = {};
         this.keys = {

@@ -176,6 +176,13 @@ class Animal {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
+    // Match canvas resolution with the window size to avoid blurring
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
     const config = await (await fetch('config.json')).json();
     const logger = new Logger();
     const sound = new SoundManager(config.soundVolume);

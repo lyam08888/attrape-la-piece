@@ -63,3 +63,7 @@ Ouvrez index.html : Lancez ce fichier dans un navigateur web moderne.
 Jouez ! Le jeu chargera les assets depuis votre GitHub et sera prêt à jouer.
 
 Astuce : appuyez sur **F3** en jeu pour activer le mode debug (FPS et hitbox).
+
+### Nouveautés graphiques
+- Le canvas ajuste maintenant automatiquement sa taille à la fenêtre pour un affichage net.
+- Le héros est plus petit et les outils visibles dans ses mains sont quatre fois réduits.
