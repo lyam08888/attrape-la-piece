@@ -12,7 +12,6 @@ export class PNJ {
         this.image = this.createImage(pnjData.appearance);
     }
 
-    // Crée une image pour le PNJ en utilisant les données de génération
     createImage(appearance) {
         const svg = `
             <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
@@ -37,5 +36,35 @@ export class PNJ {
         if (this.image.complete) {
             ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
         }
+
+        // --- Dessin de l'indicateur de quête ---
+        ctx.font = "24px 'Press Start 2P'";
+        ctx.textAlign = "center";
+        let indicatorText = "";
+        let indicatorColor = "yellow";
+
+        if (this.questState === "available") {
+            indicatorText = "!";
+        } else if (this.questState === "active") {
+            indicatorText = "?";
+            indicatorColor = "#DDD";
+        } else if (this.questState === "completed") {
+            indicatorText = "?";
+            indicatorColor = "yellow";
+        }
+
+        if (indicatorText) {
+            ctx.fillStyle = indicatorColor;
+            ctx.fillText(indicatorText, this.x + this.w / 2, this.y - 10);
+        }
+    }
+    
+    rectCollide(other) {
+        return (
+            this.x < other.x + other.w &&
+            this.x + this.w > other.x &&
+            this.y < other.y + other.h &&
+            this.y + this.h > other.y
+        );
     }
 }
