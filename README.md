@@ -66,4 +66,4 @@ Astuce : appuyez sur **F3** en jeu pour activer le mode debug (FPS et hitbox).
 
 ### Nouveautés graphiques
 - Le canvas ajuste maintenant automatiquement sa taille à la fenêtre pour un affichage net.
-- Le héros est plus petit et les outils visibles dans ses mains sont quatre fois réduits.
+- Le héros est plus petit et les outils visibles dans ses mains sont désormais beaucoup plus réduits (environ un vingtième de leur taille d'origine).
