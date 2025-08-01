@@ -4,13 +4,14 @@ import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
-// import { updateMining } from './miningEngine.js'; // Remplacé par la logique interne
 import { TimeSystem, updateCalendarUI } from './calendar.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
 import { generateMonster } from './generateurMonstres.js';
+import { generateAnimal } from './generateurAnimaux.js';
 
+// --- CLASSE MONSTER (MISE À JOUR) ---
 class Monster {
     constructor(x, y, config, monsterData) {
         this.x = x;
@@ -19,58 +20,69 @@ class Monster {
         this.h = config.tileSize;
         this.properties = monsterData.properties;
         this.isDead = false;
-
-        // Propriétés de mouvement et IA
         this.vx = 0;
         this.vy = 0;
-        this.speed = config.tileSize * (0.01 + Math.random() * 0.02); // Vitesse variable
-        this.direction = Math.random() < 0.5 ? 1 : -1; // 1 pour droite, -1 pour gauche
-        this.actionTimer = 60 + Math.random() * 120; // Change d'action toutes les 1-3 secondes
+        this.speed = config.tileSize * (0.01 + Math.random() * 0.02);
+        this.direction = Math.random() < 0.5 ? 1 : -1;
+        this.actionTimer = 60 + Math.random() * 120;
         this.isGrounded = false;
-        this.health = 100;
+        this.health = 50; // NOUVEAU: Points de vie
+        this.isDying = false; // NOUVEAU: État pour l'animation de mort
 
-        // Créer une image à partir du SVG pour le dessin sur le canvas
         this.image = new Image();
-        const svg64 = btoa(monsterData.svgString); // Encoder le SVG en Base64
+        const svg64 = btoa(monsterData.svgString);
         this.image.src = 'data:image/svg+xml;base64,' + svg64;
     }
 
+    // NOUVEAU: Méthode pour recevoir des dégâts
+    takeDamage(game, amount) {
+        if (this.isDying) return;
+        this.health -= amount;
+        game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 5, 'red');
+
+        if (this.health <= 0) {
+            this.isDying = true;
+            game.sound.play('enemy_die', { volume: 0.7 });
+            game.addXP(25);
+            game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
+            // Le monstre sera retiré de la liste des ennemis après un court délai
+            setTimeout(() => { this.isDead = true; }, 300);
+        }
+    }
+    
+    // NOUVEAU: Méthode de collision rectangulaire
+    rectCollide(other) {
+        return (
+            this.x < other.x + other.w &&
+            this.x + this.w > other.x &&
+            this.y < other.y + other.h &&
+            this.y + this.h > other.y
+        );
+    }
+
     update(game) {
-        if (this.isDead) return;
+        if (this.isDead || this.isDying) return;
 
         const { tileSize, physics } = game.config;
-
-        // --- IA & Mouvement ---
         this.actionTimer--;
         if (this.actionTimer <= 0) {
-            this.direction *= -1; // Change de direction
-            this.actionTimer = 120 + Math.random() * 180; // Réinitialise le timer (2-5 secondes)
+            this.direction *= -1;
+            this.actionTimer = 120 + Math.random() * 180;
         }
         this.vx = this.speed * this.direction;
-
-        // --- Physique (Gravité) ---
         this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) {
-            this.vy = physics.maxFallSpeed;
-        }
-
-        // --- Détection de collision ---
+        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
         this.handleCollisions(game, tileSize);
-
-        // --- Interaction avec le joueur ---
         const player = game.player;
-        if (this.x < player.x + player.w &&
-            this.x + this.w > player.x &&
-            this.y < player.y + player.h &&
-            this.y + this.h > player.y) {
 
-            if (player.vy > 0 && (player.y + player.h) < (this.y + this.h / 2)) {
-                this.isDead = true;
-                player.vy = -player.config.jumpForce * 0.6; // Petit rebond
-                game.sound.play('enemy_die', { volume: 0.7 });
-                game.addXP(25);
-                game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
-            } else {
+        // Collision avec le joueur (le monstre blesse le joueur)
+        if (this.rectCollide(player)) {
+             if (player.vy > 0 && (player.y + player.h) < (this.y + this.h * 0.5)) {
+                // Le joueur a sauté sur le monstre
+                this.takeDamage(game, 100); // Dégâts massifs pour tuer en un coup
+                player.vy = -player.config.physics.jumpForce * 0.6; // Rebond
+            } else if (!player.invulnerable) {
+                // Le monstre touche le joueur
                 game.loseLife();
             }
         }
@@ -81,18 +93,15 @@ class Monster {
         const xTile = Math.floor((nextX + (this.vx > 0 ? this.w : 0)) / tileSize);
         const yTileTop = Math.floor(this.y / tileSize);
         const yTileBottom = Math.floor((this.y + this.h - 1) / tileSize);
-
         if (game.tileMap[yTileTop]?.[xTile] > TILE.AIR || game.tileMap[yTileBottom]?.[xTile] > TILE.AIR) {
             nextX = this.x;
             this.direction *= -1;
         }
         this.x = nextX;
-
         this.y += this.vy;
         const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
         const xTileLeft = Math.floor(this.x / tileSize);
         const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
-        
         if (game.tileMap[yTile]?.[xTileLeft] > TILE.AIR || game.tileMap[yTile]?.[xTileRight] > TILE.AIR) {
             if (this.vy > 0) {
                 this.y = yTile * tileSize - this.h;
@@ -106,16 +115,61 @@ class Monster {
             this.isGrounded = false;
         }
     }
-
-    rectCollide(other) {
-        return (
-            this.x < other.x + other.w &&
-            this.x + this.w > other.x &&
-            this.y < other.y + other.h &&
-            this.y + this.h > other.y
-        );
+    draw(ctx) {
+        if (this.isDying) {
+            ctx.globalAlpha = 0.5;
+        }
+        if (this.image.complete) {
+            ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
+        }
+        ctx.globalAlpha = 1.0;
     }
+}
 
+// --- CLASSE ANIMAL (INCHANGÉE) ---
+class Animal {
+    constructor(x, y, config, animalData) {
+        this.x = x;
+        this.y = y;
+        this.w = config.tileSize * 0.8;
+        this.h = config.tileSize * 0.8;
+        this.properties = animalData;
+        this.isDead = false;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = config.tileSize * (0.005 + Math.random() * 0.015);
+        this.direction = Math.random() < 0.5 ? 1 : -1;
+        this.actionTimer = 120 + Math.random() * 240;
+        this.image = new Image();
+        const svg64 = btoa(this.properties.svgString);
+        this.image.src = 'data:image/svg+xml;base64,' + svg64;
+    }
+    update(game) {
+        const { tileSize, physics } = game.config;
+        this.actionTimer--;
+        if (this.actionTimer <= 0) {
+            this.direction *= -1;
+            this.actionTimer = 180 + Math.random() * 300;
+        }
+        this.vx = this.speed * this.direction;
+        if (this.properties.movement === 'fly') {
+            this.vy = (Math.random() - 0.5) * 0.5;
+        } else if (this.properties.movement === 'swim') {
+            this.vy = (Math.random() - 0.5) * 0.3;
+            this.vx *= 1.5;
+        } else {
+            this.vy += physics.gravity;
+            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
+        }
+        this.handleCollisions(game, tileSize);
+    }
+    handleCollisions(game, tileSize) {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x + this.w > game.config.worldWidth) {
+            this.direction *= -1;
+        }
+    }
     draw(ctx) {
         if (this.image.complete) {
             ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
@@ -188,7 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let fps = 0;
     let lastFrame = performance.now();
 
-    // --- NOUVEAU: Logique de minage ---
     const TOOL_EFFECTIVENESS = {
         pickaxe: { [TILE.STONE]: 5, [TILE.COAL]: 5, [TILE.IRON]: 6 },
         axe: { [TILE.WOOD]: 5 },
@@ -209,7 +262,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (TOOL_EFFECTIVENESS[toolName] && TOOL_EFFECTIVENESS[toolName][tileType]) {
             return TOOL_EFFECTIVENESS[toolName][tileType];
         }
-        // Les mains ou un outil inefficace font des dégâts de base
         return 1;
     }
 
@@ -220,24 +272,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleMining(game, mouse) {
         const { tileSize } = game.config;
         const { player } = game;
-
         const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
         const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
         const tileX = Math.floor(mouseWorldX / tileSize);
         const tileY = Math.floor(mouseWorldY / tileSize);
-
         const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
         if (dist > tileSize * 4) {
             game.miningEffect = null;
             return;
         }
-
         const tileType = game.tileMap[tileY]?.[tileX];
         if (!mouse.left || !tileType || tileType === TILE.AIR) {
             game.miningEffect = null;
             return;
         }
-
         if (!game.miningEffect || game.miningEffect.x !== tileX || game.miningEffect.y !== tileY) {
             game.miningEffect = {
                 x: tileX,
@@ -246,43 +294,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                 resistance: getBlockResistance(tileType)
             };
         }
-
         const selectedToolName = player.tools[player.selectedToolIndex];
         const damage = getToolDamage(selectedToolName, tileType);
-        
         game.miningEffect.progress += damage;
-
         if (game.miningEffect.progress >= game.miningEffect.resistance) {
             game.collectibles.push({
                 x: tileX * tileSize, y: tileY * tileSize,
                 w: tileSize, h: tileSize, vy: -2, tileType: tileType
             });
-
             game.tileMap[tileY][tileX] = TILE.AIR;
             game.sound.play('break_block', { volume: 0.5 });
             game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 10, '#8B4513');
             game.addXP(5);
-            
             game.miningEffect = null;
-
             game.checkBlockSupport(tileX, tileY - 1);
             game.checkBlockSupport(tileX - 1, tileY);
             game.checkBlockSupport(tileX + 1, tileY);
         }
     }
 
-
     function setupMenus(_assets) {
         assets = _assets;
         if (!ui.mainMenu) { initGame(); return; }
-        
         document.body.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
             if (action) { handleMenuAction(action); return; }
             const inc = e.target.dataset.inc;
             if (inc) { increaseSkill(inc); }
         });
-
         if (ui.renderDistanceSlider) {
             ui.renderDistanceSlider.value = gameSettings.renderDistance;
             ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
@@ -291,7 +330,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
             };
         }
-
         if (ui.zoomSlider) {
             ui.zoomSlider.value = gameSettings.zoom;
             ui.zoomValue.textContent = `x${gameSettings.zoom}`;
@@ -301,7 +339,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updateCamera(true);
             };
         }
-
         if (ui.particlesCheckbox) {
             ui.particlesCheckbox.checked = gameSettings.showParticles;
             ui.particlesCheckbox.onchange = (e) => {
@@ -329,7 +366,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 sound.setVolume(gameSettings.soundVolume);
             };
         }
-
         if(ui.btnRestart) ui.btnRestart.onclick = initGame;
     }
 
@@ -355,6 +391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             camera: { x: 0, y: 0 },
             tileMap: [],
             enemies: [],
+            animals: [],
             particles: [],
             fallingBlocks: [],
             collectibles: [],
@@ -404,29 +441,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function spawnMonsters() {
         if (!game || !game.player) return;
-
         const MAX_MONSTERS = 5;
-        if (game.enemies.length >= MAX_MONSTERS) {
-            return;
-        }
-        
+        if (game.enemies.length >= MAX_MONSTERS) return;
         if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
             const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
-
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
-
             for (let i = 0; i < 10; i++) {
                 const y = game.player.y + (Math.random() - 0.5) * 10 * tileSize;
                 const spawnTileY = Math.floor(y / tileSize);
-
                 if (game.tileMap[spawnTileY+1]?.[spawnTileX] > TILE.AIR && game.tileMap[spawnTileY]?.[spawnTileX] === TILE.AIR) {
                     const monsterData = generateMonster();
                     const newMonster = new Monster(spawnTileX * tileSize, spawnTileY * tileSize, config, monsterData);
                     game.enemies.push(newMonster);
                     return;
+                }
+            }
+        }
+    }
+    
+    function spawnAnimals() {
+        if (!game || !game.player) return;
+        const MAX_ANIMALS = 8;
+        if (game.animals.length >= MAX_ANIMALS) return;
+
+        if (Math.random() < 0.015) {
+            const animalData = generateAnimal();
+            const { tileSize } = config;
+            const spawnX = game.player.x + (Math.random() - 0.5) * (canvas.width / gameSettings.zoom);
+            const spawnY = game.player.y + (Math.random() - 0.5) * (canvas.height / gameSettings.zoom);
+            
+            if (animalData.movement === 'fly') {
+                 const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
+                 game.animals.push(newAnimal);
+            } else {
+                const spawnTileX = Math.floor(spawnX / tileSize);
+                const spawnTileY = Math.floor(spawnY / tileSize);
+                if (game.tileMap[spawnTileY+1]?.[spawnTileX] > TILE.AIR && game.tileMap[spawnTileY]?.[spawnTileX] === TILE.AIR) {
+                    const newAnimal = new Animal(spawnTileX * tileSize, spawnTileY * tileSize, config, animalData);
+                    game.animals.push(newAnimal);
                 }
             }
         }
@@ -450,17 +505,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.player.update(keys, mouse, game);
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
+            game.animals.forEach(a => a.update(game));
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
-            handleMining(game, mouse); // MODIFIÉ: Appel à la nouvelle logique de minage
+            handleMining(game, mouse);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
             spawnMonsters();
+            spawnAnimals();
 
             if (keys.action) keys.action = false;
-            // Ne réinitialisez pas mouse.left ici pour permettre le minage en continu
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
             game.over = true;
@@ -483,6 +539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawCollectibles(ctx, assets);
             drawChests(ctx, assets);
             
+            game.animals.forEach(a => a.draw(ctx));
             game.enemies.forEach(e => e.draw(ctx));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
@@ -491,9 +548,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const hb = game.player.getHitbox();
                 ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
                 ctx.strokeStyle = 'yellow';
-                game.enemies.forEach(en => {
-                    ctx.strokeRect(en.x, en.y, en.w, en.h);
-                });
+                game.enemies.forEach(en => ctx.strokeRect(en.x, en.y, en.w, en.h));
+                ctx.strokeStyle = 'cyan';
+                game.animals.forEach(an => ctx.strokeRect(an.x, an.y, an.w, an.h));
                 ctx.restore();
             }
             if (gameSettings.showParticles) drawParticles(ctx);
@@ -530,10 +587,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const spawnX = Math.floor(worldWidthInTiles / 2);
 
         const playerTiles = Math.ceil(config.player.height / tileSize);
-        const extraOffset = 10; // spawn higher so the player falls onto the ground
         for (let y = 0; y < game.tileMap.length; y++) {
             if (game.tileMap[y] && game.tileMap[y][spawnX] > 0) {
-                const offset = playerTiles + 1 + extraOffset;
+                const offset = playerTiles + 1;
                 return { x: spawnX * tileSize, y: Math.max(0, (y - offset) * tileSize) };
             }
         }
@@ -990,8 +1046,6 @@ if (physics.realistic) {
             game.paused = true;
         }
     }
-
-    // --- Lancement du moteur ---
 
     const gameLogic = {
         init: setupMenus,
