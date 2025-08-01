@@ -70,7 +70,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
             if (noise > 0.4) {
                 game.tileMap[y][x] = TILE.CLOUD;
                 if (Perlin.get(x * 0.2, y * 0.2) > 0.5) {
-                    game.tileMap[y-1][x] = TILE.HEAVENLY_STONE; // Ajout de pierre céleste
+                    game.tileMap[y-1][x] = TILE.HEAVENLY_STONE;
                 }
             }
         }
@@ -84,7 +84,7 @@ export function generateLevel(game, levelConfig, gameSettings) {
             const asteroidX = Math.floor(clusterX + (Math.random() - 0.5) * 10);
             const asteroidY = Math.floor(clusterY + (Math.random() - 0.5) * 10);
             if (game.tileMap[asteroidY]?.[asteroidX] === TILE.AIR) {
-                game.tileMap[asteroidY][asteroidX] = TILE.MOON_ROCK; // Remplacement par de la roche lunaire
+                game.tileMap[asteroidY][asteroidX] = TILE.MOON_ROCK;
             }
         }
     }
@@ -96,10 +96,9 @@ export function generateLevel(game, levelConfig, gameSettings) {
         const ySurface = SURFACE_LEVEL + height;
         for (let y = ySurface; y < CORE_START_Y; y++) {
             if (y < waterLevel && game.tileMap[y][x] === TILE.AIR) {
-                game.tileMap[y][x] = TILE.WATER; // Remplir les zones basses d'eau
+                game.tileMap[y][x] = TILE.WATER;
             } else {
                 if (y === ySurface) {
-                    // Générer des plages de sable près de l'eau
                     if (game.tileMap[y][x-1] === TILE.WATER || game.tileMap[y][x+1] === TILE.WATER) {
                         game.tileMap[y][x] = TILE.SAND;
                     } else {
@@ -120,12 +119,10 @@ export function generateLevel(game, levelConfig, gameSettings) {
                 const noise1 = Perlin.get(x * caveNoiseScale, y * caveNoiseScale);
                 if (noise1 > 0.35) game.tileMap[y][x] = TILE.AIR;
                 else {
-                    // Remplacer la pierre par des variantes
                     const rockNoise = Perlin.get(x * 0.1, y * 0.1);
                     if (rockNoise > 0.4) game.tileMap[y][x] = TILE.GRANITE;
                     else if (rockNoise < -0.4) game.tileMap[y][x] = TILE.DIORITE;
                     
-                    // Ajout de nouveaux minerais
                     if (Math.random() < 0.05) game.tileMap[y][x] = TILE.COAL;
                     else if (Math.random() < 0.03) game.tileMap[y][x] = TILE.IRON;
                     else if (y > CORE_START_Y * 0.8 && Math.random() < 0.02) game.tileMap[y][x] = TILE.GOLD;
@@ -188,7 +185,6 @@ export function generateLevel(game, levelConfig, gameSettings) {
         if (Perlin.get(x * 0.2, 0) > 0.3) {
              game.tileMap[HELL_START_Y - 1][x] = TILE.BEDROCK;
         }
-        // Ajout d'obsidienne à la frontière Eau/Lave
         if(game.tileMap[HELL_START_Y - 2][x] === TILE.WATER) {
             game.tileMap[HELL_START_Y - 2][x] = TILE.OBSIDIAN;
         }
@@ -199,8 +195,23 @@ export function generateLevel(game, levelConfig, gameSettings) {
         const x = Math.floor(Math.random() * (worldWidthInTiles - 20)) + 10;
         for (let y = SPACE_LEVEL; y < UNDERGROUND_START_Y; y++) {
             if (game.tileMap[y][x] === TILE.GRASS && game.tileMap[y - 1][x] === TILE.AIR) {
-                // ... code de génération d'arbres ...
-                // Ajout de fleurs au pied des arbres
+                const treeHeight = 5 + Math.floor(Math.random() * 5);
+                for (let j = 1; j <= treeHeight; j++) {
+                    if (y - j > 0) game.tileMap[y - j][x] = TILE.OAK_WOOD;
+                }
+                const canopySize = 2;
+                for (let ly = -canopySize; ly <= canopySize; ly++) {
+                    for (let lx = -canopySize; lx <= canopySize; lx++) {
+                        if (lx === 0 && ly < 0) continue;
+                        if (Math.random() > 0.4) {
+                            const leafY = y - treeHeight + ly;
+                            const leafX = x + lx;
+                            if (game.tileMap[leafY]?.[leafX] === TILE.AIR) {
+                                game.tileMap[leafY][leafX] = TILE.OAK_LEAVES;
+                            }
+                        }
+                    }
+                }
                 if (game.tileMap[y][x-1] === TILE.GRASS) game.tileMap[y-1][x-1] = TILE.FLOWER_RED;
                 if (game.tileMap[y][x+1] === TILE.GRASS) game.tileMap[y-1][x+1] = TILE.FLOWER_YELLOW;
                 break;
