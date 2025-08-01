@@ -258,7 +258,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // NOUVELLE LOGIQUE DE MINAGE AMÉLIORÉE
     // =========================================================================
 
-    // Données des outils : puissance, type et niveau requis pour l'utiliser
     const TOOL_DATA = {
         'hand':          { power: 1, type: 'hand', tier: 0 },
         'wood_axe':      { power: 2, type: 'axe', tier: 1 },
@@ -272,12 +271,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         'iron_pickaxe':  { power: 6, type: 'pickaxe', tier: 3 },
     };
 
-    // Données des blocs : résistance, outil correct et niveau d'outil requis pour miner
     const BLOCK_DATA = {
         [TILE.DIRT]:   { resistance: 20, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
         [TILE.GRASS]:  { resistance: 25, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
         [TILE.WOOD]:   { resistance: 80, tool: 'axe', requiredTier: 0, drops: TILE.WOOD },
-        [TILE.LEAVES]: { resistance: 10, tool: 'any', requiredTier: 0, drops: null }, // Ne drop rien
+        [TILE.LEAVES]: { resistance: 10, tool: 'any', requiredTier: 0, drops: null },
         [TILE.STONE]:  { resistance: 200, tool: 'pickaxe', requiredTier: 1, drops: TILE.STONE },
         [TILE.COAL]:   { resistance: 250, tool: 'pickaxe', requiredTier: 1, drops: TILE.COAL },
         [TILE.IRON]:   { resistance: 400, tool: 'pickaxe', requiredTier: 2, drops: TILE.IRON },
@@ -287,29 +285,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { tileSize } = game.config;
         const { player } = game;
 
-        // Coordonnées du curseur dans le monde
         const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
         const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
         const tileX = Math.floor(mouseWorldX / tileSize);
         const tileY = Math.floor(mouseWorldY / tileSize);
 
-        // Vérifier la distance entre le joueur et le bloc
         const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
-        if (dist > tileSize * 5) { // Augmentation légère de la portée
+        if (dist > tileSize * 5) {
             game.miningEffect = null;
             return;
         }
 
         const tileType = game.tileMap[tileY]?.[tileX];
-        const isMining = mouse.left; // Utiliser uniquement le clic gauche pour miner
+        const isMining = mouse.left;
 
-        // Si on ne mine pas ou si le bloc est de l'air, on arrête tout
         if (!isMining || !tileType || tileType === TILE.AIR) {
             game.miningEffect = null;
             return;
         }
         
-        // Initialiser l'effet de minage si on change de bloc
         if (!game.miningEffect || game.miningEffect.x !== tileX || game.miningEffect.y !== tileY) {
             const blockInfo = BLOCK_DATA[tileType] || { resistance: 1000, tool: 'none', requiredTier: 99 };
             game.miningEffect = {
@@ -326,34 +320,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         const selectedToolName = player.tools[player.selectedToolIndex] || 'hand';
         const toolInfo = TOOL_DATA[selectedToolName] || TOOL_DATA['hand'];
 
-        // Vérifier si l'outil est assez puissant
         if (toolInfo.tier < blockInfo.requiredTier) {
-            // On pourrait afficher un message "Outil trop faible"
             sound.play('hit_fail', { volume: 0.4 });
-            return; // Ne fait aucun dégât
+            return;
         }
 
-        // Calcul des dégâts
-        let damage = 1; // Dégâts de base si mauvais outil
+        let damage = 1;
         if (blockInfo.tool === 'any' || blockInfo.tool === toolInfo.type) {
             damage = toolInfo.power;
         }
         
-        // Bonus de force du joueur
         damage += Math.floor(player.attributes.strength / 5);
 
-        // Chance de coup critique
-        if (Math.random() < 0.05) { // 5% de chance
+        if (Math.random() < 0.05) {
             damage *= 2;
             createParticles(tileX * tileSize + tileSize/2, tileY * tileSize + tileSize/2, 5, '#FFD700');
         }
 
         miningData.progress += damage;
         
-        // Jouer un son de frappe
         sound.play('hit_block', { volume: 0.3, rate: 0.8 + (miningData.progress / miningData.resistance) * 1.2 });
 
-        // Si le bloc est cassé
         if (miningData.progress >= miningData.resistance) {
             if (blockInfo.drops !== null) {
                 game.collectibles.push({
@@ -366,20 +353,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             sound.play('break_block', { volume: 0.6 });
             createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 15, '#8B4513');
             addXP(10);
-            triggerCameraShake(4, 15); // Tremblement de caméra !
+            triggerCameraShake(4, 15);
             
             game.miningEffect = null;
             
-            // Vérifier si les blocs adjacents doivent tomber
             checkBlockSupport(tileX, tileY - 1);
             checkBlockSupport(tileX - 1, tileY);
             checkBlockSupport(tileX + 1, tileY);
         }
     }
-
-    // =========================================================================
-    // FIN DE LA NOUVELLE LOGIQUE DE MINAGE
-    // =========================================================================
     
     function setupMenus(_assets) {
         assets = _assets;
@@ -514,8 +496,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (game.enemies.length >= MAX_MONSTERS) return;
         if (Math.random() < 0.01) {
             const { tileSize } = config;
+            // CORRECTION: Utiliser clientWidth pour la zone d'apparition
             const screenLeftEdge = game.camera.x - tileSize * 5;
-            const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
+            const screenRightEdge = game.camera.x + ui.canvas.clientWidth / gameSettings.zoom + tileSize * 5;
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
             for (let i = 0; i < 10; i++) {
@@ -539,8 +522,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.015) {
             const animalData = generateAnimal();
             const { tileSize } = config;
-            const spawnX = game.player.x + (Math.random() - 0.5) * (canvas.width / gameSettings.zoom);
-            const spawnY = game.player.y + (Math.random() - 0.5) * (canvas.height / gameSettings.zoom);
+            // CORRECTION: Utiliser clientWidth/clientHeight pour la zone d'apparition
+            const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
+            const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.clientHeight / gameSettings.zoom);
             
             if (animalData.movement === 'fly') {
                 const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
@@ -596,8 +580,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             spawnMonsters();
             spawnAnimals();
             spawnPNJ();
-
-            // La ligne `if (keys.action) keys.action = false;` a été supprimée d'ici.
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
             game.over = true;
@@ -611,7 +593,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (game.player) {
             ctx.save();
             
-            // Appliquer le tremblement de la caméra
             let shakeX = 0;
             let shakeY = 0;
             if (cameraShake.duration > 0) {
@@ -700,8 +681,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.width / gameSettings.zoom) / 2;
-        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.height / gameSettings.zoom) / 2;
+        // CORRECTION: Utiliser clientWidth/clientHeight pour la taille visible de la fenêtre
+        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.clientWidth / gameSettings.zoom) / 2;
+        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.clientHeight / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
@@ -711,8 +693,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.camera.y += (targetY - game.camera.y) * 0.1;
         }
         
-        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.width / gameSettings.zoom)));
-        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.height / gameSettings.zoom)));
+        // CORRECTION: Utiliser clientWidth/clientHeight pour les limites de la caméra
+        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.clientWidth / gameSettings.zoom)));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.clientHeight / gameSettings.zoom)));
     }
 
     function drawTileMap(ctx, assets) {
