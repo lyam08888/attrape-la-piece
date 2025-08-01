@@ -1,14 +1,23 @@
 // PNJ.js
+import { TILE } from './world.js';
 
 export class PNJ {
     constructor(x, y, config, pnjData) {
         this.x = x;
         this.y = y;
+        this.spawnX = x; // Point d'ancrage
         this.w = config.tileSize;
         this.h = config.tileSize * 1.5;
         this.data = pnjData;
-        this.questState = "available"; // available, active, completed
-
+        
+        // --- Propriétés de mouvement ---
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = config.tileSize * 0.01; // Vitesse de marche lente
+        this.direction = 1;
+        this.actionTimer = 120 + Math.random() * 120; // Temps avant de changer de direction
+        this.isGrounded = false;
+        
         this.image = this.createImage(pnjData.appearance);
     }
 
@@ -29,7 +38,63 @@ export class PNJ {
     }
 
     update(game) {
-        // Logique future (mouvements, etc.)
+        const { tileSize, physics } = game.config;
+        
+        // --- Logique de mouvement simple ---
+        this.actionTimer--;
+        if (this.actionTimer <= 0 || this.x > this.spawnX + 50 || this.x < this.spawnX - 50) {
+            this.direction *= -1;
+            this.actionTimer = 180 + Math.random() * 240; // Attend avant de repartir
+        }
+
+        if (this.actionTimer < 180) { // Ne bouge que s'il n'est pas en pause
+             this.vx = this.speed * this.direction;
+        } else {
+            this.vx = 0;
+        }
+
+        // Appliquer la gravité
+        this.vy += physics.gravity;
+        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
+
+        this.handleCollisions(game, tileSize);
+
+        // --- Mise à jour de l'état de la quête ---
+        const quest = this.data.quest;
+        const playerQuest = game.player.quests.find(q => q.id === quest.id);
+
+        if (playerQuest) {
+            if (playerQuest.objective.currentAmount >= playerQuest.objective.amount) {
+                this.questState = "completed";
+            } else {
+                this.questState = "active";
+            }
+        } else {
+            this.questState = "available";
+        }
+    }
+    
+    handleCollisions(game, tileSize) {
+        this.x += this.vx;
+        // (Collision horizontale simplifiée pour éviter que le PNJ ne se bloque)
+        
+        this.y += this.vy;
+        const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
+        const xTileLeft = Math.floor(this.x / tileSize);
+        const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
+
+        if (game.tileMap[yTile]?.[xTileLeft] > TILE.AIR || game.tileMap[yTile]?.[xTileRight] > TILE.AIR) {
+            if (this.vy > 0) {
+                this.y = yTile * tileSize - this.h;
+                this.vy = 0;
+                this.isGrounded = true;
+            } else if (this.vy < 0) {
+                this.y = yTile * tileSize + tileSize;
+                this.vy = 0;
+            }
+        } else {
+            this.isGrounded = false;
+        }
     }
 
     draw(ctx) {
