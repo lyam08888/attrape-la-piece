@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastFrame = performance.now();
     let cameraShake = { intensity: 0, duration: 0 };
     let stars = [];
+    const defaultGravity = config.physics.gravity; // Sauvegarder la gravité par défaut
 
     // --- NIVEAUX DES COUCHES DU MONDE ---
     const PARADISE_LEVEL_Y = Math.floor(config.worldHeight * 0.1);
@@ -306,6 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 config: config, settings: gameSettings, sound: sound, propagateTreeCollapse: propagateTreeCollapse,
                 miningEffect: null,
                 playerBiome: 'surface',
+                lavaDamageTimer: 0,
                 createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
                 startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
                 checkBlockSupport: (x, y) => checkBlockSupport(x, y),
@@ -417,6 +419,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function updateBiomePhysics(game) {
+        const player = game.player;
+        if (!player) return;
+
+        // Réinitialiser la physique par défaut
+        game.config.physics.gravity = defaultGravity;
+        player.isSwimming = false;
+
+        switch(game.playerBiome) {
+            case 'space':
+                game.config.physics.gravity = defaultGravity * 0.15; // Gravité faible
+                break;
+            case 'nucleus':
+                game.config.physics.gravity = -0.05; // Flottabilité
+                player.isSwimming = true;
+                break;
+        }
+    }
+
+    function handleBiomeDamage(game) {
+        if (!game.player || game.over) return;
+        const { player, tileMap, config } = game;
+        const { tileSize } = config;
+        
+        const playerTileX = Math.floor((player.x + player.w / 2) / tileSize);
+        const playerTileY = Math.floor((player.y + player.h) / tileSize);
+        const tileBelow = tileMap[playerTileY]?.[playerTileX];
+
+        if (tileBelow === TILE.LAVA) {
+            game.lavaDamageTimer--;
+            if (game.lavaDamageTimer <= 0) {
+                loseLife();
+                game.lavaDamageTimer = 60; // Dégâts toutes les secondes
+            }
+        } else {
+            game.lavaDamageTimer = 60;
+        }
+    }
+
     function update(keys, mouse) {
         logger.update();
         const now = performance.now();
@@ -430,6 +471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         try {
             updatePlayerBiome();
+            updateBiomePhysics(game);
 
             if (timeSystem) timeSystem.update();
             sound.update();
@@ -442,6 +484,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateFallingBlocks();
             updateCollectibles();
             handleMining(game, keys, mouse);
+            handleBiomeDamage(game);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
