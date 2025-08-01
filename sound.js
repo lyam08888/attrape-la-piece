@@ -198,7 +198,15 @@ export class SoundManager {
         }
     }
 
-    update() { 
-        if (this.stepCooldown > 0) this.stepCooldown--; 
+    playJump(opts = {}) {
+        this.play('jump', opts);
+    }
+
+    playBreak(opts = {}) {
+        this.play('break_block', opts);
+    }
+
+    update() {
+        if (this.stepCooldown > 0) this.stepCooldown--;
     }
 }
