@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
-            const screenRightEdge = game.camera.x + ui.canvas.clientWidth / gameSettings.zoom + tileSize * 5;
+const screenRightEdge = game.camera.x + ui.canvas.offsetWidth / gameSettings.zoom + tileSize * 5;
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
             for (let i = 0; i < 10; i++) {
