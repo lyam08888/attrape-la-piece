@@ -39,6 +39,7 @@ export class Player {
         this.posture = 'standing';
         this.doubleJumped = false;
         this.animations = config.playerAnimations || {};
+        this.flying = false;
     }
 
     getHitbox() {
@@ -55,6 +56,14 @@ export class Player {
         const baseSpeed = physics.playerSpeed * (1 + this.attributes.agility * 0.05);
         const runSpeed = baseSpeed * 1.5;
         const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
+
+        if (keys.fly) {
+            this.flying = !this.flying;
+            if (this.flying) {
+                this.vy = 0;
+            }
+            keys.fly = false;
+        }
 
         if (this.posture !== 'standing' && keys.jump) {
             this.setPosture('standing');
@@ -75,38 +84,50 @@ export class Player {
         if (this.posture === 'prone') speed *= 0.3;
 
         const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
-        if (keys.left) {
-            this.vx = Math.max(this.vx - accel, -speed);
-            this.dir = -1;
-        } else if (keys.right) {
-            this.vx = Math.min(this.vx + accel, speed);
-            this.dir = 1;
-        } else {
-            const drag = this.grounded ? physics.friction : physics.airResistance;
-            this.vx *= drag;
-            if (Math.abs(this.vx) < 0.01) this.vx = 0;
-        }
 
-        if (keys.jump && this.posture === 'standing') {
-            if (this.grounded) {
-                this.vy = -jumpForce;
-                this.sound?.playJump();
-                this.canDoubleJump = true;
-                this.doubleJumped = false;
-            } else if (this.canDoubleJump) {
-                this.vy = -jumpForce * 0.8;
-                this.sound?.playJump();
-                this.canDoubleJump = false;
-                this.doubleJumped = true;
+        if (this.flying) {
+            if (keys.left) { this.vx = -speed; this.dir = -1; }
+            else if (keys.right) { this.vx = speed; this.dir = 1; }
+            else { this.vx = 0; }
+
+            if (keys.jump) this.vy = -speed;
+            else if (keys.down) this.vy = speed;
+            else this.vy = 0;
+        } else {
+            if (keys.left) {
+                this.vx = Math.max(this.vx - accel, -speed);
+                this.dir = -1;
+            } else if (keys.right) {
+                this.vx = Math.min(this.vx + accel, speed);
+                this.dir = 1;
+            } else {
+                const drag = this.grounded ? physics.friction : physics.airResistance;
+                this.vx *= drag;
+                if (Math.abs(this.vx) < 0.01) this.vx = 0;
             }
-            keys.jump = false;
+
+            if (keys.jump && this.posture === 'standing') {
+                if (this.grounded) {
+                    this.vy = -jumpForce;
+                    this.sound?.playJump();
+                    this.canDoubleJump = true;
+                    this.doubleJumped = false;
+                } else if (this.canDoubleJump) {
+                    this.vy = -jumpForce * 0.8;
+                    this.sound?.playJump();
+                    this.canDoubleJump = false;
+                    this.doubleJumped = true;
+                }
+                keys.jump = false;
+            }
+
+            this.vy += physics.gravity;
+            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
         }
-        
-        this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
 
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);
+        if (this.flying) this.grounded = false;
         this.checkCollectibleCollisions(game);
         this.updateStateAndAnimation();
         
@@ -116,7 +137,9 @@ export class Player {
     }
     
     updateStateAndAnimation() {
-        if (!this.grounded) {
+        if (this.flying) {
+            this.state = 'flying';
+        } else if (!this.grounded) {
             this.state = this.doubleJumped ? 'doubleJump' : 'jumping';
         } else if (this.posture === 'prone') {
             this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
