@@ -7,6 +7,11 @@ export class TimeSystem {
         this.monthsPerYear = 12;
     }
 
+    reset() {
+        this.totalMinutes = 6 * 60;
+        this.lastUpdate = performance.now();
+    }
+
     update() {
         const now = performance.now();
         const deltaSeconds = (now - this.lastUpdate) / 1000;
@@ -18,7 +23,7 @@ export class TimeSystem {
         const minutesPerMonth = this.minutesPerDay * this.daysPerMonth;
         const minutesPerYear = minutesPerMonth * this.monthsPerYear;
         let minutes = Math.floor(this.totalMinutes);
-        const year = Math.floor(minutes / minutesPerYear) + 2025;
+        const year = Math.floor(minutes / minutesPerYear) + 1;
         minutes %= minutesPerYear;
         const month = Math.floor(minutes / minutesPerMonth) + 1;
         minutes %= minutesPerMonth;
@@ -34,54 +39,48 @@ export class TimeSystem {
     }
 
     getStage() {
-        const { hour, minute } = this.getTime();
-        const t = hour + minute / 60;
-        if (t >= 4.5 && t < 6) return 'Aube';
-        if (t >= 6 && t < 9) return 'Matin';
-        if (t >= 9 && t < 12) return 'Fin de matinée';
-        if (t >= 12 && t < 14) return 'Midi';
-        if (t >= 14 && t < 17.5) return 'Après-midi';
-        if (t >= 17.5 && t < 19.5) return 'Soir';
-        if (t >= 19.5 && t < 21) return 'Crépuscule';
-        return 'Nuit';
+        const { hour } = this.getTime();
+        if (hour >= 5 && hour < 7) return 'aube';
+        if (hour >= 7 && hour < 12) return 'matin';
+        if (hour === 12) return 'midi';
+        if (hour > 12 && hour < 17) return 'après-midi';
+        if (hour >= 17 && hour < 19) return 'soir';
+        if (hour >= 19 || hour < 5) return 'nuit';
+        return 'jour';
     }
 
     getSunPosition(width, height) {
         const { hour, minute } = this.getTime();
-        const t = (hour + minute / 60 - 6) / 12; // 6h -> 0, 18h -> 1
-        const angle = t * Math.PI; // horizon to horizon
+        const t = (hour + minute / 60) / 24;
+        const angle = t * Math.PI * 2 - Math.PI / 2;
         const radiusX = width / 2;
         const radiusY = height / 2;
         const centerX = width / 2;
-        const centerY = height * 0.9;
+        const centerY = height / 2;
         const x = centerX + Math.cos(angle) * radiusX;
-        const y = centerY - Math.sin(angle) * radiusY;
+        const y = centerY + Math.sin(angle) * radiusY * 0.6;
         return { x, y };
     }
 
     getMoonPosition(width, height) {
         const { hour, minute } = this.getTime();
-        const t = (hour + minute / 60 - 18) / 12; // 18h -> 0, 6h -> 1
-        const angle = t * Math.PI;
+        const t = (hour + minute / 60) / 24;
+        const angle = t * Math.PI * 2 + Math.PI / 2;
         const radiusX = width / 2;
         const radiusY = height / 2;
         const centerX = width / 2;
-        const centerY = height * 0.9;
+        const centerY = height / 2;
         const x = centerX + Math.cos(angle) * radiusX;
-        const y = centerY - Math.sin(angle) * radiusY;
+        const y = centerY + Math.sin(angle) * radiusY * 0.6;
         return { x, y };
     }
 
     getSkyGradient() {
-        const { hour, minute } = this.getTime();
-        const t = hour + minute / 60;
-        if (t < 6) return ['#1b2236','#101022'];
-        if (t < 8) return ['#FFD580','#568DC8'];
-        if (t < 11) return ['#AEE6FF','#86B1E2'];
-        if (t < 15) return ['#87CEEB','#FFFACD'];
-        if (t < 18) return ['#FFD580','#FFB347'];
-        if (t < 21) return ['#FF9A22','#7A3A1D'];
-        return ['#1b2236','#101022'];
+        const { hour } = this.getTime();
+        if (hour < 5 || hour >= 19) return ['#0f2027', '#203a43']; // Nuit
+        if (hour < 7) return ['#2c5364', '#f2994a']; // Aube
+        if (hour < 17) return ['#87CEEB', '#4682B4']; // Jour
+        return ['#f2994a', '#d66d75']; // Soir
     }
 
     formatDateTime() {
@@ -92,12 +91,16 @@ export class TimeSystem {
     }
 }
 
-export function updateCalendarUI(timeSystem, elements) {
-    if (!elements) return;
-    const { day, month, year } = timeSystem.getDate();
-    const { hour, minute } = timeSystem.getTime();
+export function updateCalendarUI(timeSystem, uiElements) {
+    if (!timeSystem || !uiElements) return;
+
+    const { date, time, stage } = uiElements;
+    const dateInfo = timeSystem.getDate();
+    const timeInfo = timeSystem.getTime();
+    const stageInfo = timeSystem.getStage();
     const pad = n => n.toString().padStart(2, '0');
-    if (elements.date) elements.date.textContent = `Jour ${day}, Mois ${month}, Année ${year}`;
-    if (elements.time) elements.time.textContent = `${pad(hour)}:${pad(minute)}`;
-    if (elements.stage) elements.stage.textContent = timeSystem.getStage();
+
+    if (date) date.textContent = `Jour ${dateInfo.day}, Mois ${dateInfo.month}, Année ${dateInfo.year}`;
+    if (time) time.textContent = `Heure: ${pad(timeInfo.hour)}:${pad(timeInfo.minute)}`;
+    if (stage) stage.textContent = `Phase: ${stageInfo.charAt(0).toUpperCase() + stageInfo.slice(1)}`;
 }
