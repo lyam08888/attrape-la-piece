@@ -47,6 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     Object.assign(config, options);
 
     const canvas = document.getElementById('gameCanvas');
+
+    function resizeCanvas() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     const engine = new GameEngine(canvas, config);
 
     const optionsMenu = document.getElementById('optionsMenu');
@@ -105,6 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         mobileModeCheckbox.addEventListener('change', () => {
             config.mobileMode = mobileModeCheckbox.checked;
             document.body.classList.toggle('mobile-mode', config.mobileMode);
+            resizeCanvas();
         });
 
         soundSlider.addEventListener('input', () => {
