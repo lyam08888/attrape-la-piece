@@ -480,8 +480,8 @@ const screenRightEdge = game.camera.x + ui.canvas.offsetWidth / gameSettings.zoo
         if (Math.random() < 0.015) {
             const animalData = generateAnimal();
             const { tileSize } = config;
-            const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
-            const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.clientHeight / gameSettings.zoom);
+const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.offsetWidth / gameSettings.zoom);
+const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.offsetHeight / gameSettings.zoom);
             
             if (animalData.movement === 'fly') {
                  const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
