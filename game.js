@@ -624,8 +624,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.clientWidth / gameSettings.zoom) / 2;
-        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.clientHeight / gameSettings.zoom) / 2;
+const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.offsetWidth / gameSettings.zoom) / 2;
+const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.offsetHeight / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
