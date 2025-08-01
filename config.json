@@ -83,9 +83,6 @@
     "tile_obsidian": "assets/tiles/obsidian.png",
     "tile_lava": "assets/tiles/lava.png",
 
-    "enemy_slime": "assets/enemy_slime.png",
-    "enemy_frog": "assets/enemy_frog.png",
-    "enemy_golem": "assets/enemy_golem.png",
     "tool_pickaxe": "assets/tool_pickaxe.png",
     "tool_shovel": "assets/tool_shovel.png",
     "tool_axe": "assets/tool_axe.png",
