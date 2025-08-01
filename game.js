@@ -189,10 +189,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
         game.player.survivalItems = randomItem(5);
         game.chests.forEach(ch => { ch.items = randomItem(3); });
-        worldAnimator = new WorldAnimator(config, assets);
-        timeSystem = new TimeSystem();
-        updateCamera(true);
+       worldAnimator = new WorldAnimator(config, assets);
+       timeSystem = new TimeSystem();
+       updateCamera(true);
+        sound.stopMusic();
         sound.startAmbient();
+        sound.startMusic();
 
         if(ui.mainMenu) {
             [ui.mainMenu, ui.optionsMenu].forEach(m => m?.classList.remove('active'));
@@ -444,10 +446,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         game.over = true;
         if (ui.gameTitle) ui.gameTitle.style.display = 'block';
         if(ui.message) ui.message.innerHTML = win ? `🎉 Victoire! 🎉` : `💀 Game Over 💀`;
-        ui.hud?.classList.remove('active');
-        ui.gameover?.classList.add('active');
-        sound.stopAmbient();
-    }
+       ui.hud?.classList.remove('active');
+       ui.gameover?.classList.add('active');
+       sound.stopAmbient();
+        sound.stopMusic();
+   }
 
     function updateParticles() {
         if (!game) return;
