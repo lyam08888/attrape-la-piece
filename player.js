@@ -27,11 +27,12 @@ export class Player {
         this.animTimer = 0;
         this.animFrame = 0;
         
-        this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
+        // CORRECTION: Utiliser des noms d'outils valides qui existent dans TOOL_DATA
+        this.tools = ['stone_pickaxe', 'stone_shovel', 'stone_axe', 'knife', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
         this.quests = [];
-        this.isSwimming = false; // Pour la physique de l'eau
+        this.isSwimming = false;
 
         this.level = 1;
         this.xp = 0;
@@ -89,9 +90,9 @@ export class Player {
         const accel = this.grounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
 
         if (this.isSwimming) {
-            this.vy *= 0.9; // Ralentissement dans l'eau
+            this.vy *= 0.9;
             this.vx *= 0.9;
-            if (keys.jump) this.vy -= 0.4; // Nager vers le haut
+            if (keys.jump) this.vy -= 0.4;
             if (keys.down) this.vy += 0.2;
 
             if (keys.left) { this.vx = Math.max(this.vx - accel * 0.5, -speed * 0.7); this.dir = -1; } 
@@ -121,12 +122,12 @@ export class Player {
             if (keys.jump && this.posture === 'standing') {
                 if (this.grounded) {
                     this.vy = -jumpForce;
-                    this.sound?.playJump();
+                    this.sound?.play('jump');
                     this.canDoubleJump = true;
                     this.doubleJumped = false;
                 } else if (this.canDoubleJump) {
                     this.vy = -jumpForce * 0.8;
-                    this.sound?.playJump();
+                    this.sound?.play('jump');
                     this.canDoubleJump = false;
                     this.doubleJumped = true;
                 }
@@ -150,7 +151,7 @@ export class Player {
     
     updateStateAndAnimation() {
         if (this.isSwimming) {
-            this.state = 'swimming'; // Vous devrez ajouter une animation 'swimming'
+            this.state = 'swimming';
         } else if (this.flying) {
             this.state = 'flying';
         } else if (!this.grounded) {
@@ -181,7 +182,6 @@ export class Player {
     }
 
     handleActions(keys, mouse, game) {
-        // Interaction avec l'environnement (PNJ, Coffres)
         if (keys.action) {
             for (const pnj of game.pnjs) {
                 if (this.rectCollide(pnj)) {
@@ -197,10 +197,9 @@ export class Player {
             }
         }
 
-        // Attaque
-        const attackTools = ['sword', 'knife', 'axe', 'pickaxe'];
+        const attackTools = ['sword', 'knife', 'stone_axe', 'stone_pickaxe'];
         const selectedTool = this.tools[this.selectedToolIndex];
-        if (mouse.left && attackTools.includes(selectedTool) && this.swingTimer <= 0) {
+        if (mouse.left && attackTools.some(t => selectedTool.includes(t)) && this.swingTimer <= 0) {
             this.swingTimer = 30;
             this.attackNearbyEnemies(game);
         }
@@ -241,8 +240,8 @@ export class Player {
     getDamage() {
         const tool = this.tools[this.selectedToolIndex];
         let baseDamage = 1;
-        if (tool === 'sword') baseDamage = 10;
-        if (tool === 'knife') baseDamage = 5;
+        if (tool.includes('sword')) baseDamage = 10;
+        if (tool.includes('knife')) baseDamage = 5;
         return baseDamage + this.attributes.strength * 2;
     }
 
@@ -383,12 +382,13 @@ export class Player {
         ctx.restore();
 
         const selectedToolName = this.tools[this.selectedToolIndex];
-        if (selectedToolName) {
+        if (selectedToolName && this.state !== 'swimming') { // Ne pas montrer l'outil en nageant
             const toolAsset = assets[`tool_${selectedToolName}`];
             if (toolAsset) {
                 ctx.save();
                 
-                const toolSize = this.w * 0.05;
+                // CORRECTION: Augmenter la taille de l'outil pour le rendre visible
+                const toolSize = this.w * 0.8;
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
                 const handOffsetY = this.h * 0.6;
                 const pivotX = this.x + handOffsetX;
