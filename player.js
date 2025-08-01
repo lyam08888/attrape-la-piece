@@ -79,7 +79,7 @@ export class Player {
                 const key = item.tileType;
                 this.inventory[key] = (this.inventory[key] || 0) + 1;
                 const tileName = Object.keys(TILE).find(k=>TILE[k]===key) || "Objet";
-                game.logger.log(`+1 ${tileName}`);
+                if (game.logger) game.logger.log(`+1 ${tileName}`);
                 game.collectibles.splice(i, 1);
             }
         }
@@ -110,7 +110,9 @@ export class Player {
     }
 
     updateMiningTarget(mouse, game) {
-        if (!game.camera) return; // Sécurité pour éviter le crash au démarrage
+        // CORRECTION : Ajout d'une vérification pour éviter le crash si la souris ou la caméra n'est pas prête.
+        if (!game.camera || !mouse) return;
+        
         const { tileSize, zoom } = game.config;
         const reach = (this.config.player.reach || 4) * tileSize;
         const mouseWorldX = game.camera.x + mouse.x / zoom;
