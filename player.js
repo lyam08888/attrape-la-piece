@@ -189,13 +189,13 @@ export class Player {
 
     handleActions(keys, mouse, game) {
         if (keys.action) {
-            for (const pnj of game.pnjs) {
+            for (const pnj of (game.pnjs || [])) {
                 if (this.rectCollide(pnj)) {
                     game.startDialogue(pnj);
-                    return; 
+                    return;
                 }
             }
-            for (const chest of game.chests) {
+            for (const chest of (game.chests || [])) {
                 if (this.rectCollide(chest)) {
                     if (game.openChest) game.openChest(chest);
                     return;
@@ -222,7 +222,7 @@ export class Player {
             h: hb.h
         };
 
-        for (const enemy of game.enemies) {
+        for (const enemy of (game.enemies || [])) {
             if (!enemy || enemy.isDead || enemy.isDying) continue;
             if (typeof enemy.rectCollide === 'function' && enemy.rectCollide(attackBox)) {
                 if (typeof enemy.takeDamage === 'function') {
@@ -234,13 +234,15 @@ export class Player {
 
     addXP(amount, game) {
         this.xp += amount;
-        game.createParticles(this.x + this.w / 2, this.y, 5, '#ffff66');
+        if (game.createParticles) {
+            game.createParticles(this.x + this.w / 2, this.y, 5, '#ffff66');
+        }
         while (this.xp >= this.xpToNext && this.level < 999) {
             this.xp -= this.xpToNext;
             this.level++;
             this.skillPoints++;
             this.xpToNext = Math.floor(this.xpToNext * 1.1 + 50);
-            game.showLevelPopup(this.level);
+            if (game.showLevelPopup) game.showLevelPopup(this.level);
         }
     }
 
@@ -286,6 +288,11 @@ export class Player {
     }
 
     handleTileCollisions(game) {
+        if (!game.tileMap) {
+            this.x += this.vx;
+            this.y += this.vy;
+            return;
+        }
         const { tileSize } = this.config;
         const map = game.tileMap;
         const worldH = map.length;
@@ -359,11 +366,11 @@ export class Player {
                 }
             }
         };
-        collect(game.coins, () => game.addXP(5));
-        collect(game.bonuses, () => {
-            if (game.lives < game.config.player.maxLives) game.lives++;
+        collect(game.coins || [], () => game.addXP(5));
+        collect(game.bonuses || [], () => {
+            if (game.lives < (game.config?.player?.maxLives || Infinity)) game.lives++;
         });
-        collect(game.collectibles, item => {
+        collect(game.collectibles || [], item => {
             const key = item.tileType;
             this.inventory[key] = (this.inventory[key] || 0) + 1;
         });
