@@ -16,21 +16,26 @@ export class GameEngine {
     }
 
     async loadAssets() {
+        console.log("Chargement des assets...");
         const promises = [];
-        const allAssetPaths = { ...this.config.assets };
+        const allAssetKeys = new Set(Object.keys(this.config.assets));
 
-        // Ajouter les assets des animations du joueur
+        // Ajouter les assets des animations du joueur à la liste de chargement
         if (this.config.playerAnimations) {
-            for (const anim of Object.values(this.config.playerAnimations)) {
-                for (const frameKey of anim) {
-                    if (this.config.assets[frameKey] && !allAssetPaths[frameKey]) {
-                        allAssetPaths[frameKey] = this.config.assets[frameKey];
-                    }
+            for (const animFrames of Object.values(this.config.playerAnimations)) {
+                for (const frameKey of animFrames) {
+                    allAssetKeys.add(frameKey);
                 }
             }
         }
 
-        for (const [key, path] of Object.entries(allAssetPaths)) {
+        for (const key of allAssetKeys) {
+            const path = this.config.assets[key];
+            if (!path) {
+                console.warn(`Chemin manquant pour l'asset '${key}' dans config.json`);
+                continue;
+            }
+
             promises.push(new Promise((resolve) => {
                 const img = new Image();
                 img.src = path; // Les chemins sont relatifs à index.html
@@ -40,7 +45,7 @@ export class GameEngine {
                 };
                 img.onerror = () => {
                     console.warn(`Impossible de charger l'asset: ${path}. Une image placeholder sera utilisée.`);
-                    // Créer une image placeholder
+                    // Créer une image placeholder pour ne pas faire planter le jeu
                     const placeholder = document.createElement('canvas');
                     placeholder.width = this.config.tileSize || 16;
                     placeholder.height = this.config.tileSize || 16;
@@ -53,12 +58,12 @@ export class GameEngine {
             }));
         }
         await Promise.all(promises);
-        console.log("Tous les assets ont été traités.", this.assets);
+        console.log("Tous les assets ont été traités.", Object.keys(this.assets).length, "assets chargés.");
     }
 
     setupInput() {
         document.addEventListener('keydown', e => {
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused()) return;
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'KeyI', 'KeyP', 'KeyC', 'KeyJ', 'F3'].includes(e.code)) return;
 
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
@@ -70,6 +75,12 @@ export class GameEngine {
             if (e.code.startsWith('Digit')) {
                 const index = parseInt(e.code.replace('Digit', '')) - 1;
                 if (this.gameLogic.selectTool) this.gameLogic.selectTool(index);
+            }
+            
+            // Commandes des menus
+            if (e.code === 'KeyO' || e.code === 'Escape') {
+                e.preventDefault();
+                if (this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
             }
         });
 
@@ -106,22 +117,25 @@ export class GameEngine {
 
     start(gameLogic) {
         this.gameLogic = gameLogic;
-        this.loadAssets()
-            .then(() => {
-                this.setupInput();
-                if (this.gameLogic.init) {
-                    this.gameLogic.init(this.assets);
-                }
-                const loop = (time) => {
-                    if (!this.gameLogic.isPaused()) {
-                        this.gameLogic.update(this.keys, this.mouse);
+        
+        // L'événement 'start-game' est déclenché depuis index.html
+        document.addEventListener('start-game', () => {
+            this.loadAssets()
+                .then(() => {
+                    this.setupInput();
+                    if (this.gameLogic.init) {
+                        this.gameLogic.init(this.assets);
                     }
-                    // Le nettoyage du canvas est maintenant géré dans la logique de dessin du jeu
-                    this.gameLogic.draw(this.ctx, this.assets);
+                    const loop = (time) => {
+                        if (!this.gameLogic.isPaused()) {
+                            this.gameLogic.update(this.keys, this.mouse);
+                        }
+                        this.gameLogic.draw(this.ctx, this.assets);
+                        requestAnimationFrame(loop);
+                    };
                     requestAnimationFrame(loop);
-                };
-                requestAnimationFrame(loop);
-            })
-            .catch(err => console.error("Erreur critique lors du démarrage du moteur:", err));
+                })
+                .catch(err => console.error("Erreur critique lors du démarrage du moteur:", err));
+        });
     }
 }
