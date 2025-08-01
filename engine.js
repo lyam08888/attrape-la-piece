@@ -49,10 +49,6 @@
              allAssetPaths[`player${i+1}`] = baseUrl ? baseUrl + skinPath : skinPath;
          });
  
-         const custom = localStorage.getItem('customPlayer1');
-         if (custom) {
-             allAssetPaths['player1'] = custom;
-         }
  
         for (const [key, path] of Object.entries(allAssetPaths)) {
             promises.push(new Promise((resolve) => {

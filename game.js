@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainMenu: document.getElementById('mainMenu'),
         optionsMenu: document.getElementById('optionsMenu'),
         controlsMenu: document.getElementById('controlsMenu'),
-        creatorMenu: document.getElementById('creatorMenu'),
-        skinlist: document.getElementById('skinlist'),
         hud: document.getElementById('hud'),
         lives: document.getElementById('lives'),
         gameover: document.getElementById('gameover'),
@@ -82,18 +80,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setupMenus(_assets) {
         assets = _assets;
         if (!ui.mainMenu) { initGame(); return; }
-        ui.skinlist.innerHTML = '';
-        config.skins.forEach((_, i) => {
-            const asset = assets[`player${i+1}`];
-            if (!asset) {
-                logger.error(`Skin player${i+1} manquant`);
-                return;
-            }
-            const img = asset.cloneNode();
-            img.onclick = () => selectSkin(i);
-            if (i === currentSkin) img.classList.add("selected");
-            ui.skinlist.appendChild(img);
-        });
         
         document.body.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
@@ -155,7 +141,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     function handleMenuAction(action) {
         switch(action) {
             case 'start': initGame(); break;
-            case 'creator': showMenu(ui.creatorMenu); break;
             case 'options': showMenu(ui.optionsMenu); break;
             case 'backToMain': showMenu(ui.mainMenu); break;
             case 'closeMenu': toggleMenu(false, 'controls'); break;
@@ -306,13 +291,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function showMenu(menuToShow) {
-        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu, ui.creatorMenu].forEach(m => m?.classList.remove('active'));
+        [ui.mainMenu, ui.optionsMenu, ui.controlsMenu].forEach(m => m?.classList.remove('active'));
         menuToShow?.classList.add('active');
-    }
-
-    function selectSkin(i) {
-        currentSkin = i;
-        [...ui.skinlist.children].forEach((img, index) => img.classList.toggle("selected", index === i));
     }
 
     function findSpawnPoint() {

@@ -101,9 +101,6 @@
             width: 100%;
         }
         .option-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        #skinlist { display: flex; gap: 16px; margin-bottom: 24px; justify-content: center; flex-wrap: wrap;}
-        #skinlist img { width: 64px; height: 64px; border: 4px solid #505050; cursor: pointer; }
-        #skinlist img.selected { border-color: var(--mario-orange); }
         #hud { 
             justify-content: flex-start; 
             pointer-events: none; 
@@ -188,20 +185,6 @@
         .skill-row {
             margin-bottom: 6px;
         }
-        /* Character creator styles */
-        #creatorParts { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:10px; }
-        .creator-part { background:#1a1b1e; border-radius:7px; padding:7px 10px; margin:2px; }
-        #creatorMenu label { font-size:.95em; color:#ffe01b; }
-        #creatorMenu select, #creatorMenu input[type=color] { margin-top:3px; margin-bottom:2px; }
-        #creatorPreview {
-            width: 96px;
-            height: 96px;
-            background:#191b22;
-            border:2px solid #ffe01b;
-            margin:14px auto;
-            image-rendering:pixelated;
-        }
-        #creatorDownload { margin-top:12px; background:#ffe01b; color:#181b2a; font-weight:bold; border-radius:8px; border:none; padding:8px 20px; font-size:1em; cursor:pointer; }
         .inv-grid { display:grid; grid-template-columns:repeat(4,60px); gap:6px; margin:10px 0; }
         .inventory-slot { width:60px; height:60px; border:2px solid #888; background:rgba(0,0,0,0.5); border-radius:4px; position:relative; display:flex; align-items:center; justify-content:center; }
         .inventory-slot img { width:80%; height:80%; image-rendering:pixelated; }
@@ -229,10 +212,8 @@
         
         <div id="mainMenu" class="overlay active">
             <div class="menu-box">
-                <h2 id="menuTitle">Choisissez un héros</h2>
-                <div id="skinlist"></div>
+                <h2 id="menuTitle">MENU PRINCIPAL</h2>
                 <button data-action="start">START GAME</button>
-                <button data-action="creator">CRÉER JOUEUR</button>
                 <button data-action="options">OPTIONS</button>
             </div>
         </div>
@@ -282,16 +263,6 @@
             </div>
         </div>
 
-        <div id="creatorMenu" class="overlay">
-            <div class="menu-box">
-                <h2>CRÉER SON JOUEUR</h2>
-                <div id="creatorParts"></div>
-                <canvas id="creatorPreview" width="48" height="48"></canvas><br>
-                <button id="creatorDownload">Télécharger PNG</button>
-                <button id="creatorSave">Utiliser ce personnage</button>
-                <button data-action="backToMain">RETOUR</button>
-            </div>
-        </div>
 
         <div id="inventoryMenu" class="overlay">
             <div class="menu-box">
@@ -353,6 +324,5 @@
     <script src="engine.js" type="module"></script>
     <script src="itemIcons.js" type="module"></script>
     <script src="game.js" type="module"></script>
-    <script src="creator.js" type="module"></script>
 </body>
 </html>
