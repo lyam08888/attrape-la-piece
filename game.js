@@ -50,7 +50,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     const engine = new GameEngine(canvas, config);
 
     const optionsMenu = document.getElementById('optionsMenu');
-    // ... (toute votre logique de gestion des menus reste identique)
+    const renderDistanceSlider = document.getElementById('renderDistanceSlider');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const particlesCheckbox = document.getElementById('particlesCheckbox');
+    const weatherCheckbox = document.getElementById('weatherCheckbox');
+    const lightingCheckbox = document.getElementById('lightingCheckbox');
+    const mobileModeCheckbox = document.getElementById('mobileModeCheckbox');
+    const soundSlider = document.getElementById('soundSlider');
+    const renderDistanceValue = document.getElementById('renderDistanceValue');
+    const zoomValue = document.getElementById('zoomValue');
+    const volumeValue = document.getElementById('volumeValue');
+
+    function syncOptionUI() {
+        renderDistanceSlider.value = config.renderDistance;
+        renderDistanceValue.textContent = `${config.renderDistance} chunks`;
+
+        zoomSlider.value = config.zoom;
+        zoomValue.textContent = `x${config.zoom}`;
+
+        particlesCheckbox.checked = config.showParticles;
+        weatherCheckbox.checked = config.weatherEffects;
+        lightingCheckbox.checked = config.dynamicLighting;
+        mobileModeCheckbox.checked = config.mobileMode;
+
+        soundSlider.value = config.soundVolume;
+        volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
+
+        document.body.classList.toggle('mobile-mode', config.mobileMode);
+    }
+
+    function setupOptionHandlers() {
+        renderDistanceSlider.addEventListener('input', () => {
+            config.renderDistance = parseInt(renderDistanceSlider.value);
+            renderDistanceValue.textContent = `${config.renderDistance} chunks`;
+        });
+
+        zoomSlider.addEventListener('input', () => {
+            config.zoom = parseFloat(zoomSlider.value);
+            zoomValue.textContent = `x${config.zoom}`;
+        });
+
+        particlesCheckbox.addEventListener('change', () => {
+            config.showParticles = particlesCheckbox.checked;
+        });
+
+        weatherCheckbox.addEventListener('change', () => {
+            config.weatherEffects = weatherCheckbox.checked;
+        });
+
+        lightingCheckbox.addEventListener('change', () => {
+            config.dynamicLighting = lightingCheckbox.checked;
+        });
+
+        mobileModeCheckbox.addEventListener('change', () => {
+            config.mobileMode = mobileModeCheckbox.checked;
+            document.body.classList.toggle('mobile-mode', config.mobileMode);
+        });
+
+        soundSlider.addEventListener('input', () => {
+            config.soundVolume = parseFloat(soundSlider.value);
+            volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
+            if (game.sound) game.sound.setVolume(config.soundVolume);
+        });
+    }
+
+    setupOptionHandlers();
+    syncOptionUI();
 
     const game = {
         config: config,
@@ -110,10 +175,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    function openOptionsMenu() { optionsMenu.classList.add('active'); }
+    function openOptionsMenu() {
+        syncOptionUI();
+        optionsMenu.classList.add('active');
+    }
     function closeOptionsMenu() {
         optionsMenu.classList.remove('active');
-        saveOptions({ /* ... */ });
+        saveOptions({
+            zoom: config.zoom,
+            renderDistance: config.renderDistance,
+            showParticles: config.showParticles,
+            weatherEffects: config.weatherEffects,
+            dynamicLighting: config.dynamicLighting,
+            soundVolume: config.soundVolume,
+            mobileMode: config.mobileMode
+        });
     }
     window.openOptionsMenu = openOptionsMenu;
     window.closeOptionsMenu = closeOptionsMenu;
