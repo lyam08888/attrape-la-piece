@@ -45,14 +45,13 @@
             filter: blur(4px) grayscale(50%);
         }
 
-        /* --- NOUVEL ÉCRAN TITRE --- */
+        /* --- NOUVEL ÉCRAN TITRE AMÉLIORÉ --- */
         #titleScreen {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             display: flex;
             z-index: 20;
-            background: linear-gradient(to top, #1c2e4a, #3a7bd5);
             transition: opacity 0.8s ease-out, transform 0.8s ease-out;
         }
         #titleScreen.hidden {
@@ -64,8 +63,15 @@
             flex: 3;
             position: relative;
             overflow: hidden;
-            background: linear-gradient(to top, #2c5364, #203a43, #0f2027);
+            background: linear-gradient(to top, #3a6ea5 0%, #173753 50%, #0f2027 100%);
+            animation: sky-cycle 120s linear infinite;
         }
+
+        @keyframes sky-cycle {
+            0%, 100% { background: linear-gradient(to top, #3a6ea5 0%, #173753 50%, #0f2027 100%); }
+            50% { background: linear-gradient(to top, #f08c00 0%, #a15c1e 50%, #1c2e4a 100%); }
+        }
+
         .parallax-layer {
             position: absolute;
             bottom: 0; left: 0;
@@ -74,26 +80,62 @@
             background-position: 0 100%;
             animation: slide linear infinite;
         }
-        #bg-mountains {
-            background-image: url(https://i.imgur.com/4l2M9xT.png); /* Montagnes pixel art */
+        
+        #stars {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-image: radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0;
+            animation: stars-fade 120s linear infinite;
+        }
+        @keyframes stars-fade {
+            25% { opacity: 0; }
+            50% { opacity: 0.8; }
+            75% { opacity: 0; }
+        }
+        
+        #sun {
+            position: absolute;
+            top: 10%; left: 10%;
+            width: 80px; height: 80px;
+            background: #f9a825;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #f9a825, 0 0 80px #f9a825;
+            animation: sun-path 120s linear infinite;
+        }
+        @keyframes sun-path {
+            0%, 100% { top: 10%; left: 10%; opacity: 1; }
+            25% { top: 5%; left: 45%; opacity: 1; }
+            50% { top: 10%; left: 80%; opacity: 1; }
+            75% { top: 50%; left: 110%; opacity: 0; }
+        }
+
+        #bg-mountains-far {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><polygon fill="%23173753" points="0,20 20,5 40,15 60,2 80,18 100,20"/></svg>') 0 100% / auto 150px;
             z-index: 1;
-            opacity: 0.4;
-            animation-duration: 120s;
+            opacity: 0.8;
+            animation-duration: 180s;
+        }
+        #bg-mountains-mid {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30"><polygon fill="%232c5364" points="0,30 15,10 30,25 50,5 75,28 85,15 100,30"/></svg>') 0 100% / auto 200px;
+            z-index: 2;
+            animation-duration: 100s;
         }
         #bg-forest {
-            background-image: url(https://i.imgur.com/JOmg3mP.png); /* Forêt pixel art */
-            z-index: 2;
-            opacity: 0.6;
-            animation-duration: 80s;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><polygon fill="%230f2027" points="0,50 10,20 20,50"/><polygon fill="%230f2027" points="15,50 25,10 35,50"/><polygon fill="%230f2027" points="30,50 40,25 50,50"/></svg>') 0 100% / auto 100px;
+            z-index: 3;
+            bottom: -10px;
+            animation-duration: 60s;
         }
         #pixel-hero {
             position: absolute;
             left: 50%;
-            bottom: 10%;
+            bottom: 5%;
             transform: translateX(-50%);
             width: 150px;
             height: 225px;
-            z-index: 3;
+            z-index: 4;
         }
         .pixel {
             position: absolute;
@@ -109,12 +151,12 @@
             height: 150%;
             background: linear-gradient(to bottom, rgba(255, 230, 180, 0.2) 0%, rgba(255,255,255,0) 80%);
             transform: rotate(25deg);
-            z-index: 4;
+            z-index: 5;
             animation: gentle-sway 15s ease-in-out infinite;
         }
         @keyframes gentle-sway {
-            0%, 100% { transform: rotate(20deg) scale(1); }
-            50% { transform: rotate(30deg) scale(1.05); }
+            0%, 100% { transform: rotate(20deg) scale(1); opacity: 0.8; }
+            50% { transform: rotate(30deg) scale(1.05); opacity: 1; }
         }
         @keyframes slide {
             from { transform: translateX(0); }
@@ -374,7 +416,10 @@
         
         <div id="titleScreen">
             <div id="art-pane">
-                <div class="parallax-layer" id="bg-mountains"></div>
+                <div id="stars"></div>
+                <div id="sun"></div>
+                <div class="parallax-layer" id="bg-mountains-far"></div>
+                <div class="parallax-layer" id="bg-mountains-mid"></div>
                 <div class="parallax-layer" id="bg-forest"></div>
                 <div id="pixel-hero"></div>
                 <div id="light-shaft"></div>
@@ -440,7 +485,7 @@
                 <h2>COMMANDES</h2>
                 <b>MOUVEMENT:</b><br>- GAUCHE/DROITE: Flèches / A,D<br>- SAUTER: Espace / Flèche Haut<br><br>
                 <b>ACTIONS:</b><br>- INTERAGIR: Touche 'E'<br>- ATTAQUER/MINER: Clic Gauche<br>- CHANGER D'OBJET: Molette<br><br>
-                <b>MENUS:</b><br>- INVENTAIRE: 'I' ou 'Tab'<br>- QUÊTES: 'J'<br>- CALENDRIER: 'C'<br>- COMPÉTENCES: 'P'<br>- OPTIONS: 'O' ou 'Échap'
+                <b>MENUS:</b><br>- INVENTAIRE: 'I' ou 'Tab'<br>- QUÊTES: 'J'<br>- COMPÉTENCES: 'P'<br>- OPTIONS: 'O' ou 'Échap'
                 <button data-action="closeMenu">RETOUR AU JEU</button>
             </div>
         </div>
