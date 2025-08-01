@@ -28,6 +28,15 @@ class Monster {
         if (this.health <= 0) {
             this.isDying = true; game.sound.play('enemy_die', { volume: 0.7 }); game.addXP(25);
             game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
+            
+            // --- GESTION DE QUÊTE ---
+            game.player.quests.forEach(quest => {
+                if (quest.status === 'active' && quest.type === 'hunt') {
+                    // Ici, on pourrait vérifier le type de monstre si c'était plus spécifique
+                    quest.objective.currentAmount++;
+                }
+            });
+
             setTimeout(() => { this.isDead = true; }, 300);
         }
     }
@@ -114,6 +123,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         calendarMenu: document.getElementById('calendarMenu'), calendarDate: document.getElementById('calendarDate'), calendarTime: document.getElementById('calendarTime'),
         calendarStage: document.getElementById('calendarStage'), closeCalendar: document.getElementById('closeCalendar'), skillsMenu: document.getElementById('skillsMenu'),
         skillPointsInfo: document.getElementById('skillPointsInfo'), skillRows: document.querySelectorAll('.skill-row'),
+        dialogueBox: document.getElementById('dialogueBox'),
+        dialoguePnjName: document.getElementById('dialoguePnjName'),
+        dialogueText: document.getElementById('dialogueText'),
+        dialogueOptions: document.getElementById('dialogueOptions'),
+        questLogMenu: document.getElementById('questLogMenu'),
+        questList: document.getElementById('questList'),
     };
 
     let game = {};
@@ -130,9 +145,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastFrame = performance.now();
     let cameraShake = { intensity: 0, duration: 0 };
     let stars = [];
-    const defaultGravity = config.physics.gravity; // Sauvegarder la gravité par défaut
+    const defaultGravity = config.physics.gravity;
 
-    // --- NIVEAUX DES COUCHES DU MONDE ---
     const PARADISE_LEVEL_Y = Math.floor(config.worldHeight * 0.1);
     const SPACE_LEVEL_Y = Math.floor(config.worldHeight * 0.2);
     const SURFACE_LEVEL_Y = Math.floor(config.worldHeight * 0.3);
@@ -141,7 +155,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const NUCLEUS_START_Y = Math.floor(config.worldHeight * 0.8);
     const HELL_START_Y = Math.floor(config.worldHeight * 0.9);
 
-    // --- PROPRIÉTÉS DE TOUS LES BLOCS POUR LE MINAGE ---
     const BLOCK_DATA = {
         [TILE.GRASS]:  { resistance: 25, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
         [TILE.DIRT]:   { resistance: 20, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
@@ -242,58 +255,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const inc = e.target.dataset.inc;
             if (inc) { increaseSkill(inc); }
         });
-        if (ui.renderDistanceSlider) {
-            ui.renderDistanceSlider.value = gameSettings.renderDistance;
-            ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-            ui.renderDistanceSlider.oninput = (e) => {
-                gameSettings.renderDistance = parseInt(e.target.value);
-                ui.renderDistanceValue.textContent = `${gameSettings.renderDistance} chunks`;
-            };
-        }
-        if (ui.zoomSlider) {
-            ui.zoomSlider.value = gameSettings.zoom;
-            ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-            ui.zoomSlider.oninput = (e) => {
-                gameSettings.zoom = parseFloat(e.target.value);
-                ui.zoomValue.textContent = `x${gameSettings.zoom}`;
-                updateCamera(true);
-            };
-        }
-        if (ui.particlesCheckbox) {
-            ui.particlesCheckbox.checked = gameSettings.showParticles;
-            ui.particlesCheckbox.onchange = (e) => { gameSettings.showParticles = e.target.checked; };
-        }
-        if (ui.weatherCheckbox) {
-            ui.weatherCheckbox.checked = gameSettings.weatherEffects;
-            ui.weatherCheckbox.onchange = (e) => { gameSettings.weatherEffects = e.target.checked; };
-        }
-        if (ui.lightingCheckbox) {
-            ui.lightingCheckbox.checked = gameSettings.dynamicLighting;
-            ui.lightingCheckbox.onchange = (e) => { gameSettings.dynamicLighting = e.target.checked; };
-        }
-        if (ui.soundSlider) {
-            ui.soundSlider.value = gameSettings.soundVolume;
-            ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
-            ui.soundSlider.oninput = (e) => {
-                gameSettings.soundVolume = parseFloat(e.target.value);
-                ui.volumeValue.textContent = `${Math.round(gameSettings.soundVolume*100)}%`;
-                sound.setVolume(gameSettings.soundVolume);
-            };
-        }
-        if(ui.btnRestart) ui.btnRestart.onclick = initGame;
     }
 
     function handleMenuAction(action) {
         switch(action) {
             case 'start': initGame(); break;
             case 'options': showMenu(ui.optionsMenu); break;
-            case 'backToMain': showMenu(ui.mainMenu); break;
-            case 'closeMenu': toggleMenu(false, 'controls'); break;
             case 'closeOptions': toggleMenu(false, 'options'); break;
             case 'closeInventory': toggleInventoryMenu(); break;
             case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
             case 'closeSkills': toggleSkillsMenu(); break;
             case 'closeCalendar': toggleCalendarMenu(); break;
+            case 'closeDialogue': closeDialogue(); break;
+            case 'acceptQuest': acceptQuest(); break;
+            case 'completeQuest': completeQuest(); break;
+            case 'closeQuestLog': toggleQuestLog(); break;
         }
     }
 
@@ -308,6 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 miningEffect: null,
                 playerBiome: 'surface',
                 lavaDamageTimer: 0,
+                interactingPNJ: null,
                 createParticles: (x, y, count, color, options) => createParticles(x, y, count, color, options),
                 startFallingBlock: (x, y, type) => startFallingBlock(x, y, type),
                 checkBlockSupport: (x, y) => checkBlockSupport(x, y),
@@ -318,6 +295,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             generateLevel(game, config, {});
             const spawnPoint = findSpawnPoint();
             game.player = new Player(spawnPoint.x, spawnPoint.y, config, sound);
+            game.player.quests = [];
             game.player.survivalItems = randomItem(5);
             game.chests.forEach(ch => { ch.items = randomItem(3); });
             worldAnimator = new WorldAnimator(config, assets);
@@ -391,13 +369,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function spawnPNJ() {
-        if (!game || game.pnjs.length > 0 || game.playerBiome !== 'surface') return;
-        const pnjData = generatePNJ();
-        const { tileSize } = config;
-        const spawnX = game.player.x + 100;
-        const spawnY = game.player.y - 50;
-        const newPNJ = new PNJ(spawnX, spawnY, config, pnjData);
-        game.pnjs.push(newPNJ);
+        if (!game || game.pnjs.length > 2 || game.playerBiome !== 'surface') return;
+        if (Math.random() < 0.005) {
+            const pnjData = generatePNJ();
+            const { tileSize } = config;
+            const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
+            const spawnTileX = Math.floor(spawnX / tileSize);
+            for (let y = SURFACE_LEVEL_Y; y < UNDERGROUND_START_Y; y++) {
+                if (game.tileMap[y+1]?.[spawnTileX] > TILE.AIR && game.tileMap[y]?.[spawnTileX] === TILE.AIR) {
+                    const newPNJ = new PNJ(spawnTileX * tileSize, y * tileSize, config, pnjData);
+                    game.pnjs.push(newPNJ);
+                    return;
+                }
+            }
+        }
     }
 
     function getBiomeAt(y) {
@@ -423,16 +408,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const player = game.player;
         if (!player) return;
 
-        // Réinitialiser la physique par défaut
         game.config.physics.gravity = defaultGravity;
         player.isSwimming = false;
 
         switch(game.playerBiome) {
             case 'space':
-                game.config.physics.gravity = defaultGravity * 0.15; // Gravité faible
+                game.config.physics.gravity = defaultGravity * 0.15;
                 break;
             case 'nucleus':
-                game.config.physics.gravity = -0.05; // Flottabilité
+                game.config.physics.gravity = -0.05;
                 player.isSwimming = true;
                 break;
         }
@@ -451,11 +435,109 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.lavaDamageTimer--;
             if (game.lavaDamageTimer <= 0) {
                 loseLife();
-                game.lavaDamageTimer = 60; // Dégâts toutes les secondes
+                game.lavaDamageTimer = 60;
             }
         } else {
             game.lavaDamageTimer = 60;
         }
+    }
+
+    function handlePNJInteraction(keys) {
+        if (!keys.action || game.interactingPNJ) return;
+        
+        const { player, pnjs } = game;
+        for (const pnj of pnjs) {
+            const dist = Math.hypot(player.x - pnj.x, player.y - pnj.y);
+            if (dist < config.tileSize * 2) {
+                startDialogue(pnj);
+                break;
+            }
+        }
+    }
+
+    function startDialogue(pnj) {
+        game.paused = true;
+        game.interactingPNJ = pnj;
+        
+        ui.dialoguePnjName.textContent = pnj.data.name;
+        
+        const quest = pnj.data.quest;
+        const playerQuest = game.player.quests.find(q => q.id === quest.id);
+
+        if (playerQuest) {
+            if (playerQuest.objective.currentAmount >= playerQuest.objective.amount) {
+                ui.dialogueText.textContent = quest.dialogues.complete;
+                ui.dialogueOptions.innerHTML = `<button data-action="completeQuest">Terminer la quête</button>`;
+            } else {
+                ui.dialogueText.textContent = quest.dialogues.incomplete;
+                ui.dialogueOptions.innerHTML = `<button data-action="closeDialogue">Je m'en occupe</button>`;
+            }
+        } else {
+            ui.dialogueText.textContent = quest.dialogues.offer;
+            ui.dialogueOptions.innerHTML = `
+                <button data-action="acceptQuest">Accepter</button>
+                <button data-action="closeDialogue">Refuser</button>
+            `;
+        }
+        
+        ui.dialogueBox.classList.add('active');
+    }
+
+    function closeDialogue() {
+        game.paused = false;
+        game.interactingPNJ = null;
+        ui.dialogueBox.classList.remove('active');
+    }
+
+    function acceptQuest() {
+        const quest = game.interactingPNJ.data.quest;
+        quest.status = 'active';
+        game.player.quests.push(quest);
+        closeDialogue();
+        updateQuestLogUI();
+    }
+
+    function completeQuest() {
+        const pnj = game.interactingPNJ;
+        const quest = pnj.data.quest;
+        
+        addXP(quest.reward.xp);
+        console.log(`Récompense: ${quest.reward.item.name}`);
+
+        quest.status = 'complete';
+        pnj.data.quest = generateQuest(pnj.data.archetype);
+
+        closeDialogue();
+        updateQuestLogUI();
+    }
+
+    function toggleQuestLog() {
+        if (!ui.questLogMenu) return;
+        game.paused = !game.paused;
+        ui.questLogMenu.classList.toggle('active');
+        if (ui.questLogMenu.classList.contains('active')) {
+            updateQuestLogUI();
+        }
+    }
+
+    function updateQuestLogUI() {
+        if (!ui.questList) return;
+        ui.questList.innerHTML = '';
+        const activeQuests = game.player.quests.filter(q => q.status === 'active');
+        if (activeQuests.length === 0) {
+            ui.questList.innerHTML = '<div class="quest-item">Aucune quête active.</div>';
+            return;
+        }
+
+        activeQuests.forEach(quest => {
+            const questItem = document.createElement('div');
+            questItem.className = 'quest-item';
+            questItem.innerHTML = `
+                <div class="quest-title">${quest.title}</div>
+                <div class="quest-progress">${quest.objective.currentAmount} / ${quest.objective.amount}</div>
+            `;
+            ui.questList.appendChild(questItem);
+        });
     }
 
     function update(keys, mouse) {
@@ -485,12 +567,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateCollectibles();
             handleMining(game, keys, mouse);
             handleBiomeDamage(game);
+            handlePNJInteraction(keys);
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
             spawnMonsters();
             spawnAnimals();
             spawnPNJ();
+
+            if (keys.action) keys.action = false;
+
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
             game.over = true;
