@@ -1,54 +1,65 @@
-// generateurQuete.js
-
 // --- BASES DE DONNÉES POUR LA GÉNÉRATION ---
 
 const RESOURCES = {
-    basic: [{ id: 'wood', name: 'Bois' }, { id: 'stone', name: 'Pierre' }],
-    rare: [{ id: 'coal', name: 'Charbon' }, { id: 'iron', name: 'Fer' }]
+    surface: [{ id: 'oak_wood', name: 'Bois de Chêne' }, { id: 'sand', name: 'Sable' }],
+    underground: [{ id: 'stone', name: 'Pierre' }, { id: 'coal', name: 'Charbon' }, { id: 'iron', name: 'Fer' }],
+    deep_underground: [{ id: 'gold', name: 'Or' }, { id: 'lapis', name: 'Lapis' }, { id: 'diamond', name: 'Diamant' }],
+    core: [{ id: 'crystal', name: 'Cristal' }, { id: 'amethyst', name: 'Améthyste' }],
+    hell: [{ id: 'hellstone', name: 'Pierre Infernale' }, { id: 'soul_sand', name: 'Sable des Âmes' }],
+    paradise: [{ id: 'cloud', name: 'Nuage' }, { id: 'heavenly_stone', name: 'Pierre Céleste' }],
 };
 
-const MONSTERS = [{ id: 'monster', name: 'Monstre' }];
+const MONSTERS = {
+    surface: [{ id: 'monster_surface', name: 'Monstre de la surface' }],
+    underground: [{ id: 'monster_underground', name: 'Créature des cavernes' }],
+    hell: [{ id: 'monster_hell', name: 'Démon' }],
+};
 
-const TOOLS = [{ id: 'pickaxe', name: 'Pioche' }, { id: 'axe', name: 'Hache' }];
+const TOOLS = [{ id: 'stone_pickaxe', name: 'Pioche en Pierre' }, { id: 'iron_axe', name: 'Hache en Fer' }];
 
 // --- MODÈLES DE QUÊTES PAR ARCHÉTYPE ---
 
 const QUEST_BLUEPRINTS = {
-    // Le forgeron demande des minerais et offre des outils/métaux.
     Forgeron: [
         {
-            type: 'gather',
-            actionText: 'récupérer',
-            targets: [...RESOURCES.basic, ...RESOURCES.rare],
-            amountRange: [5, 15],
-            rewardPool: [...TOOLS, ...RESOURCES.rare]
+            type: 'gather', actionText: 'récupérer',
+            targets: [...RESOURCES.underground, ...RESOURCES.deep_underground],
+            amountRange: [8, 20],
+            rewardPool: [...TOOLS, {id: 'iron', name: 'Lingot de Fer'}]
         },
         {
-            type: 'craft',
-            actionText: 'fabriquer',
-            targets: TOOLS,
-            amountRange: [1, 1],
-            rewardPool: [...RESOURCES.rare]
+            type: 'gather', actionText: 'rapporter',
+            targets: [...RESOURCES.hell],
+            amountRange: [5, 10],
+            rewardPool: [{id: 'diamond', name: 'Diamant'}, {id: 'obsidian', name: 'Obsidienne'}]
         }
     ],
-    // Le chasseur demande de chasser des monstres et offre des récompenses liées au combat.
     Chasseur: [
         {
-            type: 'hunt',
-            actionText: 'éliminer',
-            targets: MONSTERS,
-            amountRange: [3, 8],
+            type: 'hunt', actionText: 'éliminer',
+            targets: MONSTERS.surface,
+            amountRange: [5, 10],
             rewardPool: [{ id: 'sword', name: 'Épée' }, { id: 'bow', name: 'Arc' }]
+        },
+        {
+            type: 'hunt', actionText: 'chasser',
+            targets: MONSTERS.underground,
+            amountRange: [3, 7],
+            rewardPool: [{ id: 'gold', name: 'Pépites d\'Or' }]
         }
     ],
-    // L'herboriste demande des ressources naturelles.
     Herboriste: [
         {
-            type: 'gather',
-            actionText: 'cueillir',
-            targets: [{ id: 'leaves', name: 'Feuilles' }],
+            type: 'gather', actionText: 'cueillir',
+            targets: [{ id: 'leaves', name: 'Feuilles' }, { id: 'flower_red', name: 'Fleur Rouge' }],
             amountRange: [10, 20],
-            rewardPool: [{ id: 'potion', name: 'Potion' }] // Nouvel objet possible
+            rewardPool: [{ id: 'potion', name: 'Potion de Soin' }]
+        },
+        {
+            type: 'gather', actionText: 'trouver',
+            targets: [...RESOURCES.core],
+            amountRange: [3, 5],
+            rewardPool: [{ id: 'potion_xp', name: 'Potion d\'Expérience' }]
         }
     ]
 };
@@ -56,11 +67,7 @@ const QUEST_BLUEPRINTS = {
 // --- MODÈLES DE DIALOGUES ---
 
 const DIALOGUE_TEMPLATES = {
-    greeting: [
-        "Bonjour, aventurier.",
-        "Quelle journée...",
-        "Besoin de quelque chose ?"
-    ],
+    greeting: ["Bonjour, aventurier.", "Quelle journée...", "Besoin de quelque chose ?"],
     offer: [
         "J'aurais bien besoin d'un coup de main. Pourriez-vous m'aider à {actionText} {amount} {targetName} ?",
         "Si vous avez un moment, j'ai une tâche pour vous. Il me faudrait {amount} {targetName}.",
@@ -76,8 +83,6 @@ const DIALOGUE_TEMPLATES = {
         "Merci infiniment. Prenez ceci pour votre peine."
     ]
 };
-
-// --- FONCTION PRINCIPALE DE GÉNÉRATION ---
 
 function getRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -104,10 +109,10 @@ export function generateQuest(archetype) {
             xp: 50 + amount * 10,
             item: getRandom(blueprint.rewardPool)
         },
+        status: 'available', // available, active, complete
         dialogues: {}
     };
 
-    // Générer les dialogues
     quest.dialogues.greeting = getRandom(DIALOGUE_TEMPLATES.greeting);
     quest.dialogues.offer = getRandom(DIALOGUE_TEMPLATES.offer)
         .replace('{actionText}', blueprint.actionText)
