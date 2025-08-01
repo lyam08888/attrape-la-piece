@@ -41,7 +41,7 @@ class Enemy {
         if (this.vx > 0) {
             const tx = Math.floor((hb.x + hb.w) / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
-            const ty2 = Math.floor((hb.y + hb.h -1) / tileSize);
+            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
             if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
                 this.x = tx * tileSize - hb.w;
                 this.vx *= -1; // Change de direction
@@ -49,7 +49,7 @@ class Enemy {
         } else if (this.vx < 0) {
             const tx = Math.floor(hb.x / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
-            const ty2 = Math.floor((hb.y + hb.h -1) / tileSize);
+            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
              if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
                 this.x = (tx + 1) * tileSize;
                 this.vx *= -1; // Change de direction
@@ -63,11 +63,19 @@ class Enemy {
         if (this.vy > 0) {
             const ty = Math.floor((hb.y + hb.h) / tileSize);
             const tx1 = Math.floor(hb.x / tileSize);
-            const tx2 = Math.floor((hb.x + hb.w -1) / tileSize);
+            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
             if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
                 this.y = ty * tileSize - hb.h;
                 this.vy = 0;
                 this.grounded = true;
+            }
+        } else if (this.vy < 0) {
+            const ty = Math.floor(hb.y / tileSize);
+            const tx1 = Math.floor(hb.x / tileSize);
+            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+                this.y = (ty + 1) * tileSize;
+                this.vy = 0;
             }
         }
     }
