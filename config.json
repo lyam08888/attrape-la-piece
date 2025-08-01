@@ -44,11 +44,11 @@
      "reach": 4,
      "attackRange": 20
    },
-   "skins": [
-     "player1.png",
-     "player2.png",
-     "player3.png"
-   ],
+  "skins": [
+    "player_idle1.png",
+    "player_run1.png",
+    "player_walk1.png"
+  ],
    "assets": {
      "cloud": "assets/cloud.png",
      "tile_grass": "assets/tile_grass.png",
@@ -82,8 +82,10 @@
     "player_run1": "assets/player_run1.png",
     "player_run2": "assets/player_run2.png",
     "player_jump": "assets/player_jump.png",
-    "player_doublejump": "assets/player_doublejump.png",
-    "player_fly": "assets/player_fly.png",
+    "player_double_jump1": "assets/player_double_jump1.png",
+    "player_double_jump2": "assets/player_double_jump2.png",
+    "player_fly1": "assets/player_fly1.png",
+    "player_fly2": "assets/player_fly2.png",
     "player_crouch": "assets/player_crouch.png",
     "player_crouch_walk1": "assets/player_crouch_walk1.png",
     "player_crouch_walk2": "assets/player_crouch_walk2.png",
@@ -96,8 +98,8 @@
     "walking": ["player_walk1", "player_walk2"],
     "running": ["player_run1", "player_run2"],
     "jumping": ["player_jump"],
-    "doubleJump": ["player_doublejump"],
-    "flying": ["player_fly"],
+    "doubleJump": ["player_double_jump1", "player_double_jump2"],
+    "flying": ["player_fly1", "player_fly2"],
     "crouching": ["player_crouch"],
     "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
     "prone": ["player_prone"],
