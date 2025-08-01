@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
-            const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
+            const screenRightEdge = game.camera.x + ui.canvas.clientWidth / gameSettings.zoom + tileSize * 5;
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
             for (let i = 0; i < 10; i++) {
@@ -476,8 +476,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.015) { // Un peu plus fréquents que les monstres
             const animalData = generateAnimal();
             const { tileSize } = config;
-            const spawnX = game.player.x + (Math.random() - 0.5) * (canvas.width / gameSettings.zoom);
-            const spawnY = game.player.y + (Math.random() - 0.5) * (canvas.height / gameSettings.zoom);
+            const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
+            const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.clientHeight / gameSettings.zoom);
             
             // Logique de spawn spécifique
             if (animalData.movement === 'fly') {
@@ -606,8 +606,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.width / gameSettings.zoom) / 2;
-        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.height / gameSettings.zoom) / 2;
+        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.clientWidth / gameSettings.zoom) / 2;
+        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.clientHeight / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
@@ -617,8 +617,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.camera.y += (targetY - game.camera.y) * 0.1;
         }
         
-        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.width / gameSettings.zoom)));
-        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.height / gameSettings.zoom)));
+        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.clientWidth / gameSettings.zoom)));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.clientHeight / gameSettings.zoom)));
     }
 
     function drawTileMap(ctx, assets) {
