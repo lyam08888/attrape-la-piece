@@ -4,15 +4,13 @@ import { generateLevel, TILE } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
-import { updateMining } from './miningEngine.js';
+// import { updateMining } from './miningEngine.js'; // Remplacé par la logique interne
 import { TimeSystem, updateCalendarUI } from './calendar.js';
 import { randomItem } from './survivalItems.js';
 import { getItemIcon } from './itemIcons.js';
 import { getChestImage } from './chestGenerator.js';
-// NOUVEAU: Importation du générateur de monstres
 import { generateMonster } from './generateurMonstres.js';
 
-// NOUVEAU: Classe pour gérer les monstres
 class Monster {
     constructor(x, y, config, monsterData) {
         this.x = x;
@@ -61,28 +59,24 @@ class Monster {
 
         // --- Interaction avec le joueur ---
         const player = game.player;
-        // Vérification de collision AABB (Axis-Aligned Bounding Box)
         if (this.x < player.x + player.w &&
             this.x + this.w > player.x &&
             this.y < player.y + player.h &&
             this.y + this.h > player.y) {
 
-            // Si le joueur tombe sur le monstre
             if (player.vy > 0 && (player.y + player.h) < (this.y + this.h / 2)) {
                 this.isDead = true;
                 player.vy = -player.config.jumpForce * 0.6; // Petit rebond
-                game.sound.play('enemy_die', { volume: 0.7 }); // Joue un son (si défini)
+                game.sound.play('enemy_die', { volume: 0.7 });
                 game.addXP(25);
                 game.createParticles(this.x + this.w / 2, this.y + this.h / 2, 15, this.properties.bodyColor || '#888');
             } else {
-                // Sinon, le joueur est blessé
                 game.loseLife();
             }
         }
     }
 
     handleCollisions(game, tileSize) {
-        // Collision horizontale
         let nextX = this.x + this.vx;
         const xTile = Math.floor((nextX + (this.vx > 0 ? this.w : 0)) / tileSize);
         const yTileTop = Math.floor(this.y / tileSize);
@@ -90,22 +84,21 @@ class Monster {
 
         if (game.tileMap[yTileTop]?.[xTile] > TILE.AIR || game.tileMap[yTileBottom]?.[xTile] > TILE.AIR) {
             nextX = this.x;
-            this.direction *= -1; // Touche un mur, demi-tour
+            this.direction *= -1;
         }
         this.x = nextX;
 
-        // Collision verticale
         this.y += this.vy;
         const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
         const xTileLeft = Math.floor(this.x / tileSize);
         const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
         
         if (game.tileMap[yTile]?.[xTileLeft] > TILE.AIR || game.tileMap[yTile]?.[xTileRight] > TILE.AIR) {
-            if (this.vy > 0) { // Tombe sur le sol
+            if (this.vy > 0) {
                 this.y = yTile * tileSize - this.h;
                 this.vy = 0;
                 this.isGrounded = true;
-            } else if (this.vy < 0) { // Touche un plafond
+            } else if (this.vy < 0) {
                 this.y = yTile * tileSize + tileSize;
                 this.vy = 0;
             }
@@ -179,15 +172,96 @@ document.addEventListener('DOMContentLoaded', async () => {
         dynamicLighting: config.dynamicLighting,
         soundVolume: config.soundVolume
     };
-    let assets = {}; // Pour stocker les images chargées
+    let assets = {};
     let worldAnimator;
     let timeSystem;
     let debugMode = false;
     let fps = 0;
     let lastFrame = performance.now();
 
-    // --- Définition de TOUTES les fonctions de logique du jeu ---
-    // CORRECTION: Toutes les fonctions sont maintenant définies ici avant d'être utilisées.
+    // --- NOUVEAU: Logique de minage ---
+    const TOOL_EFFECTIVENESS = {
+        pickaxe: { [TILE.STONE]: 5, [TILE.COAL]: 5, [TILE.IRON]: 6 },
+        axe: { [TILE.WOOD]: 5 },
+        shovel: { [TILE.DIRT]: 5, [TILE.GRASS]: 5 }
+    };
+
+    const BLOCK_RESISTANCE = {
+        [TILE.DIRT]: 10,
+        [TILE.GRASS]: 12,
+        [TILE.WOOD]: 30,
+        [TILE.STONE]: 50,
+        [TILE.COAL]: 60,
+        [TILE.IRON]: 80,
+        [TILE.LEAVES]: 5,
+    };
+
+    function getToolDamage(toolName, tileType) {
+        if (TOOL_EFFECTIVENESS[toolName] && TOOL_EFFECTIVENESS[toolName][tileType]) {
+            return TOOL_EFFECTIVENESS[toolName][tileType];
+        }
+        // Les mains ou un outil inefficace font des dégâts de base
+        return 1;
+    }
+
+    function getBlockResistance(tileType) {
+        return BLOCK_RESISTANCE[tileType] || 100;
+    }
+    
+    function handleMining(game, mouse) {
+        const { tileSize } = game.config;
+        const { player } = game;
+
+        const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
+        const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
+        const tileX = Math.floor(mouseWorldX / tileSize);
+        const tileY = Math.floor(mouseWorldY / tileSize);
+
+        const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
+        if (dist > tileSize * 4) {
+            game.miningEffect = null;
+            return;
+        }
+
+        const tileType = game.tileMap[tileY]?.[tileX];
+        if (!mouse.left || !tileType || tileType === TILE.AIR) {
+            game.miningEffect = null;
+            return;
+        }
+
+        if (!game.miningEffect || game.miningEffect.x !== tileX || game.miningEffect.y !== tileY) {
+            game.miningEffect = {
+                x: tileX,
+                y: tileY,
+                progress: 0,
+                resistance: getBlockResistance(tileType)
+            };
+        }
+
+        const selectedToolName = player.tools[player.selectedToolIndex];
+        const damage = getToolDamage(selectedToolName, tileType);
+        
+        game.miningEffect.progress += damage;
+
+        if (game.miningEffect.progress >= game.miningEffect.resistance) {
+            game.collectibles.push({
+                x: tileX * tileSize, y: tileY * tileSize,
+                w: tileSize, h: tileSize, vy: -2, tileType: tileType
+            });
+
+            game.tileMap[tileY][tileX] = TILE.AIR;
+            game.sound.play('break_block', { volume: 0.5 });
+            game.createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 10, '#8B4513');
+            game.addXP(5);
+            
+            game.miningEffect = null;
+
+            game.checkBlockSupport(tileX, tileY - 1);
+            game.checkBlockSupport(tileX - 1, tileY);
+            game.checkBlockSupport(tileX + 1, tileY);
+        }
+    }
+
 
     function setupMenus(_assets) {
         assets = _assets;
@@ -319,17 +393,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 }
 
-    // NOUVEAU: Fonction pour faire apparaître les monstres
     function spawnMonsters() {
         if (!game || !game.player) return;
 
-        const MAX_MONSTERS = 5; // Nombre maximum de monstres à l'écran
+        const MAX_MONSTERS = 5;
         if (game.enemies.length >= MAX_MONSTERS) {
             return;
         }
         
-        // Tente de faire apparaître un monstre (faible probabilité à chaque frame)
-        if (Math.random() < 0.01) { // Probabilité augmentée pour le test
+        if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
             const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
@@ -337,8 +409,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
 
-            // Cherche une position de spawn valide (sur le sol)
-            for (let i = 0; i < 10; i++) { // 10 tentatives
+            for (let i = 0; i < 10; i++) {
                 const y = game.player.y + (Math.random() - 0.5) * 10 * tileSize;
                 const spawnTileY = Math.floor(y / tileSize);
 
@@ -346,7 +417,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const monsterData = generateMonster();
                     const newMonster = new Monster(spawnTileX * tileSize, spawnTileY * tileSize, config, monsterData);
                     game.enemies.push(newMonster);
-                    return; // Un seul monstre par appel
+                    return;
                 }
             }
         }
@@ -373,14 +444,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
-            updateMining(game, keys, mouse);
+            handleMining(game, mouse); // MODIFIÉ: Appel à la nouvelle logique de minage
             updateCamera(false);
             if (worldAnimator) worldAnimator.update(game.camera, ui.canvas, gameSettings.zoom);
             
             spawnMonsters();
 
             if (keys.action) keys.action = false;
-            mouse.left = false; mouse.right = false;
+            // Ne réinitialisez pas mouse.left ici pour permettre le minage en continu
         } catch (error) {
             logger.error(`Erreur update: ${error.message}`);
             game.over = true;
@@ -766,15 +837,18 @@ if (physics.realistic) {
 
     function drawMiningEffect(ctx) {
         if (game && game.miningEffect) {
-            const { x, y, progress } = game.miningEffect;
+            const { x, y, progress, resistance } = game.miningEffect;
             const { tileSize } = config;
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = 'white';
-            const crackWidth = tileSize * Math.min(1, progress * 2);
+            const progressRatio = progress / resistance;
+            
+            const crackWidth = tileSize * Math.min(1, progressRatio * 2);
             const crackHeight = 2;
             ctx.fillRect(x * tileSize + (tileSize - crackWidth) / 2, y * tileSize + tileSize / 2 - crackHeight / 2, crackWidth, crackHeight);
-            if (progress > 0.5) {
-                const crackWidth2 = tileSize * Math.min(1, (progress - 0.5) * 2);
+            
+            if (progressRatio > 0.5) {
+                const crackWidth2 = tileSize * Math.min(1, (progressRatio - 0.5) * 2);
                 const crackHeight2 = 2;
                 ctx.fillRect(x * tileSize + tileSize / 2 - crackHeight2 / 2, y * tileSize + (tileSize - crackWidth2) / 2, crackHeight2, crackWidth2);
             }
