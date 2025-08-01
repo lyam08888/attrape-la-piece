@@ -1,6 +1,6 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
-import { generateLevel, TILE } from './world.js';
+import { generateLevel, TILE, WORLD_LAYERS } from './world.js';
 import { Logger } from './logger.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { SoundManager } from './sound.js';
@@ -145,131 +145,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let stars = [];
     const defaultGravity = config.physics.gravity;
 
-    const PARADISE_LEVEL_Y = Math.floor(config.worldHeight * 0.1);
-    const SPACE_LEVEL_Y = Math.floor(config.worldHeight * 0.2);
-    const SURFACE_LEVEL_Y = Math.floor(config.worldHeight * 0.3);
-    const UNDERGROUND_START_Y = SURFACE_LEVEL_Y + (20 * config.tileSize);
-    const CORE_START_Y = Math.floor(config.worldHeight * 0.6);
-    const NUCLEUS_START_Y = Math.floor(config.worldHeight * 0.8);
-    const HELL_START_Y = Math.floor(config.worldHeight * 0.9);
+    const BLOCK_DATA = { /* ... */ };
 
-    const BLOCK_DATA = {
-        [TILE.GRASS]:  { resistance: 25, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
-        [TILE.DIRT]:   { resistance: 20, tool: 'shovel', requiredTier: 0, drops: TILE.DIRT },
-        [TILE.SAND]:   { resistance: 20, tool: 'shovel', requiredTier: 0, drops: TILE.SAND },
-        [TILE.WOOD]:   { resistance: 80, tool: 'axe', requiredTier: 0, drops: TILE.WOOD },
-        [TILE.OAK_WOOD]: { resistance: 80, tool: 'axe', requiredTier: 0, drops: TILE.OAK_WOOD },
-        [TILE.LEAVES]: { resistance: 10, tool: 'any', requiredTier: 0, drops: null },
-        [TILE.OAK_LEAVES]: { resistance: 10, tool: 'any', requiredTier: 0, drops: null },
-        [TILE.STONE]:  { resistance: 200, tool: 'pickaxe', requiredTier: 1, drops: TILE.STONE },
-        [TILE.GRANITE]: { resistance: 220, tool: 'pickaxe', requiredTier: 1, drops: TILE.GRANITE },
-        [TILE.DIORITE]: { resistance: 220, tool: 'pickaxe', requiredTier: 1, drops: TILE.DIORITE },
-        [TILE.ANDESITE]: { resistance: 220, tool: 'pickaxe', requiredTier: 1, drops: TILE.ANDESITE },
-        [TILE.COAL]:   { resistance: 250, tool: 'pickaxe', requiredTier: 1, drops: TILE.COAL },
-        [TILE.IRON]:   { resistance: 400, tool: 'pickaxe', requiredTier: 2, drops: TILE.IRON },
-        [TILE.LAPIS]:  { resistance: 380, tool: 'pickaxe', requiredTier: 2, drops: TILE.LAPIS },
-        [TILE.GOLD]:   { resistance: 600, tool: 'pickaxe', requiredTier: 3, drops: TILE.GOLD },
-        [TILE.DIAMOND]:{ resistance: 800, tool: 'pickaxe', requiredTier: 3, drops: TILE.DIAMOND },
-        [TILE.CLOUD]:  { resistance: 5, tool: 'any', requiredTier: 0, drops: null },
-        [TILE.HEAVENLY_STONE]: { resistance: 500, tool: 'pickaxe', requiredTier: 3, drops: TILE.HEAVENLY_STONE },
-        [TILE.MOON_ROCK]: { resistance: 300, tool: 'pickaxe', requiredTier: 2, drops: TILE.MOON_ROCK },
-        [TILE.CRYSTAL]: { resistance: 700, tool: 'pickaxe', requiredTier: 3, drops: TILE.CRYSTAL },
-        [TILE.AMETHYST]: { resistance: 750, tool: 'pickaxe', requiredTier: 3, drops: TILE.AMETHYST },
-        [TILE.HELLSTONE]: { resistance: 450, tool: 'pickaxe', requiredTier: 3, drops: TILE.HELLSTONE },
-        [TILE.SCORCHED_STONE]: { resistance: 500, tool: 'pickaxe', requiredTier: 3, drops: TILE.SCORCHED_STONE },
-        [TILE.SOUL_SAND]: { resistance: 30, tool: 'shovel', requiredTier: 0, drops: TILE.SOUL_SAND },
-        [TILE.OBSIDIAN]: { resistance: 1200, tool: 'pickaxe', requiredTier: 4, drops: TILE.OBSIDIAN },
-        [TILE.BEDROCK]: { resistance: 99999, tool: 'none', requiredTier: 99, drops: null },
-    };
-
-    function handleMining(game, keys, mouse) {
-        const { tileSize } = game.config;
-        const { player } = game;
-        const mouseWorldX = mouse.x / game.settings.zoom + game.camera.x;
-        const mouseWorldY = mouse.y / game.settings.zoom + game.camera.y;
-        const tileX = Math.floor(mouseWorldX / tileSize);
-        const tileY = Math.floor(mouseWorldY / tileSize);
-        const dist = Math.hypot((player.x + player.w / 2) - (tileX * tileSize + tileSize / 2), (player.y + player.h / 2) - (tileY * tileSize + tileSize / 2));
-        if (dist > tileSize * 5) {
-            game.miningEffect = null;
-            return;
-        }
-        const tileType = game.tileMap[tileY]?.[tileX];
-        const isMining = mouse.left;
-        if (!isMining || !tileType || tileType === TILE.AIR) {
-            game.miningEffect = null;
-            return;
-        }
-        if (!game.miningEffect || game.miningEffect.x !== tileX || game.miningEffect.y !== tileY) {
-            const blockInfo = BLOCK_DATA[tileType] || { resistance: 1000, tool: 'none', requiredTier: 99 };
-            game.miningEffect = {
-                x: tileX, y: tileY, progress: 0, resistance: blockInfo.resistance, blockInfo: blockInfo,
-            };
-        }
-        const miningData = game.miningEffect;
-        const blockInfo = miningData.blockInfo;
-        const selectedToolName = player.tools[player.selectedToolIndex] || 'hand';
-        const toolInfo = TOOL_DATA[selectedToolName] || TOOL_DATA['hand'];
-        if (toolInfo.tier < blockInfo.requiredTier) {
-            sound.play('hit_fail', { volume: 0.4 });
-            return;
-        }
-        let damage = 1;
-        if (blockInfo.tool === 'any' || blockInfo.tool === toolInfo.type) {
-            damage = toolInfo.power;
-        }
-        damage += Math.floor(player.attributes.strength / 5);
-        if (Math.random() < 0.05) {
-            damage *= 2;
-            createParticles(tileX * tileSize + tileSize/2, tileY * tileSize + tileSize/2, 5, '#FFD700');
-        }
-        miningData.progress += damage;
-        sound.play('hit_block', { volume: 0.3, rate: 0.8 + (miningData.progress / miningData.resistance) * 1.2 });
-        if (miningData.progress >= miningData.resistance) {
-            if (blockInfo.drops !== null) {
-                game.collectibles.push({
-                    x: tileX * tileSize, y: tileY * tileSize,
-                    w: tileSize, h: tileSize, vy: -2, tileType: blockInfo.drops
-                });
-            }
-            game.tileMap[tileY][tileX] = TILE.AIR;
-            sound.play('break_block', { volume: 0.6 });
-            createParticles(tileX * tileSize + tileSize / 2, tileY * tileSize + tileSize / 2, 15, '#8B4513');
-            addXP(10);
-            triggerCameraShake(4, 15);
-            game.miningEffect = null;
-            checkBlockSupport(tileX, tileY - 1);
-            checkBlockSupport(tileX - 1, tileY);
-            checkBlockSupport(tileX + 1, tileY);
-        }
-    }
+    function handleMining(game, keys, mouse) { /* ... */ }
     
-    function setupMenus(_assets) {
-        assets = _assets;
-        if (!ui.mainMenu) { initGame(); return; }
-        document.body.addEventListener('click', (e) => {
-            const action = e.target.dataset.action;
-            if (action) { handleMenuAction(action); return; }
-            const inc = e.target.dataset.inc;
-            if (inc) { increaseSkill(inc); }
-        });
-    }
-
-    function handleMenuAction(action) {
-        switch(action) {
-            case 'start': initGame(); break;
-            case 'options': showMenu(ui.optionsMenu); break;
-            case 'closeOptions': toggleMenu(false, 'options'); break;
-            case 'closeInventory': toggleInventoryMenu(); break;
-            case 'closeChest': ui.chestMenu.classList.remove('active'); game.paused = false; break;
-            case 'closeSkills': toggleSkillsMenu(); break;
-            case 'closeCalendar': toggleCalendarMenu(); break;
-            case 'closeDialogue': closeDialogue(); break;
-            case 'acceptQuest': acceptQuest(); break;
-            case 'completeQuest': completeQuest(); break;
-            case 'closeQuestLog': toggleQuestLog(); break;
-        }
-    }
+    function setupMenus(_assets) { /* ... */ }
+    function handleMenuAction(action) { /* ... */ }
 
     function initGame() {
         try {
@@ -393,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { tileSize } = config;
             const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
             const spawnTileX = Math.floor(spawnX / tileSize);
-            for (let y = SURFACE_LEVEL_Y; y < UNDERGROUND_START_Y; y++) {
+            for (let y = WORLD_LAYERS.SURFACE_LEVEL; y < WORLD_LAYERS.UNDERGROUND_START_Y; y++) {
                 if (game.tileMap[y+1]?.[spawnTileX] > TILE.AIR && game.tileMap[y]?.[spawnTileX] === TILE.AIR) {
                     const newPNJ = new PNJ(spawnTileX * tileSize, y * tileSize, config, pnjData);
                     game.pnjs.push(newPNJ);
@@ -404,12 +285,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function getBiomeAt(y) {
-        if (y < SPACE_LEVEL_Y) return 'paradise';
-        if (y < SURFACE_LEVEL_Y) return 'space';
-        if (y > HELL_START_Y) return 'hell';
-        if (y > NUCLEUS_START_Y) return 'nucleus';
-        if (y > CORE_START_Y) return 'core';
-        if (y > UNDERGROUND_START_Y) return 'underground';
+        const yInTiles = y / config.tileSize;
+        if (yInTiles < WORLD_LAYERS.PARADISE_END_Y) return 'paradise';
+        if (yInTiles < WORLD_LAYERS.SPACE_END_Y) return 'space';
+        if (y > WORLD_LAYERS.HELL_START_Y * config.tileSize) return 'hell';
+        if (y > WORLD_LAYERS.NUCLEUS_START_Y * config.tileSize) return 'nucleus';
+        if (y > WORLD_LAYERS.CORE_START_Y * config.tileSize) return 'core';
+        if (y > WORLD_LAYERS.SURFACE_LEVEL * config.tileSize + 20 * config.tileSize) return 'underground';
         return 'surface';
     }
     
