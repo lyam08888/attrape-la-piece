@@ -209,9 +209,11 @@ export class Player {
         };
 
         for (const enemy of game.enemies) {
-            if (enemy.isDead || enemy.isDying) continue;
-            if (enemy.rectCollide(attackBox)) {
-                enemy.takeDamage(game, this.getDamage());
+            if (!enemy || enemy.isDead || enemy.isDying) continue;
+            if (typeof enemy.rectCollide === 'function' && enemy.rectCollide(attackBox)) {
+                if (typeof enemy.takeDamage === 'function') {
+                    enemy.takeDamage(game, this.getDamage());
+                }
             }
         }
     }

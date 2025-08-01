@@ -76,5 +76,24 @@ export class SoundManager {
         }
     }
 
+    /**
+     * Generic play method used by the rest of the game. Since this project
+     * only uses synthesized tones, map known effect names to a short tone.
+     * Unknown names are ignored to avoid runtime errors.
+     */
+    play(name, opts = {}) {
+        const volume = opts.volume ?? 1;
+        switch (name) {
+            case 'enemy_die':
+                this.playTone(200, 0.2, 'square', 0.1 * volume);
+                break;
+            case 'break_block':
+                this.playTone(180, 0.15, 'square', 0.1 * volume);
+                break;
+            default:
+                console.warn(`Unknown sound: ${name}`);
+        }
+    }
+
     update() { if (this.stepCooldown > 0) this.stepCooldown--; }
 }
