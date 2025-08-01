@@ -176,10 +176,15 @@ class Animal {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
+    const DPR = window.devicePixelRatio || 1;
     // Match canvas resolution with the window size to avoid blurring
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        canvas.width = Math.floor(window.innerWidth * DPR);
+        canvas.height = Math.floor(window.innerHeight * DPR);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
@@ -451,7 +456,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.01) {
             const { tileSize } = config;
             const screenLeftEdge = game.camera.x - tileSize * 5;
-            const screenRightEdge = game.camera.x + canvas.width / gameSettings.zoom + tileSize * 5;
+            const screenRightEdge = game.camera.x + ui.canvas.clientWidth / gameSettings.zoom + tileSize * 5;
             const spawnX = Math.random() < 0.5 ? screenLeftEdge : screenRightEdge;
             const spawnTileX = Math.floor(spawnX / tileSize);
             for (let i = 0; i < 10; i++) {
@@ -475,8 +480,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Math.random() < 0.015) {
             const animalData = generateAnimal();
             const { tileSize } = config;
-            const spawnX = game.player.x + (Math.random() - 0.5) * (canvas.width / gameSettings.zoom);
-            const spawnY = game.player.y + (Math.random() - 0.5) * (canvas.height / gameSettings.zoom);
+            const spawnX = game.player.x + (Math.random() - 0.5) * (ui.canvas.clientWidth / gameSettings.zoom);
+            const spawnY = game.player.y + (Math.random() - 0.5) * (ui.canvas.clientHeight / gameSettings.zoom);
             
             if (animalData.movement === 'fly') {
                  const newAnimal = new Animal(spawnX, spawnY - 100, config, animalData);
@@ -619,8 +624,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function updateCamera(isInstant = false) {
         if (!game.player) return;
-        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.width / gameSettings.zoom) / 2;
-        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.height / gameSettings.zoom) / 2;
+        const targetX = (game.player.x + game.player.w / 2) - (ui.canvas.clientWidth / gameSettings.zoom) / 2;
+        const targetY = (game.player.y + game.player.h / 2) - (ui.canvas.clientHeight / gameSettings.zoom) / 2;
         
         if (isInstant) {
             game.camera.x = targetX;
@@ -630,8 +635,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.camera.y += (targetY - game.camera.y) * 0.1;
         }
         
-        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.width / gameSettings.zoom)));
-        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.height / gameSettings.zoom)));
+        game.camera.x = Math.max(0, Math.min(game.camera.x, config.worldWidth - (ui.canvas.clientWidth / gameSettings.zoom)));
+        game.camera.y = Math.max(0, Math.min(game.camera.y, config.worldHeight - (ui.canvas.clientHeight / gameSettings.zoom)));
     }
 
     function drawTileMap(ctx, assets) {
