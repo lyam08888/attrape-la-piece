@@ -6,16 +6,17 @@ export class PNJ {
         this.x = x;
         this.y = y;
         this.spawnX = x; // Point d'ancrage
-        this.w = config.tileSize;
-        this.h = config.tileSize * 1.5;
+        this.w = config.player.width;
+        this.h = config.player.height * 1.1; // Un peu plus grand que le joueur
         this.data = pnjData;
+        this.config = config;
         
         // --- Propriétés de mouvement ---
         this.vx = 0;
         this.vy = 0;
-        this.speed = config.tileSize * 0.01; // Vitesse de marche lente
+        this.speed = config.tileSize * 0.02; // Vitesse de marche lente
         this.direction = 1;
-        this.actionTimer = 120 + Math.random() * 120; // Temps avant de changer de direction
+        this.actionTimer = 120 + Math.random() * 120; // Temps avant de changer d'action
         this.isGrounded = false;
         
         this.image = this.createImage(pnjData.appearance, pnjData.archetype);
@@ -25,39 +26,29 @@ export class PNJ {
         let clothesSvg = '';
         const bodyColor = appearance.bodyColor;
 
-        // --- Vêtements spécifiques à l'archétype ---
         switch (archetype) {
             case 'Forgeron':
-                clothesSvg = `<rect x="25" y="60" width="50" height="70" fill="#6B4422" stroke="#44290c" stroke-width="2"/>`; // Tablier en cuir
+                clothesSvg = `<rect x="25" y="60" width="50" height="70" fill="#6B4422" stroke="#44290c" stroke-width="2"/>`;
                 break;
             case 'Chasseur':
-                clothesSvg = `<rect x="20" y="50" width="60" height="80" fill="#228B22" />`; // Tunique verte
+                clothesSvg = `<rect x="20" y="50" width="60" height="80" fill="#228B22" />`;
                 break;
             case 'Herboriste':
-                clothesSvg = `<rect x="15" y="50" width="70" height="90" fill="#A0522D" />`; // Robe marron
+                clothesSvg = `<rect x="15" y="50" width="70" height="90" fill="#A0522D" />`;
                 break;
         }
 
         const svg = `
             <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-                <!-- Corps (couleur de peau) -->
                 <rect x="10" y="50" width="80" height="100" fill="#F0D2B6" />
-                
-                <!-- Vêtements -->
                 ${clothesSvg}
-
-                <!-- Tête -->
                 ${
                     appearance.headShape === "circle"
                         ? `<circle cx="50" cy="25" r="25" fill="${bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
                         : `<rect x="25" y="0" width="50" height="50" fill="${bodyColor}" stroke="#1E1E1E" stroke-width="2"/>`
                 }
-                
-                <!-- Yeux -->
                 <circle cx="40" cy="25" r="4" fill="white" /><circle cx="40" cy="25" r="2" fill="black" />
                 <circle cx="60" cy="25" r="4" fill="white" /><circle cx="60" cy="25" r="2" fill="black" />
-
-                <!-- Bouche -->
                 <path d="M 40 40 Q 50 45 60 40" stroke="black" stroke-width="2" fill="none"/>
             </svg>
         `;
@@ -67,75 +58,61 @@ export class PNJ {
     }
 
     update(game) {
-        const { tileSize, physics } = game.config;
-        
-        // --- Logique de mouvement améliorée ---
         this.actionTimer--;
-        // Change de direction s'il atteint sa limite de patrouille ou après un certain temps
-        if (this.actionTimer <= 0 || this.x > this.spawnX + 50 || this.x < this.spawnX - 50) {
-            this.direction *= -1;
-            this.actionTimer = 300 + Math.random() * 300; // Pause plus longue avant de repartir
-        }
-
-        // Ne bouge que pendant une partie de son cycle
-        if (this.actionTimer < 180) {
-             this.vx = this.speed * this.direction;
-        } else {
-            this.vx = 0; // Fait une pause
-        }
-
-        this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
-
-        this.handleCollisions(game, tileSize);
-
-        // --- Mise à jour de l'état de la quête ---
-        const quest = this.data.quest;
-        const playerQuest = game.player.quests.find(q => q.id === quest.id);
-
-        if (playerQuest) {
-            if (playerQuest.objective.currentAmount >= playerQuest.objective.amount) {
-                this.questState = "completed";
-            } else {
-                this.questState = "active";
+        if (this.actionTimer <= 0) {
+            if (this.vx === 0) { // S'il était à l'arrêt, il se met à bouger
+                this.direction *= -1;
+                this.vx = this.speed * this.direction;
+            } else { // S'il bougeait, il s'arrête
+                this.vx = 0;
             }
-        } else {
-            this.questState = "available";
+            this.actionTimer = 180 + Math.random() * 180;
         }
+
+        this.vy += this.config.physics.gravity;
+        this.handleCollisions(game);
     }
     
-    handleCollisions(game, tileSize) {
+    handleCollisions(game) {
+        const { tileSize } = this.config;
         const map = game.tileMap;
 
-        // --- Collision Horizontale ---
-        let nextX = this.x + this.vx;
-        const xTile = Math.floor((nextX + (this.vx > 0 ? this.w : 0)) / tileSize);
-        const yTileTop = Math.floor(this.y / tileSize);
-        const yTileBottom = Math.floor((this.y + this.h - 1) / tileSize);
-        if (map[yTileTop]?.[xTile] > TILE.AIR || map[yTileBottom]?.[xTile] > TILE.AIR) {
-            nextX = this.x;
-            this.direction *= -1;
-            this.actionTimer = 300 + Math.random() * 300;
+        // Collision X
+        this.x += this.vx;
+        let hb = {x: this.x, y: this.y, w: this.w, h: this.h};
+        if (this.vx > 0) {
+            const tx = Math.floor((hb.x + hb.w) / tileSize);
+            const ty1 = Math.floor(hb.y / tileSize);
+            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
+            if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+                this.x = tx * tileSize - hb.w;
+                this.vx *= -1;
+                this.direction *= -1;
+            }
+        } else if (this.vx < 0) {
+            const tx = Math.floor(hb.x / tileSize);
+            const ty1 = Math.floor(hb.y / tileSize);
+            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
+             if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+                this.x = (tx + 1) * tileSize;
+                this.vx *= -1;
+                this.direction *= -1;
+            }
         }
-        this.x = nextX;
-        
-        // --- Collision Verticale ---
-        this.y += this.vy;
-        const yTile = Math.floor((this.y + (this.vy > 0 ? this.h : 0)) / tileSize);
-        const xTileLeft = Math.floor(this.x / tileSize);
-        const xTileRight = Math.floor((this.x + this.w - 1) / tileSize);
 
-        if (map[yTile]?.[xTileLeft] > TILE.AIR || map[yTile]?.[xTileRight] > TILE.AIR) {
-            if (this.vy > 0) {
-                this.y = yTile * tileSize - this.h;
+        // Collision Y
+        this.y += this.vy;
+        hb = {x: this.x, y: this.y, w: this.w, h: this.h};
+        this.isGrounded = false;
+        if (this.vy > 0) {
+            const ty = Math.floor((hb.y + hb.h) / tileSize);
+            const tx1 = Math.floor(hb.x / tileSize);
+            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+                this.y = ty * tileSize - hb.h;
                 this.vy = 0;
                 this.isGrounded = true;
-            } else if (this.vy < 0) {
-                this.y = yTile * tileSize + tileSize;
-                this.vy = 0;
             }
-        } else {
-            this.isGrounded = false;
         }
     }
 
@@ -143,35 +120,5 @@ export class PNJ {
         if (this.image.complete) {
             ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
         }
-
-        // --- Dessin de l'indicateur de quête ---
-        ctx.font = "24px 'Press Start 2P'";
-        ctx.textAlign = "center";
-        let indicatorText = "";
-        let indicatorColor = "yellow";
-
-        if (this.questState === "available") {
-            indicatorText = "!";
-        } else if (this.questState === "active") {
-            indicatorText = "?";
-            indicatorColor = "#DDD";
-        } else if (this.questState === "completed") {
-            indicatorText = "?";
-            indicatorColor = "yellow";
-        }
-
-        if (indicatorText) {
-            ctx.fillStyle = indicatorColor;
-            ctx.fillText(indicatorText, this.x + this.w / 2, this.y - 10);
-        }
-    }
-    
-    rectCollide(other) {
-        return (
-            this.x < other.x + other.w &&
-            this.x + this.w > other.x &&
-            this.y < other.y + other.h &&
-            this.y + this.h > other.y
-        );
     }
 }
