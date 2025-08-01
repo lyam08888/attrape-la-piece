@@ -1,5 +1,5 @@
 import { randomChestType } from './chestGenerator.js';
-import { SeededRandom } from './seededRandom.js'; // Import du générateur
+import { SeededRandom } from './seededRandom.js'; 
 
 // Perlin Noise Generator (maintenant déterministe)
 const Perlin = {
