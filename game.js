@@ -13,7 +13,7 @@ import { generateAnimal } from './generateurAnimaux.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { PNJ } from './PNJ.js';
 
-// --- CLASSE MONSTER (MISE À JOUR) ---
+// --- CLASSE MONSTER (INCHANGÉE) ---
 class Monster {
     constructor(x, y, config, monsterData) {
         this.x = x;
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tileMap: [],
             enemies: [],
             animals: [],
-            pnjs: [], // NOUVEAU: Tableau pour les PNJ
+            pnjs: [],
             particles: [],
             fallingBlocks: [],
             collectibles: [],
@@ -484,9 +484,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // NOUVEAU: Logique d'apparition des PNJ
     function spawnPNJ() {
-        if (!game || game.pnjs.length > 0) return; // Un seul PNJ pour l'instant
+        if (!game || game.pnjs.length > 0) return;
         const pnjData = generatePNJ();
         const { tileSize } = config;
         const spawnX = game.player.x + 100;
@@ -514,7 +513,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.enemies.forEach(e => e.update(game));
             game.enemies = game.enemies.filter(e => !e.isDead);
             game.animals.forEach(a => a.update(game));
-            game.pnjs.forEach(p => p.update(game)); // NOUVEAU: Mise à jour des PNJ
+            game.pnjs.forEach(p => p.update(game));
             updateParticles();
             updateFallingBlocks();
             updateCollectibles();
@@ -524,7 +523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             spawnMonsters();
             spawnAnimals();
-            spawnPNJ(); // NOUVEAU: Appel à la logique d'apparition des PNJ
+            spawnPNJ();
 
             if (keys.action) keys.action = false;
         } catch (error) {
@@ -550,8 +549,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             drawChests(ctx, assets);
             
             game.animals.forEach(a => a.draw(ctx));
-            game.enemies.forEach(e => e.draw(ctx, assets));
-            game.pnjs.forEach(p => p.draw(ctx)); // NOUVEAU: Dessin des PNJ
+            game.enemies.forEach(e => e.draw(ctx));
+            game.pnjs.forEach(p => p.draw(ctx));
             game.player.draw(ctx, assets, `player${currentSkin + 1}`);
             if (debugMode) {
                 ctx.save();
