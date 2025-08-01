@@ -92,16 +92,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // --- CORRECTION MAJEURE: GESTION SIMPLIFIÉE DE LA TAILLE DU CANVAS ---
     function resizeCanvas() {
-        // Cette fonction simple garantit que la résolution du jeu correspond à sa taille d'affichage.
-        // Cela résout les problèmes de flou et de centrage sur les écrans à haute résolution.
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-
     const config = await (await fetch('config.json')).json();
     const logger = new Logger();
     const sound = new SoundManager(config.soundVolume);
@@ -360,15 +360,137 @@ document.addEventListener('DOMContentLoaded', async () => {
         return 'surface';
     }
     
-    function updatePlayerBiome() { /* ... */ }
-    function updateBiomePhysics(game) { /* ... */ }
-    function handleBiomeDamage(game) { /* ... */ }
-    function startDialogue(pnj) { /* ... */ }
-    function closeDialogue() { /* ... */ }
-    function acceptQuest() { /* ... */ }
-    function completeQuest() { /* ... */ }
-    function toggleQuestLog() { /* ... */ }
-    function updateQuestLogUI() { /* ... */ }
+    function updatePlayerBiome() {
+        if (!game.player) return;
+        const currentBiome = getBiomeAt(game.player.y);
+        if (currentBiome !== game.playerBiome) {
+            game.playerBiome = currentBiome;
+            sound.startAmbient(currentBiome);
+        }
+    }
+
+    function updateBiomePhysics(game) {
+        const player = game.player;
+        if (!player) return;
+
+        game.config.physics.gravity = defaultGravity;
+        player.isSwimming = false;
+
+        switch(game.playerBiome) {
+            case 'space':
+                game.config.physics.gravity = defaultGravity * 0.15;
+                break;
+            case 'nucleus':
+                game.config.physics.gravity = -0.05;
+                player.isSwimming = true;
+                break;
+        }
+    }
+
+    function handleBiomeDamage(game) {
+        if (!game.player || game.over) return;
+        const { player, tileMap, config } = game;
+        const { tileSize } = config;
+        
+        const playerTileX = Math.floor((player.x + player.w / 2) / tileSize);
+        const playerTileY = Math.floor((player.y + player.h) / tileSize);
+        const tileBelow = tileMap[playerTileY]?.[playerTileX];
+
+        if (tileBelow === TILE.LAVA) {
+            game.lavaDamageTimer--;
+            if (game.lavaDamageTimer <= 0) {
+                loseLife();
+                game.lavaDamageTimer = 60;
+            }
+        } else {
+            game.lavaDamageTimer = 60;
+        }
+    }
+
+    function startDialogue(pnj) {
+        game.paused = true;
+        game.interactingPNJ = pnj;
+        
+        ui.dialoguePnjName.textContent = pnj.data.name;
+        
+        const quest = pnj.data.quest;
+        const playerQuest = game.player.quests.find(q => q.id === quest.id);
+
+        if (playerQuest) {
+            if (playerQuest.objective.currentAmount >= playerQuest.objective.amount) {
+                ui.dialogueText.textContent = quest.dialogues.complete;
+                ui.dialogueOptions.innerHTML = `<button data-action="completeQuest">Terminer la quête</button>`;
+            } else {
+                ui.dialogueText.textContent = quest.dialogues.incomplete;
+                ui.dialogueOptions.innerHTML = `<button data-action="closeDialogue">Je m'en occupe</button>`;
+            }
+        } else {
+            ui.dialogueText.textContent = quest.dialogues.offer;
+            ui.dialogueOptions.innerHTML = `
+                <button data-action="acceptQuest">Accepter</button>
+                <button data-action="closeDialogue">Refuser</button>
+            `;
+        }
+        
+        ui.dialogueBox.classList.add('active');
+    }
+
+    function closeDialogue() {
+        game.paused = false;
+        game.interactingPNJ = null;
+        ui.dialogueBox.classList.remove('active');
+    }
+
+    function acceptQuest() {
+        const quest = game.interactingPNJ.data.quest;
+        quest.status = 'active';
+        game.player.quests.push(quest);
+        closeDialogue();
+        updateQuestLogUI();
+    }
+
+    function completeQuest() {
+        const pnj = game.interactingPNJ;
+        const quest = pnj.data.quest;
+        
+        addXP(quest.reward.xp);
+        console.log(`Récompense: ${quest.reward.item.name}`);
+
+        quest.status = 'complete';
+        pnj.data.quest = generateQuest(pnj.data.archetype);
+
+        closeDialogue();
+        updateQuestLogUI();
+    }
+
+    function toggleQuestLog() {
+        if (!ui.questLogMenu) return;
+        game.paused = !game.paused;
+        ui.questLogMenu.classList.toggle('active');
+        if (ui.questLogMenu.classList.contains('active')) {
+            updateQuestLogUI();
+        }
+    }
+
+    function updateQuestLogUI() {
+        if (!ui.questList) return;
+        ui.questList.innerHTML = '';
+        const activeQuests = game.player.quests.filter(q => q.status === 'active');
+        if (activeQuests.length === 0) {
+            ui.questList.innerHTML = '<div class="quest-item">Aucune quête active.</div>';
+            return;
+        }
+
+        activeQuests.forEach(quest => {
+            const questItem = document.createElement('div');
+            questItem.className = 'quest-item';
+            questItem.innerHTML = `
+                <div class="quest-title">${quest.title}</div>
+                <div class="quest-progress">${quest.objective.currentAmount} / ${quest.objective.amount}</div>
+            `;
+            ui.questList.appendChild(questItem);
+        });
+    }
 
     function update(keys, mouse) {
         logger.update();
