@@ -18,26 +18,24 @@ export class Player {
         this.stepTimer = 0;
         this.grounded = false;
         this.canDoubleJump = true;
-        this.dir = 1; // 1 for right, -1 for left
+        this.dir = 1;
         this.invulnerable = 0;
         this.swingTimer = 0;
         this.state = 'idle';
         this.animTimer = 0;
         this.animFrame = 0;
         
-        // Tool list
         this.tools = ['pickaxe', 'shovel', 'axe', 'knife', 'sword', 'bow', 'fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
+        this.quests = []; // NOUVEAU: Journal de quêtes
 
-        // XP and Leveling
         this.level = 1;
         this.xp = 0;
         this.xpToNext = 100;
         this.skillPoints = 0;
         this.attributes = { strength: 0, agility: 0, vitality: 0 };
 
-        // Posture and animations
         this.posture = 'standing';
         this.doubleJumped = false;
         this.animations = config.playerAnimations || {};
@@ -58,7 +56,6 @@ export class Player {
         const runSpeed = baseSpeed * 1.5;
         const jumpForce = physics.jumpForce * (1 + this.attributes.agility * 0.03);
 
-        // --- Posture Management ---
         if (this.posture !== 'standing' && keys.jump) {
             this.setPosture('standing');
             keys.jump = false;
@@ -72,7 +69,6 @@ export class Player {
             this.setPosture('standing');
         }
 
-        // --- Movement ---
         let speed = baseSpeed;
         if (keys.run && this.posture === 'standing') speed = runSpeed;
         if (this.posture === 'crouching') speed *= 0.5;
@@ -91,7 +87,6 @@ export class Player {
             if (Math.abs(this.vx) < 0.01) this.vx = 0;
         }
 
-        // --- Jumping ---
         if (keys.jump && this.posture === 'standing') {
             if (this.grounded) {
                 this.vy = -jumpForce;
@@ -107,11 +102,9 @@ export class Player {
             keys.jump = false;
         }
         
-        // --- Gravity ---
         this.vy += physics.gravity;
         if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
 
-        // --- Update states and timers ---
         this.handleActions(keys, mouse, game);
         this.handleTileCollisions(game);
         this.checkCollectibleCollisions(game);
@@ -153,22 +146,31 @@ export class Player {
     handleActions(keys, mouse, game) {
         const isAction = keys.action || mouse.left;
         
-        // Interaction avec les coffres
+        // NOUVEAU: Logique d'interaction avec les PNJ
+        if (keys.interact) {
+            for (const pnj of game.pnjs) {
+                if (this.rectCollide(pnj)) {
+                    game.startDialogue(pnj);
+                    break; // Interagir avec un seul PNJ à la fois
+                }
+            }
+            keys.interact = false; // Consommer l'action
+        }
+
         if (keys.action) {
             for (const chest of game.chests) {
                 if (this.rectCollide(chest)) {
                     if (game.openChest) game.openChest(chest);
                     keys.action = false;
-                    return; // Une seule action à la fois
+                    return;
                 }
             }
         }
 
-        // Logique d'attaque (pas de minage ici)
         const attackTools = ['sword', 'knife', 'axe', 'pickaxe'];
         const selectedTool = this.tools[this.selectedToolIndex];
         if (isAction && attackTools.includes(selectedTool) && this.swingTimer <= 0) {
-            this.swingTimer = 30; // Délai entre les attaques
+            this.swingTimer = 30;
             this.attackNearbyEnemies(game);
         }
     }
@@ -334,7 +336,6 @@ export class Player {
             ctx.globalAlpha = 0.5;
         }
 
-        // --- Dessin du joueur ---
         const frames = this.animations[this.state] || [];
         const frameKey = frames[this.animFrame] || skinKey || 'player1';
         const img = assets[frameKey];
@@ -348,7 +349,6 @@ export class Player {
         }
         ctx.restore();
 
-        // --- Dessin de l'outil (logique corrigée) ---
         const selectedToolName = this.tools[this.selectedToolIndex];
         if (selectedToolName) {
             const toolAsset = assets[`tool_${selectedToolName}`];
