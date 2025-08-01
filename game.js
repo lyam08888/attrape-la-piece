@@ -64,6 +64,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         particleSystem: new ParticleSystem(),
         logger: new Logger(),
         lastTime: 0,
+        canvas: canvas,
+        settings: config,
+        cameraShakeTimer: 0,
+        cameraShakeStrength: 0,
+        cameraShakeOffsetX: 0,
+        cameraShakeOffsetY: 0,
 
         createParticles(x, y, count, color, options) {
             if(this.config.showParticles) this.particleSystem.create(x, y, count, color, options);
@@ -81,6 +87,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (icon) slot.appendChild(icon.cloneNode(true));
                 toolbar.appendChild(slot);
             });
+        },
+
+        triggerCameraShake(strength = 5, duration = 30) {
+            this.cameraShakeStrength = strength;
+            this.cameraShakeTimer = duration;
+        },
+
+        checkBlockSupport(x, y) {
+            const type = this.tileMap[y]?.[x];
+            if (type > TILE.AIR && (this.tileMap[y + 1]?.[x] === TILE.AIR || this.tileMap[y + 1]?.[x] === undefined)) {
+                this.tileMap[y][x] = TILE.AIR;
+                this.collectibles.push({
+                    x: x * this.config.tileSize,
+                    y: y * this.config.tileSize,
+                    w: this.config.tileSize,
+                    h: this.config.tileSize,
+                    vy: -2,
+                    tileType: type
+                });
+            }
         }
     };
 
@@ -153,6 +179,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             game.camera.x = Math.max(0, Math.min(targetX, maxCameraX));
             game.camera.y = Math.max(0, Math.min(targetY, maxCameraY));
+
+            if (game.cameraShakeTimer > 0) {
+                game.cameraShakeTimer--;
+                game.cameraShakeOffsetX = (Math.random() - 0.5) * game.cameraShakeStrength;
+                game.cameraShakeOffsetY = (Math.random() - 0.5) * game.cameraShakeStrength;
+            } else {
+                game.cameraShakeOffsetX = 0;
+                game.cameraShakeOffsetY = 0;
+            }
         },
 
         draw(ctx, assets) {
@@ -169,7 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             ctx.save();
             ctx.scale(zoom, zoom);
-            ctx.translate(-game.camera.x, -game.camera.y);
+            ctx.translate(-game.camera.x + game.cameraShakeOffsetX, -game.camera.y + game.cameraShakeOffsetY);
 
             if (game.worldAnimator) game.worldAnimator.draw(ctx);
             
