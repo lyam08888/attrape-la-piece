@@ -44,6 +44,13 @@
         #gameCanvas.paused {
             filter: blur(4px) grayscale(50%);
         }
+        body.mobile-mode #gameCanvas {
+            width: 100vw;
+            height: 100vh;
+        }
+        body.mobile-mode .menu-box button {
+            font-size: 1.2em;
+        }
 
         /* --- NOUVEL ÉCRAN TITRE AMÉLIORÉ --- */
         @keyframes ken-burns {
@@ -445,6 +452,9 @@
                 </div>
                 <div class="option-group">
                     <label><input type="checkbox" id="lightingCheckbox"> Lumière dynamique</label>
+                </div>
+                <div class="option-group">
+                    <label><input type="checkbox" id="mobileModeCheckbox"> Mode Mobile</label>
                 </div>
                 <div class="option-group" style="margin-top:20px;">
                     <label>Volume</label>

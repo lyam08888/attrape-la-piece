@@ -4,5 +4,6 @@
   "showParticles": true,
   "weatherEffects": true,
   "dynamicLighting": true,
-  "soundVolume": 0.8
+  "soundVolume": 0.8,
+  "mobileMode": false
 }

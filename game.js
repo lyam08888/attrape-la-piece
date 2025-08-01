@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const particlesCheckbox = document.getElementById('particlesCheckbox');
     const weatherCheckbox = document.getElementById('weatherCheckbox');
     const lightingCheckbox = document.getElementById('lightingCheckbox');
+    const mobileModeCheckbox = document.getElementById('mobileModeCheckbox');
     const soundSlider = document.getElementById('soundSlider');
     const volumeValue = document.getElementById('volumeValue');
 
@@ -46,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     particlesCheckbox.checked = config.showParticles;
     weatherCheckbox.checked = config.weatherEffects;
     lightingCheckbox.checked = config.dynamicLighting;
+    mobileModeCheckbox.checked = config.mobileMode;
+    if (config.mobileMode) document.body.classList.add('mobile-mode');
     soundSlider.value = config.soundVolume;
     volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
 
@@ -67,6 +70,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     lightingCheckbox.addEventListener('change', () => {
         config.dynamicLighting = lightingCheckbox.checked;
     });
+    mobileModeCheckbox.addEventListener('change', () => {
+        config.mobileMode = mobileModeCheckbox.checked;
+        document.body.classList.toggle('mobile-mode', config.mobileMode);
+    });
     soundSlider.addEventListener('input', () => {
         config.soundVolume = parseFloat(soundSlider.value);
         volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
@@ -87,7 +94,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             showParticles: config.showParticles,
             weatherEffects: config.weatherEffects,
             dynamicLighting: config.dynamicLighting,
-            soundVolume: config.soundVolume
+            soundVolume: config.soundVolume,
+            mobileMode: config.mobileMode
         });
     }
 
