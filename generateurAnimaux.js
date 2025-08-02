@@ -51,6 +51,7 @@ const ANIMAL_PARTS = {
 };
 
 const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const BODY_PATTERNS = ['none', 'stripes', 'spots'];
 
 export function generateAnimal(options = {}) {
     const biome = options.biome || 'surface';
@@ -76,6 +77,7 @@ export function generateAnimal(options = {}) {
     const bodyColor = randomChoice(palette);
     const eyeColor = randomChoice(palette.filter(c => c !== bodyColor));
     let svgParts = [];
+    const pattern = randomChoice(BODY_PATTERNS);
 
     // Assemblage des parties
     if (parts.bodies) svgParts.push(randomChoice(parts.bodies).replace(/{color}/g, bodyColor));
@@ -88,6 +90,13 @@ export function generateAnimal(options = {}) {
     }
     if (parts.extras && Math.random() < 0.5) {
         svgParts.push(randomChoice(parts.extras).replace(/{color}/g, bodyColor).replace(/{eyeColor}/g, eyeColor));
+    }
+
+    // Motifs simples sur le corps
+    if (pattern === 'stripes') {
+        svgParts.push(`<path d="M0 45 H100 M0 55 H100" stroke="${eyeColor}" stroke-width="3" opacity="0.4"/>`);
+    } else if (pattern === 'spots') {
+        svgParts.push(`<circle cx="40" cy="55" r="5" fill="${eyeColor}" opacity="0.4"/><circle cx="60" cy="45" r="4" fill="${eyeColor}" opacity="0.4"/>`);
     }
 
     // Oeil simple pour tous

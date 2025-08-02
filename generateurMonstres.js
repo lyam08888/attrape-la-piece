@@ -30,6 +30,8 @@ const MOUTH_SHAPES = [
     { type: 'sharp_teeth', path: 'M35 70 L40 78 L45 70 L50 78 L55 70 L60 78 L65 70' },
 ];
 
+const BODY_PATTERNS = ['none', 'stripes', 'spots'];
+
 const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randomBetween = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
 
@@ -61,6 +63,8 @@ export function generateMonster(options = {}) {
         mouthShape: (biome === 'hell' && Math.random() < 0.5) ? MOUTH_SHAPES.find(m => m.type === 'sharp_teeth') : randomChoice(MOUTH_SHAPES),
         hasHorns: Math.random() > 0.3, // Plus de chance d'avoir des cornes
         hasExtraFeature: Math.random() > 0.5, // Pour les ailes, antennes, etc.
+        bodyPattern: randomChoice(BODY_PATTERNS),
+        hasLimbs: Math.random() > 0.6,
     };
     
     properties.eyeColor = randomChoice(palette.filter(c => c !== properties.bodyColor));
@@ -142,11 +146,43 @@ export function generateMonster(options = {}) {
         }
     }
 
+    // 6. Membres basiques
+    let limbsSvg = '';
+    if (properties.hasLimbs) {
+        const legY = body.y + body.height;
+        limbsSvg = `
+            <rect x="${body.x + 5}" y="${legY}" width="10" height="20" fill="${properties.bodyColor}" stroke="#1E1E1E" stroke-width="2"/>
+            <rect x="${body.x + body.width - 15}" y="${legY}" width="10" height="20" fill="${properties.bodyColor}" stroke="#1E1E1E" stroke-width="2"/>
+        `;
+    }
+
+    // 7. Motifs sur le corps
+    let patternSvg = '';
+    if (properties.bodyPattern === 'stripes') {
+        const stripeY1 = body.y + body.height * 0.3;
+        const stripeY2 = body.y + body.height * 0.6;
+        patternSvg = `
+            <path d="M ${body.x} ${stripeY1} H ${body.x + body.width}" stroke="${properties.eyeColor}" stroke-width="4" opacity="0.5"/>
+            <path d="M ${body.x} ${stripeY2} H ${body.x + body.width}" stroke="${properties.eyeColor}" stroke-width="4" opacity="0.5"/>
+        `;
+    } else if (properties.bodyPattern === 'spots') {
+        const spot1x = body.x + body.width * 0.3;
+        const spot1y = body.y + body.height * 0.4;
+        const spot2x = body.x + body.width * 0.7;
+        const spot2y = body.y + body.height * 0.7;
+        patternSvg = `
+            <circle cx="${spot1x}" cy="${spot1y}" r="6" fill="${properties.eyeColor}" opacity="0.5"/>
+            <circle cx="${spot2x}" cy="${spot2y}" r="5" fill="${properties.eyeColor}" opacity="0.5"/>
+        `;
+    }
+
     // Assemblage final du SVG
     const svgString = `<svg viewBox="-10 -10 120 120" xmlns="http://www.w3.org/2000/svg">
         ${hornsSvg}
         ${extraFeatureSvg}
         ${bodySvg}
+        ${patternSvg}
+        ${limbsSvg}
         ${eyesSvg}
         ${mouthSvg}
     </svg>`;
