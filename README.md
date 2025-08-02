@@ -71,3 +71,4 @@ Activez le mode mobile dans le menu Options pour afficher des boutons tactiles (
 ### Nouveautés graphiques
 - Le canvas ajuste maintenant automatiquement sa taille à la fenêtre pour un affichage net.
 - Le héros est plus petit et les outils visibles dans ses mains sont désormais beaucoup plus réduits (environ un vingtième de leur taille d'origine).
+- Les générateurs de monstres et d'animaux ajoutent désormais des motifs (rayures, taches) et des membres pour des créatures plus détaillées.
