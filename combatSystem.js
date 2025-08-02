@@ -15,16 +15,16 @@ export class PlayerStats {
         this.mining = 10;
         this.luck = 5;
         
+        // Effets temporaires
+        this.effects = new Map();
+
+        // Équipement (initialisé vide)
+        this.equipment = new Map();
+
         // Statistiques dérivées
         this.attackDamage = this.calculateAttackDamage();
         this.moveSpeed = this.calculateMoveSpeed();
         this.miningSpeed = this.calculateMiningSpeed();
-        
-        // Effets temporaires
-        this.effects = new Map();
-        
-        // Équipement (initialisé vide)
-        this.equipment = new Map();
         
         // Statistiques de jeu
         this.blocksMinedTotal = 0;
@@ -131,8 +131,8 @@ export class PlayerStats {
     calculateAttackDamage() {
         let damage = this.strength;
         
-        // Appliquer les effets
-        for (const effect of this.effects.values()) {
+        // Appliquer les effets si disponibles
+        for (const effect of this.effects?.values?.() || []) {
             if (effect && effect.modifier && effect.modifier.attackDamage) {
                 damage += effect.modifier.attackDamage;
             }
@@ -143,8 +143,8 @@ export class PlayerStats {
 
     calculateMoveSpeed() {
         let speed = this.speed;
-        
-        for (const effect of this.effects.values()) {
+
+        for (const effect of this.effects?.values?.() || []) {
             if (effect && effect.modifier && effect.modifier.speed) {
                 speed += effect.modifier.speed;
             }
@@ -155,8 +155,8 @@ export class PlayerStats {
 
     calculateMiningSpeed() {
         let mining = this.mining;
-        
-        for (const effect of this.effects.values()) {
+
+        for (const effect of this.effects?.values?.() || []) {
             if (effect && effect.modifier && effect.modifier.mining) {
                 mining += effect.modifier.mining;
             }
