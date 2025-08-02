@@ -1,4 +1,6 @@
 // engine.js - Moteur de jeu générique (Corrigé)
+import { TILE } from './world.js';
+
 export class GameEngine {
     constructor(canvas, config) {
         this.canvas = canvas;
@@ -17,7 +19,23 @@ export class GameEngine {
     async loadAssets() {
         console.log("Chargement des assets...");
         const promises = [];
-        const allAssetKeys = new Set(Object.keys(this.config.assets));
+
+        // Assurer la présence d'une structure d'assets même si la config
+        // chargée n'en fournit pas. Cela évite un crash lorsque config.json
+        // n'est pas disponible et que le jeu tente tout de même de charger
+        // les ressources par défaut.
+        const configAssets = this.config.assets || {};
+
+        const allAssetKeys = new Set(Object.keys(configAssets));
+
+        // Ajouter automatiquement les assets des tuiles connues. Ainsi, le
+        // moteur peut fonctionner avec une configuration minimale et générer
+        // le monde sans écran noir.
+        Object.keys(TILE).forEach(key => {
+            if (key !== 'AIR') {
+                allAssetKeys.add(`tile_${key.toLowerCase()}`);
+            }
+        });
 
         if (this.config.playerAnimations) {
             for (const animFrames of Object.values(this.config.playerAnimations)) {
@@ -28,7 +46,7 @@ export class GameEngine {
         }
 
         for (const key of allAssetKeys) {
-            let path = this.config.assets[key];
+            let path = configAssets[key];
 
             // If the asset is referenced (e.g. in an animation) but not
             // explicitly listed in the config, fall back to the conventional
