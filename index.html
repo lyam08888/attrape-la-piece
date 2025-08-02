@@ -222,7 +222,7 @@
             margin-bottom: 15px;
             text-align: left;
         }
-        .option-group label { font-size: 0.8em; display: flex; align-items: center; }
+        .option-group label { font-size: 0.8em; display: flex; align-items: center; cursor: pointer; }
         .option-group span { font-size: 0.8em; color: var(--primary-color); }
         .option-group input[type="checkbox"] { display: none; }
         .option-group input[type="checkbox"] + .checkbox-label::before {
@@ -292,22 +292,22 @@
         <div id="optionsMenu" class="overlay">
             <div class="menu-box">
                 <h2>OPTIONS</h2>
-                <div class="option-group"><label>Volume</label><span id="volumeValue">80%</span></div>
-                <input type="range" id="soundSlider" min="0" max="1" step="0.1" value="0.8" style="width: 100%;">
+                <div class="option-group"><label for="soundSlider">Volume</label><span id="volumeValue">80%</span></div>
+                <input type="range" id="soundSlider" min="0" max="1" step="0.1" value="0.8" style="width: 100%;" aria-labelledby="volumeValue">
                 
-                <div class="option-group" style="margin-top: 20px;"><label>Distance d'affichage</label><span id="renderDistanceValue">8 chunks</span></div>
-                <input type="range" id="renderDistanceSlider" min="4" max="16" value="8" style="width: 100%;">
+                <div class="option-group" style="margin-top: 20px;"><label for="renderDistanceSlider">Distance d'affichage</label><span id="renderDistanceValue">8 chunks</span></div>
+                <input type="range" id="renderDistanceSlider" min="4" max="16" value="8" style="width: 100%;" aria-labelledby="renderDistanceValue">
                 
-                <div class="option-group" style="margin-top: 20px;"><label>Zoom</label><span id="zoomValue">x3.00</span></div>
-                <input type="range" id="zoomSlider" min="1" max="5" value="3" step="0.25" style="width: 100%;">
+                <div class="option-group" style="margin-top: 20px;"><label for="zoomSlider">Zoom</label><span id="zoomValue">x3.00</span></div>
+                <input type="range" id="zoomSlider" min="1" max="5" value="3" step="0.25" style="width: 100%;" aria-labelledby="zoomValue">
                 
                 <div class="option-group" style="margin-top: 30px;">
-                    <label><input type="checkbox" id="particlesCheckbox" checked><span class="checkbox-label">Particules</span></label>
-                    <label><input type="checkbox" id="weatherCheckbox" checked><span class="checkbox-label">Météo</span></label>
+                    <label for="particlesCheckbox"><input type="checkbox" id="particlesCheckbox" checked><span class="checkbox-label">Particules</span></label>
+                    <label for="weatherCheckbox"><input type="checkbox" id="weatherCheckbox" checked><span class="checkbox-label">Météo</span></label>
                 </div>
                  <div class="option-group">
-                    <label><input type="checkbox" id="lightingCheckbox" checked><span class="checkbox-label">Lumière Dyn.</span></label>
-                    <label><input type="checkbox" id="mobileModeCheckbox"><span class="checkbox-label">Mode Mobile</span></label>
+                    <label for="lightingCheckbox"><input type="checkbox" id="lightingCheckbox" checked><span class="checkbox-label">Lumière Dyn.</span></label>
+                    <label for="mobileModeCheckbox"><input type="checkbox" id="mobileModeCheckbox"><span class="checkbox-label">Mode Mobile</span></label>
                 </div>
                 <button data-action="close-menu" style="margin-top: 30px;">RETOUR</button>
             </div>
@@ -320,6 +320,7 @@
     </div>
     
     <script>
+        // --- SCRIPT DE GESTION DES MENUS ---
         document.addEventListener('DOMContentLoaded', () => {
             let isGameRunning = false;
             const ui = {
@@ -436,6 +437,65 @@
             if(ui.sliders.volume) ui.sliders.volume.addEventListener('input', (e) => { ui.values.volume.textContent = `${Math.round(e.target.value * 100)}%`; });
             if(ui.sliders.renderDistance) ui.sliders.renderDistance.addEventListener('input', (e) => { ui.values.renderDistance.textContent = `${e.target.value} chunks`; });
             if(ui.sliders.zoom) ui.sliders.zoom.addEventListener('input', (e) => { ui.values.zoom.textContent = `x${parseFloat(e.target.value).toFixed(2)}`; });
+        });
+    </script>
+
+    <script type="module">
+        // --- SCRIPT DE LOGIQUE DE JEU (PLACEHOLDER) ---
+        // Ce script s'active après la fin de l'écran de chargement.
+        // Remplacez ce contenu par la logique de votre propre jeu.
+
+        document.addEventListener('start-game', (e) => {
+            console.log('Le jeu démarre avec la seed :', e.detail.seed);
+
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // --- État du jeu de démonstration ---
+            let playerX = 50;
+            let playerY = 50;
+            let gameTime = 0;
+            
+            function resizeCanvas() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+
+            function gameLoop(timestamp) {
+                gameTime = timestamp;
+
+                // Mettre à jour la logique du jeu ici
+                // Exemple : faire bouger le joueur en cercle
+                playerX = (canvas.width / 2) + Math.sin(timestamp / 1000) * 50;
+                playerY = (canvas.height / 2) + Math.cos(timestamp / 1000) * 50;
+
+                // Logique de dessin
+                // 1. Effacer l'écran
+                ctx.fillStyle = '#1d2b53'; // Fond bleu foncé
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 2. Dessiner le joueur
+                ctx.fillStyle = '#f9a825'; // Couleur primaire du thème
+                ctx.fillRect(playerX - 16, playerY - 16, 32, 32);
+
+                // 3. Dessiner des informations de débogage
+                ctx.fillStyle = 'white';
+                ctx.font = "16px 'Press Start 2P', cursive";
+                ctx.textAlign = 'left';
+                ctx.fillText(`Seed: ${e.detail.seed}`, 10, 30);
+                ctx.fillText(`Temps: ${Math.floor(gameTime / 1000)}s`, 10, 50);
+                ctx.fillText('La logique du jeu est active !', 10, 80);
+
+                // Demander la prochaine frame d'animation
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Configuration initiale
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // Définir la taille initiale
+            
+            // Lancer la boucle de jeu
+            requestAnimationFrame(gameLoop);
         });
     </script>
 </body>
