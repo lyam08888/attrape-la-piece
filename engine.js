@@ -28,10 +28,14 @@ export class GameEngine {
         }
 
         for (const key of allAssetKeys) {
-            const path = this.config.assets[key];
+            let path = this.config.assets[key];
+
+            // If the asset is referenced (e.g. in an animation) but not
+            // explicitly listed in the config, fall back to the conventional
+            // "assets/<key>.png" path so that all player frames and tools can
+            // still be loaded.
             if (!path) {
-                console.warn(`Chemin manquant pour l'asset '${key}' dans config.json`);
-                continue;
+                path = `assets/${key}.png`;
             }
 
             promises.push(new Promise((resolve) => {
