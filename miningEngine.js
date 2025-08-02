@@ -11,9 +11,10 @@ const TOOL_EFFICIENCY = {
     axe:    { [TILE.WOOD]: 3, [TILE.LEAVES]: 3, [TILE.OAK_WOOD]: 3, [TILE.OAK_LEAVES]: 3 },
 };
 
-export function updateMining(game, mouse, delta) {
+// Ajout de "keys" pour permettre l'utilisation de la touche d'action
+export function updateMining(game, keys, mouse, delta) {
     const player = game.player;
-    if (!player || !mouse.left || !player.miningTarget) {
+    if (!player || !(mouse.left || keys?.action) || !player.miningTarget) {
         if (player) player.miningProgress = 0;
         game.miningEffect = null;
         return;

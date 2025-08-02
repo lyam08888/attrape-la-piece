@@ -33,7 +33,7 @@ Interface enrichie :
 
 ## Cassage de blocs
 
-Le module `miningEngine.js` gère la destruction des tuiles. Maintenez l'action sur un bloc pour remplir la jauge de minage. Une fois pleine, le bloc se transforme en objet collectable qui rejoint l'inventaire au contact du joueur (`player.inventory`). Intégrez simplement le moteur en appelant `updateMining(game, keys, mouse)` à chaque frame.
+Le module `miningEngine.js` gère la destruction des tuiles. Maintenez l'action sur un bloc pour remplir la jauge de minage. Une fois pleine, le bloc se transforme en objet collectable qui rejoint l'inventaire au contact du joueur (`player.inventory`). Intégrez simplement le moteur en appelant `updateMining(game, keys, mouse, delta)` à chaque frame.
 
 ### Outils disponibles
 
@@ -49,7 +49,7 @@ Les outils utilisables pour casser les blocs disposent chacun de leur icône dan
 
 ### Utilisation des outils
 
-Appuyez sur **A** ou cliquez avec la souris pour utiliser l'outil sélectionné. Vous pouvez miner les blocs, mais aussi infliger des dégâts aux ennemis à portée. Utilisez la molette ou les touches **1-9** pour changer rapidement d'outil.
+Appuyez sur la touche d'action (**E** par défaut) ou cliquez avec le bouton gauche de la souris pour utiliser l'outil sélectionné. Vous pouvez miner les blocs, mais aussi infliger des dégâts aux ennemis à portée. Utilisez la molette ou les touches **1-9** pour changer rapidement d'outil.
 
 ### Physique des blocs
 
