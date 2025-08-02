@@ -38,6 +38,25 @@ export class TimeSystem {
         return { hour, minute };
     }
 
+    getSeason() {
+        const { month } = this.getDate();
+        if (month >= 3 && month <= 5) return 'Printemps';
+        if (month >= 6 && month <= 8) return 'Été';
+        if (month >= 9 && month <= 11) return 'Automne';
+        return 'Hiver';
+    }
+
+    getSeasonalBonus() {
+        const season = this.getSeason();
+        const bonuses = {
+            'Printemps': { growth: 1.2, animals: 1.3 },
+            'Été': { mining: 1.1, energy: 1.2 },
+            'Automne': { harvest: 1.5, crafting: 1.1 },
+            'Hiver': { survival: 1.3, warmth: 0.8 }
+        };
+        return bonuses[season] || {};
+    }
+
     getStage() {
         const { hour } = this.getTime();
         if (hour >= 5 && hour < 7) return 'aube';

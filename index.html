@@ -601,6 +601,7 @@
         import { generateAnimal } from './generateurAnimaux.js';
         import { LightingSystem as AdvancedLighting } from './lighting.js';
         import { SURVIVAL_ITEMS } from './survivalItems.js';
+        import { generateMonster } from './generateurMonstres.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -629,6 +630,79 @@
             
             return loot;
         }
+        
+        // Système d'événements dynamiques
+        function triggerRandomEvent(game) {
+            const events = [
+                {
+                    name: 'Pluie de Ressources',
+                    execute: () => {
+                        for (let i = 0; i < 5; i++) {
+                            const x = game.player.x + (Math.random() - 0.5) * 200;
+                            const y = game.player.y - 100;
+                            game.collectibles.push({
+                                x: x, y: y, w: 8, h: 8, vy: 0,
+                                tileType: TILE.GOLD + Math.floor(Math.random() * 3)
+                            });
+                        }
+                        game.logger.log('🌟 Pluie de ressources !');
+                        game.createParticles(game.player.x, game.player.y - 50, 20, '#FFD700');
+                    }
+                },
+                {
+                    name: 'Invasion de Monstres',
+                    execute: () => {
+                        for (let i = 0; i < 3; i++) {
+                            const angle = (Math.PI * 2 * i) / 3;
+                            const distance = 150;
+                            const x = game.player.x + Math.cos(angle) * distance;
+                            const y = game.player.y + Math.sin(angle) * distance;
+                            
+                            const monster = new Enemy(x, y, 'slime');
+                            monster.health = 15;
+                            monster.maxHealth = 15;
+                            game.enemies.push(monster);
+                        }
+                        game.logger.log('⚔️ Invasion de monstres !');
+                        game.createParticles(game.player.x, game.player.y, 30, '#FF4444');
+                    }
+                },
+                {
+                    name: 'Coffre Mystérieux',
+                    execute: () => {
+                        const chestType = CHEST_TYPES[2]; // Coffre en Or
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = 100 + Math.random() * 100;
+                        const x = game.player.x + Math.cos(angle) * distance;
+                        const y = game.player.y + Math.sin(angle) * distance;
+                        
+                        game.chests.push({
+                            x: x, y: y, w: 32, h: 24,
+                            type: chestType, opened: false,
+                            loot: generateChestLoot(chestType.name)
+                        });
+                        game.logger.log('💎 Coffre mystérieux apparu !');
+                        game.createParticles(x + 16, y + 12, 15, '#FFD700');
+                    }
+                },
+                {
+                    name: 'Boost Temporaire',
+                    execute: () => {
+                        game.player.stats.effects.set('speed_boost', {
+                            duration: 10000, // 10 secondes
+                            modifier: { speed: 5 }
+                        });
+                        game.logger.log('⚡ Boost de vitesse temporaire !');
+                        game.createParticles(game.player.x + game.player.w/2, game.player.y, 20, '#00FFFF');
+                    }
+                }
+            ];
+            
+            const event = events[Math.floor(Math.random() * events.length)];
+            event.execute();
+            return event.name;
+        }
+        
         import { Logger } from './logger.js';
         // import { getItemIcon } from './itemIcons.js'; // Non utilisé, version simplifiée dans le code
         // import { SoundManager } from './sound.js'; // Version simplifiée utilisée dans le code
@@ -889,6 +963,11 @@
                     survivalItemsFound: 0,
                     totalPlayTime: 0,
                     startTime: Date.now()
+                },
+                eventSystem: {
+                    lastEventTime: 0,
+                    eventCooldown: 30000, // 30 secondes entre les événements
+                    activeEvents: []
                 },
                 enemySpawner: null,
                 camera: { x: 0, y: 0 },
@@ -1163,6 +1242,35 @@
                     }
                     console.log(`${game.animals.length} animaux générés`);
                     
+                    // Générer des monstres procéduraux
+                    for (let i = 0; i < 3; i++) {
+                        const biomes = ['surface', 'underground', 'core', 'hell', 'paradise', 'space'];
+                        const biome = biomes[Math.floor(Math.random() * biomes.length)];
+                        const monsterData = generateMonster({ biome });
+                        
+                        const x = Math.random() * config.worldWidth;
+                        let y = 0;
+                        
+                        // Trouver la surface
+                        for (let ty = 0; ty < game.tileMap.length; ty++) {
+                            const tx = Math.floor(x / config.tileSize);
+                            if (game.tileMap[ty] && game.tileMap[ty][tx] > TILE.AIR) {
+                                y = (ty - 2) * config.tileSize;
+                                break;
+                            }
+                        }
+                        
+                        // Créer un ennemi avec les données du monstre généré
+                        const monster = new Enemy(x, y, 'custom_monster');
+                        monster.monsterData = monsterData;
+                        monster.biome = biome;
+                        monster.maxHealth = 30 + Math.floor(Math.random() * 50);
+                        monster.health = monster.maxHealth;
+                        monster.attackDamage = 8 + Math.floor(Math.random() * 12);
+                        game.enemies.push(monster);
+                    }
+                    console.log(`${game.enemies.length} monstres procéduraux générés`);
+                    
                     // Démarrer la première quête
                     game.questSystem.startQuest('first_steps');
                     
@@ -1379,6 +1487,19 @@
                     if (game.lightingSystem) game.lightingSystem.updateLightMap(game);
                     if (game.advancedLighting) game.advancedLighting.update();
                     if (game.disasterManager) game.disasterManager.update(game, delta);
+                    
+                    // Système d'événements dynamiques
+                    const currentTime = Date.now();
+                    if (currentTime - game.eventSystem.lastEventTime > game.eventSystem.eventCooldown) {
+                        if (Math.random() < 0.3) { // 30% de chance
+                            const eventName = triggerRandomEvent(game);
+                            game.eventSystem.lastEventTime = currentTime;
+                            game.eventSystem.activeEvents.push({
+                                name: eventName,
+                                time: currentTime
+                            });
+                        }
+                    }
                     
                     if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
                     if (game.timeSystem) game.timeSystem.update();
@@ -1741,15 +1862,17 @@
                         if (game.calendarSystem) {
                             const date = game.calendarSystem.getDate();
                             const time = game.calendarSystem.getTime();
+                            const season = game.calendarSystem.getSeason();
                             ctx.fillText(`Date: ${date.day}/${date.month}/${date.year}`, 20, 170);
                             ctx.fillText(`Calendrier: ${time.hour.toString().padStart(2,'0')}:${time.minute.toString().padStart(2,'0')}`, 20, 190);
+                            ctx.fillText(`Saison: ${season}`, 20, 210);
                         }
                         
                         // Afficher les statistiques
                         if (game.statistics) {
-                            ctx.fillText(`Coffres: ${game.statistics.chestsOpened}`, 20, 210);
-                            ctx.fillText(`Animaux: ${game.statistics.animalsObserved}`, 20, 230);
-                            ctx.fillText(`Survie: ${game.statistics.survivalItemsFound}`, 20, 250);
+                            ctx.fillText(`Coffres: ${game.statistics.chestsOpened}`, 20, 230);
+                            ctx.fillText(`Animaux: ${game.statistics.animalsObserved}`, 20, 250);
+                            ctx.fillText(`Survie: ${game.statistics.survivalItemsFound}`, 20, 270);
                         }
                         
                         // Dessiner l'interface de jeu
