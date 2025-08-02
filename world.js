@@ -19,10 +19,23 @@ export const TILE = {
 function generateColumns(game, config, startX, width) {
     const worldHeightInTiles = game.tileMap.length;
     const surfaceLevel = Math.floor(worldHeightInTiles * 0.4);
+    const waterLevel = surfaceLevel + 3;
     const { tileSize } = config;
 
     for (let x = startX; x < startX + width; x++) {
         const groundY = surfaceLevel + Math.floor(Perlin.get(x * 0.05, 0) * 10);
+        if (groundY > waterLevel + 3) {
+            for (let y = groundY; y < worldHeightInTiles; y++) {
+                if (y === groundY) game.tileMap[y][x] = TILE.SAND;
+                else if (y < groundY + 5) game.tileMap[y][x] = TILE.DIRT;
+                else game.tileMap[y][x] = TILE.STONE;
+            }
+            for (let y = waterLevel; y < groundY; y++) {
+                game.tileMap[y][x] = TILE.WATER;
+            }
+            continue;
+        }
+
         for (let y = groundY; y < worldHeightInTiles; y++) {
             if (y === groundY) game.tileMap[y][x] = TILE.GRASS;
             else if (y < groundY + 5) game.tileMap[y][x] = TILE.DIRT;
