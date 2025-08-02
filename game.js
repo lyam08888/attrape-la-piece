@@ -2,7 +2,7 @@
 
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
-import { TILE, generateLevel } from './world.js';
+import { TILE, generateLevel, ensureWorldColumns } from './world.js';
 import { PNJ } from './PNJ.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { updateMining } from './miningEngine.js';
@@ -209,10 +209,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.sound = new SoundManager(config.soundVolume);
             game.logger.log("Génération du monde...");
             generateLevel(game, config);
-            
+
             game.player = new Player(100, 100, config, game.sound);
-            
-            const startXTile = Math.floor(game.tileMap[0].length / 4);
+
+            const startXTile = Math.floor(game.generatedRange.max / 4);
             for (let y = 0; y < game.tileMap.length; y++) {
                 if (game.tileMap[y][startXTile] > TILE.AIR) {
                     game.player.x = startXTile * config.tileSize;
@@ -251,7 +251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
             if (game.timeSystem) game.timeSystem.update();
             game.logger.update();
-            
+
+            const playerTileX = Math.floor(game.player.x / config.tileSize);
+            const bufferTiles = config.renderDistance * config.chunkSize;
+            ensureWorldColumns(game, config, playerTileX - bufferTiles, playerTileX + bufferTiles);
+
             const { zoom, worldWidth, worldHeight } = config;
             const canvasWidth = canvas.clientWidth;
             const canvasHeight = canvas.clientHeight;
@@ -299,7 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const endY = startY + Math.ceil(canvas.height / zoom / tileSize) + 2;
 
             for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
-                for (let x = Math.max(0, startX); x < Math.min(game.tileMap[0].length, endX); x++) {
+                for (let x = Math.max(0, startX); x < endX; x++) {
                     const tileType = game.tileMap[y][x];
                     if (tileType > TILE.AIR) {
                         const assetKey = Object.keys(TILE).find(key => TILE[key] === tileType);
