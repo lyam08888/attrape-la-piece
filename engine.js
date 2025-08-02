@@ -111,28 +111,26 @@ export class GameEngine {
 
     start(gameLogic) {
         this.gameLogic = gameLogic;
-        document.addEventListener('start-game', () => {
-            this.loadAssets()
-                .then(() => {
-                    this.setupInput();
-                    if (this.gameLogic.init) this.gameLogic.init(this.assets);
-                    
-                    let lastTime = 0;
-                    const loop = (time) => {
-                        if (!lastTime) lastTime = time;
-                        const delta = (time - lastTime) / 1000;
-                        lastTime = time;
+        this.loadAssets()
+            .then(() => {
+                this.setupInput();
+                if (this.gameLogic.init) this.gameLogic.init(this.assets);
 
-                        if (!this.gameLogic.isPaused()) {
-                            // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
-                            this.gameLogic.update(delta, this.keys, this.mouse);
-                        }
-                        this.gameLogic.draw(this.ctx, this.assets);
-                        requestAnimationFrame(loop);
-                    };
+                let lastTime = 0;
+                const loop = (time) => {
+                    if (!lastTime) lastTime = time;
+                    const delta = (time - lastTime) / 1000;
+                    lastTime = time;
+
+                    if (!this.gameLogic.isPaused()) {
+                        // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
+                        this.gameLogic.update(delta, this.keys, this.mouse);
+                    }
+                    this.gameLogic.draw(this.ctx, this.assets);
                     requestAnimationFrame(loop);
-                })
-                .catch(err => console.error("Erreur critique lors du démarrage du moteur:", err));
-        });
+                };
+                requestAnimationFrame(loop);
+            })
+            .catch(err => console.error("Erreur critique lors du démarrage du moteur:", err));
     }
 }
