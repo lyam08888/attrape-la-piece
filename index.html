@@ -974,12 +974,24 @@
                     };
                     
                     game.logger.log("Génération du monde...");
-                    generateLevel(game, config);
+                    try {
+                        generateLevel(game, config);
+                        console.log("Monde généré avec succès, taille:", game.tileMap?.length, "x", game.tileMap?.[0]?.length);
+                    } catch (error) {
+                        console.error("Erreur génération monde:", error);
+                        throw error;
+                    }
 
                     // Initialiser le joueur avec des statistiques
-                    game.player = new Player(100, 100, config, game.sound);
-                    game.player.stats = new PlayerStats();
-                    game.player.inventory = game.inventory;
+                    try {
+                        game.player = new Player(100, 100, config, game.sound);
+                        game.player.stats = new PlayerStats();
+                        game.player.inventory = game.inventory;
+                        console.log("Joueur créé avec succès");
+                    } catch (error) {
+                        console.error("Erreur création joueur:", error);
+                        throw error;
+                    }
 
                     // Positionner le joueur au centre du monde
                     const startXTile = Math.floor(config.worldWidth / config.tileSize / 2);

@@ -23,6 +23,9 @@ export class PlayerStats {
         // Effets temporaires
         this.effects = new Map();
         
+        // Équipement (initialisé vide)
+        this.equipment = new Map();
+        
         // Statistiques de jeu
         this.blocksMinedTotal = 0;
         this.enemiesKilledTotal = 0;
