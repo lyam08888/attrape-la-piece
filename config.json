@@ -98,7 +98,7 @@
     "decoration_bush": "assets/decoration_bush.png",
     "flag": "assets/flag.png",
     "heart": "assets/heart.png",
-    "player_idle1": "assets/player_idle_blink.png",
+    "player_idle1": "assets/player_idle1.png",
     "player_idle2": "assets/player_idle_blink.png",
     "player_walk1": "assets/player_walk1.png",
     "player_walk2": "assets/player_walk2.png",

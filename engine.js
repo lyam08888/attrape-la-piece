@@ -67,6 +67,7 @@ export class GameEngine {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.jump = true;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
+            if (e.code === 'KeyV' && !e.repeat) this.keys.fly = !this.keys.fly;
             if (e.code.startsWith('Digit')) {
                 const index = parseInt(e.code.replace('Digit', '')) - 1;
                 if (this.gameLogic.selectTool) this.gameLogic.selectTool(index);
