@@ -487,11 +487,19 @@
             };
 
             const startGame = (seed) => {
-                isGameRunning = true;
-                ui.titleScreen.classList.add('hidden');
-                openMenu(ui.loadingScreen);
-                ui.loadingBar.style.width = '100%';
-                document.dispatchEvent(new CustomEvent('start-game', { detail: { seed } }));
+                const launch = () => {
+                    isGameRunning = true;
+                    ui.titleScreen.classList.add('hidden');
+                    openMenu(ui.loadingScreen);
+                    ui.loadingBar.style.width = '100%';
+                    document.dispatchEvent(new CustomEvent('start-game', { detail: { seed } }));
+                };
+
+                if (window.gameModuleReady) {
+                    launch();
+                } else {
+                    document.addEventListener('game-module-ready', launch, { once: true });
+                }
             };
 
             // Écouteurs d'événements
@@ -594,6 +602,9 @@
         import { Minimap, initializeMinimap, drawMinimapToElement } from './minimap.js';
         import { EnemySpawner } from './enemySpawner.js';
         import { SaveSystem, createSaveUI } from './saveSystem.js';
+
+        window.gameModuleReady = true;
+        document.dispatchEvent(new Event('game-module-ready'));
 
         async function loadConfig() {
             try {
