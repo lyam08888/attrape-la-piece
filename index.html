@@ -595,6 +595,40 @@
         import { ParticleSystem } from './fx.js';
         // import { WorldAnimator } from './worldAnimator.js'; // Désactivé pour l'instant
         import { TimeSystem } from './timeSystem.js';
+        import { TimeSystem as CalendarSystem } from './calendar.js';
+        import { CHEST_TYPES } from './chestGenerator.js';
+        import { DisasterManager } from './disasterManager.js';
+        import { generateAnimal } from './generateurAnimaux.js';
+        import { LightingSystem as AdvancedLighting } from './lighting.js';
+        import { SURVIVAL_ITEMS } from './survivalItems.js';
+        
+        // Fonction pour générer le loot des coffres
+        function generateChestLoot(chestType) {
+            const basicLoot = {
+                "Coffre en Bois": [
+                    { item: 'wood', quantity: 5 + Math.floor(Math.random() * 10) },
+                    { item: 'stone', quantity: 3 + Math.floor(Math.random() * 7) }
+                ],
+                "Coffre en Métal": [
+                    { item: 'iron', quantity: 2 + Math.floor(Math.random() * 5) },
+                    { item: 'coal', quantity: 3 + Math.floor(Math.random() * 8) }
+                ],
+                "Coffre en Or": [
+                    { item: 'gold', quantity: 1 + Math.floor(Math.random() * 3) },
+                    { item: 'diamond', quantity: Math.floor(Math.random() * 2) }
+                ]
+            };
+            
+            let loot = [...(basicLoot[chestType] || basicLoot["Coffre en Bois"])];
+            
+            // Ajouter des items de survie rares
+            if (Math.random() < 0.3) { // 30% de chance
+                const survivalItem = SURVIVAL_ITEMS[Math.floor(Math.random() * SURVIVAL_ITEMS.length)];
+                loot.push({ item: survivalItem.toLowerCase().replace(/\s+/g, '_'), quantity: 1 });
+            }
+            
+            return loot;
+        }
         import { Logger } from './logger.js';
         // import { getItemIcon } from './itemIcons.js'; // Non utilisé, version simplifiée dans le code
         // import { SoundManager } from './sound.js'; // Version simplifiée utilisée dans le code
@@ -846,6 +880,16 @@
                 pnjs: [],
                 collectibles: [],
                 projectiles: [],
+                chests: [], // Coffres au trésor
+                animals: [], // Animaux sauvages
+                statistics: {
+                    chestsOpened: 0,
+                    animalsObserved: 0,
+                    disastersSurvived: 0,
+                    survivalItemsFound: 0,
+                    totalPlayTime: 0,
+                    startTime: Date.now()
+                },
                 enemySpawner: null,
                 camera: { x: 0, y: 0 },
                 particleSystem: new ParticleSystem(),
@@ -857,6 +901,8 @@
                 biomeSystem: new BiomeSystem(),
                 weatherSystem: new WeatherSystem(config),
                 lightingSystem: new LightingSystem(config),
+                advancedLighting: new AdvancedLighting(config),
+                disasterManager: new DisasterManager(),
                 minimap: null,
                 saveSystem: new SaveSystem(),
                 lastTime: 0,
@@ -1017,6 +1063,8 @@
                     // Initialiser les systèmes
                     game.worldAnimator = null; // Désactivé pour l'instant
                     game.timeSystem = new TimeSystem();
+                    game.calendarSystem = new CalendarSystem();
+                    console.log("Système de calendrier initialisé");
                     
                     // Générer des PNJ (désactivé pour l'instant)
                     // for (let i = 0; i < 5; i++) {
@@ -1053,6 +1101,67 @@
                     // Ajouter quelques items de départ
                     game.inventory.addItem('wood', 10);
                     game.inventory.addItem('stone', 5);
+                    
+                    // Générer des coffres au trésor
+                    for (let i = 0; i < 5; i++) {
+                        const chestType = CHEST_TYPES[Math.floor(Math.random() * CHEST_TYPES.length)];
+                        const x = Math.random() * config.worldWidth;
+                        let y = 0;
+                        
+                        // Trouver la surface pour placer le coffre
+                        for (let ty = 0; ty < game.tileMap.length; ty++) {
+                            const tx = Math.floor(x / config.tileSize);
+                            if (game.tileMap[ty] && game.tileMap[ty][tx] > TILE.AIR) {
+                                y = (ty - 1) * config.tileSize;
+                                break;
+                            }
+                        }
+                        
+                        game.chests.push({
+                            x: x,
+                            y: y,
+                            w: 32,
+                            h: 24,
+                            type: chestType,
+                            opened: false,
+                            loot: generateChestLoot(chestType.name)
+                        });
+                    }
+                    console.log(`${game.chests.length} coffres générés`);
+                    
+                    // Générer des animaux sauvages
+                    for (let i = 0; i < 8; i++) {
+                        const biomes = ['surface', 'paradise', 'nucleus'];
+                        const biome = biomes[Math.floor(Math.random() * biomes.length)];
+                        const animalData = generateAnimal({ biome });
+                        
+                        const x = Math.random() * config.worldWidth;
+                        let y = 0;
+                        
+                        // Trouver la surface
+                        for (let ty = 0; ty < game.tileMap.length; ty++) {
+                            const tx = Math.floor(x / config.tileSize);
+                            if (game.tileMap[ty] && game.tileMap[ty][tx] > TILE.AIR) {
+                                y = (ty - 2) * config.tileSize;
+                                break;
+                            }
+                        }
+                        
+                        game.animals.push({
+                            x: x,
+                            y: y,
+                            w: 24,
+                            h: 20,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: 0,
+                            data: animalData,
+                            biome: biome,
+                            health: 20,
+                            lastDirection: 1,
+                            moveTimer: 0
+                        });
+                    }
+                    console.log(`${game.animals.length} animaux générés`);
                     
                     // Démarrer la première quête
                     game.questSystem.startQuest('first_steps');
@@ -1162,6 +1271,51 @@
                     // Mettre à jour les PNJ
                     game.pnjs.forEach(p => p.update(game, delta));
                     
+                    // Mettre à jour les animaux
+                    game.animals.forEach((animal, index) => {
+                        // IA simple des animaux
+                        animal.moveTimer -= delta;
+                        if (animal.moveTimer <= 0) {
+                            animal.vx = (Math.random() - 0.5) * 3;
+                            animal.moveTimer = 1000 + Math.random() * 2000; // 1-3 secondes
+                        }
+                        
+                        // Mouvement
+                        animal.x += animal.vx * delta / 16;
+                        animal.vy += config.physics.gravity;
+                        animal.y += animal.vy * delta / 16;
+                        
+                        // Collision avec le sol
+                        const groundY = Math.floor((animal.y + animal.h) / config.tileSize);
+                        const groundX = Math.floor((animal.x + animal.w/2) / config.tileSize);
+                        if (game.tileMap[groundY] && game.tileMap[groundY][groundX] > TILE.AIR) {
+                            animal.y = groundY * config.tileSize - animal.h;
+                            animal.vy = 0;
+                        }
+                        
+                        // Limites du monde
+                        if (animal.x < 0 || animal.x > config.worldWidth) {
+                            animal.vx *= -1;
+                        }
+                        
+                        // Direction pour le rendu
+                        if (animal.vx !== 0) {
+                            animal.lastDirection = animal.vx > 0 ? 1 : -1;
+                        }
+                        
+                        // Observation d'animaux pour les quêtes
+                        if (!animal.observed && game.player.rectCollide({
+                            x: animal.x - 50, y: animal.y - 50, 
+                            w: animal.w + 100, h: animal.h + 100
+                        })) {
+                            animal.observed = true;
+                            game.questSystem.updateQuestProgress('observe_animals', { amount: 1 });
+                            game.statistics.animalsObserved++;
+                            game.logger.log(`Animal observé: ${animal.biome}`);
+                            game.createParticles(animal.x + animal.w/2, animal.y, 8, '#4CAF50');
+                        }
+                    });
+                    
                     // Mettre à jour les collectibles
                     game.collectibles.forEach((c, index) => {
                         c.vy += config.physics.gravity * 0.5;
@@ -1184,6 +1338,35 @@
                             }
                         }
                     });
+                    
+                    // Interaction avec les coffres
+                    game.chests.forEach(chest => {
+                        if (!chest.opened && game.player.rectCollide(chest)) {
+                            if (keys['KeyE']) { // Touche E pour ouvrir
+                                chest.opened = true;
+                                let hasSurvivalItem = false;
+                                chest.loot.forEach(lootItem => {
+                                    game.inventory.addItem(lootItem.item, lootItem.quantity);
+                                    game.logger.log(`Trouvé: ${lootItem.quantity}x ${lootItem.item}`);
+                                    
+                                    // Vérifier si c'est un item de survie
+                                    if (SURVIVAL_ITEMS.some(item => item.toLowerCase().replace(/\s+/g, '_') === lootItem.item)) {
+                                        hasSurvivalItem = true;
+                                    }
+                                });
+                                
+                                game.createParticles(chest.x + chest.w/2, chest.y, 15, '#FFD700');
+                                game.sound.play('chest_open');
+                                game.questSystem.updateQuestProgress('open_chests', { amount: 1 });
+                                game.statistics.chestsOpened++;
+                                
+                                if (hasSurvivalItem) {
+                                    game.questSystem.updateQuestProgress('collect_survival_items', { amount: 1 });
+                                    game.statistics.survivalItemsFound++;
+                                }
+                            }
+                        }
+                    });
 
                     // Mettre à jour le système de minage
                     updateMining(game, keys, mouse, delta);
@@ -1194,9 +1377,12 @@
                     if (game.biomeSystem) game.biomeSystem.updatePlayerBiome(game.player, game);
                     if (game.weatherSystem) game.weatherSystem.update(game, delta);
                     if (game.lightingSystem) game.lightingSystem.updateLightMap(game);
+                    if (game.advancedLighting) game.advancedLighting.update();
+                    if (game.disasterManager) game.disasterManager.update(game, delta);
                     
                     if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
                     if (game.timeSystem) game.timeSystem.update();
+                    if (game.calendarSystem) game.calendarSystem.update();
                     game.logger.update();
 
                     // Génération du monde
@@ -1366,6 +1552,30 @@
                             ctx.fillRect(item.x, item.y, item.w, item.h);
                             ctx.shadowBlur = 0;
                         });
+                        
+                        // Dessiner les coffres
+                        game.chests.forEach(chest => {
+                            ctx.save();
+                            ctx.translate(chest.x, chest.y);
+                            if (chest.type && chest.type.draw) {
+                                chest.type.draw(ctx);
+                            } else {
+                                // Coffre simple si pas de type
+                                ctx.fillStyle = chest.opened ? '#8B4513' : '#D2691E';
+                                ctx.fillRect(0, 0, chest.w, chest.h);
+                                ctx.strokeStyle = '#654321';
+                                ctx.strokeRect(0, 0, chest.w, chest.h);
+                            }
+                            
+                            // Indicateur d'interaction
+                            if (!chest.opened && game.player.rectCollide(chest)) {
+                                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                                ctx.font = '12px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.fillText('E', chest.w/2, -5);
+                            }
+                            ctx.restore();
+                        });
 
                         // Dessiner les PNJ
                         game.pnjs.forEach(pnj => {
@@ -1375,6 +1585,30 @@
                                 ctx.fillStyle = '#4CAF50';
                                 ctx.fillRect(pnj.x, pnj.y, pnj.w || 16, pnj.h || 16);
                             }
+                        });
+                        
+                        // Dessiner les animaux
+                        game.animals.forEach(animal => {
+                            ctx.save();
+                            ctx.translate(animal.x + animal.w/2, animal.y + animal.h/2);
+                            if (animal.lastDirection < 0) ctx.scale(-1, 1);
+                            
+                            // Rendu simple des animaux par couleur de biome
+                            const biomeColors = {
+                                surface: '#8B4513',
+                                paradise: '#FFD700', 
+                                nucleus: '#00FFFF'
+                            };
+                            
+                            ctx.fillStyle = biomeColors[animal.biome] || '#8B4513';
+                            ctx.fillRect(-animal.w/2, -animal.h/2, animal.w, animal.h);
+                            
+                            // Yeux
+                            ctx.fillStyle = '#000000';
+                            ctx.fillRect(-animal.w/4, -animal.h/3, 3, 3);
+                            ctx.fillRect(animal.w/4-3, -animal.h/3, 3, 3);
+                            
+                            ctx.restore();
                         });
 
                         // Dessiner les ennemis avec leurs animations
@@ -1416,6 +1650,11 @@
                         ctx.fillRect(projectile.x, projectile.y, projectile.w, projectile.h);
                         ctx.restore();
                     });
+                    
+                    // Appliquer l'éclairage avancé
+                    if (game.advancedLighting && config.dynamicLighting) {
+                        game.advancedLighting.drawLightOverlay(ctx, game.player, game.camera, zoom);
+                    }
                     
                     // Dessiner les particules
                     game.particleSystem.draw(ctx);
@@ -1496,6 +1735,21 @@
                         // Afficher l'heure
                         if (game.timeSystem && game.timeSystem.formatDateTime) {
                             ctx.fillText(`Temps: ${game.timeSystem.formatDateTime()}`, 20, 150);
+                        }
+                        
+                        // Afficher la date du calendrier
+                        if (game.calendarSystem) {
+                            const date = game.calendarSystem.getDate();
+                            const time = game.calendarSystem.getTime();
+                            ctx.fillText(`Date: ${date.day}/${date.month}/${date.year}`, 20, 170);
+                            ctx.fillText(`Calendrier: ${time.hour.toString().padStart(2,'0')}:${time.minute.toString().padStart(2,'0')}`, 20, 190);
+                        }
+                        
+                        // Afficher les statistiques
+                        if (game.statistics) {
+                            ctx.fillText(`Coffres: ${game.statistics.chestsOpened}`, 20, 210);
+                            ctx.fillText(`Animaux: ${game.statistics.animalsObserved}`, 20, 230);
+                            ctx.fillText(`Survie: ${game.statistics.survivalItemsFound}`, 20, 250);
                         }
                         
                         // Dessiner l'interface de jeu

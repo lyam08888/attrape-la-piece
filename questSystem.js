@@ -125,6 +125,62 @@ export class QuestSystem {
             { xp: 300, items: [{ name: 'diamond_pickaxe', quantity: 1 }] },
             ['explorer']
         ));
+
+        // Nouvelles quêtes innovantes
+        this.addQuest(new Quest(
+            'treasure_hunter',
+            'Chasseur de Trésors',
+            'Trouvez et ouvrez des coffres cachés dans le monde.',
+            [
+                { id: 'open_chests', description: 'Ouvrir 3 coffres', target: 3 }
+            ],
+            { xp: 150, items: [{ name: 'gold', quantity: 5 }] },
+            ['first_steps']
+        ));
+        
+        this.addQuest(new Quest(
+            'animal_observer',
+            'Observateur de la Faune',
+            'Observez différents types d\'animaux dans leurs habitats naturels.',
+            [
+                { id: 'observe_animals', description: 'Observer 5 animaux différents', target: 5 }
+            ],
+            { xp: 100, items: [{ name: 'wood', quantity: 10 }] },
+            ['treasure_hunter']
+        ));
+        
+        this.addQuest(new Quest(
+            'disaster_survivor',
+            'Survivant des Catastrophes',
+            'Survivez à une catastrophe naturelle.',
+            [
+                { id: 'survive_disaster', description: 'Survivre à 1 catastrophe', target: 1 }
+            ],
+            { xp: 200, items: [{ name: 'diamond', quantity: 2 }] },
+            ['animal_observer']
+        ));
+        
+        this.addQuest(new Quest(
+            'time_keeper',
+            'Gardien du Temps',
+            'Passez une journée complète dans le monde.',
+            [
+                { id: 'survive_day', description: 'Survivre 24h de jeu', target: 1 }
+            ],
+            { xp: 300, items: [{ name: 'crystal', quantity: 3 }] },
+            ['disaster_survivor']
+        ));
+        
+        this.addQuest(new Quest(
+            'survival_expert',
+            'Expert en Survie',
+            'Collectez des objets de survie rares.',
+            [
+                { id: 'collect_survival_items', description: 'Collecter 3 objets de survie', target: 3 }
+            ],
+            { xp: 250, items: [{ name: 'gold', quantity: 10 }] },
+            ['time_keeper']
+        ));
     }
 
     addQuest(quest) {
