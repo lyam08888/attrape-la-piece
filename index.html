@@ -602,6 +602,7 @@
         import { LightingSystem as AdvancedLighting } from './lighting.js';
         import { SURVIVAL_ITEMS } from './survivalItems.js';
         import { generateMonster } from './generateurMonstres.js';
+        import { Enemy, Slime } from './enemy.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -658,7 +659,7 @@
                             const x = game.player.x + Math.cos(angle) * distance;
                             const y = game.player.y + Math.sin(angle) * distance;
                             
-                            const monster = new Enemy(x, y, 'slime');
+                            const monster = new Slime(x, y, game.config);
                             monster.health = 15;
                             monster.maxHealth = 15;
                             game.enemies.push(monster);
@@ -1261,7 +1262,7 @@
                         }
                         
                         // Créer un ennemi avec les données du monstre généré
-                        const monster = new Enemy(x, y, 'custom_monster');
+                        const monster = new Enemy(x, y, game.config);
                         monster.monsterData = monsterData;
                         monster.biome = biome;
                         monster.maxHealth = 30 + Math.floor(Math.random() * 50);
