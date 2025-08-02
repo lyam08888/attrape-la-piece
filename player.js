@@ -23,6 +23,8 @@ export class Player {
         this.inventory = {};
         this.miningTarget = null;
         this.miningProgress = 0;
+        this.attackCooldown = 0;
+        this.attackRange = 40;
 
         this.state = 'idle';
         this.animTimer = 0;
@@ -128,6 +130,8 @@ export class Player {
 
         if (this.swingTimer > 0) this.swingTimer--;
         if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
+        
+        this.updateCombat(game, delta);
     }
     
     checkCollectibleCollisions(game) {
@@ -300,5 +304,97 @@ export class Player {
                 ctx.restore();
             }
         }
+    }
+
+    updateCombat(game, delta) {
+        if (this.attackCooldown > 0) {
+            this.attackCooldown -= delta;
+        }
+    }
+
+    attack(game) {
+        if (this.attackCooldown > 0) return false;
+        
+        const currentTool = this.tools[this.selectedToolIndex];
+        const weapon = { name: currentTool };
+        
+        // Zone d'attaque devant le joueur
+        const attackX = this.x + (this.dir === 1 ? this.w : -this.attackRange);
+        const attackY = this.y;
+        const attackZone = {
+            x: attackX,
+            y: attackY,
+            w: this.attackRange,
+            h: this.h
+        };
+        
+        let hitSomething = false;
+        
+        // Attaquer les ennemis
+        game.enemies.forEach(enemy => {
+            if (enemy.isDead) return;
+            
+            if (this.isInAttackZone(enemy, attackZone)) {
+                const damage = game.combatSystem.attack(this, enemy, weapon);
+                if (enemy.health <= 0) {
+                    enemy.isDead = true;
+                    enemy.deathTime = Date.now();
+                    
+                    // Récompenses
+                    if (this.stats) {
+                        this.stats.addEnemyKilled();
+                        this.stats.addXP(enemy.xpReward || 10);
+                    }
+                    
+                    // Mettre à jour les quêtes
+                    if (game.questSystem) {
+                        game.questSystem.updateQuestProgress('kill_enemies', { amount: 1 });
+                    }
+                    
+                    game.createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, 15, '#ff0000');
+                    game.logger.log(`${enemy.name || 'Ennemi'} éliminé !`);
+                }
+                hitSomething = true;
+            }
+        });
+        
+        if (hitSomething) {
+            this.attackCooldown = this.getAttackCooldown(currentTool);
+            this.swingTimer = 20;
+            game.triggerCameraShake(2, 10);
+            return true;
+        }
+        
+        return false;
+    }
+
+    isInAttackZone(target, attackZone) {
+        return (
+            target.x < attackZone.x + attackZone.w &&
+            target.x + target.w > attackZone.x &&
+            target.y < attackZone.y + attackZone.h &&
+            target.y + target.h > attackZone.y
+        );
+    }
+
+    getAttackCooldown(toolName) {
+        const cooldowns = {
+            'sword': 500,    // 0.5 seconde
+            'knife': 300,    // 0.3 seconde
+            'axe': 800,      // 0.8 seconde
+            'pickaxe': 600,  // 0.6 seconde
+            'shovel': 700,   // 0.7 seconde
+            'bow': 1000,     // 1 seconde
+            'fishing_rod': 400 // 0.4 seconde
+        };
+        
+        return cooldowns[toolName] || 500;
+    }
+
+    takeDamage(amount, source) {
+        if (this.stats) {
+            return this.stats.takeDamage(amount, source);
+        }
+        return 0;
     }
 }

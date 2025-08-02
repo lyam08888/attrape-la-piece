@@ -48,6 +48,21 @@ export function updateMining(game, keys, mouse, delta) {
 function destroyBlock(game, x, y, type) {
     const { tileSize } = game.config;
     game.tileMap[y][x] = TILE.AIR;
+    
+    // Ajouter des statistiques
+    if (game.player && game.player.stats) {
+        game.player.stats.addBlockMined();
+    }
+    
+    // Mettre à jour les quêtes
+    if (game.questSystem) {
+        game.questSystem.updateQuestProgress('mine_blocks', { amount: 1 });
+        
+        // Quêtes spécifiques selon le type de bloc
+        if (type === TILE.WOOD || type === TILE.OAK_WOOD) {
+            game.questSystem.updateQuestProgress('collect_wood', { amount: 1 });
+        }
+    }
     game.sound?.play('break_block');
     game.createParticles(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 10, '#ccc');
 

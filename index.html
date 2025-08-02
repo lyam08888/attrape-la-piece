@@ -204,6 +204,116 @@
             height: 80%;
             image-rendering: pixelated;
         }
+
+        #gameInfo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            pointer-events: all;
+        }
+
+        .bar-container {
+            position: relative;
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #666;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .health-fill {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+        }
+
+        .bar-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        #minimap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #666;
+            border-radius: 8px;
+            pointer-events: all;
+        }
+
+        .inventory-slot {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #666;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .inventory-slot:hover {
+            border-color: var(--primary-color);
+            background: rgba(252, 152, 56, 0.2);
+        }
+
+        .inventory-slot img {
+            width: 80%;
+            height: 80%;
+            image-rendering: pixelated;
+        }
+
+        .stat-line {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        #questList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .quest-item {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #666;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .quest-title {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .quest-description {
+            font-size: 10px;
+            margin: 5px 0;
+        }
+
+        .quest-progress {
+            font-size: 10px;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -211,6 +321,22 @@
         <canvas id="gameCanvas"></canvas>
         <div id="hud">
              <div id="toolbar"></div>
+             <div id="gameInfo">
+                <div id="healthBar">
+                    <div class="bar-container">
+                        <div class="bar-fill health-fill" id="healthFill"></div>
+                        <span class="bar-text">❤️ <span id="healthText">100/100</span></span>
+                    </div>
+                </div>
+                <div id="timeDisplay">
+                    <span id="gameTime">06:00</span>
+                    <span id="gameDate">Jour 1</span>
+                </div>
+                <div id="biomeDisplay">
+                    <span id="currentBiome">Surface</span>
+                </div>
+             </div>
+             <div id="minimap"></div>
         </div>
 
         <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
@@ -277,6 +403,49 @@
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
+
+        <div id="inventoryMenu" class="overlay">
+            <div class="menu-box" style="max-width: 600px;">
+                <h2>INVENTAIRE</h2>
+                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
+                    <!-- Slots d'inventaire générés dynamiquement -->
+                </div>
+                <div id="craftingArea" style="margin-top: 20px;">
+                    <h3>FABRICATION</h3>
+                    <div id="craftingGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; margin: 10px auto;">
+                        <!-- Grille de crafting 3x3 -->
+                    </div>
+                    <div id="craftingResult" style="margin: 10px 0;">
+                        <div class="inventory-slot" id="resultSlot"></div>
+                    </div>
+                </div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
+        <div id="characterMenu" class="overlay">
+            <div class="menu-box">
+                <h2>PERSONNAGE</h2>
+                <div id="characterStats">
+                    <div class="stat-line">Niveau: <span id="playerLevel">1</span></div>
+                    <div class="stat-line">Expérience: <span id="playerXP">0/100</span></div>
+                    <div class="stat-line">Santé: <span id="playerHealth">100/100</span></div>
+                    <div class="stat-line">Force: <span id="playerStrength">10</span></div>
+                    <div class="stat-line">Vitesse: <span id="playerSpeed">10</span></div>
+                </div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
+        <div id="questMenu" class="overlay">
+            <div class="menu-box">
+                <h2>QUÊTES</h2>
+                <div id="questList">
+                    <!-- Quêtes générées dynamiquement -->
+                </div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -296,7 +465,10 @@
                 },
                 menus: {
                     pause: document.getElementById('pauseMenu'),
-                    options: document.getElementById('optionsMenu')
+                    options: document.getElementById('optionsMenu'),
+                    inventory: document.getElementById('inventoryMenu'),
+                    character: document.getElementById('characterMenu'),
+                    quests: document.getElementById('questMenu')
                 },
                 seedInput: document.getElementById('seed-input')
             };
@@ -335,6 +507,9 @@
                         case 'close-menu': target.closest('.overlay').classList.remove('active'); break;
                         case 'back-to-main-menu-view': switchView(ui.views.main); break;
                         case 'resume': togglePauseMenu(); break;
+                        case 'open-inventory': openMenu(ui.menus.inventory); break;
+                        case 'open-character': openMenu(ui.menus.character); break;
+                        case 'open-quests': openMenu(ui.menus.quests); break;
                         case 'open-options': openMenu(ui.menus.options); break;
                         case 'back-to-main-menu': window.location.reload(); break;
                     }
@@ -348,13 +523,54 @@
             });
 
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isGameRunning) {
+                if (!isGameRunning) return;
+                
+                if (e.key === 'Escape') {
                     const activeSubMenu = document.querySelector('.overlay.active');
                     if (activeSubMenu) {
                         closeMenu(activeSubMenu);
                     } else {
                         togglePauseMenu();
                     }
+                } else if (e.key === 'i' || e.key === 'I') {
+                    e.preventDefault();
+                    const isInventoryOpen = ui.menus.inventory.classList.contains('active');
+                    if (isInventoryOpen) {
+                        closeMenu(ui.menus.inventory);
+                    } else {
+                        openMenu(ui.menus.inventory);
+                    }
+                } else if (e.key === 'c' || e.key === 'C') {
+                    e.preventDefault();
+                    const isCharacterOpen = ui.menus.character.classList.contains('active');
+                    if (isCharacterOpen) {
+                        closeMenu(ui.menus.character);
+                    } else {
+                        openMenu(ui.menus.character);
+                    }
+                } else if (e.key === 'q' || e.key === 'Q') {
+                    e.preventDefault();
+                    const isQuestOpen = ui.menus.quests.classList.contains('active');
+                    if (isQuestOpen) {
+                        closeMenu(ui.menus.quests);
+                    } else {
+                        openMenu(ui.menus.quests);
+                    }
+                } else if (e.key >= '1' && e.key <= '7' && window.game && window.game.player) {
+                    // Sélection d'outils avec les chiffres
+                    const toolIndex = parseInt(e.key) - 1;
+                    if (toolIndex < window.game.player.tools.length) {
+                        window.game.player.selectedToolIndex = toolIndex;
+                        window.game.updateToolbar();
+                    }
+                } else if (e.ctrlKey && e.key === 's' && window.game) {
+                    // Sauvegarde rapide
+                    e.preventDefault();
+                    window.game.saveSystem.saveGame(window.game);
+                } else if (e.ctrlKey && e.key === 'l' && window.game) {
+                    // Chargement rapide
+                    e.preventDefault();
+                    window.game.saveSystem.loadGame(window.game);
                 }
             });
         });
@@ -374,6 +590,13 @@
         import { Logger } from './logger.js';
         import { getItemIcon } from './itemIcons.js';
         import { SoundManager } from './sound.js';
+        import { QuestSystem, updateQuestUI } from './questSystem.js';
+        import { Inventory, CraftingSystem, updateInventoryUI, initializeCraftingUI } from './inventorySystem.js';
+        import { PlayerStats, CombatSystem, BiomeSystem, updatePlayerStatsUI } from './combatSystem.js';
+        import { WeatherSystem, LightingSystem } from './weatherSystem.js';
+        import { Minimap, initializeMinimap, drawMinimapToElement } from './minimap.js';
+        import { EnemySpawner } from './enemySpawner.js';
+        import { SaveSystem, createSaveUI } from './saveSystem.js';
 
         async function loadConfig() {
             try {
@@ -512,6 +735,9 @@
             setupOptionHandlers();
             syncOptionUI();
 
+            // Référence globale pour les contrôles
+            window.game = null;
+            
             const game = {
                 config: config,
                 assets: {},
@@ -520,9 +746,20 @@
                 enemies: [],
                 pnjs: [],
                 collectibles: [],
+                projectiles: [],
+                enemySpawner: null,
                 camera: { x: 0, y: 0 },
                 particleSystem: new ParticleSystem(),
                 logger: new Logger(),
+                questSystem: new QuestSystem(),
+                inventory: new Inventory(32),
+                craftingSystem: new CraftingSystem(),
+                combatSystem: new CombatSystem(),
+                biomeSystem: new BiomeSystem(),
+                weatherSystem: new WeatherSystem(config),
+                lightingSystem: new LightingSystem(config),
+                minimap: null,
+                saveSystem: new SaveSystem(),
                 lastTime: 0,
                 canvas: canvas,
                 settings: config,
@@ -547,6 +784,44 @@
                         if (icon) slot.appendChild(icon.cloneNode(true));
                         toolbar.appendChild(slot);
                     });
+                },
+
+                updateUI() {
+                    if (this.player && this.player.stats) {
+                        updatePlayerStatsUI(this.player.stats);
+                        
+                        // Mettre à jour l'affichage du temps
+                        if (this.timeSystem) {
+                            const timeInfo = this.timeSystem.getTime();
+                            const dateInfo = this.timeSystem.getDate();
+                            const gameTime = document.getElementById('gameTime');
+                            const gameDate = document.getElementById('gameDate');
+                            
+                            if (gameTime) {
+                                const pad = n => n.toString().padStart(2, '0');
+                                gameTime.textContent = `${pad(timeInfo.hour)}:${pad(timeInfo.minute)}`;
+                            }
+                            
+                            if (gameDate) {
+                                gameDate.textContent = `Jour ${dateInfo.day}`;
+                            }
+                        }
+                    }
+                    
+                    // Mettre à jour l'interface des quêtes si elle est ouverte
+                    if (document.getElementById('questMenu').classList.contains('active')) {
+                        updateQuestUI(this.questSystem);
+                    }
+                    
+                    // Mettre à jour l'inventaire si il est ouvert
+                    if (document.getElementById('inventoryMenu').classList.contains('active')) {
+                        updateInventoryUI(this.inventory);
+                    }
+                    
+                    // Mettre à jour la minimap
+                    if (this.minimap) {
+                        drawMinimapToElement(this.minimap, this);
+                    }
                 },
 
                 triggerCameraShake(strength = 5, duration = 30) {
@@ -596,8 +871,12 @@
                     game.logger.log("Génération du monde...");
                     generateLevel(game, config);
 
+                    // Initialiser le joueur avec des statistiques
                     game.player = new Player(100, 100, config, game.sound);
+                    game.player.stats = new PlayerStats();
+                    game.player.inventory = game.inventory;
 
+                    // Positionner le joueur
                     const startXTile = Math.floor(game.generatedRange.max / 4);
                     for (let y = 0; y < game.tileMap.length; y++) {
                         if (game.tileMap[y][startXTile] > TILE.AIR) {
@@ -607,20 +886,137 @@
                         }
                     }
                     
+                    // Initialiser les systèmes
                     game.worldAnimator = new WorldAnimator(config, assets);
                     game.timeSystem = new TimeSystem();
+                    
+                    // Générer des PNJ
+                    for (let i = 0; i < 5; i++) {
+                        const pnj = generatePNJ(game, config);
+                        if (pnj) game.pnjs.push(pnj);
+                    }
+                    
+                    // Initialiser l'interface de crafting
+                    initializeCraftingUI(game.craftingSystem);
+                    
+                    // Initialiser la minimap
+                    game.minimap = initializeMinimap(game);
+                    
+                    // Initialiser le générateur d'ennemis
+                    game.enemySpawner = new EnemySpawner(config);
+                    
+                    // Ajouter quelques items de départ
+                    game.inventory.addItem('wood', 10);
+                    game.inventory.addItem('stone', 5);
+                    
+                    // Démarrer la première quête
+                    game.questSystem.startQuest('first_steps');
+                    
+                    // Événements de récompenses de quêtes
+                    document.addEventListener('quest-reward', (event) => {
+                        const { type, amount, name, quantity } = event.detail;
+                        if (type === 'xp') {
+                            const levelsGained = game.player.stats.addXP(amount);
+                            if (levelsGained > 0) {
+                                game.logger.log(`Niveau supérieur ! Niveau ${game.player.stats.level}`);
+                                game.createParticles(game.player.x + game.player.w/2, game.player.y, 20, '#ffd700');
+                            }
+                        } else if (type === 'item') {
+                            game.inventory.addItem(name, quantity);
+                            game.logger.log(`Reçu: ${quantity}x ${name}`);
+                        }
+                    });
+                    
                     game.updateToolbar();
+                    game.updateUI();
                     game.logger.log("Jeu prêt !");
+                    
+                    // Assigner la référence globale
+                    window.game = game;
                 },
 
                 update(delta, keys, mouse) {
                     if (!game.player) return;
 
+                    // Mettre à jour les statistiques du joueur
+                    if (game.player.stats) {
+                        game.player.stats.updateEffects(delta);
+                        game.player.stats.updatePlayTime(delta);
+                    }
+
+                    // Mettre à jour le joueur
+                    const oldX = game.player.x;
+                    const oldY = game.player.y;
                     game.player.update(keys, mouse, game, delta);
-                    game.enemies.forEach(e => e.update(game, delta));
+                    
+                    // Gestion des attaques
+                    if (mouse.left && game.player.swingTimer <= 0) {
+                        game.player.attack(game);
+                    }
+                    
+                    // Calculer la distance parcourue
+                    if (game.player.stats) {
+                        const distance = Math.sqrt(Math.pow(game.player.x - oldX, 2) + Math.pow(game.player.y - oldY, 2));
+                        game.player.stats.addDistanceWalked(distance);
+                        
+                        // Mettre à jour les quêtes de marche
+                        if (distance > 0) {
+                            game.questSystem.updateQuestProgress('walk_distance', { amount: distance });
+                        }
+                    }
+
+                    // Générer et mettre à jour les ennemis
+                    if (game.enemySpawner) {
+                        game.enemySpawner.update(game, delta);
+                    }
+                    
+                    game.enemies.forEach(e => {
+                        e.update(game, delta);
+                        
+                        // Vérifier les collisions avec le joueur
+                        if (game.player.rectCollide(e) && !e.isDead) {
+                            const damage = game.combatSystem.attack(e, game.player);
+                            game.triggerCameraShake(3, 15);
+                        }
+                    });
+                    
+                    // Mettre à jour les projectiles
+                    game.projectiles.forEach((projectile, index) => {
+                        projectile.x += projectile.vx;
+                        projectile.y += projectile.vy;
+                        projectile.life--;
+                        
+                        // Vérifier collision avec le joueur
+                        if (game.player.rectCollide(projectile)) {
+                            const damage = game.combatSystem.attack(
+                                { damage: projectile.damage, name: 'Projectile' }, 
+                                game.player
+                            );
+                            game.projectiles.splice(index, 1);
+                            game.createParticles(projectile.x, projectile.y, 8, '#ff4500');
+                            return;
+                        }
+                        
+                        // Vérifier collision avec les blocs
+                        const tileX = Math.floor(projectile.x / config.tileSize);
+                        const tileY = Math.floor(projectile.y / config.tileSize);
+                        if (game.tileMap[tileY]?.[tileX] > TILE.AIR) {
+                            game.projectiles.splice(index, 1);
+                            game.createParticles(projectile.x, projectile.y, 5, '#ff6600');
+                            return;
+                        }
+                        
+                        // Supprimer les projectiles expirés
+                        if (projectile.life <= 0) {
+                            game.projectiles.splice(index, 1);
+                        }
+                    });
+                    
+                    // Mettre à jour les PNJ
                     game.pnjs.forEach(p => p.update(game, delta));
                     
-                    game.collectibles.forEach(c => {
+                    // Mettre à jour les collectibles
+                    game.collectibles.forEach((c, index) => {
                         c.vy += config.physics.gravity * 0.5;
                         c.y += c.vy;
                         const groundY = Math.floor((c.y + c.h) / config.tileSize);
@@ -629,18 +1025,39 @@
                             c.y = groundY * config.tileSize - c.h;
                             c.vy = 0;
                         }
+                        
+                        // Vérifier la collecte par le joueur
+                        if (game.player.rectCollide(c)) {
+                            const tileKey = Object.keys(TILE).find(key => TILE[key] === c.tileType);
+                            if (tileKey) {
+                                const itemName = tileKey.toLowerCase();
+                                game.inventory.addItem(itemName, 1);
+                                game.collectibles.splice(index, 1);
+                                game.createParticles(c.x + c.w/2, c.y + c.h/2, 5, '#4CAF50');
+                            }
+                        }
                     });
 
+                    // Mettre à jour le système de minage
                     updateMining(game, keys, mouse, delta);
+                    
+                    // Mettre à jour les systèmes
                     game.particleSystem.update();
+                    game.combatSystem.updateDamageNumbers();
+                    game.biomeSystem.updatePlayerBiome(game.player, game);
+                    game.weatherSystem.update(game, delta);
+                    game.lightingSystem.updateLightMap(game);
+                    
                     if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
                     if (game.timeSystem) game.timeSystem.update();
                     game.logger.update();
 
+                    // Génération du monde
                     const playerTileX = Math.floor(game.player.x / config.tileSize);
-                    const bufferTiles = config.renderDistance * config.chunkSize;
+                    const bufferTiles = config.renderDistance * (config.chunkSize || 16);
                     ensureWorldColumns(game, config, playerTileX - bufferTiles, playerTileX + bufferTiles);
 
+                    // Gestion de la caméra
                     const { zoom, worldWidth, worldHeight } = config;
                     const canvasWidth = canvas.clientWidth;
                     const canvasHeight = canvas.clientHeight;
@@ -654,6 +1071,7 @@
                     game.camera.x = Math.max(0, Math.min(targetX, maxCameraX));
                     game.camera.y = Math.max(0, Math.min(targetY, maxCameraY));
 
+                    // Effet de tremblement de caméra
                     if (game.cameraShakeTimer > 0) {
                         game.cameraShakeTimer--;
                         game.cameraShakeOffsetX = (Math.random() - 0.5) * game.cameraShakeStrength;
@@ -662,6 +1080,12 @@
                         game.cameraShakeOffsetX = 0;
                         game.cameraShakeOffsetY = 0;
                     }
+                    
+                    // Mettre à jour l'interface utilisateur
+                    game.updateUI();
+                    
+                    // Sauvegarde automatique
+                    game.saveSystem.autoSave(game);
                 },
 
                 draw(ctx, assets) {
@@ -669,7 +1093,13 @@
 
                     const { tileSize, zoom } = config;
                     
-                    const skyGrad = game.timeSystem.getSkyGradient();
+                    // Arrière-plan du ciel avec influence météo
+                    let skyGrad = game.timeSystem.getSkyGradient();
+                    const currentBiome = game.biomeSystem.getCurrentBiome();
+                    if (currentBiome && currentBiome.skyColor) {
+                        skyGrad = currentBiome.skyColor;
+                    }
+                    
                     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
                     gradient.addColorStop(0, skyGrad[0]);
                     gradient.addColorStop(1, skyGrad[1]);
@@ -680,13 +1110,16 @@
                     ctx.scale(zoom, zoom);
                     ctx.translate(-game.camera.x + game.cameraShakeOffsetX, -game.camera.y + game.cameraShakeOffsetY);
 
+                    // Dessiner l'animateur de monde (nuages, etc.)
                     if (game.worldAnimator) game.worldAnimator.draw(ctx);
                     
+                    // Calculer la zone visible
                     const startX = Math.floor(game.camera.x / tileSize) - 1;
                     const endX = startX + Math.ceil(canvas.width / zoom / tileSize) + 2;
                     const startY = Math.floor(game.camera.y / tileSize) - 1;
                     const endY = startY + Math.ceil(canvas.height / zoom / tileSize) + 2;
 
+                    // Dessiner les tuiles
                     for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
                         for (let x = Math.max(0, startX); x < endX; x++) {
                             const tileType = game.tileMap[y]?.[x];
@@ -700,6 +1133,7 @@
                         }
                     }
                     
+                    // Dessiner les collectibles
                     game.collectibles.forEach(c => {
                          const assetKey = Object.keys(TILE).find(key => TILE[key] === c.tileType);
                          if(assetKey) {
@@ -708,11 +1142,36 @@
                          }
                     });
 
+                    // Dessiner les entités
                     game.pnjs.forEach(p => p.draw(ctx));
                     game.enemies.forEach(e => e.draw(ctx, assets));
                     if(game.player) game.player.draw(ctx, assets, config.playerAnimations);
+                    
+                    // Dessiner les projectiles
+                    game.projectiles.forEach(projectile => {
+                        ctx.save();
+                        if (projectile.type === 'fireball') {
+                            ctx.fillStyle = '#ff4500';
+                            ctx.shadowColor = '#ff4500';
+                            ctx.shadowBlur = 5;
+                        } else if (projectile.type === 'dragonfire') {
+                            ctx.fillStyle = '#ff6600';
+                            ctx.shadowColor = '#ff6600';
+                            ctx.shadowBlur = 8;
+                        } else {
+                            ctx.fillStyle = '#ffff00';
+                        }
+                        ctx.fillRect(projectile.x, projectile.y, projectile.w, projectile.h);
+                        ctx.restore();
+                    });
+                    
+                    // Dessiner les particules
                     game.particleSystem.draw(ctx);
                     
+                    // Dessiner les nombres de dégâts
+                    game.combatSystem.drawDamageNumbers(ctx, game.camera);
+                    
+                    // Effet de minage
                     if (game.miningEffect) {
                         ctx.globalAlpha = 0.5;
                         ctx.fillStyle = 'white';
@@ -726,6 +1185,14 @@
                     }
 
                     ctx.restore();
+                    
+                    // Dessiner les effets météo (par-dessus tout)
+                    game.weatherSystem.draw(ctx, game.camera, canvas);
+                    
+                    // Dessiner l'éclairage dynamique
+                    game.lightingSystem.draw(ctx, game.camera, canvas);
+                    
+                    // Dessiner l'interface de jeu
                     game.logger.draw(ctx, canvas);
                 },
 

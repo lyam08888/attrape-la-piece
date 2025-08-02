@@ -89,6 +89,21 @@ export class TimeSystem {
         const pad = n => n.toString().padStart(2, '0');
         return `${day}/${month}/${year} ${pad(hour)}:${pad(minute)}`;
     }
+
+    // Méthodes de sérialisation
+    serialize() {
+        return {
+            gameTime: this.gameTime,
+            timeSpeed: this.timeSpeed,
+            isPaused: this.isPaused
+        };
+    }
+
+    deserialize(data) {
+        this.gameTime = data.gameTime || 0;
+        this.timeSpeed = data.timeSpeed || 1;
+        this.isPaused = data.isPaused || false;
+    }
 }
 
 export function updateCalendarUI(timeSystem, uiElements) {
