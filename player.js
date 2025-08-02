@@ -27,6 +27,11 @@ export class Player {
         this.state = 'idle';
         this.animTimer = 0;
         this.animFrame = 0;
+        this.isCrouching = false;
+        this.isProne = false;
+        this.isFlying = false;
+        this.jumpCount = 0;
+        this.prevJump = false;
     }
 
     getHitbox() {
@@ -46,33 +51,64 @@ export class Player {
 
     update(keys, mouse, game, delta) {
         const { physics } = this.config;
-        const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
-        const speed = keys.run ? physics.playerSpeed * 1.5 : physics.playerSpeed;
+        this.isFlying = keys.fly;
 
-        if (keys.left) {
-            this.vx = Math.max(this.vx - accel, -speed);
-            this.dir = -1;
-        } else if (keys.right) {
-            this.vx = Math.min(this.vx + accel, speed);
-            this.dir = 1;
+        // Crouch / prone handling
+        if (this.grounded && keys.down && !this.isFlying) {
+            this.isProne = keys.run;
+            this.isCrouching = !keys.run;
         } else {
-            this.vx *= this.grounded ? physics.friction : physics.airResistance;
-            if (Math.abs(this.vx) < 0.1) this.vx = 0;
+            this.isCrouching = false;
+            this.isProne = false;
         }
 
-        if (keys.jump && this.grounded) {
-            this.vy = -physics.jumpForce;
-            this.sound?.play('jump');
+        let speed = physics.playerSpeed;
+        if (keys.run && !this.isCrouching && !this.isProne && !this.isFlying) speed *= 1.5;
+        if (this.isCrouching) speed *= 0.5;
+        if (this.isProne) speed *= 0.3;
+
+        if (this.isFlying) {
+            this.vx = keys.left ? -speed : keys.right ? speed : 0;
+            this.vy = keys.jump ? -speed : keys.down ? speed : 0;
+            this.grounded = false;
+        } else {
+            const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
+            if (keys.left) {
+                this.vx = Math.max(this.vx - accel, -speed);
+                this.dir = -1;
+            } else if (keys.right) {
+                this.vx = Math.min(this.vx + accel, speed);
+                this.dir = 1;
+            } else {
+                this.vx *= this.grounded ? physics.friction : physics.airResistance;
+                if (Math.abs(this.vx) < 0.1) this.vx = 0;
+            }
+
+            if (keys.jump && !this.prevJump) {
+                if (this.grounded) {
+                    this.vy = -physics.jumpForce;
+                    this.sound?.play('jump');
+                    this.jumpCount = 1;
+                } else if (this.jumpCount < 2) {
+                    this.vy = -physics.jumpForce;
+                    this.sound?.play('jump');
+                    this.jumpCount = 2;
+                }
+            }
+
+            this.vy += physics.gravity;
+            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
         }
 
-        this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
+        this.prevJump = keys.jump;
 
         this.handleCollisions(game);
+        if (this.grounded && !this.isFlying) this.jumpCount = 0;
+
         this.checkCollectibleCollisions(game);
         this.updateMiningTarget(mouse, game);
         this.updateStateAndAnimation();
-        
+
         if (this.swingTimer > 0) this.swingTimer--;
         if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
     }
@@ -92,8 +128,14 @@ export class Player {
     }
 
     updateStateAndAnimation() {
-        if (!this.grounded) {
-            this.state = 'jumping';
+        if (this.isFlying) {
+            this.state = 'flying';
+        } else if (this.isProne) {
+            this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
+        } else if (this.isCrouching) {
+            this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
+        } else if (!this.grounded) {
+            this.state = this.jumpCount === 2 ? 'doubleJump' : 'jumping';
         } else if (Math.abs(this.vx) > this.config.physics.playerSpeed) {
             this.state = 'running';
         } else if (Math.abs(this.vx) > 0.1) {
@@ -101,7 +143,7 @@ export class Player {
         } else {
             this.state = 'idle';
         }
-        
+
         const anim = this.config.playerAnimations[this.state];
         if (anim && anim.length > 0) {
             this.animTimer++;
