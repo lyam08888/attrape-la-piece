@@ -1932,20 +1932,22 @@
                         }
                         
                         try {
-                            // Mettre à jour la logique
-                            logic.update(delta, getKeys(), getMouse());
-                            
-                            // Dessiner
+                            // Mettre à jour la logique uniquement si le jeu n'est pas en pause
+                            if (!logic.isPaused || !logic.isPaused()) {
+                                logic.update(delta, getKeys(), getMouse());
+                            }
+
+                            // Dessiner (toujours afficher, même en pause)
                             const ctx = canvas.getContext('2d');
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            
+
                             // Le jeu est maintenant actif
-                            
+
                             logic.draw(ctx, game.assets || {});
                         } catch (error) {
                             console.error("Erreur dans la boucle de jeu:", error);
                         }
-                        
+
                         requestAnimationFrame(gameLoop);
                     };
                     
