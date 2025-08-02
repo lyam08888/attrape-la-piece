@@ -39,13 +39,16 @@
             display: block;
             width: 100vw;
             height: 100vh;
-            background: transparent;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -o-crisp-edges;
+            background: #87CEEB;
             image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
             -ms-interpolation-mode: nearest-neighbor;
             transition: filter 0.3s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
         #gameCanvas.paused {
             filter: blur(8px) grayscale(60%);
@@ -691,7 +694,52 @@
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
 
-            const engine = new GameEngine(canvas, config);
+            // Gestion des entrées
+            const keys = {};
+            const mouse = { x: 0, y: 0, left: false, right: false };
+
+            const getKeys = () => ({
+                left: keys['ArrowLeft'] || keys['a'] || keys['A'],
+                right: keys['ArrowRight'] || keys['d'] || keys['D'],
+                up: keys['ArrowUp'] || keys['w'] || keys['W'],
+                down: keys['ArrowDown'] || keys['s'] || keys['S'],
+                jump: keys[' '] || keys['Space'],
+                run: keys['Shift'],
+                fly: keys['Control'],
+                interact: keys['e'] || keys['E']
+            });
+
+            const getMouse = () => mouse;
+
+            // Événements clavier
+            document.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                keys[e.code] = true;
+            });
+
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+                keys[e.code] = false;
+            });
+
+            // Événements souris
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0) mouse.left = true;
+                if (e.button === 2) mouse.right = true;
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (e.button === 0) mouse.left = false;
+                if (e.button === 2) mouse.right = false;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = (e.clientX - rect.left) / config.zoom;
+                mouse.y = (e.clientY - rect.top) / config.zoom;
+            });
+
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
             const optionsMenu = document.getElementById('optionsMenu');
             const renderDistanceSlider = document.getElementById('renderDistanceSlider');
@@ -827,8 +875,11 @@
                         const slot = document.createElement('div');
                         slot.className = 'toolbar-slot';
                         if (index === this.player.selectedToolIndex) slot.classList.add('selected');
-                        const icon = getItemIcon(toolName, this.assets);
-                        if (icon) slot.appendChild(icon.cloneNode(true));
+                        // Créer une icône simple
+                        const icon = document.createElement('div');
+                        icon.textContent = toolName.charAt(0).toUpperCase();
+                        icon.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;';
+                        slot.appendChild(icon);
                         toolbar.appendChild(slot);
                     });
                 },
@@ -912,9 +963,16 @@
             window.closeOptionsMenu = closeOptionsMenu;
 
             const gameLogic = {
-                init(assets) {
+                init(assets = {}) {
+                    console.log("Initialisation du jeu...");
                     game.assets = assets;
-                    game.sound = new SoundManager(config.soundVolume);
+                    
+                    // Créer un gestionnaire de son basique
+                    game.sound = {
+                        play: (name) => console.log(`Son: ${name}`),
+                        setVolume: (vol) => console.log(`Volume: ${vol}`)
+                    };
+                    
                     game.logger.log("Génération du monde...");
                     generateLevel(game, config);
 
@@ -923,25 +981,30 @@
                     game.player.stats = new PlayerStats();
                     game.player.inventory = game.inventory;
 
-                    // Positionner le joueur
-                    const startXTile = Math.floor(game.generatedRange.max / 4);
+                    // Positionner le joueur au centre du monde
+                    const startXTile = Math.floor(config.worldWidth / config.tileSize / 2);
+                    let playerY = 0;
+                    
+                    // Trouver la surface
                     for (let y = 0; y < game.tileMap.length; y++) {
-                        if (game.tileMap[y][startXTile] > TILE.AIR) {
-                            game.player.x = startXTile * config.tileSize;
-                            game.player.y = (y - 3) * config.tileSize;
+                        if (game.tileMap[y] && game.tileMap[y][startXTile] > TILE.AIR) {
+                            playerY = (y - 3) * config.tileSize;
                             break;
                         }
                     }
                     
+                    game.player.x = startXTile * config.tileSize;
+                    game.player.y = Math.max(0, playerY);
+                    
                     // Initialiser les systèmes
-                    game.worldAnimator = new WorldAnimator(config, assets);
+                    game.worldAnimator = null; // Désactivé pour l'instant
                     game.timeSystem = new TimeSystem();
                     
-                    // Générer des PNJ
-                    for (let i = 0; i < 5; i++) {
-                        const pnj = generatePNJ(game, config);
-                        if (pnj) game.pnjs.push(pnj);
-                    }
+                    // Générer des PNJ (désactivé pour l'instant)
+                    // for (let i = 0; i < 5; i++) {
+                    //     const pnj = generatePNJ(game, config);
+                    //     if (pnj) game.pnjs.push(pnj);
+                    // }
                     
                     // Initialiser l'interface de crafting
                     initializeCraftingUI(game.craftingSystem);
@@ -977,6 +1040,8 @@
                     game.updateToolbar();
                     game.updateUI();
                     game.logger.log("Jeu prêt !");
+                    console.log("Initialisation terminée. Joueur position:", game.player.x, game.player.y);
+                    console.log("Taille du monde:", game.tileMap.length, "x", game.tileMap[0]?.length);
                     
                     // Assigner la référence globale
                     window.game = game;
@@ -1136,26 +1201,50 @@
                 },
 
                 draw(ctx, assets) {
-                    if (!game.timeSystem || !game.tileMap.length) return;
+                    try {
+                        // Arrière-plan simple
+                        ctx.fillStyle = '#87CEEB';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        if (!game.player || !game.tileMap || !game.tileMap.length) {
+                            // Afficher un message d'attente
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '24px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Chargement du monde...', canvas.width/2, canvas.height/2);
+                            return;
+                        }
 
                     const { tileSize, zoom } = config;
                     
-                    // Arrière-plan du ciel avec influence météo
-                    let skyGrad = game.timeSystem.getSkyGradient();
-                    const currentBiome = game.biomeSystem.getCurrentBiome();
-                    if (currentBiome && currentBiome.skyColor) {
-                        skyGrad = currentBiome.skyColor;
-                    }
-                    
-                    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                    gradient.addColorStop(0, skyGrad[0]);
-                    gradient.addColorStop(1, skyGrad[1]);
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        // Arrière-plan du ciel avec système temporel
+                        if (game.timeSystem && game.timeSystem.getSkyGradient) {
+                            try {
+                                let skyGrad = game.timeSystem.getSkyGradient();
+                                const currentBiome = game.biomeSystem.getCurrentBiome();
+                                if (currentBiome && currentBiome.skyColor) {
+                                    skyGrad = currentBiome.skyColor;
+                                }
+                                
+                                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                                gradient.addColorStop(0, skyGrad[0] || '#87CEEB');
+                                gradient.addColorStop(1, skyGrad[1] || '#98D8E8');
+                                ctx.fillStyle = gradient;
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            } catch (e) {
+                                console.warn("Erreur ciel:", e);
+                                ctx.fillStyle = '#87CEEB';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            }
+                        } else {
+                            // Arrière-plan par défaut
+                            ctx.fillStyle = '#87CEEB';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
 
                     ctx.save();
                     ctx.scale(zoom, zoom);
-                    ctx.translate(-game.camera.x + game.cameraShakeOffsetX, -game.camera.y + game.cameraShakeOffsetY);
+                    ctx.translate(-game.camera.x + (game.cameraShakeOffsetX || 0), -game.camera.y + (game.cameraShakeOffsetY || 0));
 
                     // Dessiner l'animateur de monde (nuages, etc.)
                     if (game.worldAnimator) game.worldAnimator.draw(ctx);
@@ -1233,18 +1322,80 @@
 
                     ctx.restore();
                     
-                    // Dessiner les effets météo (par-dessus tout)
-                    game.weatherSystem.draw(ctx, game.camera, canvas);
+                        // Dessiner les effets météo (par-dessus tout)
+                        if (game.weatherSystem && game.weatherSystem.draw) {
+                            try {
+                                game.weatherSystem.draw(ctx, game.camera, canvas);
+                            } catch (e) {
+                                console.warn("Erreur météo:", e);
+                            }
+                        }
+                        
+                        // Dessiner l'éclairage dynamique
+                        if (config.dynamicLighting && game.lightingSystem && game.lightingSystem.draw) {
+                            try {
+                                ctx.globalAlpha = 0.7;
+                                game.lightingSystem.draw(ctx, game.camera, canvas);
+                                ctx.globalAlpha = 1;
+                            } catch (e) {
+                                console.warn("Erreur éclairage:", e);
+                                ctx.globalAlpha = 1;
+                            }
+                        }
                     
-                    // Dessiner l'éclairage dynamique
-                    game.lightingSystem.draw(ctx, game.camera, canvas);
-                    
-                    // Dessiner l'interface de jeu
-                    game.logger.draw(ctx, canvas);
+                        // Interface utilisateur avancée
+                        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                        ctx.fillRect(10, 10, 200, 150);
+                        
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = '16px Arial';
+                        ctx.textAlign = 'left';
+                        
+                        if (game.player && game.player.stats) {
+                            ctx.fillText(`Vie: ${game.player.stats.health}/${game.player.stats.maxHealth}`, 20, 30);
+                            ctx.fillText(`Niveau: ${game.player.stats.level}`, 20, 50);
+                            ctx.fillText(`XP: ${game.player.stats.xp}`, 20, 70);
+                            ctx.fillText(`Force: ${game.player.stats.strength}`, 20, 90);
+                        }
+                        
+                        // Afficher le biome actuel
+                        if (game.biomeSystem) {
+                            const biome = game.biomeSystem.getCurrentBiome();
+                            if (biome) {
+                                ctx.fillText(`Biome: ${biome.name}`, 20, 110);
+                            }
+                        }
+                        
+                        // Afficher la météo
+                        if (game.weatherSystem && game.weatherSystem.currentWeather) {
+                            ctx.fillText(`Météo: ${game.weatherSystem.currentWeather.name}`, 20, 130);
+                        }
+                        
+                        // Afficher l'heure
+                        if (game.timeSystem && game.timeSystem.formatDateTime) {
+                            ctx.fillText(`Temps: ${game.timeSystem.formatDateTime()}`, 20, 150);
+                        }
+                        
+                        // Dessiner l'interface de jeu
+                        if (game.logger && game.logger.draw) {
+                            game.logger.draw(ctx, canvas);
+                        }
+                    } catch (error) {
+                        console.error("Erreur de dessin:", error);
+                        ctx.fillStyle = '#ff0000';
+                        ctx.font = '20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Erreur: ' + error.message, canvas.width/2, canvas.height/2);
+                    }
                 },
 
-                isPaused: () => optionsMenu.classList.contains('active'),
-                toggleMenu: (menu) => { if (menu === 'options') optionsMenu.classList.toggle('active'); },
+                isPaused: () => document.getElementById('optionsMenu')?.classList.contains('active') || false,
+                toggleMenu: (menu) => { 
+                    if (menu === 'options') {
+                        const optionsMenu = document.getElementById('optionsMenu');
+                        if (optionsMenu) optionsMenu.classList.toggle('active');
+                    }
+                },
                 selectTool: (index) => {
                     if (game.player && index >= 0 && index < game.player.tools.length) {
                         game.player.selectedToolIndex = index;
@@ -1260,9 +1411,60 @@
                 }
             };
 
+            // Créer le moteur de jeu
+            const engine = {
+                start: async (logic) => {
+                    console.log("Démarrage du moteur de jeu...");
+                    
+                    // Initialiser la logique de jeu
+                    await logic.init();
+                    
+                    // Démarrer la boucle de jeu
+                    let lastTime = 0;
+                    let frameCount = 0;
+                    const gameLoop = (currentTime) => {
+                        const delta = currentTime - lastTime;
+                        lastTime = currentTime;
+                        frameCount++;
+                        
+                        // Log moins fréquent
+                        if (frameCount === 60) {
+                            console.log("Jeu démarré avec succès!");
+                        }
+                        
+                        try {
+                            // Mettre à jour la logique
+                            logic.update(delta, getKeys(), getMouse());
+                            
+                            // Dessiner
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Le jeu est maintenant actif
+                            
+                            logic.draw(ctx, game.assets || {});
+                        } catch (error) {
+                            console.error("Erreur dans la boucle de jeu:", error);
+                        }
+                        
+                        requestAnimationFrame(gameLoop);
+                    };
+                    
+                    requestAnimationFrame(gameLoop);
+                }
+            };
+            
+            console.log("Démarrage du moteur...");
             await engine.start(gameLogic);
+            
+            console.log("Masquage de l'écran de chargement...");
             loadingScreen.classList.remove('active');
+            
+            console.log("Affichage du HUD...");
             if (hud) hud.classList.add('active');
+            
+            console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
+            console.log("Canvas visible:", canvas.offsetWidth, "x", canvas.offsetHeight);
         });
     </script>
 </body>
