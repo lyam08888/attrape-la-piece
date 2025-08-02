@@ -23,7 +23,7 @@ class LogMessage {
         const g = parseInt(color.slice(3, 5), 16);
         const b = parseInt(color.slice(5, 7), 16);
         
-        ctx.font = '12px "Press Start 2P"';
+        ctx.font = '12px "VT323"';
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
         ctx.textAlign = 'right';
         ctx.fillText(this.text, x, y - (index * 20));

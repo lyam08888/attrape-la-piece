@@ -29,7 +29,7 @@ function drawIcon(objName, ctx) {
       ctx.fillStyle=`hsl(${h*1.4}, 50%, 60%)`;
       ctx.fillRect(-12,-12,24,24);
       ctx.strokeStyle="rgba(0,0,0,0.2)"; ctx.strokeRect(-12,-12,24,24);
-      ctx.font="bold 11px monospace";
+      ctx.font='bold 11px "VT323"';
       ctx.fillStyle="rgba(0,0,0,0.6)";
       ctx.textAlign="center";
       ctx.fillText(objName.substring(0, 2).toUpperCase(), 0, 4);

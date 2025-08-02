@@ -111,7 +111,7 @@ export class GameEngine {
 
     start(gameLogic) {
         this.gameLogic = gameLogic;
-        this.loadAssets()
+        return this.loadAssets()
             .then(() => {
                 this.setupInput();
                 if (this.gameLogic.init) this.gameLogic.init(this.assets);

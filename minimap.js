@@ -176,7 +176,7 @@ export class Minimap {
             { color: '#ffd700', text: 'Minerais' }
         ];
 
-        ctx.font = '8px "Press Start 2P"';
+        ctx.font = '8px "VT323"';
         ctx.fillStyle = '#ffffff';
         
         legendItems.forEach((item, index) => {
