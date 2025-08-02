@@ -613,7 +613,41 @@
                 return await resp.json();
             } catch (e) {
                 console.error("Impossible de charger config.json. Utilisation d'une configuration par défaut.", e);
-                return {"version":"0.01","tileSize":16,"zoom":3,"worldWidth":2048,"worldHeight":1024,"generation":{"enemyCount":10,"treeCount":20},"physics":{"gravity":0.35,"jumpForce":8,"playerSpeed":3,"friction":0.85,"airResistance":0.98,"maxFallSpeed":10,"groundAcceleration":0.4,"airAcceleration":0.2},"player":{"width":32,"height":32,"hitbox":{"offsetX":4,"offsetY":4,"width":24,"height":24}}};
+                return {
+                    "version": "0.01",
+                    "tileSize": 16,
+                    "zoom": 3,
+                    "worldWidth": 2048,
+                    "worldHeight": 1024,
+                    "generation": { "enemyCount": 10, "treeCount": 20 },
+                    "physics": {
+                        "gravity": 0.35,
+                        "jumpForce": 8,
+                        "playerSpeed": 3,
+                        "friction": 0.85,
+                        "airResistance": 0.98,
+                        "maxFallSpeed": 10,
+                        "groundAcceleration": 0.4,
+                        "airAcceleration": 0.2
+                    },
+                    "player": {
+                        "width": 32,
+                        "height": 32,
+                        "hitbox": { "offsetX": 4, "offsetY": 4, "width": 24, "height": 24 }
+                    },
+                    "playerAnimations": {
+                        "idle": ["player_idle1", "player_idle2"],
+                        "walking": ["player_walk1", "player_walk2"],
+                        "running": ["player_run1", "player_run2"],
+                        "jumping": ["player_jump"],
+                        "doubleJump": ["player_double_jump1", "player_double_jump2"],
+                        "flying": ["player_fly1", "player_fly2"],
+                        "crouching": ["player_crouch"],
+                        "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
+                        "prone": ["player_prone"],
+                        "proneWalking": ["player_prone_walk1", "player_prone_walk2"]
+                    }
+                };
             }
         }
 
