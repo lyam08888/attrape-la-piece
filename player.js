@@ -32,6 +32,7 @@ export class Player {
         this.isFlying = false;
         this.jumpCount = 0;
         this.prevJump = false;
+        this.inWater = false;
     }
 
     getHitbox() {
@@ -50,8 +51,12 @@ export class Player {
     }
 
     update(keys, mouse, game, delta) {
-        const { physics } = this.config;
+        const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
+
+        const centerX = Math.floor((this.x + this.w / 2) / tileSize);
+        const centerY = Math.floor((this.y + this.h / 2) / tileSize);
+        this.inWater = game.tileMap[centerY]?.[centerX] === TILE.WATER;
 
         // Crouch / prone handling
         if (this.grounded && keys.down && !this.isFlying) {
@@ -70,6 +75,18 @@ export class Player {
         if (this.isFlying) {
             this.vx = keys.left ? -speed : keys.right ? speed : 0;
             this.vy = keys.jump ? -speed : keys.down ? speed : 0;
+            this.grounded = false;
+        } else if (this.inWater) {
+            const swimSpeed = physics.playerSpeed * 0.5;
+            this.vx = keys.left ? -swimSpeed : keys.right ? swimSpeed : this.vx * 0.9;
+            if (keys.jump) {
+                this.vy = -swimSpeed;
+            } else if (keys.down) {
+                this.vy = swimSpeed;
+            } else {
+                this.vy *= 0.9;
+                this.vy += physics.gravity * 0.2;
+            }
             this.grounded = false;
         } else {
             const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
@@ -130,6 +147,8 @@ export class Player {
     updateStateAndAnimation() {
         if (this.isFlying) {
             this.state = 'flying';
+        } else if (this.inWater) {
+            this.state = 'swimming';
         } else if (this.isProne) {
             this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
         } else if (this.isCrouching) {
@@ -197,7 +216,8 @@ export class Player {
             const tx = Math.floor((hb.x + hb.w) / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-            if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+            if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
+                ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
                 this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
                 this.vx = 0;
             }
@@ -205,7 +225,8 @@ export class Player {
             const tx = Math.floor(hb.x / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-             if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+             if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
+                 ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
                 this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
                 this.vx = 0;
             }
@@ -219,7 +240,8 @@ export class Player {
             const ty = Math.floor((hb.y + hb.h) / tileSize);
             const tx1 = Math.floor(hb.x / tileSize);
             const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+            if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
+                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER)) {
                 this.y = ty * tileSize - this.hitbox.height - this.hitbox.offsetY;
                 this.vy = 0;
                 this.grounded = true;
@@ -228,7 +250,8 @@ export class Player {
             const ty = Math.floor(hb.y / tileSize);
             const tx1 = Math.floor(hb.x / tileSize);
             const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+            if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
+                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER)) {
                 this.y = (ty + 1) * tileSize - this.hitbox.offsetY;
                 this.vy = 0;
             }
