@@ -15,16 +15,16 @@ export class PlayerStats {
         this.mining = 10;
         this.luck = 5;
         
+        // Effets temporaires
+        this.effects = new Map();
+
+        // Équipement (initialisé vide)
+        this.equipment = new Map();
+
         // Statistiques dérivées
         this.attackDamage = this.calculateAttackDamage();
         this.moveSpeed = this.calculateMoveSpeed();
         this.miningSpeed = this.calculateMiningSpeed();
-        
-        // Effets temporaires
-        this.effects = new Map();
-        
-        // Équipement (initialisé vide)
-        this.equipment = new Map();
         
         // Statistiques de jeu
         this.blocksMinedTotal = 0;
