@@ -44,7 +44,10 @@ function generateColumns(game, config, startX, width) {
 
         if (SeededRandom.random() < 0.05) {
             for (let y = 10; y < worldHeightInTiles; y++) {
-                if (game.tileMap[y]?.[x] === TILE.GRASS && game.tileMap[y - 1]?.[x] === TILE.AIR) {
+                if (
+                    game.tileMap[y]?.[x] === TILE.GRASS &&
+                    (game.tileMap[y - 1]?.[x] === TILE.AIR || game.tileMap[y - 1]?.[x] === undefined)
+                ) {
                     const treeHeight = 5 + Math.floor(SeededRandom.random() * 5);
                     for (let j = 0; j < treeHeight; j++) {
                         if (y - 1 - j > 0) game.tileMap[y - 1 - j][x] = TILE.OAK_WOOD;
