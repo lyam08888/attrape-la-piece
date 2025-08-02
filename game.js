@@ -20,7 +20,7 @@ async function loadConfig() {
         return await resp.json();
     } catch (e) {
         console.error("Impossible de charger config.json. Utilisation d'une configuration par défaut.", e);
-        return {"tileSize":16,"zoom":3,"worldWidth":2048,"worldHeight":1024,"generation":{"enemyCount":10,"treeCount":20},"physics":{"gravity":0.35,"jumpForce":8,"playerSpeed":3,"friction":0.85,"airResistance":0.98,"maxFallSpeed":10,"groundAcceleration":0.4,"airAcceleration":0.2},"player":{"width":64,"height":64,"hitbox":{"offsetX":8,"offsetY":8,"width":48,"height":48}}};
+        return {"version":"0.01","tileSize":16,"zoom":3,"worldWidth":2048,"worldHeight":1024,"generation":{"enemyCount":10,"treeCount":20},"physics":{"gravity":0.35,"jumpForce":8,"playerSpeed":3,"friction":0.85,"airResistance":0.98,"maxFallSpeed":10,"groundAcceleration":0.4,"airAcceleration":0.2},"player":{"width":64,"height":64,"hitbox":{"offsetX":8,"offsetY":8,"width":48,"height":48}}};
     }
 }
 
@@ -43,6 +43,7 @@ function saveOptions(opts) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const config = await loadConfig();
+    document.title = `Super Pixel Adventure 2 V.${config.version || '0.01'}`;
     const options = await loadOptions();
     Object.assign(config, options);
 
