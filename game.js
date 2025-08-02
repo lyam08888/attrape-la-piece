@@ -246,7 +246,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            updateMining(game, mouse, delta);
+            // Passe également les touches clavier pour permettre le minage via la touche d'action
+            updateMining(game, keys, mouse, delta);
             game.particleSystem.update();
             if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
             if (game.timeSystem) game.timeSystem.update();
