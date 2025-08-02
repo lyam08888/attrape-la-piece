@@ -2,11 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Pixel Adventure 2</title>
     <link rel="icon" href="https://placehold.co/32x32/f9a825/000000?text=P" />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         :root {
             --primary-color: #f9a825;
             --secondary-color: #a15c1e;
@@ -22,7 +21,7 @@
             background: #0d1117;
         }
         body {
-            font-family: 'Press Start 2P', cursive;
+            font-family: 'Press Start 2P', cursive; /* Utilise la police si disponible, sinon une police cursive générique */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -41,9 +40,12 @@
             width: 100%;
             height: 100%;
             background: transparent;
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
+            /* Amélioration de la compatibilité pour le rendu pixelisé */
+            image-rendering: -webkit-optimize-contrast; /* Edge */
+            image-rendering: -moz-crisp-edges; /* Firefox */
+            image-rendering: -o-crisp-edges; /* Opera */
+            image-rendering: pixelated; /* Chrome, standard */
+            -ms-interpolation-mode: nearest-neighbor; /* IE */
             transition: filter 0.3s ease-in-out;
         }
         #gameCanvas.paused {
@@ -161,6 +163,8 @@
             width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
             background: rgba(10, 10, 20, 0.85);
+            /* Ajout du préfixe pour Safari */
+            -webkit-backdrop-filter: blur(4px);
             backdrop-filter: blur(4px);
             visibility: hidden; opacity: 0;
             transition: opacity 0.3s, visibility 0.3s;
@@ -170,7 +174,8 @@
         .overlay .menu-box { transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
         .overlay.active .menu-box { transform: scale(1); }
         .menu-box {
-            background: #1e1e1e url('https://www.transparenttextures.com/patterns/rocky-wall.png');
+            /* Suppression de l'image de fond externe */
+            background: linear-gradient(to bottom, #2a2a2a, #1e1e1e);
             border: 4px solid var(--border-color);
             border-radius: 8px;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.5);
@@ -195,40 +200,39 @@
         #main-menu-view button { animation: fade-in-up 0.8s ease-out 0.8s both; }
 
         /* --- MENU DE CONFIGURATION DE PARTIE (SEED) --- */
-        #new-game-view label {
-            display: block;
-            font-size: 0.8em;
-            margin-bottom: 10px;
-            color: #ccc;
-        }
-        .seed-container {
-            display: flex;
-            width: 100%;
-            margin-bottom: 20px;
-        }
+        #new-game-view label { display: block; font-size: 0.8em; margin-bottom: 10px; color: #ccc; }
+        .seed-container { display: flex; width: 100%; margin-bottom: 20px; }
         #seed-input {
-            flex-grow: 1;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid var(--border-color);
-            border-radius: 8px 0 0 8px;
-            padding: 10px;
-            font-family: inherit;
-            font-size: 1em;
-            color: var(--text-light);
-            text-align: center;
+            flex-grow: 1; background: rgba(0,0,0,0.5); border: 2px solid var(--border-color);
+            border-radius: 8px 0 0 8px; padding: 10px; font-family: inherit;
+            font-size: 1em; color: var(--text-light); text-align: center;
         }
-        #seed-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
+        #seed-input:focus { outline: none; border-color: var(--primary-color); }
         #btn-random-seed {
-            width: 50px;
-            padding: 10px;
-            border-radius: 0 8px 8px 0;
-            border: 2px solid var(--border-color);
-            border-left: none;
-            font-size: 1.2em;
-            background: #444;
+            width: 50px; padding: 10px; border-radius: 0 8px 8px 0;
+            border: 2px solid var(--border-color); border-left: none;
+            font-size: 1.2em; background: #444;
+        }
+
+        /* --- MENU OPTIONS --- */
+        .option-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .option-group label { font-size: 0.8em; display: flex; align-items: center; }
+        .option-group span { font-size: 0.8em; color: var(--primary-color); }
+        .option-group input[type="checkbox"] { display: none; }
+        .option-group input[type="checkbox"] + .checkbox-label::before {
+            content: ''; display: inline-block; width: 16px; height: 16px;
+            border: 2px solid var(--border-color); background: #333;
+            border-radius: 3px; margin-right: 10px; vertical-align: middle;
+        }
+        .option-group input[type="checkbox"]:checked + .checkbox-label::before {
+            background-color: var(--primary-color);
+            box-shadow: inset 0 0 0 2px #333;
         }
 
         /* --- CHARGEMENT --- */
@@ -236,28 +240,21 @@
         #loading-bar-container { width: 80%; max-width: 400px; height: 20px; background: #333; border-radius: 10px; margin-top: 20px; overflow: hidden; border: 2px solid var(--border-color); }
         #loading-bar { width: 0%; height: 100%; background: var(--primary-color); transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1); }
         
-        /* (Conservez vos autres menus et styles de HUD ici, ils restent utiles pour le menu pause) */
-        #optionsMenu, #creditsMenu, #pauseMenu { /* etc... */ }
     </style>
 </head>
 <body>
     <div id="gameWrapper">
         <canvas id="gameCanvas"></canvas>
         <div id="particles-container"></div>
+        <div id="hud"></div>
 
         <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
         <div id="titleScreen" class="active">
             <div id="menu-pane">
                 <h1 id="gameTitle">Super Pixel Adventure 2</h1>
-
-                <!-- Vue Menu Principal -->
                 <div id="main-menu-view" class="menu-view active">
-                    <div class="menu-box">
-                        <button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button>
-                    </div>
+                    <div class="menu-box"><button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button></div>
                 </div>
-
-                <!-- Vue Configuration Nouvelle Partie -->
                 <div id="new-game-view" class="menu-view">
                     <div class="menu-box">
                          <h2>NOUVELLE PARTIE</h2>
@@ -271,120 +268,128 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Liens en bas de page -->
             <div id="footer-menu">
                 <button id="btn-main-options">Options</button>
                 <button id="btn-credits">Crédits</button>
             </div>
         </div>
 
-        <!-- Tous les autres overlays (chargement, pause, options, etc.) restent ici -->
-        <div id="loading-overlay" class="overlay">
+        <!-- TOUS LES AUTRES OVERLAYS -->
+        <div id="loading-overlay" class="overlay"><div class="menu-box"><h2>CHARGEMENT...</h2><div id="loading-bar-container"><div id="loading-bar"></div></div></div></div>
+
+        <div id="pauseMenu" class="overlay">
             <div class="menu-box">
-                <h2>CHARGEMENT...</h2>
-                <div id="loading-bar-container"><div id="loading-bar"></div></div>
+                <h2>PAUSE</h2>
+                <button data-action="resume">REPRENDRE</button>
+                <button data-action="open-inventory">INVENTAIRE</button>
+                <button data-action="open-character">PERSONNAGE</button>
+                <button data-action="open-quests">JOURNAL DE QUÊTES</button>
+                <button data-action="open-options">OPTIONS</button>
+                <button data-action="back-to-main-menu">RETOUR AU MENU PRINCIPAL</button>
             </div>
         </div>
 
-        <div id="pauseMenu" class="overlay">
-            <!-- Le menu pause reste inchangé et fonctionnel -->
-        </div>
         <div id="optionsMenu" class="overlay">
-             <!-- Le menu options reste inchangé et fonctionnel -->
-        </div>
-        <div id="creditsMenu" class="overlay">
             <div class="menu-box">
-                <h2>CRÉDITS</h2>
-                <p>Un jeu par vous.</p>
-                <button data-action="close-menu">RETOUR</button>
+                <h2>OPTIONS</h2>
+                <div class="option-group"><label>Volume</label><span id="volumeValue">80%</span></div>
+                <input type="range" id="soundSlider" min="0" max="1" step="0.1" value="0.8" style="width: 100%;">
+                
+                <div class="option-group" style="margin-top: 20px;"><label>Distance d'affichage</label><span id="renderDistanceValue">8 chunks</span></div>
+                <input type="range" id="renderDistanceSlider" min="4" max="16" value="8" style="width: 100%;">
+                
+                <div class="option-group" style="margin-top: 20px;"><label>Zoom</label><span id="zoomValue">x3.00</span></div>
+                <input type="range" id="zoomSlider" min="1" max="5" value="3" step="0.25" style="width: 100%;">
+                
+                <div class="option-group" style="margin-top: 30px;">
+                    <label><input type="checkbox" id="particlesCheckbox" checked><span class="checkbox-label">Particules</span></label>
+                    <label><input type="checkbox" id="weatherCheckbox" checked><span class="checkbox-label">Météo</span></label>
+                </div>
+                 <div class="option-group">
+                    <label><input type="checkbox" id="lightingCheckbox" checked><span class="checkbox-label">Lumière Dyn.</span></label>
+                    <label><input type="checkbox" id="mobileModeCheckbox"><span class="checkbox-label">Mode Mobile</span></label>
+                </div>
+                <button data-action="close-menu" style="margin-top: 30px;">RETOUR</button>
             </div>
         </div>
-        <!-- ... autres menus ... -->
+
+        <div id="creditsMenu" class="overlay"><div class="menu-box"><h2>CRÉDITS</h2><p>Un jeu par vous.</p><button data-action="close-menu">RETOUR</button></div></div>
+        <div id="inventoryMenu" class="overlay"><div class="menu-box"><h2>INVENTAIRE</h2><button data-action="close-menu">FERMER</button></div></div>
+        <div id="characterMenu" class="overlay"><div class="menu-box"><h2>PERSONNAGE</h2><button data-action="close-menu">FERMER</button></div></div>
+        <div id="questMenu" class="overlay"><div class="menu-box"><h2>JOURNAL DE QUÊTES</h2><button data-action="close-menu">FERMER</button></div></div>
     </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- VARIABLES GLOBALES DE L'UI ---
+            let isGameRunning = false;
             const ui = {
                 canvas: document.getElementById('gameCanvas'),
                 titleScreen: document.getElementById('titleScreen'),
                 loadingScreen: document.getElementById('loading-overlay'),
                 loadingBar: document.getElementById('loading-bar'),
                 hud: document.getElementById('hud'),
-                views: {
-                    main: document.getElementById('main-menu-view'),
-                    newGame: document.getElementById('new-game-view'),
-                },
+                views: { main: document.getElementById('main-menu-view'), newGame: document.getElementById('new-game-view') },
                 menus: {
                     options: document.getElementById('optionsMenu'),
                     credits: document.getElementById('creditsMenu'),
                     pause: document.getElementById('pauseMenu'),
+                    inventory: document.getElementById('inventoryMenu'),
+                    character: document.getElementById('characterMenu'),
+                    quests: document.getElementById('questMenu'),
                 },
                 seedInput: document.getElementById('seed-input'),
+                sliders: {
+                    volume: document.getElementById('soundSlider'),
+                    renderDistance: document.getElementById('renderDistanceSlider'),
+                    zoom: document.getElementById('zoomSlider'),
+                },
+                values: {
+                    volume: document.getElementById('volumeValue'),
+                    renderDistance: document.getElementById('renderDistanceValue'),
+                    zoom: document.getElementById('zoomValue'),
+                }
             };
 
-            // --- GESTION DES PARTICULES (AUGMENTÉ) ---
+            // --- GESTION DES PARTICULES ---
             const particlesContainer = document.getElementById('particles-container');
             if (particlesContainer) {
-                // Couche 1: Particules de poussière lentes
                 for (let i = 0; i < 150; i++) {
-                    const p = document.createElement('div');
-                    p.className = 'particle';
-                    const size = Math.random() * 2 + 1;
-                    p.style.width = `${size}px`;
-                    p.style.height = `${size}px`;
-                    p.style.left = `${Math.random() * 100}%`;
-                    p.style.animationDelay = `${Math.random() * 25}s`;
-                    p.style.animationDuration = `${Math.random() * 20 + 15}s`;
+                    const p = document.createElement('div'); p.className = 'particle'; const size = Math.random() * 2 + 1;
+                    p.style.width = `${size}px`; p.style.height = `${size}px`; p.style.left = `${Math.random() * 100}%`;
+                    p.style.animationDelay = `${Math.random() * 25}s`; p.style.animationDuration = `${Math.random() * 20 + 15}s`;
                     particlesContainer.appendChild(p);
                 }
-                // Couche 2: Étoiles scintillantes
                  for (let i = 0; i < 50; i++) {
-                    const p = document.createElement('div');
-                    p.className = 'particle star';
-                    const size = Math.random() * 1.5 + 1;
-                    p.style.width = `${size}px`;
-                    p.style.height = `${size}px`;
-                    p.style.left = `${Math.random() * 100}%`;
-                    p.style.animationDelay = `${Math.random() * 30}s`;
-                    p.style.animationDuration = `${Math.random() * 20 + 20}s`;
+                    const p = document.createElement('div'); p.className = 'particle star'; const size = Math.random() * 1.5 + 1;
+                    p.style.width = `${size}px`; p.style.height = `${size}px`; p.style.left = `${Math.random() * 100}%`;
+                    p.style.animationDelay = `${Math.random() * 30}s`; p.style.animationDuration = `${Math.random() * 20 + 20}s`;
                     particlesContainer.appendChild(p);
                 }
             }
 
-            // --- FONCTIONS DE GESTION DES MENUS ---
+            // --- FONCTIONS DE GESTION ---
             const switchView = (viewToShow) => {
-                for (const key in ui.views) {
-                    ui.views[key].classList.remove('active');
-                }
+                Object.values(ui.views).forEach(v => v.classList.remove('active'));
                 if (viewToShow) viewToShow.classList.add('active');
             };
-            
-            const openMenu = (menu) => {
-                if (menu) menu.classList.add('active');
-            };
-
-            const generateRandomSeed = () => {
-                return Math.floor(Date.now() * Math.random()).toString(16);
+            const openMenu = (menu) => { if (menu) menu.classList.add('active'); };
+            const closeMenu = (menu) => { if (menu) menu.classList.remove('active'); };
+            const generateRandomSeed = () => Math.floor(Date.now() * Math.random()).toString(16);
+            const togglePauseMenu = () => {
+                const isPaused = ui.menus.pause.classList.toggle('active');
+                ui.canvas.classList.toggle('paused', isPaused);
+                document.dispatchEvent(new CustomEvent('game-pause-toggle', { detail: { paused: isPaused } }));
             };
 
             const startGame = () => {
-                let seed = ui.seedInput.value.trim();
-                if (seed === '') {
-                    seed = generateRandomSeed();
-                }
-
+                let seed = ui.seedInput.value.trim() || generateRandomSeed();
+                isGameRunning = true;
                 ui.titleScreen.classList.add('hidden');
                 openMenu(ui.loadingScreen);
-                
                 setTimeout(() => { ui.loadingBar.style.width = '100%'; }, 100);
-
                 setTimeout(() => {
                     ui.loadingScreen.classList.remove('active');
                     if(ui.hud) ui.hud.classList.add('active');
-                    
-                    // Déclenche l'événement pour que game.js démarre la logique du jeu avec la seed
                     document.dispatchEvent(new CustomEvent('start-game', { detail: { seed: seed } }));
                 }, 1600);
             };
@@ -394,34 +399,43 @@
                 const target = e.target;
                 const action = target.dataset.action;
 
-                // Actions génériques
-                if (action === 'close-menu') {
-                    target.closest('.overlay').classList.remove('active');
-                }
-                if (action === 'back-to-main-menu-view') {
-                    switchView(ui.views.main);
+                if (action) {
+                    switch(action) {
+                        case 'close-menu': target.closest('.overlay').classList.remove('active'); break;
+                        case 'back-to-main-menu-view': switchView(ui.views.main); break;
+                        case 'resume': togglePauseMenu(); break;
+                        case 'open-inventory': openMenu(ui.menus.inventory); break;
+                        case 'open-character': openMenu(ui.menus.character); break;
+                        case 'open-quests': openMenu(ui.menus.quests); break;
+                        case 'open-options': openMenu(ui.menus.options); break;
+                        case 'back-to-main-menu': window.location.reload(); break;
+                    }
                 }
 
-                // Actions spécifiques par ID
                 switch(target.id) {
-                    case 'btn-go-to-new-game':
-                        ui.seedInput.value = generateRandomSeed();
-                        switchView(ui.views.newGame);
-                        break;
-                    case 'btn-random-seed':
-                        ui.seedInput.value = generateRandomSeed();
-                        break;
-                    case 'btn-launch-game':
-                        startGame();
-                        break;
-                    case 'btn-main-options':
-                        openMenu(ui.menus.options);
-                        break;
-                    case 'btn-credits':
-                        openMenu(ui.menus.credits);
-                        break;
+                    case 'btn-go-to-new-game': ui.seedInput.value = generateRandomSeed(); switchView(ui.views.newGame); break;
+                    case 'btn-random-seed': ui.seedInput.value = generateRandomSeed(); break;
+                    case 'btn-launch-game': startGame(); break;
+                    case 'btn-main-options': openMenu(ui.menus.options); break;
+                    case 'btn-credits': openMenu(ui.menus.credits); break;
                 }
             });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isGameRunning) {
+                    const activeSubMenu = document.querySelector('#pauseMenu .overlay.active, #inventoryMenu.active, #characterMenu.active, #questMenu.active, #optionsMenu.active');
+                    if (activeSubMenu) {
+                        closeMenu(activeSubMenu);
+                    } else {
+                        togglePauseMenu();
+                    }
+                }
+            });
+
+            // --- SLIDERS ---
+            if(ui.sliders.volume) ui.sliders.volume.addEventListener('input', (e) => { ui.values.volume.textContent = `${Math.round(e.target.value * 100)}%`; });
+            if(ui.sliders.renderDistance) ui.sliders.renderDistance.addEventListener('input', (e) => { ui.values.renderDistance.textContent = `${e.target.value} chunks`; });
+            if(ui.sliders.zoom) ui.sliders.zoom.addEventListener('input', (e) => { ui.values.zoom.textContent = `x${parseFloat(e.target.value).toFixed(2)}`; });
         });
     </script>
 </body>
