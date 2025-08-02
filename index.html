@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Pixel Adventure 2</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #f9a825;
@@ -20,7 +21,7 @@
             background: #0d1117;
         }
         body {
-            font-family: 'Press Start 2P', cursive;
+            font-family: 'VT323', monospace;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -489,12 +490,8 @@
                 isGameRunning = true;
                 ui.titleScreen.classList.add('hidden');
                 openMenu(ui.loadingScreen);
-                setTimeout(() => { ui.loadingBar.style.width = '100%'; }, 100);
-                setTimeout(() => {
-                    ui.loadingScreen.classList.remove('active');
-                    if(ui.hud) ui.hud.classList.add('active');
-                    document.dispatchEvent(new CustomEvent('start-game', { detail: { seed: seed } }));
-                }, 1600);
+                ui.loadingBar.style.width = '100%';
+                document.dispatchEvent(new CustomEvent('start-game', { detail: { seed } }));
             };
 
             // Écouteurs d'événements
@@ -636,6 +633,8 @@
             config.seed = seed;
 
             const canvas = document.getElementById('gameCanvas');
+            const loadingScreen = document.getElementById('loading-overlay');
+            const hud = document.getElementById('hud');
 
             function resizeCanvas() {
                 canvas.width = canvas.clientWidth;
@@ -1213,7 +1212,9 @@
                 }
             };
 
-            engine.start(gameLogic);
+            await engine.start(gameLogic);
+            loadingScreen.classList.remove('active');
+            if (hud) hud.classList.add('active');
         });
     </script>
 </body>

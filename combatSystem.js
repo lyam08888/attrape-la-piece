@@ -320,7 +320,7 @@ export class CombatSystem {
 
     drawDamageNumbers(ctx, camera) {
         ctx.save();
-        ctx.font = 'bold 14px "Press Start 2P"';
+        ctx.font = 'bold 14px "VT323"';
         ctx.textAlign = 'center';
         
         this.damageNumbers.forEach(dmgNum => {
