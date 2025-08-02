@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Pixel Adventure 2</title>
+    <style>
+        :root {
+            --primary-color: #f9a825;
+            --secondary-color: #a15c1e;
+            --text-light: #F0F0F0;
+            --border-color: #4A4A4A;
+            --background-dark: #1A1A1A;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0d1117;
+        }
+        body {
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+        }
+        
+        #gameWrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            background: #000;
+        }
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -o-crisp-edges;
+            image-rendering: pixelated;
+            -ms-interpolation-mode: nearest-neighbor;
+            transition: filter 0.3s ease-in-out;
+        }
+        #gameCanvas.paused {
+            filter: blur(8px) grayscale(60%);
+        }
+
+        @keyframes fade-in-down { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+        #titleScreen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            perspective: 1500px;
+            overflow: hidden;
+        }
+        #titleScreen.hidden {
+            opacity: 0;
+            transform: scale(1.2);
+            pointer-events: none;
+        }
+
+        #menu-pane {
+            position: relative;
+            z-index: 22;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5vw;
+        }
+        
+        #gameTitle {
+            font-size: 5vmin;
+            color: white;
+            text-shadow: 0.6vmin 0.6vmin 0px var(--secondary-color), 0 0 3vmin var(--primary-color);
+            margin-bottom: 50px;
+            text-align: center;
+            animation: fade-in-down 1s ease-out 0.5s both;
+        }
+
+        .menu-view {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            animation: fade-in 0.5s ease-in-out;
+        }
+        .menu-view.active {
+            display: flex;
+        }
+
+        .overlay {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(10, 10, 20, 0.85);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+            visibility: hidden; opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 30;
+        }
+        .overlay.active { visibility: visible; opacity: 1; }
+        .overlay .menu-box { transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .overlay.active .menu-box { transform: scale(1); }
+        .menu-box {
+            background: linear-gradient(to bottom, #2a2a2a, #1e1e1e);
+            border: 4px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.5);
+            padding: 30px;
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+        }
+        #menu-pane .menu-box {
+            background: transparent; border: none; box-shadow: none;
+        }
+        .menu-box h2 { font-size: 1.5em; margin-bottom: 25px; color: var(--primary-color); text-shadow: 2px 2px 0px var(--secondary-color); }
+        .menu-box button {
+            font-family: inherit; font-size: 1em; padding: 12px 20px; cursor: pointer;
+            background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+            border: 2px solid var(--border-color); border-bottom: 4px solid #2a2a2a;
+            border-radius: 8px; color: var(--text-light); margin-top: 10px;
+            width: 100%; transition: all 0.1s ease-out; text-shadow: 1px 1px 0 #000;
+        }
+        .menu-box button:hover { background: linear-gradient(to bottom, #6a6a6a, #4a4a4a); transform: translateY(-2px); border-bottom-width: 6px; }
+        .menu-box button:active { transform: translateY(1px); border-bottom-width: 4px; }
+        #main-menu-view button { animation: fade-in-up 0.8s ease-out 0.8s both; }
+
+        #new-game-view label { display: block; font-size: 0.8em; margin-bottom: 10px; color: #ccc; }
+        .seed-container { display: flex; width: 100%; margin-bottom: 20px; }
+        #seed-input {
+            flex-grow: 1; background: rgba(0,0,0,0.5); border: 2px solid var(--border-color);
+            border-radius: 8px 0 0 8px; padding: 10px; font-family: inherit;
+            font-size: 1em; color: var(--text-light); text-align: center;
+        }
+        #seed-input:focus { outline: none; border-color: var(--primary-color); }
+        #btn-random-seed {
+            width: 50px; padding: 10px; border-radius: 0 8px 8px 0;
+            border: 2px solid var(--border-color); border-left: none;
+            font-size: 1.2em; background: #444;
+        }
+
+        #loading-overlay { z-index: 99; flex-direction: column; }
+        #loading-bar-container { width: 80%; max-width: 400px; height: 20px; background: #333; border-radius: 10px; margin-top: 20px; overflow: hidden; border: 2px solid var(--border-color); }
+        #loading-bar { width: 0%; height: 100%; background: var(--primary-color); transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1); }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            background: rgba(0,0,0,0.4);
+            padding: 5px;
+            border-radius: 8px;
+            pointer-events: all;
+        }
+        .toolbar-slot {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #888;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .toolbar-slot.selected {
+            border-color: var(--primary-color);
+            background: rgba(252, 152, 56, 0.3);
+            transform: scale(1.1);
+        }
+        .toolbar-slot img {
+            width: 80%;
+            height: 80%;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameWrapper">
+        <canvas id="gameCanvas"></canvas>
+        <div id="hud">
+             <div id="toolbar"></div>
+        </div>
+
+        <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
+        <div id="titleScreen" class="active">
+            <div id="menu-pane">
+                <h1 id="gameTitle">Super Pixel Adventure 2</h1>
+                <div id="main-menu-view" class="menu-view active">
+                    <div class="menu-box"><button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button></div>
+                </div>
+                <div id="new-game-view" class="menu-view">
+                    <div class="menu-box">
+                         <h2>NOUVELLE PARTIE</h2>
+                         <label for="seed-input">SEED DE LA CARTE</label>
+                         <div class="seed-container">
+                            <input type="text" id="seed-input" placeholder="Entrez une seed ou laissez vide">
+                            <button id="btn-random-seed" title="Générer une seed aléatoire">?</button>
+                         </div>
+                         <button id="btn-launch-game">LANCER</button>
+                         <button data-action="back-to-main-menu-view" style="background: #444; border-bottom-color: #222;">RETOUR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAYS -->
+        <div id="loading-overlay" class="overlay"><div class="menu-box"><h2>CHARGEMENT...</h2><div id="loading-bar-container"><div id="loading-bar"></div></div></div></div>
+
+        <div id="pauseMenu" class="overlay">
+            <div class="menu-box">
+                <h2>PAUSE</h2>
+                <button data-action="resume">REPRENDRE</button>
+                <button data-action="open-options">OPTIONS</button>
+                <button data-action="back-to-main-menu">RETOUR AU MENU PRINCIPAL</button>
+            </div>
+        </div>
+
+        <div id="optionsMenu" class="overlay">
+            <div class="menu-box">
+                <h2>OPTIONS</h2>
+                <div style="margin-bottom: 15px;">
+                    <label for="soundSlider">Volume: <span id="volumeValue">80%</span></label>
+                    <input type="range" id="soundSlider" min="0" max="1" step="0.1" value="0.8" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="zoomSlider">Zoom: <span id="zoomValue">x3</span></label>
+                    <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="3" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label for="renderDistanceSlider">Distance de rendu: <span id="renderDistanceValue">8 chunks</span></label>
+                    <input type="range" id="renderDistanceSlider" min="4" max="16" step="1" value="8" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><input type="checkbox" id="particlesCheckbox" checked> Particules</label>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><input type="checkbox" id="weatherCheckbox" checked> Effets météo</label>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><input type="checkbox" id="lightingCheckbox" checked> Éclairage dynamique</label>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><input type="checkbox" id="mobileModeCheckbox"> Mode mobile</label>
+                </div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Interface utilisateur et gestion des menus
+        document.addEventListener('DOMContentLoaded', () => {
+            let isGameRunning = false;
+
+            const ui = {
+                titleScreen: document.getElementById('titleScreen'),
+                canvas: document.getElementById('gameCanvas'),
+                loadingScreen: document.getElementById('loading-overlay'),
+                loadingBar: document.getElementById('loading-bar'),
+                hud: document.getElementById('hud'),
+                views: {
+                    main: document.getElementById('main-menu-view'),
+                    newGame: document.getElementById('new-game-view')
+                },
+                menus: {
+                    pause: document.getElementById('pauseMenu'),
+                    options: document.getElementById('optionsMenu')
+                },
+                seedInput: document.getElementById('seed-input')
+            };
+
+            const switchView = (viewToShow) => {
+                Object.values(ui.views).forEach(v => v.classList.remove('active'));
+                if (viewToShow) viewToShow.classList.add('active');
+            };
+            const openMenu = (menu) => { if (menu) menu.classList.add('active'); };
+            const closeMenu = (menu) => { if (menu) menu.classList.remove('active'); };
+            const generateRandomSeed = () => Math.floor(Date.now() * Math.random()).toString(16);
+            const togglePauseMenu = () => {
+                const isPaused = ui.menus.pause.classList.toggle('active');
+                ui.canvas.classList.toggle('paused', isPaused);
+            };
+
+            const startGame = (seed) => {
+                isGameRunning = true;
+                ui.titleScreen.classList.add('hidden');
+                openMenu(ui.loadingScreen);
+                setTimeout(() => { ui.loadingBar.style.width = '100%'; }, 100);
+                setTimeout(() => {
+                    ui.loadingScreen.classList.remove('active');
+                    if(ui.hud) ui.hud.classList.add('active');
+                    document.dispatchEvent(new CustomEvent('start-game', { detail: { seed: seed } }));
+                }, 1600);
+            };
+
+            // Écouteurs d'événements
+            document.body.addEventListener('click', (e) => {
+                const target = e.target;
+                const action = target.dataset.action;
+
+                if (action) {
+                    switch(action) {
+                        case 'close-menu': target.closest('.overlay').classList.remove('active'); break;
+                        case 'back-to-main-menu-view': switchView(ui.views.main); break;
+                        case 'resume': togglePauseMenu(); break;
+                        case 'open-options': openMenu(ui.menus.options); break;
+                        case 'back-to-main-menu': window.location.reload(); break;
+                    }
+                }
+
+                switch(target.id) {
+                    case 'btn-go-to-new-game': ui.seedInput.value = generateRandomSeed(); switchView(ui.views.newGame); break;
+                    case 'btn-random-seed': ui.seedInput.value = generateRandomSeed(); break;
+                    case 'btn-launch-game': startGame(ui.seedInput.value.trim() || generateRandomSeed()); break;
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isGameRunning) {
+                    const activeSubMenu = document.querySelector('.overlay.active');
+                    if (activeSubMenu) {
+                        closeMenu(activeSubMenu);
+                    } else {
+                        togglePauseMenu();
+                    }
+                }
+            });
+        });
+    </script>
+
+    <script type="module">
+        // Import des modules ES6
+        import { GameEngine } from './engine.js';
+        import { Player } from './player.js';
+        import { TILE, generateLevel, ensureWorldColumns } from './world.js';
+        import { PNJ } from './PNJ.js';
+        import { generatePNJ } from './generateurPNJ.js';
+        import { updateMining } from './miningEngine.js';
+        import { ParticleSystem } from './fx.js';
+        import { WorldAnimator } from './worldAnimator.js';
+        import { TimeSystem } from './timeSystem.js';
+        import { Logger } from './logger.js';
+        import { getItemIcon } from './itemIcons.js';
+        import { SoundManager } from './sound.js';
+
+        async function loadConfig() {
+            try {
+                const resp = await fetch('config.json');
+                if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+                return await resp.json();
+            } catch (e) {
+                console.error("Impossible de charger config.json. Utilisation d'une configuration par défaut.", e);
+                return {"tileSize":16,"zoom":3,"worldWidth":2048,"worldHeight":1024,"generation":{"enemyCount":10,"treeCount":20},"physics":{"gravity":0.35,"jumpForce":8,"playerSpeed":3,"friction":0.85,"airResistance":0.98,"maxFallSpeed":10,"groundAcceleration":0.4,"airAcceleration":0.2},"player":{"width":32,"height":32,"hitbox":{"offsetX":4,"offsetY":4,"width":24,"height":24}}};
+            }
+        }
+
+        async function loadOptions() {
+            const stored = localStorage.getItem('gameOptions');
+            if (stored) return JSON.parse(stored);
+            try {
+                const resp = await fetch('options.json');
+                if (!resp.ok) throw new Error('options.json non trouvé');
+                return await resp.json();
+            } catch (e) {
+                console.warn(e);
+                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false};
+            }
+        }
+
+        function saveOptions(opts) {
+            localStorage.setItem('gameOptions', JSON.stringify(opts));
+        }
+
+        document.addEventListener('start-game', async (event) => {
+            const seed = event.detail.seed;
+            console.log("Événement 'start-game' reçu avec la seed:", seed);
+
+            const config = await loadConfig();
+            const options = await loadOptions();
+            Object.assign(config, options);
+            config.seed = seed;
+
+            const canvas = document.getElementById('gameCanvas');
+
+            function resizeCanvas() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            const engine = new GameEngine(canvas, config);
+
+            const optionsMenu = document.getElementById('optionsMenu');
+            const renderDistanceSlider = document.getElementById('renderDistanceSlider');
+            const zoomSlider = document.getElementById('zoomSlider');
+            const particlesCheckbox = document.getElementById('particlesCheckbox');
+            const weatherCheckbox = document.getElementById('weatherCheckbox');
+            const lightingCheckbox = document.getElementById('lightingCheckbox');
+            const mobileModeCheckbox = document.getElementById('mobileModeCheckbox');
+            const soundSlider = document.getElementById('soundSlider');
+            const renderDistanceValue = document.getElementById('renderDistanceValue');
+            const zoomValue = document.getElementById('zoomValue');
+            const volumeValue = document.getElementById('volumeValue');
+
+            function syncOptionUI() {
+                if (renderDistanceSlider) {
+                    renderDistanceSlider.value = config.renderDistance;
+                    renderDistanceValue.textContent = `${config.renderDistance} chunks`;
+                }
+
+                if (zoomSlider) {
+                    zoomSlider.value = config.zoom;
+                    zoomValue.textContent = `x${config.zoom}`;
+                }
+
+                if (particlesCheckbox) particlesCheckbox.checked = config.showParticles;
+                if (weatherCheckbox) weatherCheckbox.checked = config.weatherEffects;
+                if (lightingCheckbox) lightingCheckbox.checked = config.dynamicLighting;
+                if (mobileModeCheckbox) mobileModeCheckbox.checked = config.mobileMode;
+
+                if (soundSlider) {
+                    soundSlider.value = config.soundVolume;
+                    volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
+                }
+
+                document.body.classList.toggle('mobile-mode', config.mobileMode);
+            }
+
+            function setupOptionHandlers() {
+                if (renderDistanceSlider) {
+                    renderDistanceSlider.addEventListener('input', () => {
+                        config.renderDistance = parseInt(renderDistanceSlider.value);
+                        renderDistanceValue.textContent = `${config.renderDistance} chunks`;
+                    });
+                }
+
+                if (zoomSlider) {
+                    zoomSlider.addEventListener('input', () => {
+                        config.zoom = parseFloat(zoomSlider.value);
+                        zoomValue.textContent = `x${config.zoom}`;
+                    });
+                }
+
+                if (particlesCheckbox) {
+                    particlesCheckbox.addEventListener('change', () => {
+                        config.showParticles = particlesCheckbox.checked;
+                    });
+                }
+
+                if (weatherCheckbox) {
+                    weatherCheckbox.addEventListener('change', () => {
+                        config.weatherEffects = weatherCheckbox.checked;
+                    });
+                }
+
+                if (lightingCheckbox) {
+                    lightingCheckbox.addEventListener('change', () => {
+                        config.dynamicLighting = lightingCheckbox.checked;
+                    });
+                }
+
+                if (mobileModeCheckbox) {
+                    mobileModeCheckbox.addEventListener('change', () => {
+                        config.mobileMode = mobileModeCheckbox.checked;
+                        document.body.classList.toggle('mobile-mode', config.mobileMode);
+                        resizeCanvas();
+                    });
+                }
+
+                if (soundSlider) {
+                    soundSlider.addEventListener('input', () => {
+                        config.soundVolume = parseFloat(soundSlider.value);
+                        volumeValue.textContent = `${Math.round(config.soundVolume * 100)}%`;
+                        if (game.sound) game.sound.setVolume(config.soundVolume);
+                    });
+                }
+            }
+
+            setupOptionHandlers();
+            syncOptionUI();
+
+            const game = {
+                config: config,
+                assets: {},
+                tileMap: [],
+                player: null,
+                enemies: [],
+                pnjs: [],
+                collectibles: [],
+                camera: { x: 0, y: 0 },
+                particleSystem: new ParticleSystem(),
+                logger: new Logger(),
+                lastTime: 0,
+                canvas: canvas,
+                settings: config,
+                cameraShakeTimer: 0,
+                cameraShakeStrength: 0,
+                cameraShakeOffsetX: 0,
+                cameraShakeOffsetY: 0,
+
+                createParticles(x, y, count, color, options) {
+                    if(this.config.showParticles) this.particleSystem.create(x, y, count, color, options);
+                },
+                
+                updateToolbar() {
+                    const toolbar = document.getElementById('toolbar');
+                    if (!toolbar || !this.player) return;
+                    toolbar.innerHTML = '';
+                    this.player.tools.forEach((toolName, index) => {
+                        const slot = document.createElement('div');
+                        slot.className = 'toolbar-slot';
+                        if (index === this.player.selectedToolIndex) slot.classList.add('selected');
+                        const icon = getItemIcon(toolName, this.assets);
+                        if (icon) slot.appendChild(icon.cloneNode(true));
+                        toolbar.appendChild(slot);
+                    });
+                },
+
+                triggerCameraShake(strength = 5, duration = 30) {
+                    this.cameraShakeStrength = strength;
+                    this.cameraShakeTimer = duration;
+                },
+
+                checkBlockSupport(x, y) {
+                    const type = this.tileMap[y]?.[x];
+                    if (type > TILE.AIR && (this.tileMap[y + 1]?.[x] === TILE.AIR || this.tileMap[y + 1]?.[x] === undefined)) {
+                        this.tileMap[y][x] = TILE.AIR;
+                        this.collectibles.push({
+                            x: x * this.config.tileSize,
+                            y: y * this.config.tileSize,
+                            w: this.config.tileSize,
+                            h: this.config.tileSize,
+                            vy: -2,
+                            tileType: type
+                        });
+                    }
+                }
+            };
+
+            function openOptionsMenu() {
+                syncOptionUI();
+                optionsMenu.classList.add('active');
+            }
+            function closeOptionsMenu() {
+                optionsMenu.classList.remove('active');
+                saveOptions({
+                    zoom: config.zoom,
+                    renderDistance: config.renderDistance,
+                    showParticles: config.showParticles,
+                    weatherEffects: config.weatherEffects,
+                    dynamicLighting: config.dynamicLighting,
+                    soundVolume: config.soundVolume,
+                    mobileMode: config.mobileMode
+                });
+            }
+            window.openOptionsMenu = openOptionsMenu;
+            window.closeOptionsMenu = closeOptionsMenu;
+
+            const gameLogic = {
+                init(assets) {
+                    game.assets = assets;
+                    game.sound = new SoundManager(config.soundVolume);
+                    game.logger.log("Génération du monde...");
+                    generateLevel(game, config);
+
+                    game.player = new Player(100, 100, config, game.sound);
+
+                    const startXTile = Math.floor(game.generatedRange.max / 4);
+                    for (let y = 0; y < game.tileMap.length; y++) {
+                        if (game.tileMap[y][startXTile] > TILE.AIR) {
+                            game.player.x = startXTile * config.tileSize;
+                            game.player.y = (y - 3) * config.tileSize;
+                            break;
+                        }
+                    }
+                    
+                    game.worldAnimator = new WorldAnimator(config, assets);
+                    game.timeSystem = new TimeSystem();
+                    game.updateToolbar();
+                    game.logger.log("Jeu prêt !");
+                },
+
+                update(delta, keys, mouse) {
+                    if (!game.player) return;
+
+                    game.player.update(keys, mouse, game, delta);
+                    game.enemies.forEach(e => e.update(game, delta));
+                    game.pnjs.forEach(p => p.update(game, delta));
+                    
+                    game.collectibles.forEach(c => {
+                        c.vy += config.physics.gravity * 0.5;
+                        c.y += c.vy;
+                        const groundY = Math.floor((c.y + c.h) / config.tileSize);
+                        const groundX = Math.floor((c.x + c.w/2) / config.tileSize);
+                        if(game.tileMap[groundY]?.[groundX] > TILE.AIR) {
+                            c.y = groundY * config.tileSize - c.h;
+                            c.vy = 0;
+                        }
+                    });
+
+                    updateMining(game, keys, mouse, delta);
+                    game.particleSystem.update();
+                    if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
+                    if (game.timeSystem) game.timeSystem.update();
+                    game.logger.update();
+
+                    const playerTileX = Math.floor(game.player.x / config.tileSize);
+                    const bufferTiles = config.renderDistance * config.chunkSize;
+                    ensureWorldColumns(game, config, playerTileX - bufferTiles, playerTileX + bufferTiles);
+
+                    const { zoom, worldWidth, worldHeight } = config;
+                    const canvasWidth = canvas.clientWidth;
+                    const canvasHeight = canvas.clientHeight;
+
+                    let targetX = game.player.x + game.player.w / 2 - canvasWidth / 2 / zoom;
+                    let targetY = game.player.y + game.player.h / 2 - canvasHeight / 2 / zoom;
+
+                    const maxCameraX = worldWidth - (canvasWidth / zoom);
+                    const maxCameraY = worldHeight - (canvasHeight / zoom);
+
+                    game.camera.x = Math.max(0, Math.min(targetX, maxCameraX));
+                    game.camera.y = Math.max(0, Math.min(targetY, maxCameraY));
+
+                    if (game.cameraShakeTimer > 0) {
+                        game.cameraShakeTimer--;
+                        game.cameraShakeOffsetX = (Math.random() - 0.5) * game.cameraShakeStrength;
+                        game.cameraShakeOffsetY = (Math.random() - 0.5) * game.cameraShakeStrength;
+                    } else {
+                        game.cameraShakeOffsetX = 0;
+                        game.cameraShakeOffsetY = 0;
+                    }
+                },
+
+                draw(ctx, assets) {
+                    if (!game.timeSystem || !game.tileMap.length) return;
+
+                    const { tileSize, zoom } = config;
+                    
+                    const skyGrad = game.timeSystem.getSkyGradient();
+                    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                    gradient.addColorStop(0, skyGrad[0]);
+                    gradient.addColorStop(1, skyGrad[1]);
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.save();
+                    ctx.scale(zoom, zoom);
+                    ctx.translate(-game.camera.x + game.cameraShakeOffsetX, -game.camera.y + game.cameraShakeOffsetY);
+
+                    if (game.worldAnimator) game.worldAnimator.draw(ctx);
+                    
+                    const startX = Math.floor(game.camera.x / tileSize) - 1;
+                    const endX = startX + Math.ceil(canvas.width / zoom / tileSize) + 2;
+                    const startY = Math.floor(game.camera.y / tileSize) - 1;
+                    const endY = startY + Math.ceil(canvas.height / zoom / tileSize) + 2;
+
+                    for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
+                        for (let x = Math.max(0, startX); x < endX; x++) {
+                            const tileType = game.tileMap[y]?.[x];
+                            if (tileType > TILE.AIR) {
+                                const assetKey = Object.keys(TILE).find(key => TILE[key] === tileType);
+                                if(assetKey) {
+                                    const img = assets[`tile_${assetKey.toLowerCase()}`];
+                                    if (img) ctx.drawImage(img, x * tileSize, y * tileSize, tileSize, tileSize);
+                                }
+                            }
+                        }
+                    }
+                    
+                    game.collectibles.forEach(c => {
+                         const assetKey = Object.keys(TILE).find(key => TILE[key] === c.tileType);
+                         if(assetKey) {
+                            const img = assets[`tile_${assetKey.toLowerCase()}`];
+                            if (img) ctx.drawImage(img, c.x, c.y, c.w, c.h);
+                         }
+                    });
+
+                    game.pnjs.forEach(p => p.draw(ctx));
+                    game.enemies.forEach(e => e.draw(ctx, assets));
+                    if(game.player) game.player.draw(ctx, assets, config.playerAnimations);
+                    game.particleSystem.draw(ctx);
+                    
+                    if (game.miningEffect) {
+                        ctx.globalAlpha = 0.5;
+                        ctx.fillStyle = 'white';
+                        const crackSize = tileSize * game.miningEffect.progress;
+                        ctx.fillRect(
+                            game.miningEffect.x * tileSize + (tileSize - crackSize) / 2,
+                            game.miningEffect.y * tileSize + (tileSize - crackSize) / 2,
+                            crackSize, crackSize
+                        );
+                        ctx.globalAlpha = 1;
+                    }
+
+                    ctx.restore();
+                    game.logger.draw(ctx, canvas);
+                },
+
+                isPaused: () => optionsMenu.classList.contains('active'),
+                toggleMenu: (menu) => { if (menu === 'options') optionsMenu.classList.toggle('active'); },
+                selectTool: (index) => {
+                    if (game.player && index >= 0 && index < game.player.tools.length) {
+                        game.player.selectedToolIndex = index;
+                        game.updateToolbar();
+                    }
+                },
+                cycleTool: (direction) => {
+                    if (game.player) {
+                        const len = game.player.tools.length;
+                        game.player.selectedToolIndex = (game.player.selectedToolIndex + direction + len) % len;
+                        game.updateToolbar();
+                    }
+                }
+            };
+
+            engine.start(gameLogic);
+        });
+    </script>
+</body>
+</html>
