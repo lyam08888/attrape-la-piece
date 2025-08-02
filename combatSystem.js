@@ -63,6 +63,10 @@ export class PlayerStats {
         return 0;
     }
 
+    getXPForNextLevel() {
+        return this.xpToNextLevel;
+    }
+
     takeDamage(amount, source = 'unknown') {
         const actualDamage = Math.max(1, amount - this.defense);
         this.health = Math.max(0, this.health - actualDamage);
@@ -129,7 +133,7 @@ export class PlayerStats {
         
         // Appliquer les effets
         for (const effect of this.effects.values()) {
-            if (effect.modifier.attackDamage) {
+            if (effect && effect.modifier && effect.modifier.attackDamage) {
                 damage += effect.modifier.attackDamage;
             }
         }
@@ -141,7 +145,7 @@ export class PlayerStats {
         let speed = this.speed;
         
         for (const effect of this.effects.values()) {
-            if (effect.modifier.speed) {
+            if (effect && effect.modifier && effect.modifier.speed) {
                 speed += effect.modifier.speed;
             }
         }
@@ -153,7 +157,7 @@ export class PlayerStats {
         let mining = this.mining;
         
         for (const effect of this.effects.values()) {
-            if (effect.modifier.mining) {
+            if (effect && effect.modifier && effect.modifier.mining) {
                 mining += effect.modifier.mining;
             }
         }
