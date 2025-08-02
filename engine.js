@@ -61,7 +61,7 @@ export class GameEngine {
                 img.src = path;
                 img.onload = () => {
                     this.assets[key] = img;
-                    resolve({ status: 'fulfilled', value: key });
+                    resolve();
                 };
                 img.onerror = () => {
                     console.warn(`Impossible de charger l'asset: ${path}. Une image placeholder sera utilisée.`);
@@ -72,11 +72,11 @@ export class GameEngine {
                     pCtx.fillStyle = 'magenta';
                     pCtx.fillRect(0, 0, placeholder.width, placeholder.height);
                     this.assets[key] = placeholder;
-                    resolve({ status: 'rejected', reason: key });
+                    resolve();
                 };
             }));
         }
-        await Promise.all(promises);
+        await Promise.allSettled(promises);
         console.log("Tous les assets ont été traités.", Object.keys(this.assets).length, "assets chargés.");
     }
 
