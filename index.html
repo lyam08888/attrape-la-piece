@@ -398,7 +398,10 @@
             <div id="menu-pane">
                 <h1 id="gameTitle">Super Pixel Adventure 2</h1>
                 <div id="main-menu-view" class="menu-view active">
-                    <div class="menu-box"><button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button></div>
+                    <div class="menu-box">
+                        <button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button>
+                        <button data-action="open-options">OPTIONS</button>
+                    </div>
                 </div>
                 <div id="new-game-view" class="menu-view">
                     <div class="menu-box">
@@ -454,6 +457,15 @@
                 <div style="margin-bottom: 15px;">
                     <label><input type="checkbox" id="mobileModeCheckbox"> Mode mobile</label>
                 </div>
+                <button data-action="open-controls">COMMANDES</button>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
+        <div id="controlsMenu" class="overlay">
+            <div class="menu-box">
+                <h2>COMMANDES</h2>
+                <div id="controlsList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;"></div>
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
@@ -530,6 +542,7 @@
                 menus: {
                     pause: document.getElementById('pauseMenu'),
                     options: document.getElementById('optionsMenu'),
+                    controls: document.getElementById('controlsMenu'),
                     inventory: document.getElementById('inventoryMenu'),
                     character: document.getElementById('characterMenu'),
                     quests: document.getElementById('questMenu')
@@ -582,6 +595,7 @@
                         case 'open-character': openMenu(ui.menus.character); break;
                         case 'open-quests': openMenu(ui.menus.quests); break;
                         case 'open-options': openMenu(ui.menus.options); break;
+                        case 'open-controls': syncControlsUI(); openMenu(ui.menus.controls); break;
                         case 'back-to-main-menu': window.location.reload(); break;
                     }
                 }
@@ -922,7 +936,7 @@
                 return await resp.json();
             } catch (e) {
                 console.warn(e);
-                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false};
+                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":"Space","down":"ArrowDown","action":"KeyE","run":"ShiftLeft","fly":"KeyV","repair":"KeyR"}};
             }
         }
 
@@ -957,16 +971,20 @@
             const keys = {};
             const mouse = { x: 0, y: 0, left: false, right: false };
 
-            const getKeys = () => ({
-                left: keys['ArrowLeft'] || keys['a'] || keys['A'],
-                right: keys['ArrowRight'] || keys['d'] || keys['D'],
-                up: keys['ArrowUp'] || keys['w'] || keys['W'],
-                down: keys['ArrowDown'] || keys['s'] || keys['S'],
-                jump: keys[' '] || keys['Space'],
-                run: keys['Shift'],
-                fly: keys['v'] || keys['V'] || keys['KeyV'],
-                action: keys['e'] || keys['E']
-            });
+            const getKeys = () => {
+                const binds = config.keyBindings || {};
+                return {
+                    left: keys[binds.left],
+                    right: keys[binds.right],
+                    up: keys[binds.jump] || keys[binds.up],
+                    down: keys[binds.down],
+                    jump: keys[binds.jump],
+                    run: keys[binds.run],
+                    fly: keys[binds.fly],
+                    action: keys[binds.action],
+                    repair: keys[binds.repair]
+                };
+            };
 
             const getMouse = () => mouse;
 
@@ -1051,6 +1069,45 @@
                 }
 
                 document.body.classList.toggle('mobile-mode', config.mobileMode);
+            }
+
+            function syncControlsUI() {
+                const list = document.getElementById('controlsList');
+                if (!list) return;
+                list.innerHTML = '';
+                const bindings = config.keyBindings || {};
+                for (const [action, key] of Object.entries(bindings)) {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    const label = document.createElement('span');
+                    label.textContent = action;
+                    const btn = document.createElement('button');
+                    btn.textContent = key;
+                    btn.addEventListener('click', () => {
+                        btn.textContent = '...';
+                        const handler = (e) => {
+                            e.preventDefault();
+                            bindings[action] = e.code;
+                            btn.textContent = e.code;
+                            saveOptions({
+                                zoom: config.zoom,
+                                renderDistance: config.renderDistance,
+                                showParticles: config.showParticles,
+                                weatherEffects: config.weatherEffects,
+                                dynamicLighting: config.dynamicLighting,
+                                soundVolume: config.soundVolume,
+                                mobileMode: config.mobileMode,
+                                keyBindings: bindings
+                            });
+                        };
+                        document.addEventListener('keydown', handler, { once: true });
+                    });
+                    row.appendChild(label);
+                    row.appendChild(btn);
+                    list.appendChild(row);
+                }
             }
 
             function setupOptionHandlers() {
@@ -1306,7 +1363,8 @@
                     weatherEffects: config.weatherEffects,
                     dynamicLighting: config.dynamicLighting,
                     soundVolume: config.soundVolume,
-                    mobileMode: config.mobileMode
+                    mobileMode: config.mobileMode,
+                    keyBindings: config.keyBindings
                 });
             }
             window.openOptionsMenu = openOptionsMenu;
