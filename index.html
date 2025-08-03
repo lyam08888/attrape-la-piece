@@ -614,6 +614,10 @@
         // Import de la classe de base Enemy sous un alias pour éviter les conflits globaux
         import { Enemy as BaseEnemy, Slime } from './enemy.js';
         
+        // Import des nouveaux systèmes
+        import { AnimalManager, Animal } from './animalSystem.js';
+        import { FoodSystem } from './foodSystem.js';
+        
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
             const basicLoot = {
@@ -1396,6 +1400,11 @@
                     // Initialiser la caméra
                     game.camera = { x: 0, y: 0 };
                     
+                    // Initialiser les nouveaux systèmes
+                    game.animalManager = new AnimalManager();
+                    game.foodSystem = new FoodSystem();
+                    game.particles = [];
+                    
                     // Assigner la référence globale
                     window.game = game;
                 },
@@ -1413,6 +1422,18 @@
                     const oldX = game.player.x;
                     const oldY = game.player.y;
                     game.player.update(keys, mouse, game, delta);
+                    
+                    // Mettre à jour les nouveaux systèmes
+                    if (game.animalManager) {
+                        game.animalManager.update(game, delta);
+                    }
+                    if (game.foodSystem) {
+                        game.foodSystem.update(game, delta);
+                        // Faire pousser des légumes au sol périodiquement
+                        if (Math.random() < 0.001) {
+                            game.foodSystem.growGroundVegetables(game);
+                        }
+                    }
                     
                     // Physique des fluides - Vérifier si le joueur est dans l'eau ou la lave
                     const playerTileX = Math.floor((game.player.x + game.player.w/2) / config.tileSize);
@@ -1827,6 +1848,11 @@
                                         };
                                         ctx.fillStyle = colors[tile] || '#666666';
                                         ctx.fillRect(tileX, tileY, tileSize, tileSize);
+                                        
+                                        // Grille fine pour séparer les blocs
+                                        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                                        ctx.lineWidth = 0.5;
+                                        ctx.strokeRect(tileX, tileY, tileSize, tileSize);
                                     }
                                     
                                     // Effet de brillance pour les minerais
@@ -1917,6 +1943,49 @@
                             }
                         });
 
+                        // Dessiner les particules
+                        if (game.particles) {
+                            game.particles.forEach((particle, index) => {
+                                particle.life--;
+                                particle.x += particle.vx;
+                                particle.y += particle.vy;
+                                particle.vy += 0.1; // Gravité
+                                
+                                const alpha = particle.life / particle.maxLife;
+                                ctx.globalAlpha = alpha;
+                                ctx.fillStyle = particle.color;
+                                ctx.fillRect(particle.x - particle.size/2, particle.y - particle.size/2, particle.size, particle.size);
+                                ctx.globalAlpha = 1;
+                                
+                                if (particle.life <= 0) {
+                                    game.particles.splice(index, 1);
+                                }
+                            });
+                        }
+
+                        // Dessiner la barre de minage
+                        if (game.player && game.player.miningTarget && game.player.miningProgress > 0) {
+                            const target = game.player.miningTarget;
+                            const barX = target.x * tileSize;
+                            const barY = target.y * tileSize - 8;
+                            const barWidth = tileSize;
+                            const barHeight = 4;
+                            const progress = game.player.miningProgress / 100;
+                            
+                            // Fond de la barre
+                            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                            ctx.fillRect(barX, barY, barWidth, barHeight);
+                            
+                            // Progression
+                            ctx.fillStyle = '#4CAF50';
+                            ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+                            
+                            // Bordure
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(barX, barY, barWidth, barHeight);
+                        }
+
                         // Dessiner le joueur avec animations
                         if (game.player) {
                             if (game.player.draw) {
@@ -1962,6 +2031,14 @@
                                     ctx.fillRect(game.player.x, game.player.y, game.player.w, game.player.h);
                                 }
                             }
+                        }
+
+                        // Dessiner les nouveaux systèmes
+                        if (game.animalManager) {
+                            game.animalManager.draw(ctx, assets);
+                        }
+                        if (game.foodSystem) {
+                            game.foodSystem.draw(ctx, assets, game);
                         }
                     
                     // Dessiner les projectiles
@@ -2220,7 +2297,50 @@
                 'tile_quartz', 'tile_fluorite', 'tile_malachite', 'tile_hematite', 'tile_pyrite',
                 
                 // Outils
-                'tool_pickaxe', 'tool_axe', 'tool_shovel', 'tool_sword', 'tool_bow',
+                'tool_pickaxe', 'tool_axe', 'tool_shovel', 'tool_sword', 'tool_bow', 'tool_fishing_rod',
+                
+                // Nourriture - Fruits
+                'food_apple', 'food_pear', 'food_cherry', 'food_peach', 'food_orange', 'food_banana',
+                'food_grapes', 'food_strawberry', 'food_blueberry', 'food_kiwi', 'food_lemon',
+                'food_pineapple', 'food_watermelon',
+                
+                // Nourriture - Légumes
+                'food_carrot', 'food_potato', 'food_onion', 'food_tomato', 'food_corn', 'food_pumpkin',
+                'food_broccoli', 'food_lettuce', 'food_cucumber', 'food_bell_pepper', 'food_eggplant',
+                'food_asparagus', 'food_spinach', 'food_mushroom', 'food_garlic', 'food_radish',
+                'food_sweet_potato', 'food_chili', 'food_pepper',
+                
+                // Nourriture - Protéines
+                'food_fish', 'food_salmon', 'food_crab', 'food_lobster', 'food_shrimp', 'food_mussel',
+                'food_oyster', 'food_steak', 'food_roast_chicken', 'food_ham', 'food_sausage',
+                'food_fried_egg', 'food_canned_tuna',
+                
+                // Nourriture - Produits laitiers
+                'food_milk_carton', 'food_cheese', 'food_mozzarella', 'food_camembert', 'food_butter',
+                'food_yogurt',
+                
+                // Nourriture - Céréales et pain
+                'food_bread', 'food_sliced_bread', 'food_baguette', 'food_croissant', 'food_brioche',
+                'food_pretzel', 'food_rice_bowl',
+                
+                // Nourriture - Plats cuisinés
+                'food_pizza', 'food_burger', 'food_hotdog', 'food_sandwich', 'food_taco', 'food_burrito',
+                'food_pasta', 'food_lasagna', 'food_ramen', 'food_soup_bowl', 'food_paella',
+                'food_couscous', 'food_quiche', 'food_fish_and_chips', 'food_kebab', 'food_sushi_maki',
+                'food_onigiri', 'food_spring_roll', 'food_guacamole',
+                
+                // Nourriture - Desserts
+                'food_cake_slice', 'food_cheesecake', 'food_tiramisu', 'food_ice_cream', 'food_donut',
+                'food_cookie', 'food_muffin', 'food_macaron', 'food_chocolate_bar', 'food_chocolate_eclair',
+                'food_candy', 'food_waffle', 'food_pancake', 'food_crepe', 'food_apple_pie',
+                
+                // Nourriture - Boissons
+                'food_water_bottle', 'food_orange_juice', 'food_coffee', 'food_tea', 'food_hot_chocolate',
+                'food_smoothie', 'food_soda', 'food_beer', 'food_red_wine', 'food_cocktail',
+                
+                // Nourriture - Condiments et autres
+                'food_honey_pot', 'food_salt', 'food_ketchup', 'food_mayonnaise', 'food_mustard',
+                'food_olive', 'food_peanuts', 'food_walnut', 'food_chips', 'food_popcorn',
                 
                 // Autres
                 'coin', 'heart', 'bonus', 'flag'

@@ -23,6 +23,12 @@ export class Player {
         this.inventory = {};
         this.miningTarget = null;
         this.miningProgress = 0;
+        
+        // Système de survie
+        this.hunger = 100;
+        this.maxHunger = 100;
+        this.hungerTimer = 0;
+        this.foodInventory = {};
         this.attackCooldown = 0;
         this.attackRange = 40;
 
@@ -133,7 +139,10 @@ export class Player {
 
         this.checkCollectibleCollisions(game);
         this.updateMiningTarget(mouse, game);
+        this.updateMining(mouse, game);
+        this.updateFruitHarvesting(mouse, game);
         this.updateStateAndAnimation();
+        this.updateHunger(delta);
 
         if (this.swingTimer > 0) this.swingTimer--;
         if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
@@ -146,10 +155,26 @@ export class Player {
         for (let i = game.collectibles.length - 1; i >= 0; i--) {
             const item = game.collectibles[i];
             if (this.rectCollide(item)) {
-                const key = item.tileType;
-                this.inventory[key] = (this.inventory[key] || 0) + 1;
-                const tileName = Object.keys(TILE).find(k=>TILE[k]===key) || "Objet";
-                if (game.logger) game.logger.log(`+1 ${tileName}`);
+                // Gérer les aliments
+                if (item.foodType) {
+                    if (!this.foodInventory) this.foodInventory = {};
+                    this.foodInventory[item.foodType] = (this.foodInventory[item.foodType] || 0) + 1;
+                    
+                    // Consommer automatiquement si la faim est basse
+                    if (this.hunger < 50 && game.foodSystem) {
+                        game.foodSystem.consumeFood(this, item.foodType);
+                        if (game.logger) game.logger.log(`Consommé: ${item.foodType.replace('food_', '').replace('_', ' ')}`);
+                    } else {
+                        if (game.logger) game.logger.log(`+1 ${item.foodType.replace('food_', '').replace('_', ' ')}`);
+                    }
+                } else {
+                    // Gérer les blocs normaux
+                    const key = item.tileType;
+                    this.inventory[key] = (this.inventory[key] || 0) + 1;
+                    const tileName = Object.keys(TILE).find(k=>TILE[k]===key) || "Objet";
+                    if (game.logger) game.logger.log(`+1 ${tileName}`);
+                }
+                
                 game.collectibles.splice(i, 1);
             }
         }
@@ -215,6 +240,171 @@ export class Player {
             }
         } else {
             this.miningTarget = null;
+        }
+    }
+
+    updateMining(mouse, game) {
+        if (!this.miningTarget || !mouse.left) {
+            this.miningProgress = 0;
+            return;
+        }
+
+        const selectedTool = this.tools[this.selectedToolIndex];
+        const miningSpeed = this.getMiningSpeed(this.miningTarget.type, selectedTool);
+        
+        this.miningProgress += miningSpeed;
+        
+        // Créer des particules de minage
+        if (Math.random() < 0.3) {
+            this.createMiningParticles(game, this.miningTarget);
+        }
+        
+        // Bloc cassé
+        if (this.miningProgress >= 100) {
+            this.breakBlock(game, this.miningTarget);
+            this.miningTarget = null;
+            this.miningProgress = 0;
+        }
+    }
+
+    getMiningSpeed(tileType, tool) {
+        const baseSpeed = 2;
+        let toolMultiplier = 1;
+        
+        // Efficacité des outils selon le type de bloc
+        switch (tool) {
+            case 'pickaxe':
+                if ([TILE.STONE, TILE.COAL, TILE.IRON, TILE.GOLD, TILE.DIAMOND, TILE.GRANITE, TILE.DIORITE, TILE.ANDESITE, TILE.OBSIDIAN].includes(tileType)) {
+                    toolMultiplier = 3;
+                }
+                break;
+            case 'shovel':
+                if ([TILE.DIRT, TILE.SAND, TILE.GRASS].includes(tileType)) {
+                    toolMultiplier = 3;
+                }
+                break;
+            case 'axe':
+                if ([TILE.OAK_WOOD, TILE.OAK_LEAVES, TILE.WOOD, TILE.LEAVES].includes(tileType)) {
+                    toolMultiplier = 3;
+                }
+                break;
+        }
+        
+        // Dureté des blocs
+        let hardness = 1;
+        if ([TILE.OBSIDIAN, TILE.BEDROCK].includes(tileType)) hardness = 10;
+        else if ([TILE.DIAMOND, TILE.HELLSTONE].includes(tileType)) hardness = 5;
+        else if ([TILE.GOLD, TILE.IRON, TILE.STONE].includes(tileType)) hardness = 3;
+        else if ([TILE.COAL, TILE.DIRT].includes(tileType)) hardness = 2;
+        
+        return (baseSpeed * toolMultiplier) / hardness;
+    }
+
+    createMiningParticles(game, target) {
+        if (!game.particles) game.particles = [];
+        
+        const { tileSize } = game.config;
+        const worldX = target.x * tileSize + tileSize / 2;
+        const worldY = target.y * tileSize + tileSize / 2;
+        
+        // Couleur des particules selon le type de bloc
+        let particleColor = '#666666';
+        switch (target.type) {
+            case TILE.STONE: particleColor = '#808080'; break;
+            case TILE.DIRT: particleColor = '#8B4513'; break;
+            case TILE.GRASS: particleColor = '#228B22'; break;
+            case TILE.SAND: particleColor = '#F4A460'; break;
+            case TILE.COAL: particleColor = '#2F2F2F'; break;
+            case TILE.IRON: particleColor = '#CD853F'; break;
+            case TILE.GOLD: particleColor = '#FFD700'; break;
+            case TILE.DIAMOND: particleColor = '#87CEEB'; break;
+            case TILE.OAK_WOOD: particleColor = '#8B4513'; break;
+            case TILE.OAK_LEAVES: particleColor = '#228B22'; break;
+        }
+        
+        // Créer 2-4 particules
+        for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
+            game.particles.push({
+                x: worldX + (Math.random() - 0.5) * tileSize,
+                y: worldY + (Math.random() - 0.5) * tileSize,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4 - 2,
+                color: particleColor,
+                life: 30 + Math.floor(Math.random() * 20),
+                maxLife: 50,
+                size: 2 + Math.random() * 3
+            });
+        }
+    }
+
+    breakBlock(game, target) {
+        const { tileSize } = game.config;
+        
+        // Supprimer le bloc
+        game.tileMap[target.y][target.x] = TILE.AIR;
+        
+        // Créer un objet collectible
+        if (!game.collectibles) game.collectibles = [];
+        
+        // Ne pas dropper certains blocs
+        if (target.type !== TILE.BEDROCK && target.type !== TILE.AIR) {
+            game.collectibles.push({
+                x: target.x * tileSize + Math.random() * tileSize * 0.5,
+                y: target.y * tileSize + Math.random() * tileSize * 0.5,
+                w: 8,
+                h: 8,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 3,
+                tileType: target.type,
+                life: 300 // 5 secondes à 60 FPS
+            });
+        }
+        
+        // Effet de cassure avec plus de particules
+        for (let i = 0; i < 8; i++) {
+            this.createMiningParticles(game, target);
+        }
+        
+        // Son de cassure (si disponible)
+        if (this.sound && this.sound.playBreak) {
+            this.sound.playBreak(target.type);
+        }
+    }
+
+    updateFruitHarvesting(mouse, game) {
+        if (!mouse.right || !game.foodSystem) return; // Clic droit pour récolter
+        
+        const { tileSize, zoom } = game.config;
+        const reach = (this.config.player.reach || 4) * tileSize;
+        const mouseWorldX = game.camera.x + mouse.x / zoom;
+        const mouseWorldY = game.camera.y + mouse.y / zoom;
+        
+        if (Math.hypot(mouseWorldX - (this.x + this.w / 2), mouseWorldY - (this.y + this.h / 2)) > reach) {
+            return;
+        }
+        
+        // Essayer de récolter un fruit
+        if (game.foodSystem.harvestFruit(game, mouseWorldX, mouseWorldY)) {
+            if (game.logger) game.logger.log("Fruit récolté !");
+        }
+    }
+
+    updateHunger(delta) {
+        this.hungerTimer += delta;
+        
+        // Perdre de la faim toutes les 5 secondes
+        if (this.hungerTimer > 300) { // 5 secondes à 60 FPS
+            this.hunger = Math.max(0, this.hunger - 1);
+            this.hungerTimer = 0;
+            
+            // Effets de la faim
+            if (this.hunger <= 0) {
+                // Perdre de la santé si affamé
+                this.health = Math.max(1, this.health - 1);
+            } else if (this.hunger < 20) {
+                // Mouvement ralenti si très affamé
+                this.vx *= 0.8;
+            }
         }
     }
     
@@ -325,8 +515,7 @@ export class Player {
         const img = assets[frameKey];
         
         if (!img) {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x, this.y, this.w, this.h);
+            // Pas de carré rouge, juste retourner
             return;
         }
 

@@ -31,28 +31,29 @@ function generateColumns(game, config, startX, width) {
     for (let x = startX; x < startX + width; x++) {
         // === GÉNÉRATION DE TERRAIN COMPLEXE ===
         
-        // Bruit continental (forme générale des continents)
-        const continentalNoise = Perlin.get(x * 0.003, 0) * 60;
+        // Bruit continental (forme générale des continents) - AMPLIFIÉE
+        const continentalNoise = Perlin.get(x * 0.002, 0) * 120;
         
-        // Chaînes de montagnes
-        const mountainRidgeNoise = Perlin.get(x * 0.008, 0) * 35;
-        const mountainDetailNoise = Perlin.get(x * 0.02, 0) * 15;
+        // Chaînes de montagnes - PLUS DRAMATIQUES
+        const mountainRidgeNoise = Perlin.get(x * 0.006, 0) * 80;
+        const mountainDetailNoise = Perlin.get(x * 0.015, 0) * 40;
         
-        // Collines et vallées
-        const hillNoise = Perlin.get(x * 0.04, 0) * 12;
-        const valleyNoise = Perlin.get(x * 0.06, 0) * 8;
+        // Collines et vallées - PLUS PRONONCÉES
+        const hillNoise = Perlin.get(x * 0.03, 0) * 25;
+        const valleyNoise = Perlin.get(x * 0.05, 0) * 20;
         
-        // Détails fins du terrain
-        const detailNoise = Perlin.get(x * 0.1, 0) * 4;
-        const microNoise = Perlin.get(x * 0.2, 0) * 2;
+        // Détails fins du terrain - PLUS VARIÉS
+        const detailNoise = Perlin.get(x * 0.08, 0) * 8;
+        const microNoise = Perlin.get(x * 0.15, 0) * 4;
         
-        // Combinaison intelligente des bruits
+        // Combinaison intelligente des bruits avec plus de variation
         let terrainHeight = continentalNoise + mountainRidgeNoise + mountainDetailNoise;
-        terrainHeight += hillNoise - Math.abs(valleyNoise) * 0.5; // Vallées creusent le terrain
+        terrainHeight += hillNoise - Math.abs(valleyNoise) * 0.8; // Vallées plus profondes
         terrainHeight += detailNoise + microNoise;
         
-        const groundY = Math.max(skyLevel + 10, 
-            Math.min(surfaceLevel + 80, surfaceLevel + Math.floor(terrainHeight)));
+        // Terrain beaucoup plus varié
+        const groundY = Math.max(skyLevel + 5, 
+            Math.min(surfaceLevel + 150, surfaceLevel + Math.floor(terrainHeight)));
         
         // === SYSTÈME DE BIOMES INTELLIGENT ===
         
