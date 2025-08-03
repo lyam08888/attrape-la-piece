@@ -1447,7 +1447,9 @@
                     // Initialiser le système de désastres
                     try {
                         const { DisasterManager } = await import('./disasterManager.js');
-                        game.disasterManager = new DisasterManager(config);
+                        // Passer l'objet de jeu pour que le gestionnaire de désastres
+                        // puisse accéder à la caméra et aux autres propriétés nécessaires
+                        game.disasterManager = new DisasterManager(game);
                         console.log('✅ Système de désastres initialisé');
                     } catch (error) {
                         console.warn('⚠️ Erreur lors de l\'initialisation des désastres:', error);
