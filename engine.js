@@ -10,7 +10,7 @@ export class GameEngine {
         this.assets = {};
         this.keys = {
             left: false, right: false, jump: false, action: false,
-            fly: false, down: false, run: false,
+            fly: false, down: false, run: false, repair: false,
         };
         this.mouse = { x: 0, y: 0, left: false, right: false };
         this.gameLogic = {};
@@ -105,6 +105,7 @@ export class GameEngine {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.jump = true;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
+            if (e.code === 'KeyR') this.keys.repair = true;
             if (e.code === 'KeyV' && !e.repeat) this.keys.fly = !this.keys.fly;
             if (e.code.startsWith('Digit')) {
                 const digit = parseInt(e.code.slice(5));
@@ -124,6 +125,7 @@ export class GameEngine {
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.jump = false;
             if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = false;
+            if (e.code === 'KeyR') this.keys.repair = false;
         });
         this.canvas.addEventListener('mousemove', e => {
             const rect = this.canvas.getBoundingClientRect();

@@ -183,6 +183,7 @@ export class Player {
         this.updateFruitHarvesting(mouse, game);
         this.updateStateAndAnimation();
         this.updateHunger(delta);
+        this.updateToolRepair(keys, game);
 
         if (this.swingTimer > 0) this.swingTimer--;
         if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
@@ -330,6 +331,60 @@ export class Player {
                 this.vx *= 0.8;
             }
         }
+    }
+    
+    updateToolRepair(keys, game) {
+        // Réparation automatique lente des outils au fil du temps
+        if (!this.repairTimer) this.repairTimer = 0;
+        this.repairTimer += 1;
+        
+        // Réparer un peu tous les outils toutes les 10 secondes
+        if (this.repairTimer > 600) { // 10 secondes à 60 FPS
+            this.repairTimer = 0;
+            
+            this.tools.forEach(toolName => {
+                const maxDurability = this.toolDurability[toolName] || 100;
+                const currentDurability = this.durability[toolName] || 0;
+                
+                // Réparation lente automatique (1 point toutes les 10 secondes)
+                if (currentDurability < maxDurability && currentDurability > 0) {
+                    this.durability[toolName] = Math.min(maxDurability, currentDurability + 1);
+                }
+            });
+            
+            // Mettre à jour la barre d'outils
+            if (game.updateToolbar) game.updateToolbar();
+        }
+        
+        // Réparation rapide avec la touche R si on a des matériaux
+        if (keys.repair && !this.prevRepair) {
+            const currentTool = this.tools[this.selectedToolIndex];
+            if (currentTool && this.durability[currentTool] < this.toolDurability[currentTool]) {
+                // Vérifier si on a des matériaux pour réparer
+                const repairMaterial = this.getRepairMaterial(currentTool);
+                if (this.inventory[repairMaterial] > 0) {
+                    this.inventory[repairMaterial]--;
+                    this.durability[currentTool] = this.toolDurability[currentTool];
+                    if (game.logger) game.logger.log(`${currentTool} réparé !`);
+                    if (game.updateToolbar) game.updateToolbar();
+                }
+            }
+        }
+        this.prevRepair = keys.repair;
+    }
+    
+    getRepairMaterial(toolName) {
+        // Matériaux nécessaires pour réparer chaque outil
+        const repairMaterials = {
+            pickaxe: TILE.IRON,
+            shovel: TILE.IRON,
+            axe: TILE.IRON,
+            sword: TILE.IRON,
+            knife: TILE.IRON,
+            bow: TILE.WOOD,
+            fishing_rod: TILE.WOOD
+        };
+        return repairMaterials[toolName] || TILE.WOOD;
     }
     
     handleCollisions(game) {

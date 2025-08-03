@@ -211,7 +211,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const icon = getItemIcon(toolName, this.assets);
                 if (icon) slot.appendChild(icon.cloneNode(true));
                 
-                // Ajouter une barre de durabilité
+                // Ajouter une barre de durabilité et des effets visuels
+                const durabilityPercent = durability / maxDurability;
+                
                 if (durability < maxDurability) {
                     const durabilityBar = document.createElement('div');
                     durabilityBar.className = 'durability-bar';
@@ -225,15 +227,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                         border-radius: 1px;
                     `;
                     const durabilityFill = document.createElement('div');
+                    const color = durabilityPercent > 0.5 ? 'rgba(0,255,0,0.8)' : 
+                                 durabilityPercent > 0.2 ? 'rgba(255,255,0,0.8)' : 'rgba(255,0,0,0.8)';
                     durabilityFill.style.cssText = `
                         height: 100%;
-                        background: rgba(0,255,0,0.8);
-                        width: ${(durability / maxDurability) * 100}%;
+                        background: ${color};
+                        width: ${durabilityPercent * 100}%;
                         border-radius: 1px;
                     `;
                     durabilityBar.appendChild(durabilityFill);
                     slot.style.position = 'relative';
                     slot.appendChild(durabilityBar);
+                }
+                
+                // Effet visuel pour les outils cassés
+                if (durability <= 0) {
+                    slot.style.opacity = '0.5';
+                    slot.style.filter = 'grayscale(70%)';
+                    slot.title += ' - CASSÉ';
                 }
                 
                 toolbar.appendChild(slot);
@@ -249,12 +260,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const durability = this.player.durability[toolName] || 0;
                 const maxDurability = this.player.toolDurability[toolName] || 100;
                 const enchantments = this.player.toolEnchantments[toolName] || [];
+                const repairMaterial = this.player.getRepairMaterial(toolName);
+                const repairMaterialName = Object.keys(TILE).find(k => TILE[k] === repairMaterial) || 'Matériau';
+                const hasRepairMaterial = (this.player.inventory[repairMaterial] || 0) > 0;
+                
+                let statusText = '';
+                if (durability <= 0) {
+                    statusText = '<span style="color: #ff4444;">CASSÉ</span>';
+                } else if (durability < maxDurability * 0.2) {
+                    statusText = '<span style="color: #ffaa00;">Très usé</span>';
+                } else if (durability < maxDurability * 0.5) {
+                    statusText = '<span style="color: #ffff00;">Usé</span>';
+                }
                 
                 toolInfo.innerHTML = `
                     <div style="font-size: 12px; color: #fff;">
                         <strong>${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')}</strong><br>
-                        Durabilité: ${durability}/${maxDurability}<br>
-                        ${enchantments.length > 0 ? `Enchantements: ${enchantments.join(', ')}` : ''}
+                        Durabilité: ${durability}/${maxDurability} ${statusText}<br>
+                        ${enchantments.length > 0 ? `Enchantements: ${enchantments.join(', ')}<br>` : ''}
+                        ${durability < maxDurability ? `Réparation: ${repairMaterialName} ${hasRepairMaterial ? '✓' : '✗'}<br>` : ''}
+                        ${durability < maxDurability ? '<span style="font-size: 10px; color: #aaa;">Appuyez sur R pour réparer</span>' : ''}
                     </div>
                 `;
             }

@@ -161,10 +161,20 @@ export function updateMining(game, keys, mouse, delta) {
     if (toolName !== 'hand') {
         const durability = player.durability[toolName] || 0;
         if (durability <= 0) {
-            // Outil cassé, utiliser l'efficacité de la main
-            efficiency = 0.5;
+            // Outil cassé, vérifier si on peut miner à la main
+            if (!handMineable.includes(currentType)) {
+                // Ne peut pas miner ce bloc avec un outil cassé
+                player.miningProgress = 0;
+                game.miningEffect = null;
+                if (game.logger && Math.random() < 0.02) { // Message occasionnel
+                    game.logger.log(`${toolName} est cassé ! Impossible de miner ce bloc.`);
+                }
+                return;
+            }
+            // Outil cassé mais bloc minable à la main
+            efficiency = 0.3; // Encore plus lent qu'à la main normale
             if (game.logger && Math.random() < 0.01) { // Message occasionnel
-                game.logger.log(`${toolName} est cassé ! Utilisez vos mains.`);
+                game.logger.log(`${toolName} est cassé ! Minage très lent.`);
             }
         }
     }
