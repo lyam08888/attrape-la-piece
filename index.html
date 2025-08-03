@@ -603,6 +603,8 @@
         import { LightingSystem as AdvancedLighting } from './lighting.js';
         import { SURVIVAL_ITEMS } from './survivalItems.js';
         import { generateMonster } from './generateurMonstres.js';
+        // Import de la classe de base Enemy sous un alias pour éviter les conflits globaux
+        import { Enemy as BaseEnemy, Slime } from './enemy.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -664,7 +666,7 @@
                             const x = game.player.x + Math.cos(angle) * distance;
                             const y = game.player.y + Math.sin(angle) * distance;
                             
-                            const monster = createEnemy(x, y, game.config);
+                            const monster = new Slime(x, y, game.config);
                             monster.health = 15;
                             monster.maxHealth = 15;
                             game.enemies.push(monster);
@@ -1290,7 +1292,7 @@
                         }
                         
                         // Créer un ennemi avec les données du monstre généré
-                        const monster = createEnemy(x, y, config);
+                        const monster = new BaseEnemy(x, y, game.config);
                         monster.monsterData = monsterData;
                         monster.biome = biome;
                         monster.maxHealth = 30 + Math.floor(Math.random() * 50);
@@ -1941,12 +1943,16 @@
 
             // Créer le moteur de jeu
             const engine = {
+                _frameId: null,
+                _running: false,
                 start: async (logic) => {
+                    if (engine._running) return;
+                    engine._running = true;
                     console.log("Démarrage du moteur de jeu...");
-                    
+
                     // Initialiser la logique de jeu
                     await logic.init();
-                    
+
                     // Démarrer la boucle de jeu
                     let lastTime = 0;
                     let frameCount = 0;
@@ -1954,31 +1960,42 @@
                         const delta = currentTime - lastTime;
                         lastTime = currentTime;
                         frameCount++;
-                        
+
                         // Log moins fréquent
                         if (frameCount === 60) {
                             console.log("Jeu démarré avec succès!");
                         }
-                        
+
                         try {
-                            // Mettre à jour la logique
-                            logic.update(delta, getKeys(), getMouse());
-                            
-                            // Dessiner
+                            // Mettre à jour la logique uniquement si le jeu n'est pas en pause
+                            if (!logic.isPaused || !logic.isPaused()) {
+                                logic.update(delta, getKeys(), getMouse());
+                            }
+
+                            // Dessiner (toujours afficher, même en pause)
+
                             const ctx = canvas.getContext('2d');
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            
+
                             // Le jeu est maintenant actif
-                            
+
                             logic.draw(ctx, game.assets || {});
                         } catch (error) {
                             console.error("Erreur dans la boucle de jeu:", error);
                         }
-                        
+
                         requestAnimationFrame(gameLoop);
+
                     };
-                    
-                    requestAnimationFrame(gameLoop);
+
+                    engine._frameId = requestAnimationFrame(gameLoop);
+                },
+                stop: () => {
+                    if (engine._frameId !== null) {
+                        cancelAnimationFrame(engine._frameId);
+                        engine._frameId = null;
+                        engine._running = false;
+                    }
                 }
             };
             

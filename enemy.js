@@ -2,7 +2,7 @@
 import { TILE } from './world.js';
 import { SeededRandom } from './seededRandom.js';
 
-class Enemy {
+export class Enemy {
     constructor(x, y, config) {
         this.x = x;
         this.y = y;
