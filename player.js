@@ -56,10 +56,10 @@ export class Player {
         const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
         
-        // Debug: vérifier les touches (désactivé)
-        // if (keys.left || keys.right || keys.jump) {
-        //     console.log(`Touches: left=${keys.left}, right=${keys.right}, jump=${keys.jump}`);
-        // }
+        // Debug: vérifier les touches
+        if (keys.left || keys.right || keys.jump) {
+            console.log(`Touches détectées: left=${keys.left}, right=${keys.right}, jump=${keys.jump}, vx=${this.vx}, vy=${this.vy}`);
+        }
 
         const centerX = Math.floor((this.x + this.w / 2) / tileSize);
         const centerY = Math.floor((this.y + this.h / 2) / tileSize);
@@ -126,7 +126,22 @@ export class Player {
 
         this.prevJump = keys.jump;
 
-        this.handleCollisions(game);
+        // Test: désactiver temporairement les collisions pour diagnostiquer
+        // this.handleCollisions(game);
+        
+        // Mouvement simple sans collisions pour test
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Gravité simple
+        if (!this.isFlying && !this.inWater) {
+            this.vy += physics.gravity;
+            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
+        }
+        
+        // Réinitialiser grounded pour le test
+        this.grounded = this.y > 1000; // Temporaire
+        
         if (this.grounded && !this.isFlying) this.jumpCount = 0;
 
         this.checkCollectibleCollisions(game);
@@ -251,25 +266,41 @@ export class Player {
         }
 
         // Collision X
+        const oldX = this.x;
         this.x += this.vx;
         let hb = this.getHitbox();
+        
+        // Debug collisions
+        if (this.vx !== 0) {
+            console.log(`Collision X: oldX=${oldX}, newX=${this.x}, vx=${this.vx}, hitbox=`, hb);
+        }
         if (this.vx > 0) {
             const tx = Math.floor((hb.x + hb.w) / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-            if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
-                this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
-                this.vx = 0;
+            
+            // Vérifications de limites
+            if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
+                if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
+                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
+                    this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
+                    this.vx = 0;
+                    console.log(`Collision droite détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
+                }
             }
         } else if (this.vx < 0) {
             const tx = Math.floor(hb.x / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-             if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                 ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
-                this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
-                this.vx = 0;
+            
+            // Vérifications de limites
+            if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
+                if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
+                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
+                    this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
+                    this.vx = 0;
+                    console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
+                }
             }
         }
 

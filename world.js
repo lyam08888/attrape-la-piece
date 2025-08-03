@@ -188,12 +188,19 @@ function generateColumns(game, config, startX, width) {
             }
         }
 
-        if (SeededRandom.random() < 0.02) {
-            const enemyTypes = [Slime, Frog, Golem];
+        // Spawn d'ennemis sur la surface (sera géré par enemySpawner.js)
+        if (SeededRandom.random() < 0.01) {
             for (let y = 0; y < worldHeightInTiles; y++) {
-                if (game.tileMap[y]?.[x] > TILE.AIR && game.tileMap[y - 1]?.[x] === TILE.AIR) {
-                    const EnemyType = enemyTypes[Math.floor(SeededRandom.random() * enemyTypes.length)];
-                    game.enemies.push(new EnemyType(x * tileSize, (y - 2) * tileSize, config));
+                if (game.tileMap[y]?.[x] > TILE.AIR && 
+                    game.tileMap[y - 1]?.[x] === TILE.AIR && 
+                    game.tileMap[y - 2]?.[x] === TILE.AIR) {
+                    // Marquer cette position comme point de spawn potentiel
+                    if (!game.spawnPoints) game.spawnPoints = [];
+                    game.spawnPoints.push({
+                        x: x * tileSize,
+                        y: (y - 2) * tileSize,
+                        biome: y < surfaceLevel ? 'sky' : y < undergroundLevel ? 'surface' : 'underground'
+                    });
                     break;
                 }
             }

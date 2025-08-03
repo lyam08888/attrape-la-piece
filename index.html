@@ -1192,11 +1192,21 @@
                     // Trouver la surface avec vérifications robustes
                     if (game.tileMap && game.tileMap.length > 0 && game.tileMap[0].length > startXTile) {
                         let surfaceFound = false;
-                        for (let y = 0; y < game.tileMap.length; y++) {
+                        
+                        // Chercher la première surface solide en partant du haut
+                        for (let y = Math.floor(game.tileMap.length * 0.1); y < game.tileMap.length; y++) {
                             const tile = game.tileMap[y][startXTile];
-                            if (tile && tile > TILE.AIR && tile !== TILE.WATER) {
-                                playerY = (y - 2) * config.tileSize; // 2 blocs au-dessus du sol
+                            const tileAbove1 = game.tileMap[y - 1]?.[startXTile];
+                            const tileAbove2 = game.tileMap[y - 2]?.[startXTile];
+                            
+                            // Vérifier qu'il y a un bloc solide et 2 blocs d'air au-dessus
+                            if (tile && tile > TILE.AIR && tile !== TILE.WATER && tile !== TILE.LAVA &&
+                                (tileAbove1 === TILE.AIR || tileAbove1 === undefined) &&
+                                (tileAbove2 === TILE.AIR || tileAbove2 === undefined)) {
+                                
+                                playerY = (y - 3) * config.tileSize; // 3 blocs au-dessus du sol pour plus de sécurité
                                 console.log(`Surface trouvée à y=${y}, joueur positionné à ${playerY}`);
+                                console.log(`Tiles: sol=${tile}, air1=${tileAbove1}, air2=${tileAbove2}`);
                                 surfaceFound = true;
                                 break;
                             }
@@ -1204,11 +1214,11 @@
                         
                         if (!surfaceFound) {
                             console.warn("Aucune surface trouvée, utilisation de la position par défaut");
-                            playerY = config.tileSize * 20; // Position de sécurité
+                            playerY = config.tileSize * 10; // Position de sécurité plus haute
                         }
                     } else {
                         console.error("TileMap invalide pour le spawn du joueur");
-                        playerY = config.tileSize * 20;
+                        playerY = config.tileSize * 10;
                     }
                     
                     game.player.x = startXTile * config.tileSize;
@@ -1226,6 +1236,11 @@
                     game.worldAnimator = null; // Désactivé pour l'instant
                     game.timeSystem = new TimeSystem();
                     game.calendarSystem = new CalendarSystem();
+                    
+                    // Initialiser les listes d'entités
+                    if (!game.enemies) game.enemies = [];
+                    if (!game.pnjs) game.pnjs = [];
+                    if (!game.spawnPoints) game.spawnPoints = [];
                     console.log("Système de calendrier initialisé");
                     
                     // Générer des PNJ (désactivé pour l'instant)
