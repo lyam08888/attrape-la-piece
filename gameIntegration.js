@@ -1,5 +1,5 @@
 // gameIntegration.js - Intégration du monde complexe dans le jeu existant
-import { WorldIntegrationSystem } from './worldIntegrationSystem.js';
+import WorldIntegrationSystem from './worldIntegrationSystem.js';
 
 // Fonction principale d'intégration
 export function integrateComplexWorld(game, config, gameLogic) {
