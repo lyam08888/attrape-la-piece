@@ -423,6 +423,40 @@ export class AnimalManager {
             this.animals.push(animal);
         }
     }
+
+    spawnAnimal(game, type = 'cow', x = null, y = null) {
+        if (!game || !game.config) return null;
+
+        const { tileSize } = game.config;
+        let spawnX = x;
+        let spawnY = y;
+
+        // Si aucune position n'est fournie, générer l'animal près du joueur
+        if (spawnX == null || spawnY == null) {
+            if (!game.player) return null;
+            const spawnDistance = 50;
+            const angle = SeededRandom.random() * Math.PI * 2;
+            spawnX = game.player.x + Math.cos(angle) * spawnDistance;
+            spawnY = game.player.y + Math.sin(angle) * spawnDistance;
+
+            const tileX = Math.floor(spawnX / tileSize);
+            let groundY = -1;
+            for (let yy = 0; yy < game.tileMap.length - 1; yy++) {
+                const tile = game.tileMap[yy]?.[tileX];
+                const tileBelow = game.tileMap[yy + 1]?.[tileX];
+                if (tile === TILE.AIR && tileBelow > TILE.AIR) {
+                    groundY = yy * tileSize;
+                    break;
+                }
+            }
+            if (groundY === -1) return null;
+            spawnY = groundY - 24;
+        }
+
+        const animal = new Animal(spawnX, spawnY, type, game.config);
+        this.animals.push(animal);
+        return animal;
+    }
     
     getBiomeAt(game, tileX, tileY) {
         // Logique simplifiée de détection de biome
