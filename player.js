@@ -56,10 +56,10 @@ export class Player {
         const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
         
-        // Debug: vérifier les touches
-        if (keys.left || keys.right || keys.jump) {
-            console.log(`Touches détectées: left=${keys.left}, right=${keys.right}, jump=${keys.jump}, vx=${this.vx}, vy=${this.vy}`);
-        }
+        // Debug: vérifier les touches (désactivé)
+        // if (keys.left || keys.right || keys.jump) {
+        //     console.log(`Touches détectées: left=${keys.left}, right=${keys.right}, jump=${keys.jump}, vx=${this.vx}, vy=${this.vy}`);
+        // }
 
         const centerX = Math.floor((this.x + this.w / 2) / tileSize);
         const centerY = Math.floor((this.y + this.h / 2) / tileSize);
@@ -126,21 +126,8 @@ export class Player {
 
         this.prevJump = keys.jump;
 
-        // Test: désactiver temporairement les collisions pour diagnostiquer
-        // this.handleCollisions(game);
-        
-        // Mouvement simple sans collisions pour test
-        this.x += this.vx;
-        this.y += this.vy;
-        
-        // Gravité simple
-        if (!this.isFlying && !this.inWater) {
-            this.vy += physics.gravity;
-            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
-        }
-        
-        // Réinitialiser grounded pour le test
-        this.grounded = this.y > 1000; // Temporaire
+        // Collisions réactivées avec améliorations
+        this.handleCollisions(game);
         
         if (this.grounded && !this.isFlying) this.jumpCount = 0;
 
@@ -270,10 +257,10 @@ export class Player {
         this.x += this.vx;
         let hb = this.getHitbox();
         
-        // Debug collisions
-        if (this.vx !== 0) {
-            console.log(`Collision X: oldX=${oldX}, newX=${this.x}, vx=${this.vx}, hitbox=`, hb);
-        }
+        // Debug collisions (désactivé)
+        // if (this.vx !== 0) {
+        //     console.log(`Collision X: oldX=${oldX}, newX=${this.x}, vx=${this.vx}, hitbox=`, hb);
+        // }
         if (this.vx > 0) {
             const tx = Math.floor((hb.x + hb.w) / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
@@ -285,7 +272,7 @@ export class Player {
                     ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
                     this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
                     this.vx = 0;
-                    console.log(`Collision droite détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
+                    // console.log(`Collision droite détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
                 }
             }
         } else if (this.vx < 0) {
@@ -299,7 +286,7 @@ export class Player {
                     ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
                     this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
                     this.vx = 0;
-                    console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
+                    // console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
                 }
             }
         }
