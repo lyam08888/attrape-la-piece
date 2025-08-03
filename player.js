@@ -476,10 +476,42 @@ export class Player {
             }
         }
 
-        // Collision X
-        const oldX = this.x;
-        this.x += this.vx;
+        // Collision Y
+        this.y += this.vy;
         let hb = this.getHitbox();
+        this.grounded = false;
+        if (this.vy > 0) {
+            const ty = Math.floor((hb.y + hb.h) / tileSize);
+            const tx1 = Math.floor(hb.x / tileSize);
+            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
+            if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
+                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
+                ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
+                this.y = ty * tileSize - this.hitbox.height - this.hitbox.offsetY;
+                this.vy = 0;
+                this.grounded = true;
+            }
+        } else if (this.vy < 0) {
+            const ty = Math.floor(hb.y / tileSize);
+            const tx1 = Math.floor(hb.x / tileSize);
+            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
+            
+            // Vérifications de limites pour collision vers le haut
+            if (ty >= 0 && ty < map.length && tx1 >= 0 && tx1 < map[0]?.length && tx2 >= 0 && tx2 < map[0]?.length) {
+                if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
+                    ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
+                    ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
+                    this.y = (ty + 1) * tileSize - this.hitbox.offsetY;
+                    this.vy = 0;
+                }
+            }
+        }
+
+        // Collision X
+        this.x += this.vx;
+        hb = this.getHitbox();
         
         // Debug collisions (désactivé)
         // if (this.vx !== 0) {
@@ -515,39 +547,6 @@ export class Player {
                     this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
                     this.vx = 0;
                     // console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
-                }
-            }
-        }
-
-        // Collision Y
-        this.y += this.vy;
-        hb = this.getHitbox();
-        this.grounded = false;
-        if (this.vy > 0) {
-            const ty = Math.floor((hb.y + hb.h) / tileSize);
-            const tx1 = Math.floor(hb.x / tileSize);
-            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
-            if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
-                ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
-                this.y = ty * tileSize - this.hitbox.height - this.hitbox.offsetY;
-                this.vy = 0;
-                this.grounded = true;
-            }
-        } else if (this.vy < 0) {
-            const ty = Math.floor(hb.y / tileSize);
-            const tx1 = Math.floor(hb.x / tileSize);
-            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
-            
-            // Vérifications de limites pour collision vers le haut
-            if (ty >= 0 && ty < map.length && tx1 >= 0 && tx1 < map[0]?.length && tx2 >= 0 && tx2 < map[0]?.length) {
-                if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                    ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
-                    ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
-                    this.y = (ty + 1) * tileSize - this.hitbox.offsetY;
-                    this.vy = 0;
                 }
             }
         }

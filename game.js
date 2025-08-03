@@ -209,6 +209,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         cameraShakeOffsetY: 0,
         worldIntegration: null, // Système d'intégration du monde complexe
 
+        // Function to map keys according to config.keyBindings
+        getKeys(rawKeys) {
+            const binds = this.config.keyBindings || {};
+            return {
+                left: rawKeys[binds.left],
+                right: rawKeys[binds.right],
+                up: rawKeys[binds.jump] || rawKeys[binds.up],
+                down: rawKeys[binds.down],
+                jump: rawKeys[binds.jump],
+                run: rawKeys[binds.run],
+                fly: rawKeys[binds.fly],
+                action: rawKeys[binds.action],
+                repair: rawKeys[binds.repair]
+            };
+        },
+
         createParticles(x, y, count, color, options) {
             if(this.config.showParticles) this.particleSystem.create(x, y, count, color, options);
         },
