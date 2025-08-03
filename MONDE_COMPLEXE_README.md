@@ -6,6 +6,8 @@ Le système de monde complexe transforme le jeu 2D pixel adventure en un univers
 
 ## 🏗️ Architecture du Système
 
+---
+
 ### Fichiers Principaux
 
 1. **[`worldComplexSystem.js`](worldComplexSystem.js)** - Système de destruction environnementale
@@ -16,6 +18,8 @@ Le système de monde complexe transforme le jeu 2D pixel adventure en un univers
 6. **[`test-standalone.html`](test-standalone.html)** - Test autonome et démonstration
 
 ## 🌟 Fonctionnalités Principales
+
+---
 
 ### 🌍 12 Biomes Uniques (Paradis → Enfer)
 
@@ -34,7 +38,11 @@ Le système de monde complexe transforme le jeu 2D pixel adventure en un univers
 | **Infernal Depths** | 85°C | 20% | 6/6 | Enfers ardents, démons |
 | **Abyssal Depths** | 2°C | 95% | 6/6 | Profondeurs océaniques, créatures abyssales |
 
+---
+
 ### 💥 Système de Destruction Environnementale
+
+---
 
 #### Types d'Événements Naturels
 - **🔥 Explosions** - Dégâts en zone avec onde de choc
@@ -48,7 +56,11 @@ Le système de monde complexe transforme le jeu 2D pixel adventure en un univers
 - **🏔️ Avalanches** - Chute de neige et rochers
 - **🌫️ Tempêtes de sable** - Visibilité nulle et érosion
 
+---
+
 ### 🐾 Intelligence Artificielle des Animaux
+
+---
 
 #### 100+ Espèces Animales Intelligentes
 Les animaux utilisent tous les assets existants avec des comportements adaptatifs :
@@ -71,7 +83,11 @@ Les animaux utilisent tous les assets existants avec des comportements adaptatif
 - Événements naturels
 - Proximité du joueur
 
+---
+
 ### 🛠️ Outils d'Exploration Avancés
+
+---
 
 #### 8 Outils Légendaires
 1. **⚡ Quantum Pickaxe** - Minage instantané et téléportation
@@ -83,6 +99,8 @@ Les animaux utilisent tous les assets existants avec des comportements adaptatif
 7. **👁️ Omniscient Eye** - Vision à travers la matière
 8. **⏰ Temporal Stabilizer** - Manipulation du temps
 
+---
+
 #### 6 Blueprints de Construction
 1. **🏰 Fortress** - Forteresse défensive
 2. **🔬 Laboratory** - Station de recherche
@@ -91,7 +109,11 @@ Les animaux utilisent tous les assets existants avec des comportements adaptatif
 5. **🏛️ Temple** - Sanctuaire mystique
 6. **🏭 Factory** - Complexe industriel
 
+---
+
 ### 🏛️ Système de Landmarks
+
+---
 
 #### Types de Landmarks
 - **🏛️ Ancient Ruins** - Ruines mystérieuses
@@ -109,6 +131,8 @@ Les animaux utilisent tous les assets existants avec des comportements adaptatif
 
 ## 🎮 Utilisation et Intégration
 
+---
+
 ### Intégration dans le Jeu Principal
 
 ```javascript
@@ -118,6 +142,8 @@ import { integrateComplexWorld } from './gameIntegration.js';
 // Initialisation
 game.worldIntegration = integrateComplexWorld(game, config);
 ```
+
+---
 
 ### Commandes de Debug Disponibles
 
@@ -144,6 +170,8 @@ window.complexWorld.getStatus();
 
 ## 🧪 Tests et Démonstration
 
+---
+
 ### Test Autonome
 Ouvrez [`test-standalone.html`](test-standalone.html) dans un navigateur pour une démonstration interactive complète.
 
@@ -155,6 +183,8 @@ Ouvrez [`test-standalone.html`](test-standalone.html) dans un navigateur pour un
 - ✅ Effets visuels et particules
 - ✅ Interface utilisateur dynamique
 
+---
+
 ### Résultats des Tests
 - **Performance** : 60 FPS avec 15+ animaux actifs
 - **Mémoire** : Gestion optimisée des particules et effets
@@ -162,6 +192,8 @@ Ouvrez [`test-standalone.html`](test-standalone.html) dans un navigateur pour un
 - **Stabilité** : Aucun crash détecté lors des tests intensifs
 
 ## 📊 Statistiques du Système
+
+---
 
 ### Métriques Techniques
 - **12 biomes** uniques avec caractéristiques distinctes
@@ -171,6 +203,8 @@ Ouvrez [`test-standalone.html`](test-standalone.html) dans un navigateur pour un
 - **12 types de landmarks** à découvrir
 - **6 blueprints** de construction
 
+---
+
 ### Performance
 - **Rendu** : Canvas 2D optimisé avec culling
 - **IA** : Système d'états finis pour les animaux
@@ -178,6 +212,8 @@ Ouvrez [`test-standalone.html`](test-standalone.html) dans un navigateur pour un
 - **Mémoire** : Garbage collection optimisée
 
 ## 🔧 Configuration et Personnalisation
+
+---
 
 ### Configuration des Biomes
 ```javascript
@@ -189,6 +225,8 @@ const biomeConfig = {
     weatherEffects: ['snow', 'blizzard']
 };
 ```
+
+---
 
 ### Configuration des Animaux
 ```javascript
@@ -206,6 +244,8 @@ const animalConfig = {
 
 ## 🚀 Évolutions Futures
 
+---
+
 ### Fonctionnalités Prévues
 - **🌐 Multijoueur** - Monde partagé entre joueurs
 - **🏗️ Construction avancée** - Villes et civilisations
@@ -213,6 +253,8 @@ const animalConfig = {
 - **🌌 Dimensions parallèles** - Voyages interdimensionnels
 - **🎯 Quêtes dynamiques** - Missions générées procéduralement
 - **📈 Économie complexe** - Commerce et ressources
+
+---
 
 ### Optimisations Techniques
 - **🔄 Web Workers** - Calculs IA en arrière-plan
@@ -222,11 +264,15 @@ const animalConfig = {
 
 ## 📝 Notes de Développement
 
+---
+
 ### Défis Résolus
 1. **Intégration sans rupture** - Le système s'intègre parfaitement au jeu existant
 2. **Performance avec 100+ animaux** - Optimisation de l'IA et du rendu
 3. **Gestion mémoire** - Pool d'objets et nettoyage automatique
 4. **Compatibilité navigateurs** - Code vanilla JavaScript moderne
+
+---
 
 ### Leçons Apprises
 - L'architecture modulaire facilite les tests et la maintenance
