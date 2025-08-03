@@ -41,7 +41,7 @@ async function loadConfig() {
             "player": {
                 "width": 64,
                 "height": 64,
-                "hitbox": { "offsetX": 8, "offsetY": 8, "width": 48, "height": 48 }
+                "hitbox": { "offsetX": 0, "offsetY": 0, "width": 64, "height": 64 }
             },
             "playerAnimations": {
                 "idle": ["player_idle1"],
