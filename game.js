@@ -456,8 +456,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         update(delta, keys, mouse) {
             if (!game.player) return;
 
-            // Fix: Use getKeys() to map keys properly according to config.keyBindings
-            const mappedKeys = getKeys();
+            // Map raw key states according to config.keyBindings
+            const mappedKeys = this.getKeys(keys);
 
             game.player.update(mappedKeys, mouse, game, delta);
             game.enemies.forEach(e => e.update(game, delta));
