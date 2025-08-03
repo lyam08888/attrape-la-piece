@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Movement Mechanics</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 2px solid #444;
+            background: #111;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .controls h3 {
+            margin-top: 0;
+        }
+        .key-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .key-item {
+            display: flex;
+            align-items: center;
+        }
+        .key {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #555;
+            border-radius: 3px;
+            margin-right: 8px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Movement Mechanics</h1>
+        <p>This page tests the enhanced movement mechanics including wall jumping, gliding, and improved collision detection.</p>
+        
+        <div class="controls">
+            <h3>Controls:</h3>
+            <div class="key-list">
+                <div class="key-item"><span class="key">←</span> Move Left</div>
+                <div class="key-item"><span class="key">→</span> Move Right</div>
+                <div class="key-item"><span class="key">Space</span> Jump</div>
+                <div class="key-item"><span class="key">↓</span> Crouch/Glide</div>
+                <div class="key-item"><span class="key">Shift</span> Run</div>
+                <div class="key-item"><span class="key">V</span> Fly Toggle</div>
+                <div class="key-item"><span class="key">E</span> Action</div>
+                <div class="key-item"><span class="key">R</span> Repair</div>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="instructions">
+            <h3>Test Instructions:</h3>
+            <ul>
+                <li>Try running and jumping to test basic movement</li>
+                <li>Press and hold DOWN while in the air to glide</li>
+                <li>Jump toward a wall and try wall sliding and wall jumping</li>
+                <li>Press V to toggle flying mode</li>
+                <li>Try double jumping by pressing Space twice in the air</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simple test implementation to verify movement mechanics
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Player object
+        const player = {
+            x: 100,
+            y: 300,
+            width: 32,
+            height: 32,
+            vx: 0,
+            vy: 0,
+            grounded: false,
+            isFlying: false,
+            isGliding: false,
+            isWallSliding: false,
+            jumpCount: 0,
+            color: '#4CAF50'
+        };
+        
+        // Simple platform
+        const platforms = [
+            { x: 0, y: 500, width: 800, height: 100 },
+            { x: 300, y: 400, width: 200, height: 20 },
+            { x: 100, y: 300, width: 100, height: 20 },
+            { x: 600, y: 250, width: 100, height: 20 },
+            { x: 350, y: 200, width: 100, height: 20 }
+        ];
+        
+        // Key states
+        const keys = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            jump: false
+        };
+        
+        // Event listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'ArrowRight') keys.right = true;
+            if (e.key === 'ArrowUp') keys.up = true;
+            if (e.key === 'ArrowDown') keys.down = true;
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                keys.jump = true;
+                e.preventDefault();
+            }
+            if (e.key === 'v' || e.key === 'V') {
+                player.isFlying = !player.isFlying;
+                e.preventDefault();
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'ArrowRight') keys.right = false;
+            if (e.key === 'ArrowUp') keys.up = false;
+            if (e.key === 'ArrowDown') keys.down = false;
+            if (e.key === ' ' || e.key === 'Spacebar') keys.jump = false;
+        });
+        
+        // Physics constants
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -12;
+        const MOVE_SPEED = 5;
+        const AIR_RESISTANCE = 0.95;
+        const FRICTION = 0.8;
+        const WALL_SLIDE_SPEED = 1;
+        const WALL_JUMP_FORCE = 10;
+        
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply movement
+            if (player.isFlying) {
+                player.vx = 0;
+                player.vy = 0;
+                if (keys.left) player.vx = -MOVE_SPEED;
+                if (keys.right) player.vx = MOVE_SPEED;
+                if (keys.up) player.vy = -MOVE_SPEED;
+                if (keys.down) player.vy = MOVE_SPEED;
+            } else {
+                // Horizontal movement
+                if (keys.left) player.vx = -MOVE_SPEED;
+                else if (keys.right) player.vx = MOVE_SPEED;
+                else {
+                    player.vx *= player.grounded ? FRICTION : AIR_RESISTANCE;
+                    if (Math.abs(player.vx) < 0.1) player.vx = 0;
+                }
+                
+                // Apply gravity
+                if (player.isGliding) {
+                    player.vy += GRAVITY * 0.2;
+                    if (player.vy > 2) player.vy = 2;
+                } else if (player.isWallSliding) {
+                    player.vy = Math.min(player.vy + GRAVITY * 0.5, WALL_SLIDE_SPEED);
+                } else {
+                    player.vy += GRAVITY;
+                }
+                
+                // Jumping
+                if (keys.jump && player.grounded) {
+                    player.vy = JUMP_FORCE;
+                    player.jumpCount = 1;
+                    player.grounded = false;
+                } else if (keys.jump && player.isWallSliding) {
+                    player.vy = JUMP_FORCE;
+                    player.vx = player.isWallSliding === -1 ? WALL_JUMP_FORCE : -WALL_JUMP_FORCE;
+                    player.jumpCount = 1;
+                    player.isWallSliding = false;
+                } else if (keys.jump && player.jumpCount < 2) {
+                    player.vy = JUMP_FORCE;
+                    player.jumpCount = 2;
+                }
+            }
+            
+            // Gliding
+            player.isGliding = !player.grounded && keys.down && !player.isFlying && player.vy > 0;
+            
+            // Update position
+            player.x += player.vx;
+            player.y += player.vy;
+            
+            // Boundary checks
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+            
+            // Reset wall sliding
+            player.isWallSliding = false;
+            
+            // Platform collision
+            player.grounded = false;
+            for (const platform of platforms) {
+                // Draw platform
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                
+                // Collision detection
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    
+                    // Landing on top
+                    if (player.vy > 0 && player.y < platform.y) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.jumpCount = 0;
+                    }
+                    // Hitting from below
+                    else if (player.vy < 0 && player.y > platform.y) {
+                        player.y = platform.y + platform.height;
+                        player.vy = 0;
+                    }
+                    // Hitting from the side
+                    else if (player.vx > 0 && player.x < platform.x) {
+                        player.x = platform.x - player.width;
+                        player.vx = 0;
+                        // Check for wall sliding
+                        if (!player.grounded && keys.down) {
+                            player.isWallSliding = -1; // Left wall
+                        }
+                    }
+                    else if (player.vx < 0 && player.x > platform.x) {
+                        player.x = platform.x + platform.width;
+                        player.vx = 0;
+                        // Check for wall sliding
+                        if (!player.grounded && keys.down) {
+                            player.isWallSliding = 1; // Right wall
+                        }
+                    }
+                }
+            }
+            
+            // Draw player
+            ctx.fillStyle = player.isFlying ? '#2196F3' : 
+                           player.isGliding ? '#FF9800' : 
+                           player.isWallSliding ? '#E91E63' : 
+                           player.grounded ? '#4CAF50' : '#9C27B0';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw player info
+            ctx.fillStyle = 'white';
+            ctx.font = '14px Arial';
+            ctx.fillText(`Position: (${Math.floor(player.x)}, ${Math.floor(player.y)})`, 10, 20);
+            ctx.fillText(`Velocity: (${player.vx.toFixed(1)}, ${player.vy.toFixed(1)})`, 10, 40);
+            ctx.fillText(`Grounded: ${player.grounded}`, 10, 60);
+            ctx.fillText(`Flying: ${player.isFlying}`, 10, 80);
+            ctx.fillText(`Gliding: ${player.isGliding}`, 10, 100);
+            ctx.fillText(`Wall Sliding: ${player.isWallSliding}`, 10, 120);
+            ctx.fillText(`Jump Count: ${player.jumpCount}`, 10, 140);
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>

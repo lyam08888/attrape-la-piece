@@ -1,20 +1,25 @@
 @echo off
-cd /d "%~dp0"
-echo Tentative de demarrage du serveur...
-
-REM Essayer Python
-python simple_server.py
-if %errorlevel% equ 0 goto :eof
-
-REM Essayer Python3
-python3 simple_server.py
-if %errorlevel% equ 0 goto :eof
-
-REM Essayer Node.js
-node simple_server.js
-if %errorlevel% equ 0 goto :eof
-
+echo ========================================
+echo    Démarrage du serveur de jeu
+echo ========================================
 echo.
-echo Aucun serveur disponible. Veuillez installer Python ou Node.js
-echo Ou ouvrez index.html directement dans votre navigateur
-pause
+
+REM Vérifier si Node.js est installé
+node --version >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Node.js détecté. Démarrage du serveur...
+    echo.
+    echo Le jeu sera accessible à l'adresse: http://localhost:3000
+    echo.
+    echo Fermez cette fenêtre pour arrêter le serveur.
+    echo.
+    node server.js
+) else (
+    echo Node.js non trouvé.
+    echo.
+    echo Veuillez installer Node.js depuis https://nodejs.org/
+    echo ou utilisez un autre serveur HTTP local.
+    echo.
+    pause
+    exit /b
+)

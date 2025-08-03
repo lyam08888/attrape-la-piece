@@ -13,6 +13,14 @@
 ---
 
 ### 👤 Joueur et Contrôles
+
+#### 🚀 Nouvelles fonctionnalités de mouvement
+- **Saut double** : Appuyez deux fois sur Espace pour effectuer un saut supplémentaire en l'air
+- **Vol** : Appuyez sur V pour activer/désactiver le mode vol
+- **Glisse** : Maintenez la flèche du bas pendant la chute pour ralentir votre descente
+- **Glissade murale** : Lorsque vous tombez contre un mur, vous pouvez glisser lentement le long de celui-ci
+- **Saut mural** : Pendant une glissade murale, appuyez sur Espace pour effectuer un saut directionnel
+
 - ✅ Personnage avec animations (marche, course, saut, vol, nage)
 - ✅ Système d'outils (pioche, pelle, hache, épée, couteau, arc, canne à pêche)
 - ✅ Sélection d'outils avec les touches 1-7

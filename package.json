@@ -1,5 +1,25 @@
 {
-  "dependencies": {
-    "pngjs": "^7.0.0"
+  "name": "attrape-la-piece",
+  "version": "1.0.0",
+  "description": "Un jeu de plateforme et d'aventure en 2D avec des mécaniques de minage et de construction",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "game",
+    "platformer",
+    "mining",
+    "adventure",
+    "2d"
+  ],
+  "author": "Attrape la Pièce Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=12.0.0"
   }
 }

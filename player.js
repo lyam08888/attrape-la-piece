@@ -85,9 +85,13 @@ export class Player {
         this.isCrouching = false;
         this.isProne = false;
         this.isFlying = false;
+        this.isGliding = false;
+        this.isWallSliding = false;
+        this.wallSlideDirection = 0; // -1 for left wall, 1 for right wall
         this.jumpCount = 0;
         this.prevJump = false;
         this.inWater = false;
+        this.wallJumpCooldown = 0;
     }
 
     getHitbox() {
@@ -109,6 +113,9 @@ export class Player {
         const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
         
+        // Update cooldowns
+        if (this.wallJumpCooldown > 0) this.wallJumpCooldown--;
+        
         const centerX = Math.floor((this.x + this.w / 2) / tileSize);
         const centerY = Math.floor((this.y + this.h / 2) / tileSize);
         this.inWater = game.tileMap[centerY]?.[centerX] === TILE.WATER;
@@ -122,6 +129,9 @@ export class Player {
             this.isProne = false;
         }
 
+        // Gliding handling
+        this.isGliding = !this.grounded && keys.down && !this.isFlying && this.vy > 0;
+        
         let speed = physics.playerSpeed;
         if (keys.run && !this.isCrouching && !this.isProne && !this.isFlying) speed *= 1.5;
         if (this.isCrouching) speed *= 0.5;
@@ -131,6 +141,7 @@ export class Player {
             this.vx = keys.left ? -speed : keys.right ? speed : 0;
             this.vy = keys.up ? -speed : keys.down ? speed : 0;
             this.grounded = false;
+            this.isWallSliding = false;
         } else if (this.inWater) {
             const swimSpeed = physics.playerSpeed * 0.5;
             this.vx = keys.left ? -swimSpeed : keys.right ? swimSpeed : this.vx * 0.9;
@@ -143,7 +154,11 @@ export class Player {
                 this.vy += physics.gravity * 0.2;
             }
             this.grounded = false;
+            this.isWallSliding = false;
         } else {
+            // Wall sliding detection
+            this.checkWallSliding(game);
+            
             const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
             if (keys.left) {
                 this.vx = Math.max(this.vx - accel, -speed);
@@ -156,20 +171,39 @@ export class Player {
                 if (Math.abs(this.vx) < 0.1) this.vx = 0;
             }
 
+            // Apply gravity
+            if (this.isGliding) {
+                this.vy += physics.glideGravity;
+                if (this.vy > physics.glideFallSpeed) this.vy = physics.glideFallSpeed;
+            } else if (this.isWallSliding) {
+                this.vy = Math.min(this.vy + physics.gravity * 0.5, physics.wallSlideSpeed);
+            } else {
+                this.vy += physics.gravity;
+            }
+            
+            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
+
+            // Jumping logic
             if (keys.jump && !this.prevJump) {
                 if (this.grounded) {
                     this.vy = -physics.jumpForce;
                     this.sound?.play('jump');
                     this.jumpCount = 1;
+                    this.isWallSliding = false;
+                } else if (this.isWallSliding && this.wallJumpCooldown <= 0) {
+                    // Wall jump
+                    this.vy = -physics.jumpForce;
+                    this.vx = -physics.wallJumpForce * this.wallSlideDirection;
+                    this.sound?.play('jump');
+                    this.jumpCount = 1;
+                    this.isWallSliding = false;
+                    this.wallJumpCooldown = 10; // Prevent immediate wall sticking after wall jump
                 } else if (this.jumpCount < 2) {
                     this.vy = -physics.jumpForce;
                     this.sound?.play('jump');
                     this.jumpCount = 2;
                 }
             }
-
-            this.vy += physics.gravity;
-            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
         }
 
         this.prevJump = keys.jump;
@@ -177,7 +211,10 @@ export class Player {
         // Collisions réactivées avec améliorations
         this.handleCollisions(game);
         
-        if (this.grounded && !this.isFlying) this.jumpCount = 0;
+        if (this.grounded && !this.isFlying) {
+            this.jumpCount = 0;
+            this.isWallSliding = false;
+        }
 
         this.checkCollectibleCollisions(game);
         this.updateMiningTarget(keys, mouse, game);
@@ -228,6 +265,10 @@ export class Player {
             this.state = 'flying';
         } else if (this.inWater) {
             this.state = 'swimming';
+        } else if (this.isGliding) {
+            this.state = 'gliding';
+        } else if (this.isWallSliding) {
+            this.state = 'wallSliding';
         } else if (this.isProne) {
             this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
         } else if (this.isCrouching) {
@@ -448,11 +489,13 @@ export class Player {
             const tx = Math.floor((hb.x + hb.w) / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
+            const ty3 = Math.floor((hb.y + hb.h / 2) / tileSize); // Check middle as well
             
             // Vérifications de limites
             if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
                 if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
+                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER) ||
+                    ((map[ty3]?.[tx] > TILE.AIR) && map[ty3]?.[tx] !== TILE.WATER)) {
                     this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
                     this.vx = 0;
                     // console.log(`Collision droite détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
@@ -462,11 +505,13 @@ export class Player {
             const tx = Math.floor(hb.x / tileSize);
             const ty1 = Math.floor(hb.y / tileSize);
             const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
+            const ty3 = Math.floor((hb.y + hb.h / 2) / tileSize); // Check middle as well
             
             // Vérifications de limites
             if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
                 if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER)) {
+                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER) ||
+                    ((map[ty3]?.[tx] > TILE.AIR) && map[ty3]?.[tx] !== TILE.WATER)) {
                     this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
                     this.vx = 0;
                     // console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
@@ -482,8 +527,10 @@ export class Player {
             const ty = Math.floor((hb.y + hb.h) / tileSize);
             const tx1 = Math.floor(hb.x / tileSize);
             const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
             if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER)) {
+                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
+                ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
                 this.y = ty * tileSize - this.hitbox.height - this.hitbox.offsetY;
                 this.vy = 0;
                 this.grounded = true;
@@ -492,11 +539,13 @@ export class Player {
             const ty = Math.floor(hb.y / tileSize);
             const tx1 = Math.floor(hb.x / tileSize);
             const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
+            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
             
             // Vérifications de limites pour collision vers le haut
             if (ty >= 0 && ty < map.length && tx1 >= 0 && tx1 < map[0]?.length && tx2 >= 0 && tx2 < map[0]?.length) {
                 if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                    ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER)) {
+                    ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
+                    ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
                     this.y = (ty + 1) * tileSize - this.hitbox.offsetY;
                     this.vy = 0;
                 }
@@ -616,6 +665,55 @@ export class Player {
             durability: this.durability[this.tools[this.selectedToolIndex]],
             enchantments: this.toolEnchantments[this.tools[this.selectedToolIndex]]
         };
+    }
+
+    // Wall sliding detection method
+    checkWallSliding(game) {
+        if (this.grounded || this.isFlying || this.inWater) {
+            this.isWallSliding = false;
+            return;
+        }
+        
+        const { tileSize } = this.config;
+        const map = game.tileMap;
+        
+        // Get player hitbox
+        const hb = this.getHitbox();
+        
+        // Check for wall on the left
+        if (this.vx < 0) {
+            const leftTileX = Math.floor(hb.x / tileSize);
+            const leftTileY1 = Math.floor((hb.y + 5) / tileSize); // Check slightly below top
+            const leftTileY2 = Math.floor((hb.y + hb.h - 5) / tileSize); // Check slightly above bottom
+            
+            // Check if there's a solid block to the left
+            if (leftTileX >= 0 && leftTileY1 >= 0 && leftTileY2 < map.length &&
+                ((map[leftTileY1]?.[leftTileX] > TILE.AIR) && map[leftTileY1]?.[leftTileX] !== TILE.WATER) &&
+                ((map[leftTileY2]?.[leftTileX] > TILE.AIR) && map[leftTileY2]?.[leftTileX] !== TILE.WATER)) {
+                this.isWallSliding = true;
+                this.wallSlideDirection = -1; // Sliding on left wall
+                return;
+            }
+        }
+        
+        // Check for wall on the right
+        if (this.vx > 0) {
+            const rightTileX = Math.floor((hb.x + hb.w) / tileSize);
+            const rightTileY1 = Math.floor((hb.y + 5) / tileSize); // Check slightly below top
+            const rightTileY2 = Math.floor((hb.y + hb.h - 5) / tileSize); // Check slightly above bottom
+            
+            // Check if there's a solid block to the right
+            if (rightTileX >= 0 && rightTileY1 >= 0 && rightTileY2 < map.length &&
+                ((map[rightTileY1]?.[rightTileX] > TILE.AIR) && map[rightTileY1]?.[rightTileX] !== TILE.WATER) &&
+                ((map[rightTileY2]?.[rightTileX] > TILE.AIR) && map[rightTileY2]?.[rightTileX] !== TILE.WATER)) {
+                this.isWallSliding = true;
+                this.wallSlideDirection = 1; // Sliding on right wall
+                return;
+            }
+        }
+        
+        // Not sliding on a wall
+        this.isWallSliding = false;
     }
 
     // Method to take damage (used by combat system)

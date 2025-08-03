@@ -36,7 +36,11 @@ async function loadConfig() {
                 "airResistance": 0.98,
                 "maxFallSpeed": 10,
                 "groundAcceleration": 0.4,
-                "airAcceleration": 0.2
+                "airAcceleration": 0.2,
+                "wallSlideSpeed": 1.5,
+                "wallJumpForce": 6,
+                "glideGravity": 0.1,
+                "glideFallSpeed": 0.5
             },
             "player": {
                 "width": 64,
@@ -50,6 +54,8 @@ async function loadConfig() {
                 "jumping": ["player_jump"],
                 "doubleJump": ["player_double_jump1", "player_double_jump2"],
                 "flying": ["player_fly1", "player_fly2"],
+                "gliding": ["player_fly1", "player_fly2"],
+                "wallSliding": ["player_idle1"],
                 "crouching": ["player_crouch"],
                 "crouchWalking": ["player_crouch_walk1", "player_crouch_walk2"],
                 "prone": ["player_prone"],

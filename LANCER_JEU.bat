@@ -5,6 +5,14 @@ echo    Lancement du jeu avec outils ameliores
 echo ========================================
 echo.
 
+echo Nouvelles fonctionnalités de mouvement:
+echo - Saut double: Appuyez deux fois sur Espace
+echo - Vol: Appuyez sur V pour activer/désactiver
+echo - Glisse: Maintenez la flèche du bas pendant la chute
+echo - Glissade murale: Glissez le long des murs
+echo - Saut mural: Saut directionnel depuis un mur
+echo.
+
 cd /d "%~dp0"
 
 echo Tentative de lancement du serveur local...

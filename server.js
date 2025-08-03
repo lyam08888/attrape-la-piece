@@ -1,103 +1,75 @@
-// server.js - Serveur HTTP simple pour tester le jeu
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
-const port = 8000;
+const PORT = 3000;
 
-// Types MIME pour les différents fichiers
-const mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'application/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon'
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.wav': 'audio/wav',
+  '.mp3': 'audio/mpeg',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword'
 };
 
 const server = http.createServer((req, res) => {
-    // Parse l'URL
-    const parsedUrl = url.parse(req.url);
-    let pathname = parsedUrl.pathname;
-    
-    // Si c'est la racine, servir index.html ou test-complex-world.html
-    if (pathname === '/') {
-        pathname = '/test-complex-world.html';
-    }
-    
-    // Chemin complet du fichier
-    const filePath = path.join(__dirname, pathname);
-    
-    // Vérifier si le fichier existe
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-        if (err) {
-            // Fichier non trouvé
+  console.log(`Request: ${req.method} ${req.url}`);
+  
+  let filePath = '.' + req.url;
+  
+  // Default to index.html for root path
+  if (filePath === './') {
+    filePath = './index.html';
+  }
+  
+  // Resolve the file path
+  filePath = path.resolve(filePath);
+  
+  // Security check to prevent directory traversal
+  const rootPath = path.resolve('.');
+  if (!filePath.startsWith(rootPath)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('403 Forbidden');
+    return;
+  }
+  
+  const extname = String(path.extname(filePath)).toLowerCase();
+  const contentType = MIME_TYPES[extname] || 'application/octet-stream';
+  
+  fs.readFile(filePath, (error, content) => {
+    if (error) {
+      if (error.code === 'ENOENT') {
+        // File not found
+        fs.readFile('./404.html', (err, content404) => {
+          if (err) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('404 Not Found');
+          } else {
             res.writeHead(404, { 'Content-Type': 'text/html' });
-            res.end(`
-                <html>
-                    <head><title>404 - Fichier non trouvé</title></head>
-                    <body>
-                        <h1>404 - Fichier non trouvé</h1>
-                        <p>Le fichier <code>${pathname}</code> n'existe pas.</p>
-                        <p><a href="/test-complex-world.html">Aller au test du monde complexe</a></p>
-                    </body>
-                </html>
-            `);
-            return;
-        }
-        
-        // Lire le fichier
-        fs.readFile(filePath, (err, data) => {
-            if (err) {
-                res.writeHead(500, { 'Content-Type': 'text/html' });
-                res.end(`
-                    <html>
-                        <head><title>500 - Erreur serveur</title></head>
-                        <body>
-                            <h1>500 - Erreur serveur</h1>
-                            <p>Impossible de lire le fichier: ${err.message}</p>
-                        </body>
-                    </html>
-                `);
-                return;
-            }
-            
-            // Déterminer le type MIME
-            const ext = path.extname(filePath).toLowerCase();
-            const mimeType = mimeTypes[ext] || 'application/octet-stream';
-            
-            // Headers CORS pour permettre les modules ES6
-            res.writeHead(200, {
-                'Content-Type': mimeType,
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                'Cache-Control': 'no-cache'
-            });
-            
-            res.end(data);
+            res.end(content404, 'utf-8');
+          }
         });
-    });
+      } else {
+        // Server error
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end(`500 Internal Server Error: ${error.code}`);
+      }
+    } else {
+      // Success
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content, 'utf-8');
+    }
+  });
 });
 
-server.listen(port, () => {
-    console.log(`🚀 Serveur HTTP démarré sur http://localhost:${port}`);
-    console.log(`📁 Répertoire: ${__dirname}`);
-    console.log(`🌍 Test du monde complexe: http://localhost:${port}/test-complex-world.html`);
-    console.log(`🎮 Jeu principal: http://localhost:${port}/index.html`);
-    console.log('');
-    console.log('Appuyez sur Ctrl+C pour arrêter le serveur');
-});
-
-// Gestion propre de l'arrêt
-process.on('SIGINT', () => {
-    console.log('\n🛑 Arrêt du serveur...');
-    server.close(() => {
-        console.log('✅ Serveur arrêté');
-        process.exit(0);
-    });
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+  console.log('Press Ctrl+C to stop the server');
 });
