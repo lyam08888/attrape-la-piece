@@ -2215,11 +2215,10 @@
                             }
                         }
 
-                        // Mettre à jour et dessiner les nouveaux systèmes
+                        // Dessiner les nouveaux systèmes
                         if (game.animalManager) {
-                            game.animalManager.update(game, delta);
                             game.animalManager.draw(ctx, assets);
-                            
+
                             // Spawn des animaux périodiquement
                             if (Math.random() < 0.001) {
                                 const animalTypes = ['cow', 'pig', 'chicken', 'sheep', 'rabbit'];
@@ -2228,27 +2227,26 @@
                             }
                         }
                         if (game.foodSystem) {
-                            game.foodSystem.update(game, delta);
                             game.foodSystem.draw(ctx, assets, game);
                         }
-                        
+
                         // Mettre à jour le système d'ennemis
                         if (game.enemySpawner) {
-                            game.enemySpawner.update(game, delta);
+                            game.enemySpawner.draw && game.enemySpawner.draw(ctx, game, assets);
                         }
-                        
-                        // Mettre à jour les PNJ
+
+                        // Dessiner les PNJ
                         if (game.pnjs) {
                             game.pnjs.forEach(pnj => {
-                                if (pnj.update) {
-                                    pnj.update(game, delta);
+                                if (pnj.draw) {
+                                    pnj.draw(ctx, assets, game);
                                 }
                             });
                         }
-                        
-                        // Mettre à jour le système de quêtes
-                        if (game.questSystem) {
-                            game.questSystem.update(game, delta);
+
+                        // Dessiner les quêtes si nécessaire
+                        if (game.questSystem && game.questSystem.draw) {
+                            game.questSystem.draw(ctx, game);
                         }
                     
                     // Dessiner les projectiles
