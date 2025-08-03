@@ -55,6 +55,11 @@ export class Player {
     update(keys, mouse, game, delta) {
         const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
+        
+        // Debug: vérifier les touches (désactivé)
+        // if (keys.left || keys.right || keys.jump) {
+        //     console.log(`Touches: left=${keys.left}, right=${keys.right}, jump=${keys.jump}`);
+        // }
 
         const centerX = Math.floor((this.x + this.w / 2) / tileSize);
         const centerY = Math.floor((this.y + this.h / 2) / tileSize);
@@ -182,7 +187,10 @@ export class Player {
 
     updateMiningTarget(mouse, game) {
         // CORRECTION : Ajout d'une vérification pour éviter le crash si la souris ou la caméra n'est pas prête.
-        if (!game.camera || !mouse) return;
+        if (!game.camera || !mouse) {
+            // console.log("updateMiningTarget: camera ou mouse manquant");
+            return;
+        }
         
         const { tileSize, zoom } = game.config;
         const reach = (this.config.player.reach || 4) * tileSize;

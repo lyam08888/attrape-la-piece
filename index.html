@@ -564,12 +564,20 @@
                     } else {
                         openMenu(ui.menus.quests);
                     }
-                } else if (e.key >= '1' && e.key <= '7' && window.game && window.game.player) {
+                } else if (e.key >= '1' && e.key <= '7') {
                     // Sélection d'outils avec les chiffres
                     const toolIndex = parseInt(e.key) - 1;
-                    if (toolIndex < window.game.player.tools.length) {
+                    console.log(`Tentative de sélection outil ${toolIndex}`);
+                    if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
                         window.game.player.selectedToolIndex = toolIndex;
                         window.game.updateToolbar();
+                        console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
+                    } else {
+                        console.log("Impossible de sélectionner l'outil:", {
+                            hasGame: !!window.game,
+                            hasPlayer: !!(window.game && window.game.player),
+                            toolsLength: window.game?.player?.tools?.length
+                        });
                     }
                 } else if (e.ctrlKey && e.key === 's' && window.game) {
                     // Sauvegarde rapide
@@ -1369,6 +1377,9 @@
                     game.logger.log("Jeu prêt !");
                     console.log("Initialisation terminée. Joueur position:", game.player.x, game.player.y);
                     console.log("Taille du monde:", game.tileMap.length, "x", game.tileMap[0]?.length);
+                    
+                    // Initialiser la caméra
+                    game.camera = { x: 0, y: 0 };
                     
                     // Assigner la référence globale
                     window.game = game;
