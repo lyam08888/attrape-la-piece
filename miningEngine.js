@@ -345,20 +345,78 @@ const GRAVITY_BLOCKS = [
 
 function checkBlockSupport(game, x, y) {
     // Vérifier si un bloc a besoin de support
-    const blockAbove = game.tileMap[y]?.[x];
-    if (!blockAbove) return;
+    const block = game.tileMap[y]?.[x];
+    if (!block) return;
     
-    if (GRAVITY_BLOCKS.includes(blockAbove)) {
-        // Faire tomber le bloc
-        game.tileMap[y][x] = TILE.AIR;
-        game.collectibles.push({
-            x: x * game.config.tileSize,
-            y: y * game.config.tileSize,
-            w: game.config.tileSize,
-            h: game.config.tileSize,
-            vy: 0,
-            tileType: blockAbove
-        });
+    if (GRAVITY_BLOCKS.includes(block)) {
+        // Vérifier si le bloc a un support en dessous
+        const blockBelow = game.tileMap[y + 1]?.[x];
+        
+        // Si le bloc en dessous est de l'air ou n'existe pas, le bloc tombe
+        if (!blockBelow || blockBelow === TILE.AIR) {
+            // Faire tomber le bloc
+            game.tileMap[y][x] = TILE.AIR;
+            game.collectibles.push({
+                x: x * game.config.tileSize,
+                y: y * game.config.tileSize,
+                w: game.config.tileSize,
+                h: game.config.tileSize,
+                vy: 0,
+                tileType: block
+            });
+        }
+    }
+    
+    // Vérifier également les blocs adjacents pour la gravité
+    // Vérifier le bloc à gauche
+    const blockLeft = game.tileMap[y]?.[x - 1];
+    if (blockLeft && GRAVITY_BLOCKS.includes(blockLeft)) {
+        const blockLeftBelow = game.tileMap[y + 1]?.[x - 1];
+        if (!blockLeftBelow || blockLeftBelow === TILE.AIR) {
+            game.tileMap[y][x - 1] = TILE.AIR;
+            game.collectibles.push({
+                x: (x - 1) * game.config.tileSize,
+                y: y * game.config.tileSize,
+                w: game.config.tileSize,
+                h: game.config.tileSize,
+                vy: 0,
+                tileType: blockLeft
+            });
+        }
+    }
+    
+    // Vérifier le bloc à droite
+    const blockRight = game.tileMap[y]?.[x + 1];
+    if (blockRight && GRAVITY_BLOCKS.includes(blockRight)) {
+        const blockRightBelow = game.tileMap[y + 1]?.[x + 1];
+        if (!blockRightBelow || blockRightBelow === TILE.AIR) {
+            game.tileMap[y][x + 1] = TILE.AIR;
+            game.collectibles.push({
+                x: (x + 1) * game.config.tileSize,
+                y: y * game.config.tileSize,
+                w: game.config.tileSize,
+                h: game.config.tileSize,
+                vy: 0,
+                tileType: blockRight
+            });
+        }
+    }
+    
+    // Vérifier le bloc au-dessus
+    const blockAbove = game.tileMap[y - 1]?.[x];
+    if (blockAbove && GRAVITY_BLOCKS.includes(blockAbove)) {
+        const blockAboveBelow = game.tileMap[y]?.[x];
+        if (!blockAboveBelow || blockAboveBelow === TILE.AIR) {
+            game.tileMap[y - 1][x] = TILE.AIR;
+            game.collectibles.push({
+                x: x * game.config.tileSize,
+                y: (y - 1) * game.config.tileSize,
+                w: game.config.tileSize,
+                h: game.config.tileSize,
+                vy: 0,
+                tileType: blockAbove
+            });
+        }
     }
 }
 
@@ -375,7 +433,7 @@ export function updateGravity(game) {
     const { tileSize } = game.config;
     const map = game.tileMap;
     
-    // Parcourir la carte de bas en haut pour éviter les problèmes de décalage
+    // Parcourir la carte de haut en bas pour éviter les problèmes de décalage
     for (let y = map.length - 2; y >= 0; y--) {
         for (let x = 0; x < map[y].length; x++) {
             const blockType = map[y][x];
