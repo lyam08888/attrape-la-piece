@@ -107,8 +107,10 @@ export class GameEngine {
             if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
             if (e.code === 'KeyV' && !e.repeat) this.keys.fly = !this.keys.fly;
             if (e.code.startsWith('Digit')) {
-                const index = parseInt(e.code.replace('Digit', '')) - 1;
-                if (this.gameLogic.selectTool) this.gameLogic.selectTool(index);
+                const digit = parseInt(e.code.slice(5));
+                if (digit >= 1 && digit <= 6 && this.gameLogic.selectTool) {
+                    this.gameLogic.selectTool(digit - 1);
+                }
             }
             if (e.code === 'KeyO' || e.code === 'Escape') {
                 e.preventDefault();
