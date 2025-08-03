@@ -326,7 +326,7 @@
 </head>
 <body>
     <div id="gameWrapper">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" tabindex="0"></canvas>
         <div id="hud">
              <div id="toolbar"></div>
              <div id="gameInfo">
@@ -500,12 +500,15 @@
             };
 
             const startGame = (seed) => {
+                if (isGameRunning) return;
+
                 const launch = () => {
                     isGameRunning = true;
                     ui.titleScreen.classList.add('hidden');
                     openMenu(ui.loadingScreen);
                     ui.loadingBar.style.width = '100%';
                     document.dispatchEvent(new CustomEvent('start-game', { detail: { seed } }));
+                    ui.canvas.focus();
                 };
 
                 if (window.gameModuleReady) {
