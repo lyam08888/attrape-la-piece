@@ -480,7 +480,8 @@ export class BiomeSystem {
 export function updatePlayerStatsUI(stats) {
     const elements = {
         playerLevel: document.getElementById('playerLevel'),
-        playerXP: document.getElementById('playerXP'),
+        playerXPText: document.getElementById('playerXPText'),
+        playerXPFill: document.getElementById('playerXPFill'),
         playerHealth: document.getElementById('playerHealth'),
         playerStrength: document.getElementById('playerStrength'),
         playerSpeed: document.getElementById('playerSpeed'),
@@ -489,7 +490,11 @@ export function updatePlayerStatsUI(stats) {
     };
 
     if (elements.playerLevel) elements.playerLevel.textContent = stats.level;
-    if (elements.playerXP) elements.playerXP.textContent = `${stats.xp}/${stats.xpToNextLevel}`;
+    if (elements.playerXPText) elements.playerXPText.textContent = `${stats.xp}/${stats.xpToNextLevel}`;
+    if (elements.playerXPFill) {
+        const xpPercent = (stats.xp / stats.xpToNextLevel) * 100;
+        elements.playerXPFill.style.width = `${xpPercent}%`;
+    }
     if (elements.playerHealth) elements.playerHealth.textContent = `${stats.health}/${stats.maxHealth}`;
     if (elements.playerStrength) elements.playerStrength.textContent = stats.strength;
     if (elements.playerSpeed) elements.playerSpeed.textContent = stats.speed;

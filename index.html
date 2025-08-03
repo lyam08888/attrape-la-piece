@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Pixel Adventure 2</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #f9a825;
@@ -121,8 +122,33 @@
             z-index: 30;
         }
         .overlay.active { visibility: visible; opacity: 1; }
-        .overlay .menu-box { transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-        .overlay.active .menu-box { transform: scale(1); }
+        .overlay .menu-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .overlay.active .menu-box { transform: translate(-50%, -50%) scale(1); }
+        .overlay .menu-box.marked {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        .overlay .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            cursor: move;
+        }
+        .overlay .menu-header .minimize-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        .menu-box.minimized .menu-content { display: none; }
         .menu-box {
             background: linear-gradient(to bottom, #2a2a2a, #1e1e1e);
             border: 4px solid var(--border-color);
@@ -136,7 +162,7 @@
         #menu-pane .menu-box {
             background: transparent; border: none; box-shadow: none;
         }
-        .menu-box h2 { font-size: 1.5em; margin-bottom: 25px; color: var(--primary-color); text-shadow: 2px 2px 0px var(--secondary-color); }
+        .menu-box h2 { font-size: 1.5em; margin: 0; color: var(--primary-color); text-shadow: 2px 2px 0px var(--secondary-color); }
         .menu-box button {
             font-family: inherit; font-size: 1em; padding: 12px 20px; cursor: pointer;
             background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
@@ -269,6 +295,22 @@
             image-rendering: pixelated;
         }
 
+        #environmentInfo {
+            margin-top: 6px;
+        }
+
+        .info-line {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .info-icon {
+            font-size: 14px;
+            margin-right: 6px;
+            color: var(--primary-color);
+        }
+
         #minimap {
             position: absolute;
             top: 20px;
@@ -323,8 +365,26 @@
         }
 
         .stat-line {
+            display: flex;
+            align-items: center;
             margin: 10px 0;
             font-size: 14px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            image-rendering: pixelated;
+        }
+
+        .stat-line .bar-container {
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .xp-fill {
+            background: linear-gradient(to right, #3498db, #2c3e50);
         }
 
         #questList {
@@ -377,12 +437,11 @@
                         <span class="bar-text" id="hungerText">100/100</span>
                     </div>
                 </div>
-                <div id="timeDisplay">
-                    <span id="gameTime">06:00</span>
-                    <span id="gameDate">Jour 1</span>
-                </div>
-                <div id="biomeDisplay">
-                    <span id="currentBiome">Surface</span>
+                <div id="environmentInfo">
+                    <div class="info-line"><i class="fa-solid fa-clock info-icon"></i><span id="gameTime">06:00</span></div>
+                    <div class="info-line"><i class="fa-solid fa-calendar-day info-icon"></i><span id="gameDate">Jour 1</span></div>
+                    <div class="info-line"><i id="weatherIcon" class="fa-solid fa-sun info-icon"></i><span id="gameWeather">Clair</span></div>
+                    <div class="info-line"><i class="fa-solid fa-mountain info-icon"></i><span id="currentBiome">Surface</span></div>
                 </div>
             </div>
             <div id="disasterMenu">
@@ -488,11 +547,29 @@
             <div class="menu-box">
                 <h2>PERSONNAGE</h2>
                 <div id="characterStats">
-                    <div class="stat-line">Niveau: <span id="playerLevel">1</span></div>
-                    <div class="stat-line">Expérience: <span id="playerXP">0/100</span></div>
-                    <div class="stat-line">Santé: <span id="playerHealth">100/100</span></div>
-                    <div class="stat-line">Force: <span id="playerStrength">10</span></div>
-                    <div class="stat-line">Vitesse: <span id="playerSpeed">10</span></div>
+                    <div class="stat-line">
+                        <img src="assets/bonus.png" alt="Niveau" class="stat-icon">
+                        <span>Niveau: <span id="playerLevel">1</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/coin.png" alt="Expérience" class="stat-icon">
+                        <div class="bar-container">
+                            <div class="bar-fill xp-fill" id="playerXPFill"></div>
+                            <span class="bar-text" id="playerXPText">0/100</span>
+                        </div>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/heart.png" alt="Santé" class="stat-icon">
+                        <span>Santé: <span id="playerHealth">100/100</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/tool_sword.png" alt="Force" class="stat-icon">
+                        <span>Force: <span id="playerStrength">10</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/player_run1.png" alt="Vitesse" class="stat-icon">
+                        <span>Vitesse: <span id="playerSpeed">10</span></span>
+                    </div>
                 </div>
                 <button data-action="close-menu">FERMER</button>
             </div>
@@ -536,7 +613,8 @@
                     controls: document.getElementById('controlsMenu'),
                     inventory: document.getElementById('inventoryMenu'),
                     character: document.getElementById('characterMenu'),
-                    quests: document.getElementById('questMenu')
+                    quests: document.getElementById('questMenu'),
+                    gameOver: document.getElementById('gameOverScreen')
                 },
                 seedInput: document.getElementById('seed-input')
             };
@@ -571,6 +649,53 @@
                     document.addEventListener('game-module-ready', launch, { once: true });
                 }
             };
+
+            let zIndexCounter = 100;
+            const initOverlay = (overlay) => {
+                const box = overlay?.querySelector('.menu-box');
+                if (!box) return;
+                const title = box.querySelector('h2');
+                const header = document.createElement('div');
+                header.className = 'menu-header';
+                if (title) header.appendChild(title);
+                const minimizeBtn = document.createElement('button');
+                minimizeBtn.className = 'minimize-btn';
+                minimizeBtn.textContent = '–';
+                header.appendChild(minimizeBtn);
+                box.prepend(header);
+                const content = document.createElement('div');
+                content.className = 'menu-content';
+                while (header.nextSibling) {
+                    content.appendChild(header.nextSibling);
+                }
+                box.appendChild(content);
+                box.addEventListener('dblclick', () => {
+                    box.classList.toggle('marked');
+                });
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('button')) return;
+                    zIndexCounter++;
+                    box.style.zIndex = zIndexCounter;
+                    const rect = box.getBoundingClientRect();
+                    box.style.left = `${rect.left}px`;
+                    box.style.top = `${rect.top}px`;
+                    box.style.transform = 'none';
+                    const offsetX = e.clientX - rect.left;
+                    const offsetY = e.clientY - rect.top;
+                    const onMouseMove = (ev) => {
+                        box.style.left = `${ev.clientX - offsetX}px`;
+                        box.style.top = `${ev.clientY - offsetY}px`;
+                    };
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                    }, { once: true });
+                });
+                minimizeBtn.addEventListener('click', () => {
+                    box.classList.toggle('minimized');
+                });
+            };
+            Object.values(ui.menus).forEach(initOverlay);
 
             // Écouteurs d'événements
             document.body.addEventListener('click', (e) => {
@@ -1357,20 +1482,39 @@
                             hungerText.textContent = `${Math.floor(this.player.hunger)}/${this.player.maxHunger}`;
                         }
 
-                        // Mettre à jour l'affichage du temps
+                        // Mettre à jour l'affichage du temps et de la météo
                         if (this.timeSystem) {
                             const timeInfo = this.timeSystem.getTime();
                             const dateInfo = this.timeSystem.getDate();
                             const gameTime = document.getElementById('gameTime');
                             const gameDate = document.getElementById('gameDate');
-                            
+                            const gameWeather = document.getElementById('gameWeather');
+                            const weatherIcon = document.getElementById('weatherIcon');
+
                             if (gameTime) {
                                 const pad = n => n.toString().padStart(2, '0');
                                 gameTime.textContent = `${pad(timeInfo.hour)}:${pad(timeInfo.minute)}`;
                             }
-                            
+
                             if (gameDate) {
                                 gameDate.textContent = `Jour ${dateInfo.day}`;
+                            }
+
+                            if (this.weatherSystem && gameWeather) {
+                                const currentWeather = this.weatherSystem.getCurrentWeather();
+                                gameWeather.textContent = currentWeather.name;
+                                if (weatherIcon) {
+                                    const iconMap = {
+                                        'Clair': 'fa-sun',
+                                        'Pluie': 'fa-cloud-showers-heavy',
+                                        'Orage': 'fa-cloud-bolt',
+                                        'Neige': 'fa-snowflake',
+                                        'Brouillard': 'fa-smog',
+                                        'Tempête de sable': 'fa-wind'
+                                    };
+                                    const iconClass = iconMap[currentWeather.name] || 'fa-sun';
+                                    weatherIcon.className = `fa-solid ${iconClass} info-icon`;
+                                }
                             }
                         }
                     }
