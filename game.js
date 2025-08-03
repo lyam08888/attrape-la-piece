@@ -349,16 +349,54 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.logger.log("Génération du monde...");
             generateLevel(game, config);
 
-            game.player = new Player(100, 100, config, game.sound);
+            // Créer le joueur avec des coordonnées temporaires
+            game.player = new Player(0, 0, config, game.sound);
 
-            const startXTile = Math.floor(game.generatedRange.max / 4);
-            for (let y = 0; y < game.tileMap.length; y++) {
-                if (game.tileMap[y][startXTile] > TILE.AIR) {
-                    game.player.x = startXTile * config.tileSize;
-                    game.player.y = (y - 3) * config.tileSize;
-                    break;
+            // Trouver une position de spawn appropriée
+            const { tileSize } = config;
+            let spawnX = 0;
+            let spawnY = 0;
+            let spawnFound = false;
+
+            // Chercher une position de spawn sûre (au centre du monde)
+            const centerX = Math.floor(game.tileMap[0].length / 2);
+            
+            // Parcourir les colonnes autour du centre pour trouver une surface stable
+            for (let xOffset = 0; xOffset < 100; xOffset++) {
+                for (let direction of [-1, 1]) {
+                    const x = centerX + (xOffset * direction);
+                    if (x < 0 || x >= game.tileMap[0].length) continue;
+                    
+                    // Trouver le sol à cette position x
+                    for (let y = 0; y < game.tileMap.length - 10; y++) {
+                        // Vérifier si c'est un bloc solide avec 3 blocs d'air au-dessus
+                        if (game.tileMap[y][x] > TILE.AIR && 
+                            game.tileMap[y][x] !== TILE.WATER && 
+                            game.tileMap[y][x] !== TILE.LAVA &&
+                            game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR &&
+                            game.tileMap[y-2] && game.tileMap[y-2][x] === TILE.AIR &&
+                            game.tileMap[y-3] && game.tileMap[y-3][x] === TILE.AIR) {
+                            
+                            spawnX = x * tileSize;
+                            spawnY = (y - 3) * tileSize; // 3 blocs au-dessus du sol
+                            spawnFound = true;
+                            break;
+                        }
+                    }
+                    if (spawnFound) break;
                 }
+                if (spawnFound) break;
             }
+
+            // Si aucune position appropriée n'a été trouvée, utiliser une position par défaut
+            if (!spawnFound) {
+                spawnX = centerX * tileSize;
+                spawnY = 100; // Position par défaut
+            }
+
+            // Positionner le joueur
+            game.player.x = spawnX;
+            game.player.y = spawnY;
 
             // Point de réapparition du joueur
             game.spawnPoint = { x: game.player.x, y: game.player.y };
@@ -427,6 +465,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
             if (game.timeSystem) game.timeSystem.update();
             game.logger.update();
+
+            // Mettre à jour l'interface utilisateur
+            game.updateUI();
 
             const playerTileX = Math.floor(game.player.x / config.tileSize);
             const bufferTiles = config.renderDistance * config.chunkSize;
@@ -521,12 +562,92 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.logger.draw(ctx, canvas);
         },
 
+        updateUI() {
+            if (!game.player) return;
+
+            // Mettre à jour les statistiques du personnage
+            const playerLevel = document.getElementById('playerLevel');
+            const playerXP = document.getElementById('playerXP');
+            const playerXPFill = document.getElementById('playerXPFill');
+            const playerXPText = document.getElementById('playerXPText');
+            const playerHealth = document.getElementById('playerHealth');
+            const playerHealthFill = document.getElementById('playerHealthFill');
+            const playerHealthText = document.getElementById('playerHealthText');
+            const playerHunger = document.getElementById('playerHunger');
+            const playerHungerFill = document.getElementById('playerHungerFill');
+            const playerHungerText = document.getElementById('playerHungerText');
+            const playerStrength = document.getElementById('playerStrength');
+            const playerSpeed = document.getElementById('playerSpeed');
+
+            if (playerLevel) playerLevel.textContent = game.player.stats ? game.player.stats.level : '1';
+            if (playerXP) playerXP.textContent = game.player.stats ? `${game.player.stats.xp}/${game.player.stats.xpToNextLevel || 100}` : '0/100';
+            
+            if (playerXPFill && game.player.stats) {
+                const xpPercent = game.player.stats.xpToNextLevel ? 
+                    (game.player.stats.xp / game.player.stats.xpToNextLevel) * 100 : 0;
+                playerXPFill.style.width = `${xpPercent}%`;
+            }
+            
+            if (playerXPText) playerXPText.textContent = game.player.stats ? 
+                `${game.player.stats.xp}/${game.player.stats.xpToNextLevel || 100}` : '0/100';
+            
+            if (playerHealth) playerHealth.textContent = `${Math.floor(game.player.health)}/${game.player.maxHealth || 100}`;
+            if (playerHealthFill) {
+                const healthPercent = ((game.player.maxHealth || 100) > 0) ? 
+                    (game.player.health / (game.player.maxHealth || 100)) * 100 : 0;
+                playerHealthFill.style.width = `${healthPercent}%`;
+            }
+            if (playerHealthText) playerHealthText.textContent = `${Math.floor(game.player.health)}/${game.player.maxHealth || 100}`;
+            
+            if (playerHunger) playerHunger.textContent = `${Math.floor(game.player.hunger)}/${game.player.maxHunger || 100}`;
+            if (playerHungerFill) {
+                const hungerPercent = ((game.player.maxHunger || 100) > 0) ? 
+                    (game.player.hunger / (game.player.maxHunger || 100)) * 100 : 0;
+                playerHungerFill.style.width = `${hungerPercent}%`;
+            }
+            if (playerHungerText) playerHungerText.textContent = `${Math.floor(game.player.hunger)}/${game.player.maxHunger || 100}`;
+            
+            if (playerStrength) playerStrength.textContent = game.player.stats ? game.player.stats.strength : '10';
+            if (playerSpeed) playerSpeed.textContent = game.player.stats ? game.player.stats.speed : '10';
+
+            // Mettre à jour les informations environnementales
+            if (game.timeSystem) {
+                const gameTime = document.getElementById('gameTime');
+                const gameDate = document.getElementById('gameDate');
+                if (gameTime) {
+                    const time = game.timeSystem.getTime();
+                    gameTime.textContent = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}`;
+                }
+                if (gameDate) {
+                    const date = game.timeSystem.getDate();
+                    gameDate.textContent = `Jour ${date.day}`;
+                }
+            }
+
+            if (game.weatherSystem) {
+                const gameWeather = document.getElementById('gameWeather');
+                if (gameWeather) {
+                    const weather = game.weatherSystem.getCurrentWeather();
+                    gameWeather.textContent = weather.name;
+                }
+            }
+
+            if (game.biomeSystem) {
+                const currentBiome = document.getElementById('currentBiome');
+                if (currentBiome) {
+                    const biome = game.biomeSystem.getCurrentBiome();
+                    currentBiome.textContent = biome ? biome.name : 'Surface';
+                }
+            }
+        },
+
         isPaused: () => optionsMenu.classList.contains('active') || gameOverScreen?.classList.contains('active'),
         toggleMenu: (menu) => { if (menu === 'options') optionsMenu.classList.toggle('active'); },
         selectTool: (index) => {
             if (game.player && index >= 0 && index < game.player.tools.length) {
                 game.player.selectedToolIndex = index;
                 game.updateToolbar();
+                game.updateToolInfo();
             }
         },
         cycleTool: (direction) => {
@@ -534,7 +655,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const len = game.player.tools.length;
                 game.player.selectedToolIndex = (game.player.selectedToolIndex + direction + len) % len;
                 game.updateToolbar();
+                game.updateToolInfo();
             }
+        },
+        updateToolInfo: function() {
+            if (!game.player) return;
+            
+            const toolInfo = document.getElementById('toolInfo');
+            if (!toolInfo) return;
+            
+            const toolName = game.player.tools[game.player.selectedToolIndex];
+            if (!toolName) {
+                toolInfo.textContent = "Aucun outil sélectionné";
+                return;
+            }
+            
+            const durability = game.player.durability[toolName] || 0;
+            const maxDurability = game.player.toolDurability[toolName] || 100;
+            const enchantments = game.player.toolEnchantments[toolName] || [];
+            
+            let infoText = `${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')}`;
+            infoText += ` - Durabilité: ${durability}/${maxDurability}`;
+            
+            if (enchantments.length > 0) {
+                infoText += ` - Enchantements: ${enchantments.join(', ')}`;
+            }
+            
+            toolInfo.textContent = infoText;
         }
     };
     // Gestion de la mort du joueur

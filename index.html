@@ -189,6 +189,7 @@
         #loading-bar-container { width: 80%; max-width: 400px; height: 20px; background: #333; border-radius: 10px; margin-top: 20px; overflow: hidden; border: 2px solid var(--border-color); }
         #loading-bar { width: 0%; height: 100%; background: var(--primary-color); transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1); }
         
+        /* UI Améliorée */
         #hud {
             position: absolute;
             top: 0;
@@ -197,68 +198,97 @@
             height: 100%;
             pointer-events: none;
             z-index: 10;
+            font-family: 'VT323', monospace;
         }
-        #toolbar {
+
+        /* Panneau du personnage */
+        #characterPanel {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 20px;
+            left: 20px;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            cursor: move;
+        }
+
+        #characterPanel.minimized {
+            height: 40px;
+            overflow: hidden;
+        }
+
+        #characterPanel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #444;
+        }
+
+        #characterPanel .panel-title {
+            font-size: 18px;
+            color: #FF9800;
+            font-weight: bold;
+        }
+
+        #characterPanel .panel-controls {
             display: flex;
             gap: 5px;
-            background: rgba(0,0,0,0.4);
-            padding: 5px;
-            border-radius: 8px;
-            pointer-events: all;
         }
-        .toolbar-slot {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #888;
-            background: rgba(0,0,0,0.5);
+
+        #characterPanel .panel-btn {
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-        .toolbar-slot.selected {
-            border-color: var(--primary-color);
-            background: rgba(252, 152, 56, 0.3);
-            transform: scale(1.1);
-        }
-        .toolbar-slot img {
-            width: 70%;
-            height: 70%;
-            image-rendering: pixelated;
         }
 
-        #gameInfo {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            box-shadow: 0 0 6px rgba(0,0,0,0.5);
-            color: white;
-            font-size: 12px;
-            pointer-events: all;
+        #characterPanel .panel-btn:hover {
+            background: #444;
+        }
+
+        .character-stat {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .stat-label {
+            flex: 1;
+            font-size: 16px;
+            color: #ddd;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            color: #FF9800;
+            font-weight: bold;
         }
 
         .bar-container {
             position: relative;
-            width: 200px;
-            height: 16px;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #666;
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
             border-radius: 4px;
             margin: 5px 0;
+            overflow: hidden;
         }
 
         .bar-fill {
             height: 100%;
-            border-radius: 2px;
             transition: width 0.3s ease;
         }
 
@@ -270,146 +300,217 @@
             background: linear-gradient(to right, #f39c12, #e67e22);
         }
 
+        .xp-fill {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+        }
+
         .bar-text {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 10px;
+            font-size: 12px;
             text-shadow: 1px 1px 0 #000;
+            color: white;
+            font-weight: bold;
         }
 
-        .hud-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-
-        .bar-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 6px;
-            image-rendering: pixelated;
-        }
-
-        #environmentInfo {
-            margin-top: 6px;
-        }
-
-        .info-line {
-            display: flex;
-            align-items: center;
-            margin: 2px 0;
-        }
-
-        .info-icon {
-            font-size: 14px;
-            margin-right: 6px;
-            color: var(--primary-color);
-        }
-
-        #minimap {
+        /* Barre d'outils */
+        #toolbar {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 150px;
-            height: 150px;
-            background: rgba(0,0,0,0.8);
-            border: 2px solid #666;
-            border-radius: 8px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #444;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             pointer-events: all;
         }
 
-        #disasterMenu {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.6);
+        .toolbar-slot {
+            width: 50px;
+            height: 50px;
             border: 2px solid #666;
-            border-radius: 8px;
-            padding: 10px;
-            pointer-events: none;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        #disasterMenu p {
-            margin: 0 0 4px 0;
-        }
-
-        .inventory-slot {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #666;
-            background: rgba(0,0,0,0.5);
+            background: rgba(30, 30, 30, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 6px;
             transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
         }
 
-        .inventory-slot:hover {
-            border-color: var(--primary-color);
-            background: rgba(252, 152, 56, 0.2);
+        .toolbar-slot:hover {
+            border-color: #FF9800;
+            background: rgba(50, 50, 50, 0.9);
+            transform: translateY(-3px);
         }
 
-        .inventory-slot img {
+        .toolbar-slot.selected {
+            border-color: #FF9800;
+            background: rgba(255, 152, 0, 0.2);
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+        }
+
+        .toolbar-slot img {
             width: 80%;
             height: 80%;
             image-rendering: pixelated;
         }
 
-        .stat-line {
+        .tool-durability {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            right: 2px;
+            height: 3px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 2px;
+        }
+
+        .durability-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        /* Informations environnementales */
+        #environmentPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            cursor: move;
+        }
+
+        #environmentPanel.minimized {
+            height: 40px;
+            overflow: hidden;
+        }
+
+        .environment-info {
             display: flex;
             align-items: center;
-            margin: 10px 0;
-            font-size: 14px;
+            margin: 6px 0;
+            font-size: 16px;
         }
 
-        .stat-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 6px;
-            image-rendering: pixelated;
+        .info-icon {
+            font-size: 16px;
+            margin-right: 8px;
+            width: 20px;
+            text-align: center;
         }
 
-        .stat-line .bar-container {
-            margin: 0;
-            flex-grow: 1;
-        }
-
-        .xp-fill {
-            background: linear-gradient(to right, #3498db, #2c3e50);
-        }
-
-        #questList {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .quest-item {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid #666;
-            border-radius: 4px;
-            padding: 10px;
-            margin: 5px 0;
-        }
-
-        .quest-title {
+        .info-value {
+            color: #FF9800;
             font-weight: bold;
-            color: var(--primary-color);
         }
 
-        .quest-description {
-            font-size: 10px;
+        /* Menu des catastrophes */
+        #disasterMenu {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            cursor: move;
+        }
+
+        #disasterMenu.minimized {
+            height: 40px;
+            overflow: hidden;
+        }
+
+        #disasterMenu h3 {
+            margin: 0 0 10px 0;
+            color: #FF9800;
+            font-size: 18px;
+        }
+
+        #disasterMenu p {
             margin: 5px 0;
+            font-size: 16px;
+            color: #ddd;
         }
 
-        .quest-progress {
-            font-size: 10px;
-            color: #ccc;
+        .key-hint {
+            display: inline-block;
+            background: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            font-family: monospace;
+            margin-right: 5px;
+        }
+
+        /* Minimap */
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 180px;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #444;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            cursor: move;
+        }
+
+        #minimap.minimized {
+            width: 50px;
+            height: 50px;
+        }
+
+        /* Informations sur l'outil sélectionné */
+        #toolInfo {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+        }
+
+        /* Styles pour les éléments déplaçables */
+        .draggable {
+            user-select: none;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #FF9800;
+            cursor: se-resize;
+            opacity: 0.7;
+        }
+
+        .draggable:hover .resize-handle {
+            opacity: 1;
         }
     </style>
 </head>
@@ -417,36 +518,117 @@
     <div id="gameWrapper">
         <canvas id="gameCanvas" tabindex="0"></canvas>
         <div id="hud">
-             <div id="toolbar"></div>
-             <div id="toolInfo" style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 4px; text-align: center; min-width: 150px;"></div>
-             <div id="gameInfo">
-                <div id="healthBar" class="hud-bar">
-                    <img src="assets/heart.png" alt="Santé" class="bar-icon">
-                    <div class="bar-container">
-                        <div class="bar-fill health-fill" id="healthFill"></div>
-                        <span class="bar-text" id="healthText">100/100</span>
+            <!-- Panneau du personnage -->
+            <div id="characterPanel" class="draggable">
+                <div class="panel-header">
+                    <div class="panel-title">PERSONNAGE</div>
+                    <div class="panel-controls">
+                        <div class="panel-btn minimize-btn">−</div>
+                        <div class="panel-btn close-btn">×</div>
                     </div>
                 </div>
-                <div id="hungerBar" class="hud-bar">
-                    <img src="assets/food_bread.png" alt="Faim" class="bar-icon">
+                <div class="panel-content">
+                    <div class="character-stat">
+                        <span class="stat-label">Niveau:</span>
+                        <span class="stat-value" id="playerLevel">1</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="stat-label">XP:</span>
+                        <span class="stat-value" id="playerXP">0/100</span>
+                    </div>
                     <div class="bar-container">
-                        <div class="bar-fill hunger-fill" id="hungerFill"></div>
-                        <span class="bar-text" id="hungerText">100/100</span>
+                        <div class="bar-fill xp-fill" id="playerXPFill" style="width: 0%"></div>
+                        <span class="bar-text" id="playerXPText">0/100</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="stat-label">Santé:</span>
+                        <span class="stat-value" id="playerHealth">100/100</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill health-fill" id="playerHealthFill" style="width: 100%"></div>
+                        <span class="bar-text" id="playerHealthText">100/100</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="stat-label">Faim:</span>
+                        <span class="stat-value" id="playerHunger">100/100</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill hunger-fill" id="playerHungerFill" style="width: 100%"></div>
+                        <span class="bar-text" id="playerHungerText">100/100</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="stat-label">Force:</span>
+                        <span class="stat-value" id="playerStrength">10</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="stat-label">Vitesse:</span>
+                        <span class="stat-value" id="playerSpeed">10</span>
                     </div>
                 </div>
-                <div id="environmentInfo">
-                    <div class="info-line"><i class="fa-solid fa-clock info-icon"></i><span id="gameTime">06:00</span></div>
-                    <div class="info-line"><i class="fa-solid fa-calendar-day info-icon"></i><span id="gameDate">Jour 1</span></div>
-                    <div class="info-line"><i id="weatherIcon" class="fa-solid fa-sun info-icon"></i><span id="gameWeather">Clair</span></div>
-                    <div class="info-line"><i class="fa-solid fa-mountain info-icon"></i><span id="currentBiome">Surface</span></div>
+                <div class="resize-handle"></div>
+            </div>
+
+            <!-- Barre d'outils -->
+            <div id="toolbar"></div>
+            
+            <!-- Informations sur l'outil sélectionné -->
+            <div id="toolInfo">Sélectionnez un outil</div>
+
+            <!-- Informations environnementales -->
+            <div id="environmentPanel" class="draggable">
+                <div class="panel-header">
+                    <div class="panel-title">ENVIRONNEMENT</div>
+                    <div class="panel-controls">
+                        <div class="panel-btn minimize-btn">−</div>
+                        <div class="panel-btn close-btn">×</div>
+                    </div>
                 </div>
+                <div class="panel-content">
+                    <div class="environment-info">
+                        <i class="fa-solid fa-clock info-icon"></i>
+                        <span>Temps: </span>
+                        <span class="info-value" id="gameTime">06:00</span>
+                    </div>
+                    <div class="environment-info">
+                        <i class="fa-solid fa-calendar-day info-icon"></i>
+                        <span>Date: </span>
+                        <span class="info-value" id="gameDate">Jour 1</span>
+                    </div>
+                    <div class="environment-info">
+                        <i id="weatherIcon" class="fa-solid fa-sun info-icon"></i>
+                        <span>Météo: </span>
+                        <span class="info-value" id="gameWeather">Clair</span>
+                    </div>
+                    <div class="environment-info">
+                        <i class="fa-solid fa-mountain info-icon"></i>
+                        <span>Biome: </span>
+                        <span class="info-value" id="currentBiome">Surface</span>
+                    </div>
+                </div>
+                <div class="resize-handle"></div>
             </div>
-            <div id="disasterMenu">
-                <p><strong>F1</strong> : Orage</p>
-                <p><strong>F2</strong> : Tremblement de terre</p>
-                <p><strong>F3</strong> : Pluie de météores</p>
+
+            <!-- Menu des catastrophes -->
+            <div id="disasterMenu" class="draggable">
+                <div class="panel-header">
+                    <div class="panel-title">CATASTROPHES</div>
+                    <div class="panel-controls">
+                        <div class="panel-btn minimize-btn">−</div>
+                        <div class="panel-btn close-btn">×</div>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <p><span class="key-hint">F1</span> : Orage</p>
+                    <p><span class="key-hint">F2</span> : Tremblement de terre</p>
+                    <p><span class="key-hint">F3</span> : Pluie de météores</p>
+                </div>
+                <div class="resize-handle"></div>
             </div>
-            <div id="minimap"></div>
+
+            <!-- Minimap -->
+            <div id="minimap" class="draggable">
+                <div class="resize-handle"></div>
+            </div>
         </div>
 
         <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
@@ -593,6 +775,95 @@
         // Interface utilisateur et gestion des menus
         document.addEventListener('DOMContentLoaded', () => {
             let isGameRunning = false;
+            let zIndexCounter = 100;
+
+            // Fonction pour rendre les éléments déplaçables
+            const makeDraggable = (element) => {
+                const header = element.querySelector('.panel-header');
+                if (!header) return;
+
+                header.style.cursor = 'move';
+                
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('button')) return;
+                    
+                    zIndexCounter++;
+                    element.style.zIndex = zIndexCounter;
+                    
+                    const rect = element.getBoundingClientRect();
+                    const offsetX = e.clientX - rect.left;
+                    const offsetY = e.clientY - rect.top;
+                    
+                    const onMouseMove = (ev) => {
+                        element.style.left = `${ev.clientX - offsetX}px`;
+                        element.style.top = `${ev.clientY - offsetY}px`;
+                    };
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                    }, { once: true });
+                });
+            };
+
+            // Fonction pour rendre les éléments redimensionnables
+            const makeResizable = (element) => {
+                const resizeHandle = element.querySelector('.resize-handle');
+                if (!resizeHandle) return;
+
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    
+                    zIndexCounter++;
+                    element.style.zIndex = zIndexCounter;
+                    
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
+                    const startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
+                    
+                    const onMouseMove = (ev) => {
+                        const newWidth = startWidth + (ev.clientX - startX);
+                        const newHeight = startHeight + (ev.clientY - startY);
+                        element.style.width = newWidth + 'px';
+                        element.style.height = newHeight + 'px';
+                    };
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                    }, { once: true });
+                });
+            };
+
+            // Fonction pour gérer la minimisation
+            const setupMinimize = (element) => {
+                const minimizeBtn = element.querySelector('.minimize-btn');
+                if (!minimizeBtn) return;
+
+                minimizeBtn.addEventListener('click', () => {
+                    element.classList.toggle('minimized');
+                });
+            };
+
+            // Fonction pour gérer la fermeture
+            const setupClose = (element) => {
+                const closeBtn = element.querySelector('.close-btn');
+                if (!closeBtn) return;
+
+                closeBtn.addEventListener('click', () => {
+                    element.style.display = 'none';
+                });
+            };
+
+            // Initialiser les éléments déplaçables
+            const draggableElements = document.querySelectorAll('.draggable');
+            draggableElements.forEach(element => {
+                makeDraggable(element);
+                makeResizable(element);
+                setupMinimize(element);
+                setupClose(element);
+            });
 
             const ui = {
                 titleScreen: document.getElementById('titleScreen'),
@@ -647,8 +918,7 @@
                 }
             };
 
-            let zIndexCounter = 100;
-        const initOverlay = (overlay) => {
+            const initOverlay = (overlay) => {
                 const box = overlay?.querySelector('.menu-box');
                 if (!box) return;
                 const title = box.querySelector('h2');
@@ -1622,7 +1892,8 @@
 
                     // Initialiser le joueur avec des statistiques
                     try {
-                        game.player = new Player(100, 100, config, game.sound);
+                        // Créer le joueur avec des coordonnées temporaires
+                        game.player = new Player(0, 0, config, game.sound);
                         game.player.stats = new PlayerStats();
                         game.player.inventory = game.inventory;
                         console.log("Joueur créé avec succès");
@@ -1631,47 +1902,51 @@
                         throw error;
                     }
 
-                    // Positionner le joueur au centre du monde
-                    const startXTile = Math.floor(config.worldWidth / config.tileSize / 2);
-                    let playerY = 100; // Position par défaut
+                    // Trouver une position de spawn appropriée
+                    const { tileSize } = config;
+                    let spawnX = 0;
+                    let spawnY = 0;
+                    let spawnFound = false;
+
+                    // Chercher une position de spawn sûre (au centre du monde)
+                    const centerX = Math.floor(game.tileMap[0].length / 2);
                     
-                    console.log(`Recherche de surface pour le joueur à la colonne ${startXTile}`);
-                    console.log(`TileMap dimensions: ${game.tileMap.length} x ${game.tileMap[0]?.length}`);
-                    
-                    // Trouver la surface avec vérifications robustes
-                    if (game.tileMap && game.tileMap.length > 0 && game.tileMap[0].length > startXTile) {
-                        let surfaceFound = false;
-                        
-                        // Chercher la première surface solide en partant du haut
-                        for (let y = Math.floor(game.tileMap.length * 0.1); y < game.tileMap.length; y++) {
-                            const tile = game.tileMap[y][startXTile];
-                            const tileAbove1 = game.tileMap[y - 1]?.[startXTile];
-                            const tileAbove2 = game.tileMap[y - 2]?.[startXTile];
+                    // Parcourir les colonnes autour du centre pour trouver une surface stable
+                    for (let xOffset = 0; xOffset < 100; xOffset++) {
+                        for (let direction of [-1, 1]) {
+                            const x = centerX + (xOffset * direction);
+                            if (x < 0 || x >= game.tileMap[0].length) continue;
                             
-                            // Vérifier qu'il y a un bloc solide et 2 blocs d'air au-dessus
-                            if (tile && tile > TILE.AIR && tile !== TILE.WATER && tile !== TILE.LAVA &&
-                                (tileAbove1 === TILE.AIR || tileAbove1 === undefined) &&
-                                (tileAbove2 === TILE.AIR || tileAbove2 === undefined)) {
-                                
-                                playerY = (y - 3) * config.tileSize; // 3 blocs au-dessus du sol pour plus de sécurité
-                                console.log(`Surface trouvée à y=${y}, joueur positionné à ${playerY}`);
-                                console.log(`Tiles: sol=${tile}, air1=${tileAbove1}, air2=${tileAbove2}`);
-                                surfaceFound = true;
-                                break;
+                            // Trouver le sol à cette position x
+                            for (let y = 0; y < game.tileMap.length - 10; y++) {
+                                // Vérifier si c'est un bloc solide avec 3 blocs d'air au-dessus
+                                if (game.tileMap[y][x] > TILE.AIR && 
+                                    game.tileMap[y][x] !== TILE.WATER && 
+                                    game.tileMap[y][x] !== TILE.LAVA &&
+                                    game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR &&
+                                    game.tileMap[y-2] && game.tileMap[y-2][x] === TILE.AIR &&
+                                    game.tileMap[y-3] && game.tileMap[y-3][x] === TILE.AIR) {
+                                    
+                                    spawnX = x * tileSize;
+                                    spawnY = (y - 3) * tileSize; // 3 blocs au-dessus du sol
+                                    spawnFound = true;
+                                    break;
+                                }
                             }
+                            if (spawnFound) break;
                         }
-                        
-                        if (!surfaceFound) {
-                            console.warn("Aucune surface trouvée, utilisation de la position par défaut");
-                            playerY = config.tileSize * 10; // Position de sécurité plus haute
-                        }
-                    } else {
-                        console.error("TileMap invalide pour le spawn du joueur");
-                        playerY = config.tileSize * 10;
+                        if (spawnFound) break;
                     }
-                    
-                    game.player.x = startXTile * config.tileSize;
-                    game.player.y = playerY;
+
+                    // Si aucune position appropriée n'a été trouvée, utiliser une position par défaut
+                    if (!spawnFound) {
+                        spawnX = centerX * tileSize;
+                        spawnY = 100; // Position par défaut
+                    }
+
+                    // Positionner le joueur
+                    game.player.x = spawnX;
+                    game.player.y = spawnY;
                     
                     console.log(`Position finale du joueur: (${game.player.x}, ${game.player.y})`);
                     
