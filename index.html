@@ -323,8 +323,26 @@
         }
 
         .stat-line {
+            display: flex;
+            align-items: center;
             margin: 10px 0;
             font-size: 14px;
+        }
+
+        .stat-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            image-rendering: pixelated;
+        }
+
+        .stat-line .bar-container {
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .xp-fill {
+            background: linear-gradient(to right, #3498db, #2c3e50);
         }
 
         #questList {
@@ -488,11 +506,29 @@
             <div class="menu-box">
                 <h2>PERSONNAGE</h2>
                 <div id="characterStats">
-                    <div class="stat-line">Niveau: <span id="playerLevel">1</span></div>
-                    <div class="stat-line">Expérience: <span id="playerXP">0/100</span></div>
-                    <div class="stat-line">Santé: <span id="playerHealth">100/100</span></div>
-                    <div class="stat-line">Force: <span id="playerStrength">10</span></div>
-                    <div class="stat-line">Vitesse: <span id="playerSpeed">10</span></div>
+                    <div class="stat-line">
+                        <img src="assets/bonus.png" alt="Niveau" class="stat-icon">
+                        <span>Niveau: <span id="playerLevel">1</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/coin.png" alt="Expérience" class="stat-icon">
+                        <div class="bar-container">
+                            <div class="bar-fill xp-fill" id="playerXPFill"></div>
+                            <span class="bar-text" id="playerXPText">0/100</span>
+                        </div>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/heart.png" alt="Santé" class="stat-icon">
+                        <span>Santé: <span id="playerHealth">100/100</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/tool_sword.png" alt="Force" class="stat-icon">
+                        <span>Force: <span id="playerStrength">10</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/player_run1.png" alt="Vitesse" class="stat-icon">
+                        <span>Vitesse: <span id="playerSpeed">10</span></span>
+                    </div>
                 </div>
                 <button data-action="close-menu">FERMER</button>
             </div>
