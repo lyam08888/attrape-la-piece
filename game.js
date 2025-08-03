@@ -370,30 +370,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Trouver une position de spawn appropriée
             const { tileSize } = config;
+            const playerWidthTiles = Math.ceil(game.player.w / tileSize);
             let spawnX = 0;
             let spawnY = 0;
             let spawnFound = false;
 
             // Chercher une position de spawn sûre (au centre du monde)
             const centerX = Math.floor(game.tileMap[0].length / 2);
-            
+
             // Parcourir les colonnes autour du centre pour trouver une surface stable
-            for (let xOffset = 0; xOffset < 100; xOffset++) {
+            for (let xOffset = 0; xOffset < 100 && !spawnFound; xOffset++) {
                 for (let direction of [-1, 1]) {
                     const x = centerX + (xOffset * direction);
                     if (x < 0 || x >= game.tileMap[0].length) continue;
-                    
+
                     // Trouver le sol à cette position x
                     for (let y = 0; y < game.tileMap.length - 10; y++) {
-                        // Vérifier si c'est un bloc solide avec 3 blocs d'air au-dessus
-                        if (game.tileMap[y][x] > TILE.AIR && 
-                            game.tileMap[y][x] !== TILE.WATER && 
-                            game.tileMap[y][x] !== TILE.LAVA &&
-                            game.tileMap[y-1] && game.tileMap[y-1][x] === TILE.AIR &&
-                            game.tileMap[y-2] && game.tileMap[y-2][x] === TILE.AIR &&
-                            game.tileMap[y-3] && game.tileMap[y-3][x] === TILE.AIR) {
-                            
-                            spawnX = x * tileSize;
+                        let spaceClear = true;
+
+                        // Vérifier si l'espace est suffisamment large pour le joueur
+                        for (let dx = 0; dx < playerWidthTiles; dx++) {
+                            const xx = x + dx;
+                            if (xx >= game.tileMap[0].length) {
+                                spaceClear = false;
+                                break;
+                            }
+                            const isSolid = game.tileMap[y][xx] > TILE.AIR &&
+                                game.tileMap[y][xx] !== TILE.WATER &&
+                                game.tileMap[y][xx] !== TILE.LAVA;
+                            const airAbove = game.tileMap[y - 1] && game.tileMap[y - 1][xx] === TILE.AIR &&
+                                game.tileMap[y - 2] && game.tileMap[y - 2][xx] === TILE.AIR &&
+                                game.tileMap[y - 3] && game.tileMap[y - 3][xx] === TILE.AIR;
+                            if (!(isSolid && airAbove)) {
+                                spaceClear = false;
+                                break;
+                            }
+                        }
+
+                        if (spaceClear) {
+                            // Centrer le joueur sur la zone dégagée
+                            const zoneWidth = playerWidthTiles * tileSize;
+                            spawnX = x * tileSize + (zoneWidth - game.player.w) / 2;
                             spawnY = (y - 3) * tileSize; // 3 blocs au-dessus du sol
                             spawnFound = true;
                             break;
@@ -401,18 +418,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     if (spawnFound) break;
                 }
-                if (spawnFound) break;
             }
 
             // Si aucune position appropriée n'a été trouvée, utiliser une position par défaut
             if (!spawnFound) {
-                spawnX = centerX * tileSize;
+                const zoneWidth = playerWidthTiles * tileSize;
+                spawnX = centerX * tileSize + (zoneWidth - game.player.w) / 2;
                 spawnY = 100; // Position par défaut
             }
 
             // Positionner le joueur
             game.player.x = spawnX;
             game.player.y = spawnY;
+            game.player.vx = 0;
+            game.player.vy = 0;
 
             // Point de réapparition du joueur
             game.spawnPoint = { x: game.player.x, y: game.player.y };

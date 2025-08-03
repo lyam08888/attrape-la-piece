@@ -1564,6 +1564,8 @@
                     list.appendChild(row);
                 }
             }
+            // Exposer la fonction au scope global pour le script non-module
+            window.syncControlsUI = syncControlsUI;
 
             function setupOptionHandlers() {
                 if (renderDistanceSlider) {
