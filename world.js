@@ -404,8 +404,17 @@ function generateColumns(game, config, startX, width) {
         if (biome === 'ocean' || (groundY < surfaceLevel - 5)) {
             const waterMaxY = Math.min(worldHeightInTiles, Math.max(surfaceLevel, groundY + 10));
             const startY = Math.max(0, groundY + 1);
+            // Ensure each targeted row exists before accessing it to avoid
+            // "Cannot read properties of undefined" errors when the world
+            // height hasn't been fully initialised. This can happen during
+            // early world generation when additional rows are generated on the
+            // fly. If a row is missing we create an empty one so the water can
+            // be placed safely.
             for (let y = startY; y < waterMaxY; y++) {
-                if (game.tileMap[y] && game.tileMap[y][x] === TILE.AIR) {
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
+                }
+                if (game.tileMap[y][x] === TILE.AIR || game.tileMap[y][x] === undefined) {
                     game.tileMap[y][x] = TILE.WATER;
                 }
             }
@@ -417,9 +426,10 @@ function generateColumns(game, config, startX, width) {
             const startY = Math.max(0, groundY - riverDepth);
             const endY = Math.min(worldHeightInTiles - 1, groundY);
             for (let y = startY; y <= endY; y++) {
-                if (game.tileMap[y]) {
-                    game.tileMap[y][x] = y === startY ? TILE.WATER : TILE.AIR;
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
                 }
+                game.tileMap[y][x] = y === startY ? TILE.WATER : TILE.AIR;
             }
         }
         
@@ -429,9 +439,10 @@ function generateColumns(game, config, startX, width) {
             const startY = Math.max(0, groundY - canyonDepth);
             const endY = Math.min(worldHeightInTiles - 1, groundY - 1);
             for (let y = startY; y <= endY; y++) {
-                if (game.tileMap[y]) {
-                    game.tileMap[y][x] = TILE.AIR;
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
                 }
+                game.tileMap[y][x] = TILE.AIR;
             }
         }
 
