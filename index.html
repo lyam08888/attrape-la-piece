@@ -795,8 +795,17 @@
                     const offsetY = e.clientY - rect.top;
                     
                     const onMouseMove = (ev) => {
-                        element.style.left = `${ev.clientX - offsetX}px`;
-                        element.style.top = `${ev.clientY - offsetY}px`;
+                        // Clamp position to viewport
+                        const newLeft = Math.min(
+                            Math.max(ev.clientX - offsetX, 0),
+                            window.innerWidth - rect.width
+                        );
+                        const newTop = Math.min(
+                            Math.max(ev.clientY - offsetY, 0),
+                            window.innerHeight - rect.height
+                        );
+                        element.style.left = `${newLeft}px`;
+                        element.style.top = `${newTop}px`;
                     };
                     
                     document.addEventListener('mousemove', onMouseMove);
