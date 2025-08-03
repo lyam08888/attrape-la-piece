@@ -578,7 +578,7 @@ export class Player {
         if (toolName) {
             const toolAsset = assets[`tool_${toolName}`];
             if (toolAsset) {
-                const toolSize = this.w * 0.6; // Shrink tool relative to player size
+                const toolSize = this.w * 0.45; // Shrink tool relative to player size
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
                 const handOffsetY = this.h * 0.5;
                 const pivotX = this.x + handOffsetX;
