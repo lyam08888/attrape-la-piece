@@ -1,7 +1,7 @@
 // worldIntegrationSystem.js - Système d'intégration du monde complexe
 import { ComplexWorldSystem } from './worldComplexSystem.js';
 import { AdvancedBiomeSystem } from './advancedBiomeSystem.js';
-import { ExplorationSystem } from './explorationSystem.js';
+import ExplorationSystem from './explorationSystem.js';
 import { TILE } from './world.js';
 
 export default class WorldIntegrationSystem {

@@ -2,7 +2,7 @@
 import { TILE } from './world.js';
 import { SeededRandom } from './seededRandom.js';
 
-export class ExplorationSystem {
+class ExplorationSystem {
     constructor(config) {
         this.config = config;
         this.discoveredAreas = new Map();
@@ -1119,3 +1119,5 @@ export class ExplorationSystem {
         return Array.from(this.secrets.values()).filter(s => s.discovered);
     }
 }
+
+export default ExplorationSystem;
