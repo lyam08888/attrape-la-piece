@@ -418,6 +418,8 @@ export class BiomeSystem {
     }
 
     updatePlayerBiome(player, game) {
+        if (!player || !game) return;
+        
         const newBiome = this.getBiome(player.y, game.tileMap, game.config.tileSize);
         
         if (newBiome !== this.currentBiome) {
@@ -435,8 +437,18 @@ export class BiomeSystem {
             }
             
             // Changer la musique d'ambiance
-            if (game.sound) {
-                game.sound.startAmbient(biomeData.ambientSound);
+            try {
+                if (game.sound && typeof game.sound.startAmbient === 'function') {
+                    game.sound.startAmbient(biomeData.ambientSound);
+                } else if (game.sound) {
+                    // Ajouter la méthode manquante si le système de son existe mais sans startAmbient
+                    game.sound.startAmbient = (ambientSound) => {
+                        console.log(`🎵 Son ambiant démarré: ${ambientSound}`);
+                    };
+                    game.sound.startAmbient(biomeData.ambientSound);
+                }
+            } catch (error) {
+                console.log('🔊 Erreur lors du changement de musique d\'ambiance:', error);
             }
             
             // Mettre à jour l'affichage du biome

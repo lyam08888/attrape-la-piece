@@ -387,10 +387,15 @@ export function updateQuestUI(questSystem) {
 
 // Ajouter les méthodes de sérialisation à QuestSystem
 QuestSystem.prototype.serialize = function() {
+    // S'assurer que questProgress existe
+    if (!this.questProgress) {
+        this.questProgress = new Map();
+    }
+    
     return {
         activeQuests: Array.from(this.activeQuests?.entries() || []),
         completedQuests: Array.from(this.completedQuests || []),
-        questProgress: Object.fromEntries(this.questProgress || new Map())
+        questProgress: this.questProgress.size > 0 ? Object.fromEntries(this.questProgress) : {}
     };
 };
 
