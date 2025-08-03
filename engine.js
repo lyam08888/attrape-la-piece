@@ -7,6 +7,22 @@ export class GameEngine {
         this.ctx = canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
         this.config = config;
+
+        // Provide default key bindings when none are supplied. This prevents
+        // the player from being unable to move if the configuration misses
+        // the `keyBindings` section.
+        const defaultBindings = {
+            left: 'ArrowLeft',
+            right: 'ArrowRight',
+            jump: 'Space',
+            down: 'ArrowDown',
+            action: 'KeyE',
+            run: 'ShiftLeft',
+            fly: 'KeyV',
+            repair: 'KeyR',
+        };
+        this.config.keyBindings = { ...defaultBindings, ...(config.keyBindings || {}) };
+
         this.assets = {};
         this.keys = {
             left: false, right: false, jump: false, action: false,
