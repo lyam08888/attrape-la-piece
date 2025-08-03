@@ -654,7 +654,11 @@ function generatePineTree(game, x, groundY, worldHeight) {
                 const leafY = layerY + ly;
                 if (leafY >= 0 && leafY < worldHeight && leafX >= 0 && 
                     game.tileMap[leafY]?.[leafX] === TILE.AIR) {
-                    game.tileMap[leafY][leafX] = TILE.PINE_LEAVES;
+                    // Vérifier si le point est dans le cône
+                    const distance = Math.abs(lx) + Math.abs(ly);
+                    if (distance <= layerRadius) {
+                        game.tileMap[leafY][leafX] = TILE.PINE_LEAVES;
+                    }
                 }
             }
         }

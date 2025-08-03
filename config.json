@@ -18,7 +18,10 @@
     "coinVeinCount": 80,
     "bonusBoxCount": 20,
     "chestCount": 10,
-    "checkpointCount": 5
+    "checkpointCount": 5,
+    "complexWorld": true,
+    "biomeCount": 12,
+    "landmarkCount": 15
   },
   "physics": {
     "gravity": 0.35,
