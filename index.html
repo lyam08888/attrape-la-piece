@@ -326,7 +326,7 @@
 </head>
 <body>
     <div id="gameWrapper">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" tabindex="0"></canvas>
         <div id="hud">
              <div id="toolbar"></div>
              <div id="toolInfo" style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 4px; text-align: center; min-width: 150px;"></div>
@@ -438,6 +438,14 @@
             </div>
         </div>
 
+        <div id="chestMenu" class="overlay">
+            <div class="menu-box" style="max-width: 400px;">
+                <h2>COFFRE</h2>
+                <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
         <div id="characterMenu" class="overlay">
             <div class="menu-box">
                 <h2>PERSONNAGE</h2>
@@ -501,12 +509,15 @@
             };
 
             const startGame = (seed) => {
+                if (isGameRunning) return;
+
                 const launch = () => {
                     isGameRunning = true;
                     ui.titleScreen.classList.add('hidden');
                     openMenu(ui.loadingScreen);
                     ui.loadingBar.style.width = '100%';
                     document.dispatchEvent(new CustomEvent('start-game', { detail: { seed } }));
+                    ui.canvas.focus();
                 };
 
                 if (window.gameModuleReady) {
@@ -575,20 +586,23 @@
                     } else {
                         openMenu(ui.menus.quests);
                     }
-                } else if (e.key >= '1' && e.key <= '7') {
-                    // Sélection d'outils avec les chiffres
-                    const toolIndex = parseInt(e.key) - 1;
-                    console.log(`Tentative de sélection outil ${toolIndex}`);
-                    if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
-                        window.game.player.selectedToolIndex = toolIndex;
-                        window.game.updateToolbar();
-                        console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
-                    } else {
-                        console.log("Impossible de sélectionner l'outil:", {
-                            hasGame: !!window.game,
-                            hasPlayer: !!(window.game && window.game.player),
-                            toolsLength: window.game?.player?.tools?.length
-                        });
+                } else if (e.code && e.code.startsWith('Digit')) {
+                    const digit = parseInt(e.code.slice(5));
+                    if (digit >= 1 && digit <= 6) {
+                        // Sélection d'outils avec les chiffres
+                        const toolIndex = digit - 1;
+                        console.log(`Tentative de sélection outil ${toolIndex}`);
+                        if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
+                            window.game.player.selectedToolIndex = toolIndex;
+                            window.game.updateToolbar();
+                            console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
+                        } else {
+                            console.log("Impossible de sélectionner l'outil:", {
+                                hasGame: !!window.game,
+                                hasPlayer: !!(window.game && window.game.player),
+                                toolsLength: window.game?.player?.tools?.length
+                            });
+                        }
                     }
                 } else if (e.ctrlKey && e.key === 's' && window.game) {
                     // Sauvegarde rapide
@@ -655,10 +669,52 @@
                 const survivalItem = SURVIVAL_ITEMS[Math.floor(Math.random() * SURVIVAL_ITEMS.length)];
                 loot.push({ item: survivalItem.toLowerCase().replace(/\s+/g, '_'), quantity: 1 });
             }
-            
+
             return loot;
         }
-        
+
+        function showChestInterface(loot) {
+            const chestMenu = document.getElementById('chestMenu');
+            const chestContents = document.getElementById('chestContents');
+            if (!chestMenu || !chestContents) return;
+
+            chestContents.innerHTML = '';
+
+            loot.forEach(lootItem => {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+
+                const icon = document.createElement('img');
+                icon.src = `assets/${lootItem.item}.png`;
+                icon.onerror = () => {
+                    icon.style.display = 'none';
+                    const text = document.createElement('div');
+                    text.textContent = lootItem.item.substring(0, 2).toUpperCase();
+                    text.style.fontSize = '10px';
+                    text.style.color = '#fff';
+                    slot.appendChild(text);
+                };
+                slot.appendChild(icon);
+
+                if (lootItem.quantity > 1) {
+                    const quantity = document.createElement('div');
+                    quantity.textContent = lootItem.quantity;
+                    quantity.style.position = 'absolute';
+                    quantity.style.bottom = '2px';
+                    quantity.style.right = '2px';
+                    quantity.style.fontSize = '10px';
+                    quantity.style.color = '#fff';
+                    quantity.style.textShadow = '1px 1px 0 #000';
+                    slot.style.position = 'relative';
+                    slot.appendChild(quantity);
+                }
+
+                chestContents.appendChild(slot);
+            });
+
+            chestMenu.classList.add('active');
+        }
+
         // Système d'événements dynamiques
         function triggerRandomEvent(game) {
             const events = [
@@ -1728,11 +1784,13 @@
                                 game.sound.play('chest_open');
                                 game.questSystem.updateQuestProgress('open_chests', { amount: 1 });
                                 game.statistics.chestsOpened++;
-                                
+
                                 if (hasSurvivalItem) {
                                     game.questSystem.updateQuestProgress('collect_survival_items', { amount: 1 });
                                     game.statistics.survivalItemsFound++;
                                 }
+
+                                showChestInterface(chest.loot);
                             }
                         }
                     });
