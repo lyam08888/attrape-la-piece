@@ -832,8 +832,11 @@
                     const startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
                     
                     const onMouseMove = (ev) => {
-                        const newWidth = startWidth + (ev.clientX - startX);
-                        const newHeight = startHeight + (ev.clientY - startY);
+                        // Clamp size to viewport and minimum size
+                        const maxWidth = window.innerWidth - element.getBoundingClientRect().left;
+                        const maxHeight = window.innerHeight - element.getBoundingClientRect().top;
+                        const newWidth = Math.min(Math.max(startWidth + (ev.clientX - startX), 150), maxWidth);
+                        const newHeight = Math.min(Math.max(startHeight + (ev.clientY - startY), 100), maxHeight);
                         element.style.width = newWidth + 'px';
                         element.style.height = newHeight + 'px';
                     };
