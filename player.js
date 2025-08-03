@@ -180,7 +180,7 @@ export class Player {
         if (this.grounded && !this.isFlying) this.jumpCount = 0;
 
         this.checkCollectibleCollisions(game);
-        this.updateMiningTarget(mouse, game);
+        this.updateMiningTarget(keys, mouse, game);
         updateMining(game, keys, mouse, delta); // Utiliser le système de minage avancé
         this.updateFruitHarvesting(mouse, game);
         this.updateStateAndAnimation();
@@ -255,47 +255,59 @@ export class Player {
         }
     }
 
-    updateMiningTarget(mouse, game) {
-        // CORRECTION : Ajout d'une vérification pour éviter le crash si la souris ou la caméra n'est pas prête.
-        if (!game.camera || !mouse) {
+    updateMiningTarget(keys, mouse, game) {
+        // Vérification de base
+        if (!game.camera) {
             return;
         }
-        
+
         const { tileSize, zoom } = game.config;
         const reach = (this.config.player.reach || 4) * tileSize;
-        const mouseWorldX = game.camera.x + mouse.x / zoom;
-        const mouseWorldY = game.camera.y + mouse.y / zoom;
-        
-        // Vérifier la portée
         const playerCenterX = this.x + this.w / 2;
         const playerCenterY = this.y + this.h / 2;
-        const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
-        
-        if (distance > reach) {
-            this.miningTarget = null;
-            return;
-        }
 
-        const tileX = Math.floor(mouseWorldX / tileSize);
-        const tileY = Math.floor(mouseWorldY / tileSize);
-        
-        // Vérifier que les coordonnées sont valides
-        if (tileY < 0 || tileY >= game.tileMap.length || tileX < 0 || !game.tileMap[tileY]) {
-            this.miningTarget = null;
-            return;
-        }
-        
-        const tileType = game.tileMap[tileY][tileX];
+        // Priorité au ciblage à la souris
+        if (mouse) {
+            const mouseWorldX = game.camera.x + mouse.x / zoom;
+            const mouseWorldY = game.camera.y + mouse.y / zoom;
+            const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
 
-        // Vérifier que le bloc peut être miné (pas de l'air et pas du bedrock)
-        if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
-            if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
-                this.miningTarget = { x: tileX, y: tileY, type: tileType };
-                this.miningProgress = 0;
+            if (distance <= reach) {
+                const tileX = Math.floor(mouseWorldX / tileSize);
+                const tileY = Math.floor(mouseWorldY / tileSize);
+
+                if (tileY >= 0 && tileY < game.tileMap.length && tileX >= 0 && game.tileMap[tileY]) {
+                    const tileType = game.tileMap[tileY][tileX];
+                    if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
+                        if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
+                            this.miningTarget = { x: tileX, y: tileY, type: tileType };
+                            this.miningProgress = 0;
+                        }
+                        return;
+                    }
+                }
             }
-        } else {
-            this.miningTarget = null;
         }
+
+        // Sinon, cibler le bloc juste devant le joueur si l'action est activée
+        if (keys && keys.action) {
+            const frontX = Math.floor((playerCenterX + this.dir * tileSize) / tileSize);
+            const frontY = Math.floor(playerCenterY / tileSize);
+
+            if (frontY >= 0 && frontY < game.tileMap.length && frontX >= 0 && game.tileMap[frontY]) {
+                const tileType = game.tileMap[frontY][frontX];
+                if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
+                    if (!this.miningTarget || this.miningTarget.x !== frontX || this.miningTarget.y !== frontY) {
+                        this.miningTarget = { x: frontX, y: frontY, type: tileType };
+                        this.miningProgress = 0;
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Aucun bloc ciblé
+        this.miningTarget = null;
     }
 
     updateFruitHarvesting(mouse, game) {
