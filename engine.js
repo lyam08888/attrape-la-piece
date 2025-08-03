@@ -2,15 +2,14 @@
 import { TILE } from './world.js';
 
 export class GameEngine {
-    constructor(canvas, config) {
+    constructor(canvas, config = {}) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
-        this.config = config;
 
         // Provide default key bindings when none are supplied. This prevents
         // the player from being unable to move if the configuration misses
-        // the `keyBindings` section.
+        // the `keyBindings` section or only defines a subset of controls.
         const defaultBindings = {
             left: 'ArrowLeft',
             right: 'ArrowRight',
@@ -22,7 +21,13 @@ export class GameEngine {
             fly: 'KeyV',
             repair: 'KeyR',
         };
-        this.config.keyBindings = { ...defaultBindings, ...(config.keyBindings || {}) };
+
+        // Merge provided bindings with defaults in a new config object to
+        // avoid leaving the player without movement controls.
+        this.config = {
+            ...config,
+            keyBindings: { ...defaultBindings, ...(config.keyBindings || {}) },
+        };
 
         this.assets = {};
         this.keys = {
