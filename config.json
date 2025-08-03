@@ -27,15 +27,19 @@
   },
   "physics": {
     "gravity": 0.35,
-    "jumpForce": 7,
-    "playerSpeed": 2.5,
-    "friction": 0.88,
+    "jumpForce": 8,
+    "playerSpeed": 3,
+    "friction": 0.85,
     "blockBounce": 0.3,
     "realistic": false,
     "airResistance": 0.98,
     "maxFallSpeed": 10,
     "groundAcceleration": 0.4,
-    "airAcceleration": 0.2
+    "airAcceleration": 0.2,
+    "wallSlideSpeed": 1.5,
+    "wallJumpForce": 6,
+    "glideGravity": 0.1,
+    "glideFallSpeed": 0.5
   },
   "player": {
     "maxLives": 5,
