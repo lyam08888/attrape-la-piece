@@ -144,7 +144,7 @@ export class GameEngine {
                         // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
                         this.gameLogic.update(delta, this.keys, this.mouse);
                     }
-                    this.gameLogic.draw(this.ctx, this.assets);
+                    this.gameLogic.draw(this.ctx, this.assets, delta);
                     requestAnimationFrame(loop);
                 };
                 requestAnimationFrame(loop);

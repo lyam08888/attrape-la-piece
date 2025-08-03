@@ -1816,7 +1816,7 @@
                     }
                 },
 
-                draw(ctx, assets) {
+                draw(ctx, assets, delta) {
                     try {
                         // Arrière-plan simple
                         ctx.fillStyle = '#87CEEB';
@@ -2518,7 +2518,7 @@
 
                             // Le jeu est maintenant actif
 
-                            logic.draw(ctx, game.assets || {});
+                            logic.draw(ctx, game.assets || {}, delta);
                         } catch (error) {
                             console.error("Erreur dans la boucle de jeu:", error);
                         }
