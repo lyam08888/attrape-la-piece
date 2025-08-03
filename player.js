@@ -562,10 +562,7 @@ export class Player {
         const frameKey = anim[this.animFrame % (anim.length || 1)] || 'player_idle1';
         const img = assets[frameKey];
 
-        if (!img) {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(this.x, this.y, this.w, this.h);
-        } else {
+        if (img) {
             ctx.save();
             if (this.dir === -1) {
                 ctx.scale(-1, 1);
