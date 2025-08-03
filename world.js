@@ -3,9 +3,10 @@ import { Perlin } from './perlin.js';
 import { Slime, Frog, Golem } from './enemy.js';
 import { PNJ } from './PNJ.js';
 import { generatePNJ } from './generateurPNJ.js';
+import { SeedMap } from './seedMap.js';
 
 // --- LISTE DE BLOCS ---
-export const TILE = { 
+export const TILE = {
     AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, WOOD: 4, LEAVES: 5, COAL: 6, IRON: 7,
     BEDROCK: 8, WATER: 9, CRYSTAL: 10, GLOW_MUSHROOM: 11, CLOUD: 12, HELLSTONE: 13, LAVA: 14,
     SAND: 15, OAK_WOOD: 16, OAK_LEAVES: 17, FLOWER_RED: 18, FLOWER_YELLOW: 19,
@@ -22,6 +23,8 @@ export const TILE = {
     HELLFIRE_CRYSTAL: 68, DEMON_GOLD: 69
 };
 
+const seedMap = new SeedMap();
+
 function generateColumns(game, config, startX, width) {
     const worldHeightInTiles = game.tileMap.length;
     const { tileSize } = config;
@@ -37,8 +40,9 @@ function generateColumns(game, config, startX, width) {
     for (let x = startX; x < startX + width; x++) {
         // === GÉNÉRATION DE TERRAIN ULTRA-COMPLEXE ET VARIÉ ===
         
-        // Seed unique pour chaque monde basé sur la position
-        const worldSeed = Math.floor(x / 1000) * 1337 + 42;
+        // Seed unique par chunk basé sur la seed globale
+        const chunkX = Math.floor(x / (config.chunkSize || 16));
+        const worldSeed = seedMap.getSeed(chunkX);
         SeededRandom.setSeed(worldSeed);
         
         // Bruit continental avec variations extrêmes
@@ -530,6 +534,7 @@ function generateColumns(game, config, startX, width) {
 export function generateLevel(game, config) {
     SeededRandom.setSeed(config.seed || Date.now());
     Perlin.seed();
+    seedMap.setBaseSeed(SeededRandom.seed);
 
     const { worldWidth = 4096, worldHeight, tileSize } = config;
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
