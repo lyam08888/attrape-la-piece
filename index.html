@@ -2087,6 +2087,32 @@
                                 }
                             }
                         });
+                        
+                        // Dessiner les PNJ
+                        if (game.pnjs) {
+                            game.pnjs.forEach(pnj => {
+                                ctx.save();
+                                ctx.translate(pnj.x - game.camera.x, pnj.y - game.camera.y);
+                                
+                                // Dessiner le PNJ
+                                ctx.fillStyle = '#4169E1'; // Bleu pour les PNJ
+                                ctx.fillRect(0, 0, pnj.w, pnj.h);
+                                
+                                // Indicateur de quête disponible
+                                if (pnj.hasQuest && pnj.hasQuest()) {
+                                    ctx.fillStyle = '#FFD700';
+                                    ctx.beginPath();
+                                    ctx.arc(pnj.w/2, -10, 5, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.fillStyle = '#000';
+                                    ctx.font = '12px Arial';
+                                    ctx.textAlign = 'center';
+                                    ctx.fillText('!', pnj.w/2, -6);
+                                }
+                                
+                                ctx.restore();
+                            });
+                        }
 
                         // Dessiner les particules
                         if (game.particles) {
@@ -2203,6 +2229,20 @@
                         // Mettre à jour le système d'ennemis
                         if (game.enemySpawner) {
                             game.enemySpawner.update(game, delta);
+                        }
+                        
+                        // Mettre à jour les PNJ
+                        if (game.pnjs) {
+                            game.pnjs.forEach(pnj => {
+                                if (pnj.update) {
+                                    pnj.update(game, delta);
+                                }
+                            });
+                        }
+                        
+                        // Mettre à jour le système de quêtes
+                        if (game.questSystem) {
+                            game.questSystem.update(game, delta);
                         }
                     
                     // Dessiner les projectiles

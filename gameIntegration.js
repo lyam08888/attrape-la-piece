@@ -5,45 +5,59 @@ import { WorldIntegrationSystem } from './worldIntegrationSystem.js';
 export function integrateComplexWorld(game, config, gameLogic) {
     console.log('🚀 Intégration du monde complexe...');
     
-    // Créer le système d'intégration
-    const worldIntegration = new WorldIntegrationSystem(config);
-    
-    // Initialiser le système
-    worldIntegration.initialize(game);
-    
-    // Intégrer dans la boucle de mise à jour du jeu
-    const originalUpdate = gameLogic.update;
-    if (originalUpdate) {
-        gameLogic.update = function(delta, keys, mouse) {
-            // Appeler la mise à jour originale
-            originalUpdate.call(this, delta, keys, mouse);
-            
-            // Mettre à jour le monde complexe
-            worldIntegration.update(game, delta);
-        };
+    try {
+        // Créer le système d'intégration
+        const worldIntegration = new WorldIntegrationSystem(config);
+        
+        // Initialiser le système
+        worldIntegration.initialize(game);
+        
+        // Intégrer dans la boucle de mise à jour du jeu
+        if (gameLogic && gameLogic.update) {
+            const originalUpdate = gameLogic.update;
+            gameLogic.update = function(delta, keys, mouse) {
+                // Appeler la mise à jour originale
+                originalUpdate.call(this, delta, keys, mouse);
+                
+                // Mettre à jour le monde complexe
+                try {
+                    worldIntegration.update(game, delta);
+                } catch (error) {
+                    console.warn('Erreur mise à jour monde complexe:', error);
+                }
+            };
+        }
+        
+        // Intégrer dans le rendu du jeu
+        if (gameLogic && gameLogic.draw) {
+            const originalDraw = gameLogic.draw;
+            gameLogic.draw = function(ctx, assets) {
+                // Appeler le rendu original
+                originalDraw.call(this, ctx, assets);
+                
+                // Rendu des éléments du monde complexe
+                try {
+                    drawComplexWorldElements(ctx, game, assets);
+                } catch (error) {
+                    console.warn('Erreur rendu monde complexe:', error);
+                }
+            };
+        }
+        
+        // Ajouter des commandes de débogage
+        addDebugCommands(game, worldIntegration);
+        
+        // Ajouter l'interface utilisateur
+        addComplexWorldUI(game, worldIntegration);
+        
+        console.log('✅ Monde complexe intégré avec succès !');
+        
+        return worldIntegration;
+        
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'intégration du monde complexe:', error);
+        return null;
     }
-    
-    // Intégrer dans le rendu du jeu
-    const originalDraw = gameLogic.draw;
-    if (originalDraw) {
-        gameLogic.draw = function(ctx, assets) {
-            // Appeler le rendu original
-            originalDraw.call(this, ctx, assets);
-            
-            // Rendu des éléments du monde complexe
-            drawComplexWorldElements(ctx, game, assets);
-        };
-    }
-    
-    // Ajouter des commandes de débogage
-    addDebugCommands(game, worldIntegration);
-    
-    // Ajouter l'interface utilisateur
-    addComplexWorldUI(game, worldIntegration);
-    
-    console.log('✅ Monde complexe intégré avec succès !');
-    
-    return worldIntegration;
 }
 
 // Fonction de rendu des éléments du monde complexe
