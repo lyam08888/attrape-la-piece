@@ -1039,11 +1039,28 @@
                         const slot = document.createElement('div');
                         slot.className = 'toolbar-slot';
                         if (index === this.player.selectedToolIndex) slot.classList.add('selected');
-                        // Créer une icône simple
-                        const icon = document.createElement('div');
-                        icon.textContent = toolName.charAt(0).toUpperCase();
-                        icon.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;';
-                        slot.appendChild(icon);
+                        
+                        // Utiliser la texture de l'outil si disponible
+                        const toolAssetName = `tool_${toolName}`;
+                        const toolTexture = this.assets && this.assets[toolAssetName];
+                        
+                        if (toolTexture) {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 32;
+                            canvas.height = 32;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(toolTexture, 0, 0, 32, 32);
+                            slot.appendChild(canvas);
+                        } else {
+                            // Fallback avec icône texte
+                            const icon = document.createElement('div');
+                            icon.textContent = toolName.charAt(0).toUpperCase();
+                            icon.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;';
+                            slot.appendChild(icon);
+                        }
+                        
+                        // Ajouter le nom de l'outil en tooltip
+                        slot.title = toolName;
                         toolbar.appendChild(slot);
                     });
                 },
@@ -1180,6 +1197,12 @@
                     game.player.y = playerY;
                     
                     console.log(`Position finale du joueur: (${game.player.x}, ${game.player.y})`);
+                    
+                    // Forcer la génération autour du joueur
+                    const playerTileX = Math.floor(game.player.x / config.tileSize);
+                    const bufferTiles = 50; // Zone de sécurité autour du joueur
+                    ensureWorldColumns(game, config, playerTileX - bufferTiles, playerTileX + bufferTiles);
+                    console.log("Zone autour du joueur générée");
                     
                     // Initialiser les systèmes
                     game.worldAnimator = null; // Désactivé pour l'instant
@@ -2072,6 +2095,11 @@
 
                     // Initialiser la logique de jeu
                     await logic.init(assets);
+                    
+                    // S'assurer que les assets sont disponibles dans le jeu
+                    if (logic.game) {
+                        logic.game.assets = assets;
+                    }
 
                     // Démarrer la boucle de jeu
                     let lastTime = 0;

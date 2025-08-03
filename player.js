@@ -211,7 +211,36 @@ export class Player {
     handleCollisions(game) {
         const { tileSize } = this.config;
         const map = game.tileMap;
-        if (!map || map.length === 0) return;
+        if (!map || map.length === 0) {
+            console.warn("Pas de tileMap pour les collisions");
+            return;
+        }
+        
+        // Debug: vérifier la position du joueur et empêcher la chute infinie
+        if (this.y > 2000) { // Si le joueur tombe trop bas
+            console.log(`Joueur tombe: y=${this.y}, vy=${this.vy}`);
+            console.log(`TileMap dimensions: ${map.length} x ${map[0]?.length}`);
+            const playerTileX = Math.floor(this.x / tileSize);
+            const playerTileY = Math.floor(this.y / tileSize);
+            console.log(`Position tile: (${playerTileX}, ${playerTileY})`);
+            if (map[playerTileY]) {
+                console.log(`Tile sous le joueur: ${map[playerTileY][playerTileX]}`);
+            }
+            
+            // Téléporter le joueur à la surface si il tombe trop bas
+            if (this.y > map.length * tileSize - 100) {
+                console.log("Téléportation du joueur à la surface");
+                // Trouver la surface
+                for (let y = 0; y < map.length; y++) {
+                    if (map[y] && map[y][playerTileX] > TILE.AIR) {
+                        this.y = (y - 2) * tileSize;
+                        this.vy = 0;
+                        console.log(`Joueur téléporté à y=${this.y}`);
+                        break;
+                    }
+                }
+            }
+        }
 
         // Collision X
         this.x += this.vx;
@@ -289,17 +318,22 @@ export class Player {
             const toolAsset = assets[`tool_${selectedToolName}`];
             if (toolAsset) {
                 ctx.save();
-                const toolSize = this.w;
-                const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
-                const handOffsetY = this.h * 0.5;
+                // Taille de l'outil réduite (environ 60% de la taille du joueur)
+                const toolSize = this.w * 0.6;
+                const handOffsetX = this.dir === 1 ? this.w * 0.8 : this.w * 0.2;
+                const handOffsetY = this.h * 0.6;
                 const pivotX = this.x + handOffsetX;
                 const pivotY = this.y + handOffsetY;
                 ctx.translate(pivotX, pivotY);
+                
+                // Animation de swing
                 if (this.swingTimer > 0) {
                     const progress = (20 - this.swingTimer) / 20;
-                    const angle = Math.sin(progress * Math.PI) * -this.dir;
+                    const angle = Math.sin(progress * Math.PI) * -this.dir * 0.8; // Angle réduit
                     ctx.rotate(angle);
                 }
+                
+                // Dessiner l'outil avec une taille appropriée
                 ctx.drawImage(toolAsset, -toolSize / 2, -toolSize / 2, toolSize, toolSize);
                 ctx.restore();
             }
