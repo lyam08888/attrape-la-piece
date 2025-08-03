@@ -116,6 +116,8 @@ function generateColumns(game, config, startX, width) {
         const randomCorrection = (SeededRandom.random() - 0.5) * 25;
         
         groundY += Math.floor(seedCorrection1 + seedCorrection2 + seedCorrection3 + randomCorrection);
+        // Ensure the ground level stays within valid world bounds after corrections
+        groundY = Math.max(minY, Math.min(maxY, groundY));
         
         // === SYSTÈME DE BIOMES ULTRA-COMPLEXE ET VARIÉ ===
         
@@ -400,7 +402,8 @@ function generateColumns(game, config, startX, width) {
         
         // Océans et lacs
         if (biome === 'ocean' || (groundY < surfaceLevel - 5)) {
-            for (let y = groundY + 1; y < Math.max(surfaceLevel, groundY + 10); y++) {
+            const waterMaxY = Math.min(worldHeightInTiles, Math.max(surfaceLevel, groundY + 10));
+            for (let y = groundY + 1; y < waterMaxY; y++) {
                 if (game.tileMap[y][x] === TILE.AIR) {
                     game.tileMap[y][x] = TILE.WATER;
                 }
