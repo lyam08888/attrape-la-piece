@@ -270,6 +270,33 @@ export class QuestSystem {
         return this.questLog.slice(-10); // Derniers 10 messages
     }
 
+    /**
+     * Met à jour le système de quêtes.
+     * Cette méthode est principalement un point d'extension
+     * appelé à chaque frame par la boucle de jeu. Les quêtes
+     * actuelles n'ont pas de logique temps-réel, mais la présence
+     * de cette méthode évite une erreur lorsque le jeu tente de
+     * l'invoquer.
+     * @param {Object} [game] - Référence optionnelle au jeu
+     * @param {number} [delta] - Temps écoulé depuis la dernière mise à jour
+     */
+    update(game, delta) {
+        // Pour l'instant, les quêtes n'ont pas besoin d'une mise à jour
+        // continue. Cette méthode existe pour assurer la compatibilité
+        // avec le moteur de jeu et peut être étendue plus tard.
+    }
+
+    /**
+     * Dessine les informations de quête. Le rendu de l'interface des
+     * quêtes est géré via le DOM, mais une méthode vide est fournie
+     * pour rester compatible avec le pipeline de rendu du jeu.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Object} game
+     */
+    draw(ctx, game) {
+        // Pas de dessin sur le canvas pour le moment.
+    }
+
     // Méthodes pour sauvegarder/charger l'état des quêtes
     saveState() {
         return {
