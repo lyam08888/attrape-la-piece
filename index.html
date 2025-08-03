@@ -464,6 +464,10 @@
                 <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
                     <!-- Slots d'inventaire générés dynamiquement -->
                 </div>
+                <div id="chestArea" style="display: none; margin-top: 20px;">
+                    <h3>COFFRE</h3>
+                    <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
+                </div>
                 <div id="craftingArea" style="margin-top: 20px;">
                     <h3>FABRICATION</h3>
                     <div id="craftingGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; margin: 10px auto;">
@@ -473,14 +477,6 @@
                         <div class="inventory-slot" id="resultSlot"></div>
                     </div>
                 </div>
-                <button data-action="close-menu">FERMER</button>
-            </div>
-        </div>
-
-        <div id="chestMenu" class="overlay">
-            <div class="menu-box" style="max-width: 400px;">
-                <h2>COFFRE</h2>
-                <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
@@ -718,46 +714,68 @@
             return loot;
         }
 
-        function showChestInterface(loot) {
-            const chestMenu = document.getElementById('chestMenu');
+        function showChestInterface(chest, game) {
+            const inventoryMenu = document.getElementById('inventoryMenu');
+            const chestArea = document.getElementById('chestArea');
             const chestContents = document.getElementById('chestContents');
-            if (!chestMenu || !chestContents) return;
+            if (!inventoryMenu || !chestArea || !chestContents) return;
 
-            chestContents.innerHTML = '';
+            game.openChest = chest;
 
-            loot.forEach(lootItem => {
-                const slot = document.createElement('div');
-                slot.className = 'inventory-slot';
+            const closeBtn = inventoryMenu.querySelector('[data-action="close-menu"]');
+            const onClose = () => {
+                chestArea.style.display = 'none';
+                game.openChest = null;
+                game.renderChestUI = null;
+                closeBtn.removeEventListener('click', onClose);
+            };
+            closeBtn.addEventListener('click', onClose);
 
-                const icon = document.createElement('img');
-                icon.src = `assets/${lootItem.item}.png`;
-                icon.onerror = () => {
-                    icon.style.display = 'none';
-                    const text = document.createElement('div');
-                    text.textContent = lootItem.item.substring(0, 2).toUpperCase();
-                    text.style.fontSize = '10px';
-                    text.style.color = '#fff';
-                    slot.appendChild(text);
-                };
-                slot.appendChild(icon);
+            function renderChest() {
+                chestContents.innerHTML = '';
+                chest.loot.forEach((lootItem, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = 'inventory-slot';
+                    slot.draggable = true;
+                    slot.addEventListener('dragstart', e => {
+                        e.dataTransfer.setData('text/plain', `chest:${index}`);
+                    });
 
-                if (lootItem.quantity > 1) {
-                    const quantity = document.createElement('div');
-                    quantity.textContent = lootItem.quantity;
-                    quantity.style.position = 'absolute';
-                    quantity.style.bottom = '2px';
-                    quantity.style.right = '2px';
-                    quantity.style.fontSize = '10px';
-                    quantity.style.color = '#fff';
-                    quantity.style.textShadow = '1px 1px 0 #000';
-                    slot.style.position = 'relative';
-                    slot.appendChild(quantity);
-                }
+                    const icon = document.createElement('img');
+                    icon.src = `assets/${lootItem.item}.png`;
+                    icon.onerror = () => {
+                        icon.style.display = 'none';
+                        const text = document.createElement('div');
+                        text.textContent = lootItem.item.substring(0, 2).toUpperCase();
+                        text.style.fontSize = '10px';
+                        text.style.color = '#fff';
+                        slot.appendChild(text);
+                    };
+                    slot.appendChild(icon);
 
-                chestContents.appendChild(slot);
-            });
+                    if (lootItem.quantity > 1) {
+                        const quantity = document.createElement('div');
+                        quantity.textContent = lootItem.quantity;
+                        quantity.style.position = 'absolute';
+                        quantity.style.bottom = '2px';
+                        quantity.style.right = '2px';
+                        quantity.style.fontSize = '10px';
+                        quantity.style.color = '#fff';
+                        quantity.style.textShadow = '1px 1px 0 #000';
+                        slot.style.position = 'relative';
+                        slot.appendChild(quantity);
+                    }
 
-            chestMenu.classList.add('active');
+                    chestContents.appendChild(slot);
+                });
+            }
+
+            game.renderChestUI = renderChest;
+            renderChest();
+
+            chestArea.style.display = 'block';
+            inventoryMenu.classList.add('active');
+            updateInventoryUI(game.inventory, game);
         }
 
         // Système d'événements dynamiques
@@ -1839,28 +1857,11 @@
                         if (!chest.opened && game.player.rectCollide(chest)) {
                             if (keys.action) { // Touche E pour ouvrir
                                 chest.opened = true;
-                                let hasSurvivalItem = false;
-                                chest.loot.forEach(lootItem => {
-                                    game.inventory.addItem(lootItem.item, lootItem.quantity);
-                                    game.logger.log(`Trouvé: ${lootItem.quantity}x ${lootItem.item}`);
-                                    
-                                    // Vérifier si c'est un item de survie
-                                    if (SURVIVAL_ITEMS.some(item => item.toLowerCase().replace(/\s+/g, '_') === lootItem.item)) {
-                                        hasSurvivalItem = true;
-                                    }
-                                });
-                                
                                 game.createParticles(chest.x + chest.w/2, chest.y, 15, '#FFD700');
                                 game.sound.play('chest_open');
                                 game.questSystem.updateQuestProgress('open_chests', { amount: 1 });
                                 game.statistics.chestsOpened++;
-
-                                if (hasSurvivalItem) {
-                                    game.questSystem.updateQuestProgress('collect_survival_items', { amount: 1 });
-                                    game.statistics.survivalItemsFound++;
-                                }
-
-                                showChestInterface(chest.loot);
+                                showChestInterface(chest, game);
                             }
                         }
                     });
