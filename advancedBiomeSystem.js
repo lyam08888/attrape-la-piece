@@ -12,6 +12,8 @@ export class AdvancedBiomeSystem {
         this.animalDistribution = this.initializeAnimalDistribution();
         this.biomeEffects = new Map();
         this.seasonalChanges = new Map();
+        // Biome actuel pour compatibilité avec l'ancien système
+        this.currentBiome = null;
     }
 
     initializeBiomes() {
@@ -840,11 +842,41 @@ export class AdvancedBiomeSystem {
         this.updateTransitionZones(game, delta);
     }
 
+    // Compatibilité avec l'ancien système de biomes
+    updatePlayerBiome(player, game) {
+        if (!player || !game) return;
+
+        const newBiome = this.getBiomeAt(game, player.x, player.y);
+
+        if (newBiome !== this.currentBiome) {
+            // Retirer les effets précédents
+            player.stats?.removeEffect?.('biome');
+
+            this.currentBiome = newBiome;
+
+            // Démarrer le son ambiant du nouveau biome
+            try {
+                const ambient = this.biomes[newBiome]?.ambientSound;
+                if (ambient && game.sound && typeof game.sound.startAmbient === 'function') {
+                    game.sound.startAmbient(ambient);
+                }
+            } catch (error) {
+                console.warn('Erreur changement de biome:', error);
+            }
+        }
+
+        this.applyBiomeEffects(game, player, newBiome);
+    }
+
+    getCurrentBiome() {
+        return this.currentBiome;
+    }
+
     updateBiomeEffects(game, delta) {
         if (!game.player) return;
 
-        const currentBiome = this.getBiomeAt(game, game.player.x, game.player.y);
-        this.applyBiomeEffects(game, game.player, currentBiome);
+        // Utiliser updatePlayerBiome pour éviter les doubles effets
+        this.updatePlayerBiome(game.player, game);
     }
 
     updateSeasonalChanges(game, delta) {

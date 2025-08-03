@@ -2,7 +2,7 @@
 import { TILE } from './world.js';
 import { SeededRandom } from './seededRandom.js';
 
-export class ExplorationSystem {
+class ExplorationSystem {
     constructor(config) {
         this.config = config;
         this.discoveredAreas = new Map();
@@ -377,7 +377,14 @@ export class ExplorationSystem {
             type: type,
             position: { ...position },
             discovered: false,
-            rewards: this.generateLandmarkRewards(type),
+            // Use a static helper to avoid context issues when this method is
+            // called from external systems. Previously the code relied on
+            // `this.generateLandmarkRewards`, but in some integration
+            // scenarios the instance lost its prototype methods which caused
+            // `generateLandmarkRewards` to be undefined. By referencing the
+            // static method on the class we ensure the reward generator is
+            // always available.
+            rewards: ExplorationSystem.generateLandmarkRewards(type),
             description: this.getLandmarkDescription(type),
             interactionRadius: 50
         };
@@ -1016,8 +1023,30 @@ export class ExplorationSystem {
             1000: { xp: 400, items: { 'sky_gem': 3 } },
             2000: { xp: 800, items: { 'wings_of_flight': 1 } }
         };
-        
+
         return rewards[height] || { xp: 50, items: {} };
+    }
+
+    // Static method so that reward generation doesn't depend on instance
+    // state. This prevents context-related issues when called from outside
+    // the class and guarantees the function is always available.
+    static generateLandmarkRewards(type) {
+        const rewards = {
+            'ancient_ruins': { xp: 200, items: { 'ancient_artifact': 1 } },
+            'crystal_formation': { xp: 150, items: { 'crystal': 10 } },
+            'giant_tree': { xp: 120, items: { 'wood': 50, 'fruit': 5 } },
+            'mysterious_portal': { xp: 300, items: { 'portal_fragment': 5 }, abilities: ['dimension_hop'] },
+            'floating_island': { xp: 250, items: { 'cloud_essence': 3, 'wind_crystal': 1 } },
+            'underground_lake': { xp: 180, items: { 'pure_water': 5, 'glow_mushroom': 3 } },
+            'volcanic_crater': { xp: 220, items: { 'fire_essence': 2, 'obsidian': 5 } },
+            'ice_cavern': { xp: 200, items: { 'ice_crystal': 5, 'arctic_fur': 2 } },
+            'golden_statue': { xp: 400, items: { 'gold': 100 } },
+            'energy_nexus': { xp: 260, items: { 'energy_core': 1, 'crystal': 5 } },
+            'time_rift': { xp: 350, items: { 'time_shard': 2 }, abilities: ['time_shift'] },
+            'dimensional_gate': { xp: 500, items: { 'dimensional_key': 1 } }
+        };
+
+        return rewards[type] || { xp: 100, items: {} };
     }
 
     getLandmarkDescription(type) {
@@ -1120,4 +1149,4 @@ export class ExplorationSystem {
     }
 }
 
-export { ExplorationSystem };
+export default ExplorationSystem;

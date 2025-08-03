@@ -138,8 +138,18 @@ export function updateMining(game, keys, mouse, delta) {
 
     const toolName = player.tools[player.selectedToolIndex] || 'hand';
     const breakTime = BLOCK_BREAK_TIME[currentType] || 1;
-    const efficiency = TOOL_EFFICIENCY[toolName]?.[currentType] || 0.5;
 
+    // Vérifier si l'outil actuel peut miner ce type de bloc. S'il n'y a
+    // aucune efficacité définie pour cet outil sur ce bloc, cela signifie
+    // que l'outil n'est pas adapté et ne devrait pas permettre le minage.
+    const toolEfficiency = TOOL_EFFICIENCY[toolName]?.[currentType];
+    if (toolName !== 'hand' && toolEfficiency === undefined) {
+        player.miningProgress = 0;
+        game.miningEffect = null;
+        return; // Outil inadapté : pas de progression de minage
+    }
+
+    const efficiency = toolEfficiency ?? 0.5; // 0.5 = main nue
     const timeToBreak = breakTime / efficiency;
     player.miningProgress += delta / timeToBreak;
     game.miningEffect = { x: target.x, y: target.y, progress: player.miningProgress };

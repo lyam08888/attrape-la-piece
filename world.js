@@ -116,6 +116,8 @@ function generateColumns(game, config, startX, width) {
         const randomCorrection = (SeededRandom.random() - 0.5) * 25;
         
         groundY += Math.floor(seedCorrection1 + seedCorrection2 + seedCorrection3 + randomCorrection);
+        // Ensure the ground level stays within valid world bounds after corrections
+        groundY = Math.max(minY, Math.min(maxY, groundY));
         
         // === SYSTÈME DE BIOMES ULTRA-COMPLEXE ET VARIÉ ===
         
@@ -134,7 +136,7 @@ function generateColumns(game, config, startX, width) {
         const magic = magicNoise + Math.sin(x * 0.001) * 0.3;
         
         // Détection de formations géologiques spéciales
-        const canyonNoise = Math.abs(Perlin.get(x * 0.007, worldSeed + 500));
+        // canyonNoise is already calculated earlier for terrain generation
         const riverNoise = Math.abs(Perlin.get(x * 0.025, worldSeed + 1000));
         const caveNoise = Perlin.get(x * 0.04, worldSeed + 1500);
         const crystalNoise = Perlin.get(x * 0.03, worldSeed + 2000);
@@ -400,8 +402,19 @@ function generateColumns(game, config, startX, width) {
         
         // Océans et lacs
         if (biome === 'ocean' || (groundY < surfaceLevel - 5)) {
-            for (let y = groundY + 1; y < Math.max(surfaceLevel, groundY + 10); y++) {
-                if (game.tileMap[y][x] === TILE.AIR) {
+            const waterMaxY = Math.min(worldHeightInTiles, Math.max(surfaceLevel, groundY + 10));
+            const startY = Math.max(0, groundY + 1);
+            // Ensure each targeted row exists before accessing it to avoid
+            // "Cannot read properties of undefined" errors when the world
+            // height hasn't been fully initialised. This can happen during
+            // early world generation when additional rows are generated on the
+            // fly. If a row is missing we create an empty one so the water can
+            // be placed safely.
+            for (let y = startY; y < waterMaxY; y++) {
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
+                }
+                if (game.tileMap[y][x] === TILE.AIR || game.tileMap[y][x] === undefined) {
                     game.tileMap[y][x] = TILE.WATER;
                 }
             }
@@ -410,20 +423,26 @@ function generateColumns(game, config, startX, width) {
         // Rivières
         if (isRiver && biome !== 'desert') {
             const riverDepth = 3;
-            for (let y = groundY - riverDepth; y <= groundY; y++) {
-                if (y >= 0 && y < worldHeightInTiles) {
-                    game.tileMap[y][x] = y === groundY - riverDepth ? TILE.WATER : TILE.AIR;
+            const startY = Math.max(0, groundY - riverDepth);
+            const endY = Math.min(worldHeightInTiles - 1, groundY);
+            for (let y = startY; y <= endY; y++) {
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
                 }
+                game.tileMap[y][x] = y === startY ? TILE.WATER : TILE.AIR;
             }
         }
         
         // Canyons
         if (isCanyon) {
             const canyonDepth = 15 + Math.floor(SeededRandom.random() * 10);
-            for (let y = groundY - canyonDepth; y < groundY; y++) {
-                if (y >= 0) {
-                    game.tileMap[y][x] = TILE.AIR;
+            const startY = Math.max(0, groundY - canyonDepth);
+            const endY = Math.min(worldHeightInTiles - 1, groundY - 1);
+            for (let y = startY; y <= endY; y++) {
+                if (!game.tileMap[y]) {
+                    game.tileMap[y] = [];
                 }
+                game.tileMap[y][x] = TILE.AIR;
             }
         }
 

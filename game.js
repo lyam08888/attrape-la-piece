@@ -339,7 +339,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
 
-        draw(ctx, assets) {
+        // Accepte maintenant delta pour la compatibilité avec le moteur.
+        draw(ctx, assets, delta) {
             if (!game.timeSystem || !game.tileMap.length) return;
 
             const { tileSize, zoom } = config;

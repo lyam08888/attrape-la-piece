@@ -1447,7 +1447,9 @@
                     // Initialiser le système de désastres
                     try {
                         const { DisasterManager } = await import('./disasterManager.js');
-                        game.disasterManager = new DisasterManager(config);
+                        // Passer l'objet de jeu pour que le gestionnaire de désastres
+                        // puisse accéder à la caméra et aux autres propriétés nécessaires
+                        game.disasterManager = new DisasterManager(game);
                         console.log('✅ Système de désastres initialisé');
                     } catch (error) {
                         console.warn('⚠️ Erreur lors de l\'initialisation des désastres:', error);
@@ -1740,7 +1742,13 @@
                     // Mettre à jour les systèmes
                     if (game.particleSystem) game.particleSystem.update();
                     if (game.combatSystem) game.combatSystem.updateDamageNumbers();
-                    if (game.biomeSystem) game.biomeSystem.updatePlayerBiome(game.player, game);
+                    if (game.biomeSystem) {
+                        if (typeof game.biomeSystem.updatePlayerBiome === 'function') {
+                            game.biomeSystem.updatePlayerBiome(game.player, game);
+                        } else if (typeof game.biomeSystem.update === 'function') {
+                            game.biomeSystem.update(game, delta);
+                        }
+                    }
                     if (game.weatherSystem) game.weatherSystem.update(game, delta);
                     if (game.lightingSystem) game.lightingSystem.updateLightMap(game);
                     if (game.advancedLighting) game.advancedLighting.update();
@@ -1810,7 +1818,8 @@
                     }
                 },
 
-                draw(ctx, assets) {
+                // Passe désormais delta comme troisième argument pour les animations.
+                draw(ctx, assets, delta) {
                     try {
                         // Arrière-plan simple
                         ctx.fillStyle = '#87CEEB';
@@ -2209,11 +2218,10 @@
                             }
                         }
 
-                        // Mettre à jour et dessiner les nouveaux systèmes
+                        // Dessiner les nouveaux systèmes
                         if (game.animalManager) {
-                            game.animalManager.update(game, delta);
                             game.animalManager.draw(ctx, assets);
-                            
+
                             // Spawn des animaux périodiquement
                             if (Math.random() < 0.001) {
                                 const animalTypes = ['cow', 'pig', 'chicken', 'sheep', 'rabbit'];
@@ -2222,27 +2230,26 @@
                             }
                         }
                         if (game.foodSystem) {
-                            game.foodSystem.update(game, delta);
                             game.foodSystem.draw(ctx, assets, game);
                         }
-                        
+
                         // Mettre à jour le système d'ennemis
                         if (game.enemySpawner) {
-                            game.enemySpawner.update(game, delta);
+                            game.enemySpawner.draw && game.enemySpawner.draw(ctx, game, assets);
                         }
-                        
-                        // Mettre à jour les PNJ
+
+                        // Dessiner les PNJ
                         if (game.pnjs) {
                             game.pnjs.forEach(pnj => {
-                                if (pnj.update) {
-                                    pnj.update(game, delta);
+                                if (pnj.draw) {
+                                    pnj.draw(ctx, assets, game);
                                 }
                             });
                         }
-                        
-                        // Mettre à jour le système de quêtes
-                        if (game.questSystem) {
-                            game.questSystem.update(game, delta);
+
+                        // Dessiner les quêtes si nécessaire
+                        if (game.questSystem && game.questSystem.draw) {
+                            game.questSystem.draw(ctx, game);
                         }
                     
                     // Dessiner les projectiles
@@ -2512,7 +2519,7 @@
 
                             // Le jeu est maintenant actif
 
-                            logic.draw(ctx, game.assets || {});
+                            logic.draw(ctx, game.assets || {}, delta);
                         } catch (error) {
                             console.error("Erreur dans la boucle de jeu:", error);
                         }

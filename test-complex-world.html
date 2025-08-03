@@ -224,7 +224,9 @@
                 log('Système d\'ennemis initialisé', 'success');
                 
                 const { DisasterManager } = await import('./disasterManager.js');
-                game.disasterManager = new DisasterManager(config);
+                // Fournir l'objet de jeu pour que le gestionnaire de désastres
+                // puisse utiliser la caméra et les autres données du jeu
+                game.disasterManager = new DisasterManager(game);
                 log('Système de désastres initialisé', 'success');
                 
                 const { AdvancedBiomeSystem } = await import('./advancedBiomeSystem.js');

@@ -304,6 +304,42 @@ export class QuestSystem {
             });
         }
     }
+
+    update(game, delta = 0) {
+        // Méthode de mise à jour simple pour éviter les erreurs lorsque
+        // le moteur tente d'appeler questSystem.update().
+        // Les quêtes actuelles n'ont pas de comportement dépendant du temps,
+        // mais cette méthode permettra d'en ajouter facilement plus tard.
+    }
+
+    draw(ctx, game) {
+        // Affiche une superposition basique des quêtes actives et de leur progression.
+        const activeQuests = this.getActiveQuests();
+        if (activeQuests.length === 0) return;
+
+        ctx.save();
+        ctx.font = '12px Arial';
+        const padding = 8;
+        const lineHeight = 14;
+        let width = 0;
+        const lines = activeQuests.map(q => {
+            const line = `${q.title}: ${q.getProgressText()}`;
+            width = Math.max(width, ctx.measureText(line).width);
+            return line;
+        });
+
+        const boxWidth = width + padding * 2;
+        const boxHeight = lineHeight * lines.length + padding * 2;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(10, 10, boxWidth, boxHeight);
+        ctx.fillStyle = '#fff';
+        let y = 10 + padding + lineHeight - 2;
+        lines.forEach(line => {
+            ctx.fillText(line, 10 + padding, y);
+            y += lineHeight;
+        });
+        ctx.restore();
+    }
 }
 
 // Fonction utilitaire pour mettre à jour l'interface des quêtes
