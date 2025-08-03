@@ -31,29 +31,40 @@ function generateColumns(game, config, startX, width) {
     for (let x = startX; x < startX + width; x++) {
         // === GÉNÉRATION DE TERRAIN COMPLEXE ===
         
-        // Bruit continental (forme générale des continents) - AMPLIFIÉE
-        const continentalNoise = Perlin.get(x * 0.002, 0) * 120;
+        // Bruit continental (forme générale des continents) - TRÈS AMPLIFIÉE
+        const continentalNoise = Perlin.get(x * 0.001, 0) * 200;
         
-        // Chaînes de montagnes - PLUS DRAMATIQUES
-        const mountainRidgeNoise = Perlin.get(x * 0.006, 0) * 80;
-        const mountainDetailNoise = Perlin.get(x * 0.015, 0) * 40;
+        // Chaînes de montagnes - EXTRÊMEMENT DRAMATIQUES
+        const mountainRidgeNoise = Perlin.get(x * 0.004, 0) * 150;
+        const mountainDetailNoise = Perlin.get(x * 0.012, 0) * 80;
         
-        // Collines et vallées - PLUS PRONONCÉES
-        const hillNoise = Perlin.get(x * 0.03, 0) * 25;
-        const valleyNoise = Perlin.get(x * 0.05, 0) * 20;
+        // Collines et vallées - TRÈS PRONONCÉES
+        const hillNoise = Perlin.get(x * 0.02, 0) * 60;
+        const valleyNoise = Perlin.get(x * 0.035, 0) * 40;
         
-        // Détails fins du terrain - PLUS VARIÉS
-        const detailNoise = Perlin.get(x * 0.08, 0) * 8;
-        const microNoise = Perlin.get(x * 0.15, 0) * 4;
+        // Détails fins du terrain - TRÈS VARIÉS
+        const detailNoise = Perlin.get(x * 0.06, 0) * 20;
+        const microNoise = Perlin.get(x * 0.12, 0) * 10;
         
-        // Combinaison intelligente des bruits avec plus de variation
+        // Combinaison intelligente des bruits avec énormément de variation
         let terrainHeight = continentalNoise + mountainRidgeNoise + mountainDetailNoise;
-        terrainHeight += hillNoise - Math.abs(valleyNoise) * 0.8; // Vallées plus profondes
+        terrainHeight += hillNoise - Math.abs(valleyNoise) * 1.2; // Vallées beaucoup plus profondes
         terrainHeight += detailNoise + microNoise;
         
-        // Terrain beaucoup plus varié
+        // Ajouter des formations spéciales
+        const canyonNoise = Math.abs(Perlin.get(x * 0.008, 500));
+        if (canyonNoise < 0.1) {
+            terrainHeight -= 100; // Canyons profonds
+        }
+        
+        const plateauNoise = Perlin.get(x * 0.003, 1000);
+        if (plateauNoise > 0.6) {
+            terrainHeight += 80; // Plateaux élevés
+        }
+        
+        // Terrain EXTRÊMEMENT varié
         const groundY = Math.max(skyLevel + 5, 
-            Math.min(surfaceLevel + 150, surfaceLevel + Math.floor(terrainHeight)));
+            Math.min(surfaceLevel + 250, surfaceLevel + Math.floor(terrainHeight)));
         
         // === SYSTÈME DE BIOMES INTELLIGENT ===
         

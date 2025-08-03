@@ -241,6 +241,10 @@
             background: linear-gradient(to right, #e74c3c, #c0392b);
         }
 
+        .hunger-fill {
+            background: linear-gradient(to right, #f39c12, #e67e22);
+        }
+
         .bar-text {
             position: absolute;
             top: 50%;
@@ -330,6 +334,12 @@
                     <div class="bar-container">
                         <div class="bar-fill health-fill" id="healthFill"></div>
                         <span class="bar-text">❤️ <span id="healthText">100/100</span></span>
+                    </div>
+                </div>
+                <div id="hungerBar">
+                    <div class="bar-container">
+                        <div class="bar-fill hunger-fill" id="hungerFill"></div>
+                        <span class="bar-text">🍖 <span id="hungerText">100/100</span></span>
                     </div>
                 </div>
                 <div id="timeDisplay">
@@ -2119,6 +2129,27 @@
                             ctx.fillText(`Niveau: ${game.player.stats.level}`, 20, 50);
                             ctx.fillText(`XP: ${game.player.stats.xp}`, 20, 70);
                             ctx.fillText(`Force: ${game.player.stats.strength}`, 20, 90);
+                        }
+                        
+                        // Mettre à jour le HUD
+                        if (game.player) {
+                            // Barre de santé
+                            const healthFill = document.getElementById('healthFill');
+                            const healthText = document.getElementById('healthText');
+                            if (healthFill && healthText) {
+                                const healthPercent = (game.player.health / (game.player.maxHealth || 100)) * 100;
+                                healthFill.style.width = healthPercent + '%';
+                                healthText.textContent = `${Math.floor(game.player.health)}/${game.player.maxHealth || 100}`;
+                            }
+                            
+                            // Barre de faim
+                            const hungerFill = document.getElementById('hungerFill');
+                            const hungerText = document.getElementById('hungerText');
+                            if (hungerFill && hungerText) {
+                                const hungerPercent = (game.player.hunger / game.player.maxHunger) * 100;
+                                hungerFill.style.width = hungerPercent + '%';
+                                hungerText.textContent = `${Math.floor(game.player.hunger)}/${game.player.maxHunger}`;
+                            }
                         }
                         
                         // Afficher le biome actuel
