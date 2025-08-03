@@ -1159,20 +1159,27 @@
 
                     // Positionner le joueur au centre du monde
                     const startXTile = Math.floor(config.worldWidth / config.tileSize / 2);
-                    let playerY = 0;
+                    let playerY = 100; // Position par défaut
+                    
+                    console.log(`Recherche de surface pour le joueur à la colonne ${startXTile}`);
+                    console.log(`TileMap dimensions: ${game.tileMap.length} x ${game.tileMap[0]?.length}`);
                     
                     // Trouver la surface
-                    if (game.tileMap && game.tileMap.length > 0) {
+                    if (game.tileMap && game.tileMap.length > 0 && game.tileMap[0].length > startXTile) {
                         for (let y = 0; y < game.tileMap.length; y++) {
-                            if (game.tileMap[y] && game.tileMap[y][startXTile] > TILE.AIR) {
-                                playerY = (y - 3) * config.tileSize;
+                            const tile = game.tileMap[y][startXTile];
+                            if (tile && tile > TILE.AIR) {
+                                playerY = (y - 2) * config.tileSize; // 2 blocs au-dessus du sol
+                                console.log(`Surface trouvée à y=${y}, joueur positionné à ${playerY}`);
                                 break;
                             }
                         }
                     }
                     
                     game.player.x = startXTile * config.tileSize;
-                    game.player.y = Math.max(100, playerY); // S'assurer que le joueur n'est pas trop haut
+                    game.player.y = playerY;
+                    
+                    console.log(`Position finale du joueur: (${game.player.x}, ${game.player.y})`);
                     
                     // Initialiser les systèmes
                     game.worldAnimator = null; // Désactivé pour l'instant

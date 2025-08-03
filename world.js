@@ -64,11 +64,14 @@ function generateColumns(game, config, startX, width) {
                 } else if (y < hellLevel) {
                     // Couches profondes
                     game.tileMap[y][x] = TILE.OBSIDIAN;
-                } else {
+                } else if (y < worldHeightInTiles - 1) {
                     // Enfer
                     const hellNoise = Perlin.get(x * 0.1, y * 0.1);
                     if (hellNoise > 0.2) game.tileMap[y][x] = TILE.LAVA;
                     else game.tileMap[y][x] = TILE.HELLSTONE;
+                } else {
+                    // Bedrock au fond du monde
+                    game.tileMap[y][x] = TILE.BEDROCK;
                 }
             }
             // Eau entre le niveau d'eau et le sol
@@ -107,12 +110,15 @@ function generateColumns(game, config, startX, width) {
                 const deepNoise = Perlin.get(x * 0.05, y * 0.05);
                 if (deepNoise > 0.3) game.tileMap[y][x] = TILE.OBSIDIAN;
                 else game.tileMap[y][x] = TILE.SCORCHED_STONE;
-            } else {
+            } else if (y < worldHeightInTiles - 1) {
                 // Enfer avec lave et hellstone
                 const hellNoise = Perlin.get(x * 0.1, y * 0.1);
                 if (hellNoise > 0.4) game.tileMap[y][x] = TILE.LAVA;
                 else if (hellNoise > 0.1) game.tileMap[y][x] = TILE.HELLSTONE;
                 else game.tileMap[y][x] = TILE.SOUL_SAND;
+            } else {
+                // Bedrock au fond du monde
+                game.tileMap[y][x] = TILE.BEDROCK;
             }
         }
 
@@ -173,26 +179,52 @@ export function generateLevel(game, config) {
     const { worldWidth = 4096, worldHeight, tileSize } = config;
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
-    game.tileMap = Array(worldHeightInTiles).fill(0).map(() => []);
+    // Initialiser le tileMap avec la bonne largeur
+    const initialWidth = Math.floor(worldWidth / tileSize) || 256;
+    game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(initialWidth).fill(TILE.AIR));
     game.generatedRange = { min: 0, max: 0 };
 
-    const initialWidth = Math.floor(worldWidth / tileSize) || 256;
+    console.log(`Initialisation tileMap: ${worldHeightInTiles} x ${initialWidth}`);
     generateColumns(game, config, 0, initialWidth);
     game.generatedRange.max = initialWidth;
+    
+    // Vérifier que le monde a été généré
+    let solidTiles = 0;
+    for (let y = 0; y < worldHeightInTiles; y++) {
+        for (let x = 0; x < initialWidth; x++) {
+            if (game.tileMap[y][x] > TILE.AIR) {
+                solidTiles++;
+            }
+        }
+    }
+    console.log(`Monde généré: ${solidTiles} blocs solides sur ${worldHeightInTiles * initialWidth} total`);
     config.worldWidth = initialWidth * tileSize;
 }
 
 export function ensureWorldColumns(game, config, fromX, toX) {
     const start = Math.max(0, Math.floor(fromX));
     const end = Math.max(start, Math.floor(toX));
+    const worldHeightInTiles = game.tileMap.length;
 
+    // Étendre le tableau vers la gauche si nécessaire
     if (start < game.generatedRange.min) {
-        generateColumns(game, config, start, game.generatedRange.min - start);
+        const columnsToAdd = game.generatedRange.min - start;
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            const newColumns = Array(columnsToAdd).fill(TILE.AIR);
+            game.tileMap[y] = newColumns.concat(game.tileMap[y]);
+        }
+        generateColumns(game, config, start, columnsToAdd);
         game.generatedRange.min = start;
     }
 
+    // Étendre le tableau vers la droite si nécessaire
     if (end > game.generatedRange.max) {
-        generateColumns(game, config, game.generatedRange.max, end - game.generatedRange.max);
+        const columnsToAdd = end - game.generatedRange.max;
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            const newColumns = Array(columnsToAdd).fill(TILE.AIR);
+            game.tileMap[y] = game.tileMap[y].concat(newColumns);
+        }
+        generateColumns(game, config, game.generatedRange.max, columnsToAdd);
         game.generatedRange.max = end;
     }
 
