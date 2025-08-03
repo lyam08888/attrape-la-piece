@@ -139,14 +139,6 @@ function generateColumns(game, config, startX, width) {
                 switch (biome) {
                     case 'tundra':
                     case 'snowy_mountains':
-                    game.tileMap[y][x] = TILE.AIR;
-                }
-            } else if (y === groundY) {
-                // === SURFACE SELON LE BIOME ===
-                switch (biome) {
-                    case 'tundra':
-                    case 'snowy_mountelines':
-                    case 'frozen_wasteland':
                         game.tileMap[y][x] = TILE.SNOW;
                         break;
                     case 'desert':
@@ -171,9 +163,6 @@ function generateColumns(game, config, startX, width) {
                         else if (mountainSurface < 0.6) game.tileMap[y][x] = TILE.DIRT;
                         else game.tileMap[y][x] = TILE.GRASS;
                         break;
-                    case 'volcanic':
-                        game.tileMap[y][x] = TILE.SCORCHED_STONE;
-                        break;
                     default: // plains
                         game.tileMap[y][x] = TILE.GRASS;
                 }
@@ -189,16 +178,11 @@ function generateColumns(game, config, startX, width) {
                         else game.tileMap[y][x] = TILE.STONE;
                         break;
                     case 'tundra':
-                    case 'frozen_wasteland':
                         if (y === groundY + 1) game.tileMap[y][x] = TILE.DIRT;
                         else game.tileMap[y][x] = TILE.STONE;
                         break;
                     case 'jungle':
                         if (y < groundY + 3) game.tileMap[y][x] = TILE.DIRT;
-                        else game.tileMap[y][x] = TILE.STONE;
-                        break;
-                    case 'volcanic':
-                        if (y < groundY + 2) game.tileMap[y][x] = TILE.SCORCHED_STONE;
                         else game.tileMap[y][x] = TILE.STONE;
                         break;
                     default:
@@ -260,7 +244,7 @@ function generateColumns(game, config, startX, width) {
                 } else {
                     game.tileMap[y][x] = TILE.STONE;
                 }
-            } else if (y < voidLevel) {
+            } else if (y < worldHeightInTiles - 1) {
                 // === ENFER - Paysage infernal complexe ===
                 const hellNoise = Perlin.get(x * 0.1, y * 0.1);
                 const hellDetail = Perlin.get(x * 0.2, y * 0.2);
@@ -276,14 +260,6 @@ function generateColumns(game, config, startX, width) {
                     game.tileMap[y][x] = TILE.SOUL_SAND;
                 } else {
                     game.tileMap[y][x] = TILE.OBSIDIAN;
-                }
-            } else if (y < worldHeightInTiles - 1) {
-                // === COUCHE DU VIDE ===
-                const voidNoise = Perlin.get(x * 0.05, y * 0.05);
-                if (voidNoise > 0.2) {
-                    game.tileMap[y][x] = TILE.VOID_STONE;
-                } else {
-                    game.tileMap[y][x] = TILE.AIR;
                 }
             } else {
                 // === BEDROCK - Fond indestructible ===
@@ -449,8 +425,6 @@ function getBiomeDepth(biome) {
         case 'tundra': return 4;
         case 'mountains': return 3;
         case 'ocean': return 15;
-        case 'volcanic': return 5;
-        case 'frozen_wasteland': return 3;
         default: return 5;
     }
 }
@@ -465,8 +439,6 @@ function getBiomeOreModifier(biome) {
             return { copper: 1.5, coal: 1.5, iron: 0.8 }; // Plus de charbon organique
         case 'tundra':
             return { copper: 0.3, coal: 0.3, iron: 2.0 }; // Beaucoup de fer, peu de charbon
-        case 'volcanic':
-            return { copper: 3.0, coal: 0.2, iron: 3.0, gold: 2.0 }; // Beaucoup de minerais précieux
         default:
             return { copper: 1.0, coal: 1.0, iron: 1.0 };
     }
@@ -490,12 +462,6 @@ function getBiomeStoneType(biome) {
             if (rand < 0.5) return TILE.STONE;
             else if (rand < 0.8) return TILE.ANDESITE;
             else return TILE.DIORITE;
-        case 'volcanic':
-            if (rand < 0.7) return TILE.BASALT;
-            else return TILE.SCORCHED_STONE;
-        case 'frozen_wasteland':
-            if (rand < 0.6) return TILE.ICE;
-            else return TILE.STONE;
         default:
             if (rand < 0.7) return TILE.STONE;
             else if (rand < 0.85) return TILE.GRANITE;
@@ -515,7 +481,6 @@ function getTreeChance(biome) {
         case 'mountains': return 0.06;   // Arbres de montagne
         case 'desert': return 0.001;     // Presque pas d'arbres
         case 'snowy_mountains': return 0.03; // Conifères
-        case 'frozen_wasteland': return 0.01; // Arbres gelés
         default: return 0.05;
     }
 }
@@ -528,7 +493,6 @@ function getVegetationChance(biome) {
         case 'savanna': return 0.10;
         case 'desert': return 0.02;
         case 'tundra': return 0.01;
-        case 'frozen_wasteland': return 0.005;
         default: return 0.08;
     }
 }
@@ -552,12 +516,6 @@ function generateBiomeTree(game, x, groundY, biome, worldHeight) {
             break;
         case 'savanna':
             generateAcaciaTree(game, x, groundY, worldHeight);
-            break;
-        case 'frozen_wasteland':
-            generateFrozenTree(game, x, groundY, worldHeight);
-            break;
-        case 'volcanic':
-            generateVolcanicTree(game, x, groundY, worldHeight);
             break;
         default:
             generateOakTree(game, x, groundY, worldHeight);
@@ -675,3 +633,65 @@ function generatePineTree(game, x, groundY, worldHeight) {
     
     // Tronc
     for (let dy = 0; dy < treeHeight; dy++) {
+        const treeY = groundY - 1 - dy;
+        if (treeY > 0) {
+            game.tileMap[treeY][x] = TILE.OAK_WOOD;
+        }
+    }
+    
+    // Feuillage conique
+    for (let layer = 0; layer < 4; layer++) {
+        const layerY = groundY - treeHeight + layer * 2;
+        const layerRadius = 4 - layer;
+        
+        for (let lx = -layerRadius; lx <= layerRadius; lx++) {
+            for (let ly = -1; ly <= 1; ly++) {
+                const leafX = x + lx;
+                const leafY = layerY + ly;
+                if (leafY >= 0 && leafY < worldHeight && leafX >= 0 && 
+                    game.tileMap[leafY]?.[leafX] === TILE.AIR) {
+                    game.tileMap[leafY][leafX] = TILE.OAK_LEAVES;
+                }
+            }
+        }
+    }
+}
+
+function generateAcaciaTree(game, x, groundY, worldHeight) {
+    if (game.tileMap[groundY]?.[x] !== TILE.GRASS && game.tileMap[groundY]?.[x] !== TILE.DIRT) return;
+    
+    const trunkHeight = 4 + Math.floor(SeededRandom.random() * 3);
+    
+    // Tronc
+    for (let dy = 0; dy < trunkHeight; dy++) {
+        const treeY = groundY - 1 - dy;
+        if (treeY > 0) {
+            game.tileMap[treeY][x] = TILE.OAK_WOOD;
+        }
+    }
+    
+    // Couronne plate caractéristique
+    const crownY = groundY - trunkHeight;
+    const crownRadius = 5;
+    for (let lx = -crownRadius; lx <= crownRadius; lx++) {
+        for (let ly = -2; ly <= 1; ly++) {
+            if (Math.abs(lx) + Math.abs(ly) < crownRadius) {
+                const leafX = x + lx;
+                const leafY = crownY + ly;
+                if (leafY >= 0 && leafY < worldHeight && leafX >= 0 && 
+                    game.tileMap[leafY]?.[leafX] === TILE.AIR) {
+                    game.tileMap[leafY][leafX] = TILE.OAK_LEAVES;
+                }
+            }
+        }
+    }
+}
+
+function generateOakTree(game, x, groundY, worldHeight) {
+    if (game.tileMap[groundY]?.[x] !== TILE.GRASS) return;
+    
+    const treeHeight = 5 + Math.floor(SeededRandom.random() * 5);
+    
+    // Tronc
+    for (let dy = 0; dy < treeHeight; dy++) {
+        const tree
