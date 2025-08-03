@@ -18,28 +18,102 @@ export const TILE = {
 
 function generateColumns(game, config, startX, width) {
     const worldHeightInTiles = game.tileMap.length;
+    const skyLevel = Math.floor(worldHeightInTiles * 0.1);
     const surfaceLevel = Math.floor(worldHeightInTiles * 0.4);
     const waterLevel = surfaceLevel + 3;
+    const undergroundLevel = Math.floor(worldHeightInTiles * 0.6);
+    const deepLevel = Math.floor(worldHeightInTiles * 0.8);
+    const hellLevel = Math.floor(worldHeightInTiles * 0.95);
     const { tileSize } = config;
 
     for (let x = startX; x < startX + width; x++) {
-        const groundY = surfaceLevel + Math.floor(Perlin.get(x * 0.05, 0) * 10);
-        if (groundY > waterLevel + 3) {
-            for (let y = groundY; y < worldHeightInTiles; y++) {
-                if (y === groundY) game.tileMap[y][x] = TILE.SAND;
-                else if (y < groundY + 5) game.tileMap[y][x] = TILE.DIRT;
-                else game.tileMap[y][x] = TILE.STONE;
+        // Génération de terrain avec plusieurs octaves de bruit
+        const mainTerrain = Perlin.get(x * 0.01, 0) * 30;
+        const detailTerrain = Perlin.get(x * 0.05, 0) * 10;
+        const microTerrain = Perlin.get(x * 0.1, 0) * 3;
+        const groundY = surfaceLevel + Math.floor(mainTerrain + detailTerrain + microTerrain);
+        
+        // Génération des nuages dans le ciel
+        for (let y = 0; y < skyLevel; y++) {
+            const cloudNoise = Perlin.get(x * 0.02, y * 0.02);
+            if (cloudNoise > 0.3) {
+                game.tileMap[y][x] = TILE.CLOUD;
             }
+        }
+        
+        // Génération du terrain principal
+        if (groundY > waterLevel + 3) {
+            // Zone désertique/plage
+            for (let y = groundY; y < worldHeightInTiles; y++) {
+                if (y === groundY) {
+                    game.tileMap[y][x] = TILE.SAND;
+                } else if (y < groundY + 3) {
+                    game.tileMap[y][x] = TILE.SAND;
+                } else if (y < groundY + 8) {
+                    game.tileMap[y][x] = TILE.DIRT;
+                } else if (y < undergroundLevel) {
+                    game.tileMap[y][x] = TILE.STONE;
+                } else if (y < deepLevel) {
+                    // Couche souterraine avec minerais
+                    const oreChance = SeededRandom.random();
+                    if (oreChance < 0.02) game.tileMap[y][x] = TILE.COAL;
+                    else if (oreChance < 0.035) game.tileMap[y][x] = TILE.IRON;
+                    else if (oreChance < 0.045) game.tileMap[y][x] = TILE.GOLD;
+                    else if (oreChance < 0.05) game.tileMap[y][x] = TILE.DIAMOND;
+                    else game.tileMap[y][x] = TILE.STONE;
+                } else if (y < hellLevel) {
+                    // Couches profondes
+                    game.tileMap[y][x] = TILE.OBSIDIAN;
+                } else {
+                    // Enfer
+                    const hellNoise = Perlin.get(x * 0.1, y * 0.1);
+                    if (hellNoise > 0.2) game.tileMap[y][x] = TILE.LAVA;
+                    else game.tileMap[y][x] = TILE.HELLSTONE;
+                }
+            }
+            // Eau entre le niveau d'eau et le sol
             for (let y = waterLevel; y < groundY; y++) {
                 game.tileMap[y][x] = TILE.WATER;
             }
             continue;
         }
 
+        // Terrain normal (herbe)
         for (let y = groundY; y < worldHeightInTiles; y++) {
-            if (y === groundY) game.tileMap[y][x] = TILE.GRASS;
-            else if (y < groundY + 5) game.tileMap[y][x] = TILE.DIRT;
-            else game.tileMap[y][x] = TILE.STONE;
+            if (y === groundY) {
+                game.tileMap[y][x] = TILE.GRASS;
+            } else if (y < groundY + 5) {
+                game.tileMap[y][x] = TILE.DIRT;
+            } else if (y < undergroundLevel) {
+                game.tileMap[y][x] = TILE.STONE;
+            } else if (y < deepLevel) {
+                // Couche souterraine avec minerais variés
+                const oreChance = SeededRandom.random();
+                if (oreChance < 0.015) game.tileMap[y][x] = TILE.COAL;
+                else if (oreChance < 0.025) game.tileMap[y][x] = TILE.IRON;
+                else if (oreChance < 0.032) game.tileMap[y][x] = TILE.GOLD;
+                else if (oreChance < 0.036) game.tileMap[y][x] = TILE.LAPIS;
+                else if (oreChance < 0.038) game.tileMap[y][x] = TILE.DIAMOND;
+                else if (oreChance < 0.04) game.tileMap[y][x] = TILE.AMETHYST;
+                else {
+                    const stoneVariant = SeededRandom.random();
+                    if (stoneVariant < 0.1) game.tileMap[y][x] = TILE.GRANITE;
+                    else if (stoneVariant < 0.2) game.tileMap[y][x] = TILE.DIORITE;
+                    else if (stoneVariant < 0.3) game.tileMap[y][x] = TILE.ANDESITE;
+                    else game.tileMap[y][x] = TILE.STONE;
+                }
+            } else if (y < hellLevel) {
+                // Couches profondes
+                const deepNoise = Perlin.get(x * 0.05, y * 0.05);
+                if (deepNoise > 0.3) game.tileMap[y][x] = TILE.OBSIDIAN;
+                else game.tileMap[y][x] = TILE.SCORCHED_STONE;
+            } else {
+                // Enfer avec lave et hellstone
+                const hellNoise = Perlin.get(x * 0.1, y * 0.1);
+                if (hellNoise > 0.4) game.tileMap[y][x] = TILE.LAVA;
+                else if (hellNoise > 0.1) game.tileMap[y][x] = TILE.HELLSTONE;
+                else game.tileMap[y][x] = TILE.SOUL_SAND;
+            }
         }
 
         if (SeededRandom.random() < 0.05) {

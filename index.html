@@ -1348,6 +1348,37 @@
                     const oldY = game.player.y;
                     game.player.update(keys, mouse, game, delta);
                     
+                    // Physique des fluides - Vérifier si le joueur est dans l'eau ou la lave
+                    const playerTileX = Math.floor((game.player.x + game.player.w/2) / config.tileSize);
+                    const playerTileY = Math.floor((game.player.y + game.player.h/2) / config.tileSize);
+                    const currentTile = game.tileMap[playerTileY]?.[playerTileX];
+                    
+                    if (currentTile === TILE.WATER) {
+                        // Dans l'eau - ralentir le mouvement et réduire la gravité
+                        game.player.vx *= 0.8;
+                        game.player.vy *= 0.9;
+                        if (game.player.vy > 2) game.player.vy = 2; // Vitesse de chute limitée dans l'eau
+                        
+                        // Particules d'eau
+                        if (Math.random() < 0.3) {
+                            game.createParticles(game.player.x + game.player.w/2, game.player.y + game.player.h, 2, '#2196F3', {speed: 1});
+                        }
+                    } else if (currentTile === TILE.LAVA) {
+                        // Dans la lave - dégâts et effets
+                        if (game.player.stats) {
+                            game.player.stats.takeDamage(5); // 5 dégâts par seconde dans la lave
+                        }
+                        game.player.vx *= 0.7; // Mouvement plus lent dans la lave
+                        
+                        // Particules de lave
+                        game.createParticles(game.player.x + game.player.w/2, game.player.y + game.player.h/2, 5, '#FF5722', {speed: 2});
+                        
+                        // Effet visuel de brûlure
+                        if (Math.random() < 0.5) {
+                            game.createParticles(game.player.x + Math.random() * game.player.w, game.player.y + Math.random() * game.player.h, 1, '#FFA000');
+                        }
+                    }
+                    
                     // Gestion des attaques
                     if (mouse.left && game.player.swingTimer <= 0) {
                         game.player.attack(game);
@@ -1653,43 +1684,84 @@
                                     const tileX = x * tileSize;
                                     const tileY = y * tileSize;
                                     
-                                    // Couleurs avancées pour les blocs
-                                    const colors = {
-                                        [TILE.GRASS]: '#4CAF50',
-                                        [TILE.DIRT]: '#8D6E63',
-                                        [TILE.STONE]: '#9E9E9E',
-                                        [TILE.WOOD]: '#795548',
-                                        [TILE.LEAVES]: '#2E7D32',
-                                        [TILE.COAL]: '#424242',
-                                        [TILE.IRON]: '#FF9800',
-                                        [TILE.WATER]: '#2196F3',
-                                        [TILE.SAND]: '#FFC107',
-                                        [TILE.BEDROCK]: '#212121',
-                                        [TILE.CRYSTAL]: '#E1BEE7',
-                                        [TILE.GLOW_MUSHROOM]: '#4FC3F7',
-                                        [TILE.CLOUD]: '#F5F5F5',
-                                        [TILE.HELLSTONE]: '#D32F2F',
-                                        [TILE.LAVA]: '#FF5722',
-                                        [TILE.OAK_WOOD]: '#8D6E63',
-                                        [TILE.OAK_LEAVES]: '#388E3C',
-                                        [TILE.FLOWER_RED]: '#F44336',
-                                        [TILE.FLOWER_YELLOW]: '#FFEB3B',
-                                        [TILE.GOLD]: '#FFD700',
-                                        [TILE.DIAMOND]: '#00BCD4',
-                                        [TILE.LAPIS]: '#3F51B5',
-                                        [TILE.GRANITE]: '#8D6E63',
-                                        [TILE.DIORITE]: '#BDBDBD',
-                                        [TILE.ANDESITE]: '#757575',
-                                        [TILE.HEAVENLY_STONE]: '#E8EAF6',
-                                        [TILE.MOON_ROCK]: '#CFD8DC',
-                                        [TILE.SOUL_SAND]: '#5D4037',
-                                        [TILE.SCORCHED_STONE]: '#BF360C',
-                                        [TILE.OBSIDIAN]: '#263238',
-                                        [TILE.AMETHYST]: '#9C27B0'
+                                    // Mapping des tiles vers les textures
+                                    const tileTextures = {
+                                        [TILE.GRASS]: 'tile_grass',
+                                        [TILE.DIRT]: 'tile_dirt',
+                                        [TILE.STONE]: 'tile_stone',
+                                        [TILE.WOOD]: 'tile_wood',
+                                        [TILE.LEAVES]: 'tile_leaves',
+                                        [TILE.COAL]: 'tile_coal',
+                                        [TILE.IRON]: 'tile_iron',
+                                        [TILE.WATER]: 'tile_water',
+                                        [TILE.CRYSTAL]: 'tile_crystal',
+                                        [TILE.GLOW_MUSHROOM]: 'tile_glow_mushroom',
+                                        [TILE.CLOUD]: 'tile_cloud',
+                                        [TILE.HELLSTONE]: 'tile_hellstone',
+                                        [TILE.LAVA]: 'tile_lava',
+                                        [TILE.SAND]: 'tile_sand',
+                                        [TILE.OAK_WOOD]: 'tile_oak_wood',
+                                        [TILE.OAK_LEAVES]: 'tile_oak_leaves',
+                                        [TILE.FLOWER_RED]: 'tile_flower_red',
+                                        [TILE.FLOWER_YELLOW]: 'tile_flower_yellow',
+                                        [TILE.GOLD]: 'tile_gold',
+                                        [TILE.DIAMOND]: 'tile_diamond',
+                                        [TILE.LAPIS]: 'tile_lapis',
+                                        [TILE.GRANITE]: 'tile_granite',
+                                        [TILE.DIORITE]: 'tile_diorite',
+                                        [TILE.ANDESITE]: 'tile_andesite',
+                                        [TILE.HEAVENLY_STONE]: 'tile_heavenly_stone',
+                                        [TILE.MOON_ROCK]: 'tile_moon_rock',
+                                        [TILE.SOUL_SAND]: 'tile_soul_sand',
+                                        [TILE.SCORCHED_STONE]: 'tile_scorched_stone',
+                                        [TILE.OBSIDIAN]: 'tile_obsidian',
+                                        [TILE.AMETHYST]: 'tile_amethyst'
                                     };
                                     
-                                    ctx.fillStyle = colors[tile] || '#666666';
-                                    ctx.fillRect(tileX, tileY, tileSize, tileSize);
+                                    const textureKey = tileTextures[tile];
+                                    const texture = textureKey ? game.assets[textureKey] : null;
+                                    
+                                    if (texture) {
+                                        // Dessiner avec la texture
+                                        ctx.drawImage(texture, tileX, tileY, tileSize, tileSize);
+                                    } else {
+                                        // Fallback avec couleurs
+                                        const colors = {
+                                            [TILE.GRASS]: '#4CAF50',
+                                            [TILE.DIRT]: '#8D6E63',
+                                            [TILE.STONE]: '#9E9E9E',
+                                            [TILE.WOOD]: '#795548',
+                                            [TILE.LEAVES]: '#2E7D32',
+                                            [TILE.COAL]: '#424242',
+                                            [TILE.IRON]: '#FF9800',
+                                            [TILE.WATER]: '#2196F3',
+                                            [TILE.SAND]: '#FFC107',
+                                            [TILE.BEDROCK]: '#212121',
+                                            [TILE.CRYSTAL]: '#E1BEE7',
+                                            [TILE.GLOW_MUSHROOM]: '#4FC3F7',
+                                            [TILE.CLOUD]: '#F5F5F5',
+                                            [TILE.HELLSTONE]: '#D32F2F',
+                                            [TILE.LAVA]: '#FF5722',
+                                            [TILE.OAK_WOOD]: '#8D6E63',
+                                            [TILE.OAK_LEAVES]: '#388E3C',
+                                            [TILE.FLOWER_RED]: '#F44336',
+                                            [TILE.FLOWER_YELLOW]: '#FFEB3B',
+                                            [TILE.GOLD]: '#FFD700',
+                                            [TILE.DIAMOND]: '#00BCD4',
+                                            [TILE.LAPIS]: '#3F51B5',
+                                            [TILE.GRANITE]: '#8D6E63',
+                                            [TILE.DIORITE]: '#BDBDBD',
+                                            [TILE.ANDESITE]: '#757575',
+                                            [TILE.HEAVENLY_STONE]: '#E8EAF6',
+                                            [TILE.MOON_ROCK]: '#CFD8DC',
+                                            [TILE.SOUL_SAND]: '#5D4037',
+                                            [TILE.SCORCHED_STONE]: '#BF360C',
+                                            [TILE.OBSIDIAN]: '#263238',
+                                            [TILE.AMETHYST]: '#9C27B0'
+                                        };
+                                        ctx.fillStyle = colors[tile] || '#666666';
+                                        ctx.fillRect(tileX, tileY, tileSize, tileSize);
+                                    }
                                     
                                     // Effet de brillance pour les minerais
                                     if ([TILE.COAL, TILE.IRON, TILE.GOLD, TILE.DIAMOND, TILE.CRYSTAL, TILE.AMETHYST].includes(tile)) {
@@ -1784,8 +1856,45 @@
                             if (game.player.draw) {
                                 game.player.draw(ctx, assets, config.playerAnimations);
                             } else {
-                                ctx.fillStyle = '#FF5722';
-                                ctx.fillRect(game.player.x, game.player.y, game.player.w, game.player.h);
+                                // Système d'animation du joueur
+                                let playerTexture = 'player_idle1';
+                                
+                                // Déterminer l'animation selon l'état du joueur
+                                if (Math.abs(game.player.vx) > 0.1) {
+                                    // Animation de marche/course
+                                    const animSpeed = Math.abs(game.player.vx) > 2 ? 200 : 400;
+                                    const frame = Math.floor(Date.now() / animSpeed) % 2;
+                                    if (Math.abs(game.player.vx) > 2) {
+                                        playerTexture = frame === 0 ? 'player_run1' : 'player_run2';
+                                    } else {
+                                        playerTexture = frame === 0 ? 'player_walk1' : 'player_walk2';
+                                    }
+                                } else if (game.player.vy < -0.1) {
+                                    playerTexture = 'player_jump';
+                                } else if (game.player.crouching) {
+                                    playerTexture = 'player_crouch';
+                                } else {
+                                    // Animation idle avec clignement
+                                    const idleFrame = Math.floor(Date.now() / 3000) % 10;
+                                    playerTexture = idleFrame === 0 ? 'player_idle_blink' : 'player_idle1';
+                                }
+                                
+                                const texture = assets[playerTexture];
+                                if (texture) {
+                                    ctx.save();
+                                    // Retourner le sprite si le joueur va vers la gauche
+                                    if (game.player.vx < 0) {
+                                        ctx.scale(-1, 1);
+                                        ctx.drawImage(texture, -game.player.x - game.player.w, game.player.y, game.player.w, game.player.h);
+                                    } else {
+                                        ctx.drawImage(texture, game.player.x, game.player.y, game.player.w, game.player.h);
+                                    }
+                                    ctx.restore();
+                                } else {
+                                    // Fallback avec couleur
+                                    ctx.fillStyle = '#FF5722';
+                                    ctx.fillRect(game.player.x, game.player.y, game.player.w, game.player.h);
+                                }
                             }
                         }
                     
@@ -2005,11 +2114,63 @@
             
             console.log("Chargement des assets...");
             const assets = {};
-            // Charger les assets de base (pour l'instant, on utilise des couleurs)
-            assets.player = null; // Sera rendu avec des couleurs
-            assets.enemy_slime = null;
-            assets.enemy_frog = null;
-            assets.enemy_golem = null;
+            
+            // Fonction pour charger une image
+            const loadImage = (src) => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error(`Impossible de charger: ${src}`));
+                    img.src = src;
+                });
+            };
+            
+            // Liste des assets à charger
+            const assetList = [
+                // Joueur
+                'player_idle1', 'player_walk1', 'player_walk2', 'player_run1', 'player_run2',
+                'player_jump', 'player_crouch', 'player_prone',
+                
+                // Ennemis
+                'enemy_slime', 'enemy_frog', 'enemy_golem',
+                
+                // Tiles de base
+                'tile_grass', 'tile_dirt', 'tile_stone', 'tile_water', 'tile_sand',
+                'tile_wood', 'tile_leaves', 'tile_coal', 'tile_iron', 'tile_gold',
+                'tile_diamond', 'tile_lapis', 'tile_granite', 'tile_diorite', 'tile_andesite',
+                'tile_cloud', 'tile_lava', 'tile_obsidian', 'tile_crystal', 'tile_glow_mushroom',
+                'tile_heavenly_stone', 'tile_moon_rock', 'tile_soul_sand', 'tile_scorched_stone',
+                'tile_amethyst', 'tile_oak_wood', 'tile_oak_leaves', 'tile_flower_red', 'tile_flower_yellow',
+                
+                // Tiles avancés
+                'tile_copper', 'tile_silver', 'tile_platinum', 'tile_emerald', 'tile_ruby',
+                'tile_sapphire', 'tile_topaz', 'tile_garnet', 'tile_jade', 'tile_opal',
+                'tile_marble', 'tile_limestone', 'tile_sandstone', 'tile_basalt', 'tile_slate',
+                'tile_quartz', 'tile_fluorite', 'tile_malachite', 'tile_hematite', 'tile_pyrite',
+                
+                // Outils
+                'tool_pickaxe', 'tool_axe', 'tool_shovel', 'tool_sword', 'tool_bow',
+                
+                // Autres
+                'coin', 'heart', 'bonus', 'flag'
+            ];
+            
+            // Charger tous les assets
+            const loadPromises = assetList.map(async (assetName) => {
+                try {
+                    const img = await loadImage(`assets/${assetName}.png`);
+                    assets[assetName] = img;
+                    return assetName;
+                } catch (error) {
+                    console.warn(`Asset manquant: ${assetName}`);
+                    assets[assetName] = null;
+                    return null;
+                }
+            });
+            
+            const loadedAssets = await Promise.all(loadPromises);
+            const successCount = loadedAssets.filter(a => a !== null).length;
+            console.log(`Assets chargés: ${successCount}/${assetList.length}`);
             
             console.log("Démarrage du moteur...");
             await engine.start(gameLogic);
