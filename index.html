@@ -1426,8 +1426,92 @@
                         console.warn('⚠️ Erreur lors de l\'intégration du monde complexe:', error);
                     }
                     
+                    // Initialiser le système de quêtes
+                    try {
+                        const { QuestSystem } = await import('./questSystem.js');
+                        game.questSystem = new QuestSystem();
+                        console.log('✅ Système de quêtes initialisé');
+                    } catch (error) {
+                        console.warn('⚠️ Erreur lors de l\'initialisation des quêtes:', error);
+                    }
+                    
+                    // Initialiser le système d'ennemis
+                    try {
+                        const { EnemySpawner } = await import('./enemySpawner.js');
+                        game.enemySpawner = new EnemySpawner(config);
+                        console.log('✅ Système d\'ennemis initialisé');
+                    } catch (error) {
+                        console.warn('⚠️ Erreur lors de l\'initialisation des ennemis:', error);
+                    }
+                    
+                    // Initialiser le système de désastres
+                    try {
+                        const { DisasterManager } = await import('./disasterManager.js');
+                        game.disasterManager = new DisasterManager(config);
+                        console.log('✅ Système de désastres initialisé');
+                    } catch (error) {
+                        console.warn('⚠️ Erreur lors de l\'initialisation des désastres:', error);
+                    }
+                    
+                    // Initialiser le système de biomes avancé
+                    try {
+                        const { AdvancedBiomeSystem } = await import('./advancedBiomeSystem.js');
+                        game.advancedBiomeSystem = new AdvancedBiomeSystem(config);
+                        console.log('✅ Système de biomes avancé initialisé');
+                    } catch (error) {
+                        console.warn('⚠️ Erreur lors de l\'initialisation des biomes:', error);
+                    }
+                    
                     // Assigner la référence globale
                     window.game = game;
+                    
+                    // Ajouter des commandes de débogage
+                    window.debugCommands = {
+                        spawnAnimal: (type = 'cow') => {
+                            if (game.animalManager) {
+                                game.animalManager.spawnAnimal(game, type);
+                                console.log(`Animal ${type} spawné`);
+                            }
+                        },
+                        triggerDisaster: (type = 'meteor_shower') => {
+                            if (game.disasterManager) {
+                                game.disasterManager.triggerDisaster(type, { intensity: 0.5 });
+                                console.log(`Désastre ${type} déclenché`);
+                            }
+                        },
+                        addFood: (type = 'food_apple', amount = 10) => {
+                            if (game.player && game.player.foodInventory) {
+                                game.player.foodInventory[type] = (game.player.foodInventory[type] || 0) + amount;
+                                console.log(`Ajouté ${amount} ${type}`);
+                            }
+                        },
+                        teleport: (x, y) => {
+                            if (game.player) {
+                                game.player.x = x;
+                                game.player.y = y;
+                                console.log(`Téléporté à (${x}, ${y})`);
+                            }
+                        },
+                        showStats: () => {
+                            console.log('=== STATISTIQUES DU JEU ===');
+                            console.log(`Animaux: ${game.animalManager?.animals?.length || 0}`);
+                            console.log(`Ennemis: ${game.enemies?.length || 0}`);
+                            console.log(`Collectibles: ${game.collectibles?.length || 0}`);
+                            console.log(`Particules: ${game.particles?.length || 0}`);
+                            if (game.player) {
+                                console.log(`Joueur: (${Math.floor(game.player.x)}, ${Math.floor(game.player.y)})`);
+                                console.log(`Santé: ${game.player.health}/${game.player.maxHealth || 100}`);
+                                console.log(`Faim: ${game.player.hunger}/${game.player.maxHunger}`);
+                            }
+                        }
+                    };
+                    
+                    console.log('🎮 Commandes de débogage disponibles:');
+                    console.log('debugCommands.spawnAnimal("cow") - Spawner un animal');
+                    console.log('debugCommands.triggerDisaster("meteor_shower") - Déclencher un désastre');
+                    console.log('debugCommands.addFood("food_apple", 10) - Ajouter de la nourriture');
+                    console.log('debugCommands.teleport(x, y) - Téléporter le joueur');
+                    console.log('debugCommands.showStats() - Afficher les statistiques');
                 },
 
                 update(delta, keys, mouse) {
@@ -2099,12 +2183,26 @@
                             }
                         }
 
-                        // Dessiner les nouveaux systèmes
+                        // Mettre à jour et dessiner les nouveaux systèmes
                         if (game.animalManager) {
+                            game.animalManager.update(game, delta);
                             game.animalManager.draw(ctx, assets);
+                            
+                            // Spawn des animaux périodiquement
+                            if (Math.random() < 0.001) {
+                                const animalTypes = ['cow', 'pig', 'chicken', 'sheep', 'rabbit'];
+                                const randomType = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+                                game.animalManager.spawnAnimal(game, randomType);
+                            }
                         }
                         if (game.foodSystem) {
+                            game.foodSystem.update(game, delta);
                             game.foodSystem.draw(ctx, assets, game);
+                        }
+                        
+                        // Mettre à jour le système d'ennemis
+                        if (game.enemySpawner) {
+                            game.enemySpawner.update(game, delta);
                         }
                     
                     // Dessiner les projectiles

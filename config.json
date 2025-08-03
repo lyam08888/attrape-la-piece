@@ -21,7 +21,9 @@
     "checkpointCount": 5,
     "complexWorld": true,
     "biomeCount": 12,
-    "landmarkCount": 15
+    "landmarkCount": 15,
+    "animalCount": 30,
+    "foodSourceCount": 25
   },
   "physics": {
     "gravity": 0.35,

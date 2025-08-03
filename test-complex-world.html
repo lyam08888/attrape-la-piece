@@ -7,413 +7,445 @@
     <style>
         body {
             margin: 0;
-            padding: 0;
-            background: #000;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
             color: #fff;
-            font-family: 'VT323', monospace;
-            overflow: hidden;
         }
         
-        #gameCanvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        #toolbar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 5px;
-            pointer-events: auto;
-        }
-        
-        .toolbar-slot {
-            width: 48px;
-            height: 48px;
-            border: 2px solid #666;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
-        .toolbar-slot.selected {
-            border-color: #FFD700;
-            box-shadow: 0 0 10px #FFD700;
-        }
-        
-        .toolbar-slot img {
-            width: 32px;
-            height: 32px;
-            image-rendering: pixelated;
-        }
-        
-        #debugPanel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.8);
-            border: 2px solid #666;
+        .test-section {
+            background: #2a2a2a;
+            margin: 20px 0;
+            padding: 20px;
             border-radius: 8px;
-            padding: 15px;
-            min-width: 250px;
-            pointer-events: auto;
+            border-left: 4px solid #4CAF50;
         }
         
-        #debugPanel h3 {
-            margin: 0 0 10px 0;
-            color: #FFD700;
+        .test-section.error {
+            border-left-color: #f44336;
         }
         
-        #debugPanel button {
-            background: #333;
-            color: #fff;
-            border: 1px solid #666;
-            padding: 5px 10px;
-            margin: 2px;
-            cursor: pointer;
-            font-family: inherit;
+        .test-section.warning {
+            border-left-color: #ff9800;
         }
         
-        #debugPanel button:hover {
-            background: #555;
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
         }
         
-        #worldInfoPanel {
-            position: absolute;
-            top: 200px;
-            right: 20px;
-            width: 200px;
-            background: rgba(0,0,0,0.8);
-            border: 2px solid #666;
-            border-radius: 8px;
-            padding: 10px;
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
             color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button.danger {
+            background: #f44336;
+        }
+        
+        button.danger:hover {
+            background: #da190b;
+        }
+        
+        .log-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
             font-size: 12px;
-            font-family: 'VT323', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
         }
         
-        #controls {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            background: rgba(0,0,0,0.8);
-            border: 2px solid #666;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 12px;
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
         
-        .control-group {
-            margin-bottom: 5px;
-        }
-        
-        .key {
+        .status-item {
             background: #333;
-            border: 1px solid #666;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: bold;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .status-item.success {
+            background: #2e7d32;
+        }
+        
+        .status-item.error {
+            background: #c62828;
+        }
+        
+        .status-item.warning {
+            background: #f57c00;
+        }
+        
+        canvas {
+            border: 2px solid #666;
+            margin: 20px 0;
+            display: block;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="hud">
-        <div id="toolbar"></div>
+    <div class="test-container">
+        <h1>🧪 Test du Monde Complexe</h1>
         
-        <div id="debugPanel">
-            <h3>🔧 Debug - Monde Complexe</h3>
-            <div>
-                <button onclick="testExplosion()">💥 Explosion</button>
-                <button onclick="testEarthquake()">🌍 Tremblement</button>
-                <button onclick="testMeteor()">☄️ Météore</button>
-                <button onclick="testVolcano()">🌋 Volcan</button>
-            </div>
-            <div>
-                <button onclick="spawnAnimals()">🐾 Spawner Animaux</button>
-                <button onclick="generateLandmark()">🏛️ Landmark</button>
-                <button onclick="changeBiome()">🌿 Changer Biome</button>
-            </div>
-            <div>
-                <button onclick="showStats()">📊 Statistiques</button>
-                <button onclick="toggleWeather()">🌦️ Météo</button>
+        <div class="test-section">
+            <h2>🎮 Contrôles de Test</h2>
+            <div class="test-controls">
+                <button onclick="initializeGame()">🚀 Initialiser le Jeu</button>
+                <button onclick="testWorldGeneration()">🌍 Tester Génération</button>
+                <button onclick="testAnimalSystem()">🐄 Tester Animaux</button>
+                <button onclick="testFoodSystem()">🍎 Tester Nourriture</button>
+                <button onclick="testEnemySystem()">👹 Tester Ennemis</button>
+                <button onclick="testDisasters()">⚡ Tester Désastres</button>
+                <button onclick="testBiomes()">🌲 Tester Biomes</button>
+                <button onclick="clearLogs()" class="danger">🗑️ Vider Logs</button>
             </div>
         </div>
         
-        <div id="controls">
-            <h4>🎮 Contrôles</h4>
-            <div class="control-group">
-                <span class="key">WASD</span> / <span class="key">↑↓←→</span> Déplacement
+        <div class="test-section">
+            <h2>📊 État des Systèmes</h2>
+            <div class="status-grid" id="systemStatus">
+                <!-- Statuts générés dynamiquement -->
             </div>
-            <div class="control-group">
-                <span class="key">SPACE</span> Saut / Vol
-            </div>
-            <div class="control-group">
-                <span class="key">E</span> Interaction / Minage
-            </div>
-            <div class="control-group">
-                <span class="key">1-9</span> Sélection d'outil
-            </div>
-            <div class="control-group">
-                <span class="key">Mouse</span> Viser / Cliquer
-            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🖼️ Aperçu du Monde</h2>
+            <canvas id="worldPreview" width="800" height="400"></canvas>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Logs de Test</h2>
+            <div class="log-output" id="testLogs"></div>
         </div>
     </div>
 
     <script type="module">
-        // Configuration de test pour le monde complexe
-        const testConfig = {
-            version: "0.02-complex",
-            tileSize: 16,
-            zoom: 2,
-            worldWidth: 4096,
-            worldHeight: 2048,
-            chunkSize: 32,
-            renderDistance: 12,
-            generation: { 
-                enemyCount: 15, 
-                treeCount: 30,
-                complexWorld: true,
-                biomeCount: 8,
-                landmarkCount: 12
-            },
-            physics: {
-                gravity: 0.35,
-                jumpForce: 8,
-                playerSpeed: 3,
-                friction: 0.85,
-                airResistance: 0.98,
-                maxFallSpeed: 10,
-                groundAcceleration: 0.4,
-                airAcceleration: 0.2
-            },
-            player: {
-                width: 64,
-                height: 64,
-                hitbox: { offsetX: 8, offsetY: 8, width: 48, height: 48 }
-            },
-            playerAnimations: {
-                idle: ["player_idle1", "player_idle2"],
-                walking: ["player_walk1", "player_walk2"],
-                running: ["player_run1", "player_run2"],
-                jumping: ["player_jump"],
-                doubleJump: ["player_double_jump1", "player_double_jump2"],
-                flying: ["player_fly1", "player_fly2"],
-                crouching: ["player_crouch"],
-                crouchWalking: ["player_crouch_walk1", "player_crouch_walk2"],
-                prone: ["player_prone"],
-                proneWalking: ["player_prone_walk1", "player_prone_walk2"]
-            },
-            showParticles: true,
-            weatherEffects: true,
-            dynamicLighting: true,
-            soundVolume: 0.8,
-            mobileMode: false
-        };
-
-        // Fonctions de test pour le debug panel
-        window.testExplosion = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Déclenchement d\'une explosion');
-                window.complexWorld.triggerEvent('explosion');
-            }
-        };
-
-        window.testEarthquake = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Déclenchement d\'un tremblement de terre');
-                window.complexWorld.triggerEvent('earthquake');
-            }
-        };
-
-        window.testMeteor = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Déclenchement d\'une chute de météore');
-                window.complexWorld.triggerEvent('meteor');
-            }
-        };
-
-        window.testVolcano = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Déclenchement d\'une éruption volcanique');
-                window.complexWorld.triggerEvent('volcanic_eruption');
-            }
-        };
-
-        window.spawnAnimals = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Spawn de 10 animaux');
-                const spawned = window.complexWorld.spawnAnimals(10);
-                console.log(`✅ ${spawned} animaux spawnés`);
-            }
-        };
-
-        window.generateLandmark = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Génération d\'un landmark');
-                window.complexWorld.generateLandmark();
-            }
-        };
-
-        window.changeBiome = function() {
-            if (window.complexWorld) {
-                console.log('🧪 Test: Changement de biome');
-                window.complexWorld.changeBiome('CRYSTAL_CAVES');
-            }
-        };
-
-        window.showStats = function() {
-            if (window.complexWorld) {
-                const stats = window.complexWorld.getStats();
-                console.log('📊 Statistiques du monde complexe:', stats);
-                alert(`📊 Statistiques:\n\nAnimaux: ${stats.totalAnimals}\nBiomes: ${stats.activeBiomes}\nLandmarks: ${stats.totalLandmarks}\nDestructions: ${stats.totalDestructions}\nStructures: ${stats.structuresBuilt}`);
-            }
-        };
-
-        window.toggleWeather = function() {
-            console.log('🧪 Test: Changement de météo (à implémenter)');
-        };
-
-        // Charger le jeu avec la configuration de test
-        console.log('🚀 Chargement du test du monde complexe...');
+        let game = null;
+        let config = null;
         
-        // Simuler le chargement des assets pour le test
-        const mockAssets = {};
+        // Fonction de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('testLogs');
+            const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[TEST] ${message}`);
+        }
         
-        // Créer des images de test pour les tiles
-        const tileTypes = ['grass', 'dirt', 'stone', 'wood', 'water', 'sand', 'ice', 'lava'];
-        tileTypes.forEach(type => {
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 16;
+        // Fonction pour mettre à jour le statut des systèmes
+        function updateSystemStatus() {
+            const statusGrid = document.getElementById('systemStatus');
+            const systems = [
+                { name: 'Monde Complexe', key: 'complexWorldSystem' },
+                { name: 'Animaux', key: 'animalManager' },
+                { name: 'Nourriture', key: 'foodSystem' },
+                { name: 'Ennemis', key: 'enemySpawner' },
+                { name: 'Désastres', key: 'disasterManager' },
+                { name: 'Biomes', key: 'advancedBiomeSystem' },
+                { name: 'Quêtes', key: 'questSystem' },
+                { name: 'Intégration', key: 'worldIntegration' }
+            ];
+            
+            statusGrid.innerHTML = systems.map(system => {
+                const status = game && game[system.key] ? 'success' : 'error';
+                const statusText = status === 'success' ? 'Actif' : 'Inactif';
+                return `
+                    <div class="status-item ${status}">
+                        <h3>${system.name}</h3>
+                        <p>${statusText}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Initialiser le jeu
+        window.initializeGame = async function() {
+            try {
+                log('Initialisation du jeu...', 'info');
+                
+                // Charger la configuration
+                const configResponse = await fetch('./config.json');
+                config = await configResponse.json();
+                log('Configuration chargée', 'success');
+                
+                // Créer l'objet game
+                game = {
+                    tileMap: [],
+                    player: null,
+                    enemies: [],
+                    collectibles: [],
+                    chests: [],
+                    particles: [],
+                    camera: { x: 0, y: 0 },
+                    config: config
+                };
+                
+                // Importer et initialiser les systèmes
+                const { ComplexWorldSystem } = await import('./worldComplexSystem.js');
+                game.complexWorldSystem = new ComplexWorldSystem(config);
+                log('Système de monde complexe initialisé', 'success');
+                
+                const { AnimalManager } = await import('./animalSystem.js');
+                game.animalManager = new AnimalManager();
+                log('Système d\'animaux initialisé', 'success');
+                
+                const { FoodSystem } = await import('./foodSystem.js');
+                game.foodSystem = new FoodSystem();
+                log('Système de nourriture initialisé', 'success');
+                
+                const { EnemySpawner } = await import('./enemySpawner.js');
+                game.enemySpawner = new EnemySpawner(config);
+                log('Système d\'ennemis initialisé', 'success');
+                
+                const { DisasterManager } = await import('./disasterManager.js');
+                game.disasterManager = new DisasterManager(config);
+                log('Système de désastres initialisé', 'success');
+                
+                const { AdvancedBiomeSystem } = await import('./advancedBiomeSystem.js');
+                game.advancedBiomeSystem = new AdvancedBiomeSystem(config);
+                log('Système de biomes avancé initialisé', 'success');
+                
+                const { QuestSystem } = await import('./questSystem.js');
+                game.questSystem = new QuestSystem();
+                log('Système de quêtes initialisé', 'success');
+                
+                const { integrateComplexWorld } = await import('./gameIntegration.js');
+                game.worldIntegration = integrateComplexWorld(game, config, {});
+                log('Intégration du monde complexe réussie', 'success');
+                
+                updateSystemStatus();
+                log('Tous les systèmes initialisés avec succès!', 'success');
+                
+            } catch (error) {
+                log(`Erreur lors de l'initialisation: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+        
+        // Tester la génération de monde
+        window.testWorldGeneration = async function() {
+            if (!game) {
+                log('Veuillez d\'abord initialiser le jeu', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test de génération de monde...', 'info');
+                
+                const { generateLevel } = await import('./world.js');
+                game.tileMap = generateLevel(game, config);
+                
+                log(`Monde généré: ${game.tileMap.length} lignes x ${game.tileMap[0]?.length || 0} colonnes`, 'success');
+                
+                // Dessiner un aperçu du monde
+                drawWorldPreview();
+                
+            } catch (error) {
+                log(`Erreur génération monde: ${error.message}`, 'error');
+            }
+        };
+        
+        // Tester le système d'animaux
+        window.testAnimalSystem = function() {
+            if (!game || !game.animalManager) {
+                log('Système d\'animaux non disponible', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test du système d\'animaux...', 'info');
+                
+                // Spawn quelques animaux de test
+                const animalTypes = ['cow', 'pig', 'chicken', 'sheep', 'rabbit'];
+                animalTypes.forEach(type => {
+                    game.animalManager.spawnAnimal(game, type);
+                });
+                
+                log(`${animalTypes.length} animaux générés pour test`, 'success');
+                log(`Total animaux: ${game.animalManager.animals.length}`, 'info');
+                
+            } catch (error) {
+                log(`Erreur test animaux: ${error.message}`, 'error');
+            }
+        };
+        
+        // Tester le système de nourriture
+        window.testFoodSystem = function() {
+            if (!game || !game.foodSystem) {
+                log('Système de nourriture non disponible', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test du système de nourriture...', 'info');
+                
+                // Générer quelques sources de nourriture
+                game.foodSystem.generateFoodSources(game, 10);
+                
+                log('Sources de nourriture générées', 'success');
+                log(`Fruits sur arbres: ${game.foodSystem.treeFruits.size}`, 'info');
+                log(`Objets alimentaires: ${game.foodSystem.foodItems.length}`, 'info');
+                
+            } catch (error) {
+                log(`Erreur test nourriture: ${error.message}`, 'error');
+            }
+        };
+        
+        // Tester le système d'ennemis
+        window.testEnemySystem = function() {
+            if (!game || !game.enemySpawner) {
+                log('Système d\'ennemis non disponible', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test du système d\'ennemis...', 'info');
+                
+                // Créer un joueur fictif pour les tests
+                if (!game.player) {
+                    game.player = { x: 400, y: 300, w: 32, h: 32 };
+                }
+                
+                // Forcer le spawn de quelques ennemis
+                for (let i = 0; i < 5; i++) {
+                    game.enemySpawner.trySpawnEnemy(game);
+                }
+                
+                log(`Ennemis générés: ${game.enemies.length}`, 'success');
+                
+            } catch (error) {
+                log(`Erreur test ennemis: ${error.message}`, 'error');
+            }
+        };
+        
+        // Tester les désastres
+        window.testDisasters = function() {
+            if (!game || !game.disasterManager) {
+                log('Système de désastres non disponible', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test du système de désastres...', 'info');
+                
+                // Déclencher un désastre de test
+                game.disasterManager.triggerDisaster('meteor_shower', { intensity: 0.5 });
+                
+                log('Désastre déclenché: Pluie de météores', 'success');
+                
+            } catch (error) {
+                log(`Erreur test désastres: ${error.message}`, 'error');
+            }
+        };
+        
+        // Tester les biomes
+        window.testBiomes = function() {
+            if (!game || !game.advancedBiomeSystem) {
+                log('Système de biomes non disponible', 'warning');
+                return;
+            }
+            
+            try {
+                log('Test du système de biomes...', 'info');
+                
+                const biomes = Object.keys(game.advancedBiomeSystem.biomes);
+                log(`Biomes disponibles: ${biomes.length}`, 'success');
+                log(`Biomes: ${biomes.join(', ')}`, 'info');
+                
+                // Tester la détection de biome
+                const currentBiome = game.advancedBiomeSystem.getBiomeAt(400, 300);
+                log(`Biome à (400, 300): ${currentBiome}`, 'info');
+                
+            } catch (error) {
+                log(`Erreur test biomes: ${error.message}`, 'error');
+            }
+        };
+        
+        // Dessiner un aperçu du monde
+        function drawWorldPreview() {
+            const canvas = document.getElementById('worldPreview');
             const ctx = canvas.getContext('2d');
             
-            // Couleurs de test pour chaque type de tile
-            const colors = {
-                grass: '#4CAF50',
-                dirt: '#8D6E63',
-                stone: '#607D8B',
-                wood: '#795548',
-                water: '#2196F3',
-                sand: '#FFC107',
-                ice: '#E1F5FE',
-                lava: '#FF5722'
-            };
+            if (!game.tileMap || !game.tileMap.length) {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Aucun monde généré', canvas.width/2, canvas.height/2);
+                return;
+            }
             
-            ctx.fillStyle = colors[type] || '#666';
-            ctx.fillRect(0, 0, 16, 16);
+            const worldHeight = game.tileMap.length;
+            const worldWidth = game.tileMap[0].length;
+            const scaleX = canvas.width / worldWidth;
+            const scaleY = canvas.height / worldHeight;
             
-            // Ajouter une bordure pour la visibilité
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, 16, 16);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            mockAssets[`tile_${type}`] = canvas;
-        });
-
-        // Créer des sprites de test pour le joueur
-        const playerStates = ['idle1', 'idle2', 'walk1', 'walk2', 'jump', 'run1', 'run2'];
-        playerStates.forEach(state => {
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 64;
-            const ctx = canvas.getContext('2d');
+            // Dessiner un échantillon du monde
+            const sampleRate = Math.max(1, Math.floor(worldWidth / canvas.width));
             
-            // Dessiner un personnage simple
-            ctx.fillStyle = '#FF9800';
-            ctx.fillRect(20, 10, 24, 30); // Corps
-            ctx.fillStyle = '#FFEB3B';
-            ctx.fillRect(24, 5, 16, 16); // Tête
-            ctx.fillStyle = '#000';
-            ctx.fillRect(28, 10, 2, 2); // Œil gauche
-            ctx.fillRect(34, 10, 2, 2); // Œil droit
-            ctx.fillStyle = '#8BC34A';
-            ctx.fillRect(18, 40, 28, 20); // Jambes
+            for (let y = 0; y < worldHeight; y += sampleRate) {
+                for (let x = 0; x < worldWidth; x += sampleRate) {
+                    const tile = game.tileMap[y][x];
+                    if (tile > 0) {
+                        // Couleurs simplifiées pour l'aperçu
+                        const colors = {
+                            1: '#228B22', // Herbe
+                            2: '#8B4513', // Terre
+                            3: '#696969', // Pierre
+                            4: '#DEB887', // Bois
+                            5: '#32CD32', // Feuilles
+                            9: '#4169E1', // Eau
+                            15: '#F4A460' // Sable
+                        };
+                        
+                        ctx.fillStyle = colors[tile] || '#666';
+                        ctx.fillRect(x * scaleX, y * scaleY, scaleX + 1, scaleY + 1);
+                    }
+                }
+            }
             
-            mockAssets[`player_${state}`] = canvas;
-        });
-
-        // Créer des assets d'animaux de test
-        const animalTypes = [
-            'rabbit', 'fox', 'deer', 'bear', 'wolf', 'eagle', 'fish', 'butterfly',
-            'snake', 'frog', 'turtle', 'squirrel', 'owl', 'bat', 'spider', 'bee'
-        ];
+            log('Aperçu du monde mis à jour', 'info');
+        }
         
-        animalTypes.forEach(animal => {
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            
-            // Couleurs aléatoires pour chaque animal
-            const hue = Math.random() * 360;
-            ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
-            ctx.fillRect(4, 8, 24, 16);
-            
-            // Yeux
-            ctx.fillStyle = '#000';
-            ctx.fillRect(8, 12, 2, 2);
-            ctx.fillRect(22, 12, 2, 2);
-            
-            mockAssets[animal] = canvas;
-        });
-
-        console.log('✅ Assets de test créés:', Object.keys(mockAssets).length, 'éléments');
+        // Vider les logs
+        window.clearLogs = function() {
+            document.getElementById('testLogs').textContent = '';
+            log('Logs vidés', 'info');
+        };
         
-        // Message de bienvenue
-        setTimeout(() => {
-            console.log(`
-🌍 MONDE COMPLEXE - TEST INTERACTIF
-=====================================
-
-Le monde complexe est maintenant intégré ! Voici ce que vous pouvez tester :
-
-🔧 PANEL DEBUG (en haut à gauche) :
-   • Déclencher des événements naturels (explosions, tremblements, météores, volcans)
-   • Spawner des animaux intelligents
-   • Générer des landmarks
-   • Changer de biomes
-   • Voir les statistiques
-
-🎮 CONTRÔLES :
-   • WASD ou flèches : Déplacement
-   • SPACE : Saut/Vol
-   • E : Interaction/Minage
-   • 1-9 : Sélection d'outils
-   • Souris : Viser/Cliquer
-
-🌟 FONCTIONNALITÉS :
-   • 12 biomes différents (Paradis → Enfer)
-   • 100+ animaux avec IA intelligente
-   • Système de destruction environnementale
-   • Outils d'exploration avancés
-   • Génération procédurale complexe
-   • Météo dynamique et effets visuels
-
-Explorez et testez les différentes fonctionnalités !
-            `);
-        }, 2000);
-
+        // Initialisation automatique
+        updateSystemStatus();
+        log('Interface de test prête', 'success');
+        log('Cliquez sur "Initialiser le Jeu" pour commencer', 'info');
     </script>
-    
-    <!-- Charger le jeu principal -->
-    <script type="module" src="game.js"></script>
 </body>
 </html>
