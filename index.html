@@ -216,6 +216,8 @@
             background: rgba(0,0,0,0.7);
             padding: 10px;
             border-radius: 8px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 6px rgba(0,0,0,0.5);
             color: white;
             font-size: 12px;
             pointer-events: all;
@@ -224,7 +226,7 @@
         .bar-container {
             position: relative;
             width: 200px;
-            height: 20px;
+            height: 16px;
             background: rgba(0,0,0,0.5);
             border: 2px solid #666;
             border-radius: 4px;
@@ -252,6 +254,19 @@
             transform: translate(-50%, -50%);
             font-size: 10px;
             text-shadow: 1px 1px 0 #000;
+        }
+
+        .hud-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .bar-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+            image-rendering: pixelated;
         }
 
         #minimap {
@@ -331,16 +346,18 @@
              <div id="toolbar"></div>
              <div id="toolInfo" style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 4px; text-align: center; min-width: 150px;"></div>
              <div id="gameInfo">
-                <div id="healthBar">
+                <div id="healthBar" class="hud-bar">
+                    <img src="assets/heart.png" alt="Santé" class="bar-icon">
                     <div class="bar-container">
                         <div class="bar-fill health-fill" id="healthFill"></div>
-                        <span class="bar-text">❤️ <span id="healthText">100/100</span></span>
+                        <span class="bar-text" id="healthText">100/100</span>
                     </div>
                 </div>
-                <div id="hungerBar">
+                <div id="hungerBar" class="hud-bar">
+                    <img src="assets/food_bread.png" alt="Faim" class="bar-icon">
                     <div class="bar-container">
                         <div class="bar-fill hunger-fill" id="hungerFill"></div>
-                        <span class="bar-text">🍖 <span id="hungerText">100/100</span></span>
+                        <span class="bar-text" id="hungerText">100/100</span>
                     </div>
                 </div>
                 <div id="timeDisplay">
@@ -467,6 +484,12 @@
                     <!-- Quêtes générées dynamiquement -->
                 </div>
                 <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+        <div id="gameOverScreen" class="overlay">
+            <div class="menu-box">
+                <h2>GAME OVER</h2>
+                <button data-action="back-to-main-menu">RECOMMENCER</button>
             </div>
         </div>
     </div>
@@ -901,7 +924,7 @@
                 down: keys['ArrowDown'] || keys['s'] || keys['S'],
                 jump: keys[' '] || keys['Space'],
                 run: keys['Shift'],
-                fly: keys['Control'],
+                fly: keys['v'] || keys['V'] || keys['KeyV'],
                 interact: keys['e'] || keys['E']
             });
 
@@ -1149,7 +1172,15 @@
                 updateUI() {
                     if (this.player && this.player.stats) {
                         updatePlayerStatsUI(this.player.stats);
-                        
+
+                        const hungerFill = document.getElementById('hungerFill');
+                        const hungerText = document.getElementById('hungerText');
+                        if (hungerFill && hungerText) {
+                            const hungerPercent = (this.player.hunger / this.player.maxHunger) * 100;
+                            hungerFill.style.width = `${hungerPercent}%`;
+                            hungerText.textContent = `${Math.floor(this.player.hunger)}/${this.player.maxHunger}`;
+                        }
+
                         // Mettre à jour l'affichage du temps
                         if (this.timeSystem) {
                             const timeInfo = this.timeSystem.getTime();
@@ -1767,7 +1798,7 @@
                     // Interaction avec les coffres
                     game.chests.forEach(chest => {
                         if (!chest.opened && game.player.rectCollide(chest)) {
-                            if (keys['KeyE']) { // Touche E pour ouvrir
+                            if (keys.action) { // Touche E pour ouvrir
                                 chest.opened = true;
                                 let hasSurvivalItem = false;
                                 chest.loot.forEach(lootItem => {
@@ -2509,7 +2540,7 @@
                     }
                 },
 
-                isPaused: () => document.getElementById('optionsMenu')?.classList.contains('active') || false,
+                isPaused: () => document.getElementById('optionsMenu')?.classList.contains('active') || document.getElementById('gameOverScreen')?.classList.contains('active') || false,
                 toggleMenu: (menu) => { 
                     if (menu === 'options') {
                         const optionsMenu = document.getElementById('optionsMenu');
@@ -2530,6 +2561,12 @@
                     }
                 }
             };
+
+            document.addEventListener('player-death', () => {
+                const goScreen = document.getElementById('gameOverScreen');
+                if (goScreen) goScreen.classList.add('active');
+                if (game.logger) game.logger.log('☠️ Vous êtes mort !');
+            });
 
             // Créer le moteur de jeu
             const engine = {

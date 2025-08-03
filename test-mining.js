@@ -9,7 +9,8 @@ const mockGame = {
         tools: ['pickaxe', 'bow'],
         selectedToolIndex: 0,
         miningTarget: { x: 0, y: 0, type: TILE.STONE },
-        miningProgress: 0
+        miningProgress: 0,
+        durability: { pickaxe: 100, bow: 100 }
     },
     miningEffect: null
 };

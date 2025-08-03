@@ -159,7 +159,7 @@ export function updateMining(game, keys, mouse, delta) {
     let efficiency = toolEfficiency ?? 0.5; // 0.5 = main nue
     
     if (toolName !== 'hand') {
-        const durability = player.durability[toolName] || 0;
+        const durability = player.durability?.[toolName] ?? Infinity;
         if (durability <= 0) {
             // Outil cassé, vérifier si on peut miner à la main
             if (!handMineable.includes(currentType)) {
@@ -192,15 +192,15 @@ export function updateMining(game, keys, mouse, delta) {
         destroyBlock(game, target.x, target.y, currentType);
         
         // Réduire la durabilité de l'outil (sauf pour la main)
-        if (toolName !== 'hand' && player.durability[toolName] > 0) {
+        if (toolName !== 'hand' && player.durability && player.durability[toolName] > 0) {
             player.durability[toolName] = Math.max(0, player.durability[toolName] - 1);
-            
+
             // Si l'outil est cassé, le remplacer par la main
             if (player.durability[toolName] <= 0) {
                 if (game.logger) game.logger.log(`${toolName} est cassé !`);
                 // L'outil reste dans l'inventaire mais ne peut plus être utilisé
             }
-            
+
             // Mettre à jour la barre d'outils pour refléter la durabilité
             if (game.updateToolbar) game.updateToolbar();
         }

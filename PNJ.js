@@ -18,8 +18,12 @@ export class PNJ {
         this.direction = 1;
         this.actionTimer = 120 + Math.random() * 120; // Temps avant de changer d'action
         this.isGrounded = false;
-        
+
         this.image = this.createImage(pnjData.appearance, pnjData.archetype);
+
+        // Interaction
+        this.playerNearby = false;
+        this.interactionCooldown = 0;
     }
 
     createImage(appearance, archetype) {
@@ -71,6 +75,10 @@ export class PNJ {
 
         this.vy += this.config.physics.gravity;
         this.handleCollisions(game);
+
+        if (this.interactionCooldown > 0) {
+            this.interactionCooldown--;
+        }
     }
     
     handleCollisions(game) {
@@ -119,6 +127,13 @@ export class PNJ {
     draw(ctx) {
         if (this.image.complete) {
             ctx.drawImage(this.image, this.x, this.y, this.w, this.h);
+        }
+
+        if (this.playerNearby) {
+            ctx.font = '12px "VT323"';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText('[E]', this.x + this.w / 2, this.y - 5);
         }
     }
 }
