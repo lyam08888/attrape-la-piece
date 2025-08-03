@@ -35,75 +35,194 @@ function generateColumns(game, config, startX, width) {
     const hellLevel = Math.floor(worldHeightInTiles * 0.90);       // Enfer (90%)
 
     for (let x = startX; x < startX + width; x++) {
-        // === GÉNÉRATION DE TERRAIN COMPLEXE ===
+        // === GÉNÉRATION DE TERRAIN ULTRA-COMPLEXE ET VARIÉ ===
         
-        // Bruit continental (forme générale des continents) - TRÈS AMPLIFIÉE
-        const continentalNoise = Perlin.get(x * 0.001, 0) * 200;
+        // Seed unique pour chaque monde basé sur la position
+        const worldSeed = Math.floor(x / 1000) * 1337 + 42;
+        SeededRandom.setSeed(worldSeed);
         
-        // Chaînes de montagnes - EXTRÊMEMENT DRAMATIQUES
-        const mountainRidgeNoise = Perlin.get(x * 0.004, 0) * 150;
-        const mountainDetailNoise = Perlin.get(x * 0.012, 0) * 80;
+        // Bruit continental avec variations extrêmes
+        const continentalNoise = Perlin.get(x * 0.0008, worldSeed * 0.001) * 300;
+        const continentalVariation = Perlin.get(x * 0.0015, worldSeed * 0.002) * 150;
         
-        // Collines et vallées - TRÈS PRONONCÉES
-        const hillNoise = Perlin.get(x * 0.02, 0) * 60;
-        const valleyNoise = Perlin.get(x * 0.035, 0) * 40;
+        // Système de chaînes de montagnes multi-couches
+        const majorMountainNoise = Perlin.get(x * 0.003, worldSeed * 0.1) * 200;
+        const mountainRidgeNoise = Perlin.get(x * 0.006, worldSeed * 0.2) * 120;
+        const mountainDetailNoise = Perlin.get(x * 0.015, worldSeed * 0.3) * 80;
+        const mountainPeakNoise = Perlin.get(x * 0.025, worldSeed * 0.4) * 50;
         
-        // Détails fins du terrain - TRÈS VARIÉS
-        const detailNoise = Perlin.get(x * 0.06, 0) * 20;
-        const microNoise = Perlin.get(x * 0.12, 0) * 10;
+        // Système de collines et vallées complexe
+        const majorHillNoise = Perlin.get(x * 0.018, worldSeed * 0.5) * 90;
+        const hillNoise = Perlin.get(x * 0.035, worldSeed * 0.6) * 60;
+        const valleyNoise = Perlin.get(x * 0.028, worldSeed * 0.7) * 70;
+        const deepValleyNoise = Perlin.get(x * 0.012, worldSeed * 0.8) * 100;
         
-        // Combinaison intelligente des bruits avec énormément de variation
-        let terrainHeight = continentalNoise + mountainRidgeNoise + mountainDetailNoise;
-        terrainHeight += hillNoise - Math.abs(valleyNoise) * 1.2; // Vallées beaucoup plus profondes
-        terrainHeight += detailNoise + microNoise;
+        // Détails fins multi-fréquences
+        const detailNoise = Perlin.get(x * 0.08, worldSeed * 0.9) * 30;
+        const microNoise = Perlin.get(x * 0.15, worldSeed * 1.0) * 15;
+        const nanoNoise = Perlin.get(x * 0.25, worldSeed * 1.1) * 8;
         
-        // Ajouter des formations spéciales
-        const canyonNoise = Math.abs(Perlin.get(x * 0.008, 500));
-        if (canyonNoise < 0.1) {
-            terrainHeight -= 100; // Canyons profonds
+        // Formations géologiques spéciales
+        const canyonNoise = Math.abs(Perlin.get(x * 0.007, worldSeed + 500));
+        const mesaNoise = Perlin.get(x * 0.004, worldSeed + 1000);
+        const plateauNoise = Perlin.get(x * 0.002, worldSeed + 1500);
+        const ridgeNoise = Math.abs(Perlin.get(x * 0.02, worldSeed + 2000));
+        
+        // Combinaison intelligente avec anti-platitude
+        let terrainHeight = continentalNoise + continentalVariation;
+        terrainHeight += majorMountainNoise + mountainRidgeNoise + mountainDetailNoise + mountainPeakNoise;
+        terrainHeight += majorHillNoise + hillNoise;
+        terrainHeight -= Math.abs(valleyNoise) * 1.5; // Vallées profondes
+        terrainHeight -= Math.abs(deepValleyNoise) * 0.8; // Vallées très profondes
+        terrainHeight += detailNoise + microNoise + nanoNoise;
+        
+        // Formations spéciales dramatiques
+        if (canyonNoise < 0.08) {
+            terrainHeight -= 150 + SeededRandom.random() * 100; // Canyons très profonds
         }
         
-        const plateauNoise = Perlin.get(x * 0.003, 1000);
-        if (plateauNoise > 0.6) {
-            terrainHeight += 80; // Plateaux élevés
+        if (mesaNoise > 0.7) {
+            terrainHeight += 120 + SeededRandom.random() * 80; // Mesas élevées
         }
         
-        // Terrain EXTRÊMEMENT varié avec correction de seedmap
+        if (plateauNoise > 0.65) {
+            terrainHeight += 100 + SeededRandom.random() * 60; // Plateaux variés
+        }
+        
+        if (ridgeNoise < 0.1) {
+            terrainHeight += 80 + Math.sin(x * 0.05) * 40; // Crêtes ondulantes
+        }
+        
+        // Anti-platitude : forcer la variation
+        const flatnessDetection = Math.abs(Perlin.get(x * 0.001, worldSeed + 3000));
+        if (flatnessDetection < 0.3) {
+            // Zone potentiellement plate, ajouter de la variation forcée
+            const antiFlat = Math.sin(x * 0.03) * 60 + Math.cos(x * 0.07) * 40;
+            terrainHeight += antiFlat;
+        }
+        
+        // Terrain final avec seed correction avancée
         let groundY = surfaceLevel + Math.floor(terrainHeight);
         
-        // Appliquer les limites avec plus de flexibilité
-        groundY = Math.max(skyLevel + 10, Math.min(worldHeightInTiles - 50, groundY));
+        // Limites flexibles avec variation
+        const minY = skyLevel + 5 + SeededRandom.random() * 20;
+        const maxY = worldHeightInTiles - 30 - SeededRandom.random() * 40;
+        groundY = Math.max(minY, Math.min(maxY, groundY));
         
-        // Correction de seedmap pour éviter les terrains trop plats
-        const seedCorrection = Math.sin(x * 0.01) * 15;
-        groundY += Math.floor(seedCorrection);
+        // Correction de seed multi-couches pour éviter TOUTE platitude
+        const seedCorrection1 = Math.sin(x * 0.008) * 20;
+        const seedCorrection2 = Math.cos(x * 0.015) * 15;
+        const seedCorrection3 = Math.sin(x * 0.03) * 10;
+        const randomCorrection = (SeededRandom.random() - 0.5) * 25;
         
-        // === SYSTÈME DE BIOMES INTELLIGENT ===
+        groundY += Math.floor(seedCorrection1 + seedCorrection2 + seedCorrection3 + randomCorrection);
         
-        // Facteurs climatiques
-        const temperatureNoise = Perlin.get(x * 0.01, 0);
-        const humidityNoise = Perlin.get(x * 0.012, 1000);
-        const elevationFactor = (groundY - surfaceLevel) / 50.0;
+        // === SYSTÈME DE BIOMES ULTRA-COMPLEXE ET VARIÉ ===
         
-        // Classification des biomes
-        const temperature = temperatureNoise + elevationFactor * -0.3; // Plus froid en altitude
-        const humidity = humidityNoise;
+        // Facteurs climatiques avancés avec seed variation
+        const temperatureNoise = Perlin.get(x * 0.008, worldSeed * 0.01);
+        const humidityNoise = Perlin.get(x * 0.011, worldSeed * 0.02);
+        const windNoise = Perlin.get(x * 0.015, worldSeed * 0.03);
+        const magicNoise = Perlin.get(x * 0.006, worldSeed * 0.04); // Facteur magique pour biomes spéciaux
         
+        const elevationFactor = (groundY - surfaceLevel) / 40.0;
+        const extremeElevation = Math.abs(elevationFactor) > 1.5;
+        
+        // Classification climatique complexe
+        const temperature = temperatureNoise + elevationFactor * -0.4 + windNoise * 0.2;
+        const humidity = humidityNoise + elevationFactor * 0.1 - Math.abs(windNoise) * 0.3;
+        const magic = magicNoise + Math.sin(x * 0.001) * 0.3;
+        
+        // Détection de formations géologiques spéciales
+        const canyonNoise = Math.abs(Perlin.get(x * 0.007, worldSeed + 500));
+        const riverNoise = Math.abs(Perlin.get(x * 0.025, worldSeed + 1000));
+        const caveNoise = Perlin.get(x * 0.04, worldSeed + 1500);
+        const crystalNoise = Perlin.get(x * 0.03, worldSeed + 2000);
+        const volcanicNoise = Perlin.get(x * 0.005, worldSeed + 2500);
+        
+        // Classification de biomes ultra-variée
         let biome = 'plains';
-        if (temperature < -0.4) biome = 'tundra';
-        else if (temperature < -0.2 && elevationFactor > 0.3) biome = 'snowy_mountains';
-        else if (temperature > 0.4 && humidity < -0.2) biome = 'desert';
-        else if (temperature > 0.2 && humidity > 0.3) biome = 'jungle';
-        else if (humidity > 0.4 && groundY < surfaceLevel) biome = 'swamp';
-        else if (elevationFactor > 0.5) biome = 'mountains';
-        else if (humidity < 0 && temperature > 0) biome = 'savanna';
-        else if (groundY < surfaceLevel - 10) biome = 'ocean';
         
-        // Biomes spéciaux basés sur des formations géologiques
-        const caveNoise = Perlin.get(x * 0.05, 0);
-        const riverNoise = Math.abs(Perlin.get(x * 0.03, 500));
-        const isRiver = riverNoise < 0.1 && groundY > surfaceLevel - 20;
-        const isCanyon = Math.abs(Perlin.get(x * 0.02, 2000)) < 0.15 && elevationFactor > 0.2;
+        // Biomes extrêmes d'altitude
+        if (extremeElevation && elevationFactor > 2) {
+            if (temperature < -0.3) biome = 'frozen_peaks';
+            else if (magic > 0.4) biome = 'sky_islands';
+            else biome = 'mountain_peaks';
+        }
+        else if (extremeElevation && elevationFactor < -2) {
+            if (humidity > 0.3) biome = 'deep_caverns';
+            else if (magic > 0.5) biome = 'crystal_caves';
+            else biome = 'underground_lakes';
+        }
+        // Biomes magiques
+        else if (magic > 0.6) {
+            if (temperature > 0.2) biome = 'enchanted_forest';
+            else if (humidity < -0.2) biome = 'crystal_desert';
+            else biome = 'mystic_meadows';
+        }
+        // Biomes volcaniques
+        else if (volcanicNoise > 0.5) {
+            if (temperature > 0.4) biome = 'volcanic_wasteland';
+            else biome = 'geothermal_springs';
+        }
+        // Biomes aquatiques
+        else if (groundY < surfaceLevel - 15) {
+            if (temperature < -0.2) biome = 'frozen_ocean';
+            else if (humidity > 0.4) biome = 'coral_reef';
+            else biome = 'deep_ocean';
+        }
+        else if (riverNoise < 0.08 && groundY > surfaceLevel - 20) {
+            biome = 'river_valley';
+        }
+        // Biomes de canyon
+        else if (canyonNoise < 0.06) {
+            if (temperature > 0.3) biome = 'red_canyon';
+            else biome = 'stone_canyon';
+        }
+        // Biomes climatiques classiques mais variés
+        else if (temperature < -0.5) {
+            if (humidity > 0.2) biome = 'snowy_forest';
+            else biome = 'frozen_tundra';
+        }
+        else if (temperature < -0.2 && elevationFactor > 0.4) {
+            biome = 'snowy_mountains';
+        }
+        else if (temperature > 0.5 && humidity < -0.3) {
+            if (crystalNoise > 0.3) biome = 'crystal_desert';
+            else biome = 'arid_desert';
+        }
+        else if (temperature > 0.3 && humidity > 0.4) {
+            if (elevationFactor < -0.5) biome = 'tropical_swamp';
+            else biome = 'tropical_jungle';
+        }
+        else if (humidity > 0.5 && groundY < surfaceLevel + 10) {
+            biome = 'marshland';
+        }
+        else if (elevationFactor > 0.8) {
+            if (temperature > 0) biome = 'highland_plateau';
+            else biome = 'rocky_mountains';
+        }
+        else if (humidity < -0.1 && temperature > 0.1) {
+            biome = 'dry_savanna';
+        }
+        else if (caveNoise > 0.4) {
+            biome = 'cave_entrance';
+        }
+        else {
+            // Variantes de plaines pour éviter la monotonie
+            const plainsVariant = SeededRandom.random();
+            if (plainsVariant < 0.2) biome = 'flower_meadows';
+            else if (plainsVariant < 0.4) biome = 'rolling_hills';
+            else if (plainsVariant < 0.6) biome = 'grasslands';
+            else if (plainsVariant < 0.8) biome = 'mixed_forest';
+            else biome = 'plains';
+        }
+        
+        // Détection de formations spéciales
+        const isRiver = riverNoise < 0.08 && groundY > surfaceLevel - 25;
+        const isCanyon = canyonNoise < 0.06 && elevationFactor > 0.3;
+        const isCrystalFormation = crystalNoise > 0.6;
+        const isVolcanicVent = volcanicNoise > 0.7 && temperature > 0.3;
         
         // === GÉNÉRATION DES COUCHES SELON LE BIOME ===
         for (let y = 0; y < worldHeightInTiles; y++) {
@@ -429,12 +548,60 @@ export function generateLevel(game, config) {
 
 function getBiomeDepth(biome) {
     switch (biome) {
+        // Biomes aquatiques
+        case 'deep_ocean': return 25;
+        case 'frozen_ocean': return 20;
+        case 'coral_reef': return 18;
+        case 'river_valley': return 8;
+        case 'tropical_swamp': return 12;
+        case 'marshland': return 10;
+        
+        // Biomes désertiques
+        case 'arid_desert': return 15;
+        case 'crystal_desert': return 12;
+        case 'dry_savanna': return 8;
+        
+        // Biomes forestiers
+        case 'tropical_jungle': return 10;
+        case 'enchanted_forest': return 8;
+        case 'snowy_forest': return 6;
+        case 'mixed_forest': return 7;
+        
+        // Biomes montagneux
+        case 'rocky_mountains': return 3;
+        case 'snowy_mountains': return 4;
+        case 'mountain_peaks': return 2;
+        case 'frozen_peaks': return 2;
+        case 'highland_plateau': return 5;
+        
+        // Biomes souterrains
+        case 'deep_caverns': return 20;
+        case 'crystal_caves': return 15;
+        case 'underground_lakes': return 18;
+        case 'cave_entrance': return 12;
+        
+        // Biomes spéciaux
+        case 'volcanic_wasteland': return 8;
+        case 'geothermal_springs': return 10;
+        case 'sky_islands': return 3;
+        case 'mystic_meadows': return 6;
+        case 'red_canyon': return 4;
+        case 'stone_canyon': return 5;
+        case 'frozen_tundra': return 4;
+        
+        // Biomes de plaines variées
+        case 'flower_meadows': return 6;
+        case 'rolling_hills': return 5;
+        case 'grasslands': return 5;
+        
+        // Anciens biomes
         case 'desert': return 12;
         case 'jungle': return 8;
         case 'swamp': return 6;
         case 'tundra': return 4;
         case 'mountains': return 3;
         case 'ocean': return 15;
+        
         default: return 5;
     }
 }
