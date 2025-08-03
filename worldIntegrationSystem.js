@@ -4,7 +4,7 @@ import { AdvancedBiomeSystem } from './advancedBiomeSystem.js';
 import { ExplorationSystem } from './explorationSystem.js';
 import { TILE } from './world.js';
 
-export class WorldIntegrationSystem {
+export default class WorldIntegrationSystem {
     constructor(config) {
         this.config = config;
         this.complexWorldSystem = new ComplexWorldSystem(config);
@@ -971,4 +971,3 @@ export class WorldIntegrationSystem {
     }
 }
 
-export { WorldIntegrationSystem };
