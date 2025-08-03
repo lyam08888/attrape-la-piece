@@ -127,13 +127,27 @@
             left: 50%;
             transform: translate(-50%, -50%) scale(0.9);
             transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            cursor: move;
         }
         .overlay.active .menu-box { transform: translate(-50%, -50%) scale(1); }
         .overlay .menu-box.marked {
             border-color: var(--primary-color);
             box-shadow: 0 0 10px var(--primary-color);
         }
+        .overlay .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            cursor: move;
+        }
+        .overlay .menu-header .minimize-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        .menu-box.minimized .menu-content { display: none; }
         .menu-box {
             background: linear-gradient(to bottom, #2a2a2a, #1e1e1e);
             border: 4px solid var(--border-color);
@@ -147,7 +161,7 @@
         #menu-pane .menu-box {
             background: transparent; border: none; box-shadow: none;
         }
-        .menu-box h2 { font-size: 1.5em; margin-bottom: 25px; color: var(--primary-color); text-shadow: 2px 2px 0px var(--secondary-color); }
+        .menu-box h2 { font-size: 1.5em; margin: 0; color: var(--primary-color); text-shadow: 2px 2px 0px var(--secondary-color); }
         .menu-box button {
             font-family: inherit; font-size: 1em; padding: 12px 20px; cursor: pointer;
             background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
@@ -547,7 +561,8 @@
                     controls: document.getElementById('controlsMenu'),
                     inventory: document.getElementById('inventoryMenu'),
                     character: document.getElementById('characterMenu'),
-                    quests: document.getElementById('questMenu')
+                    quests: document.getElementById('questMenu'),
+                    gameOver: document.getElementById('gameOverScreen')
                 },
                 seedInput: document.getElementById('seed-input')
             };
@@ -584,10 +599,28 @@
             };
 
             let zIndexCounter = 100;
-            const makeDraggable = (overlay) => {
+            const initOverlay = (overlay) => {
                 const box = overlay?.querySelector('.menu-box');
                 if (!box) return;
-                box.addEventListener('mousedown', (e) => {
+                const title = box.querySelector('h2');
+                const header = document.createElement('div');
+                header.className = 'menu-header';
+                if (title) header.appendChild(title);
+                const minimizeBtn = document.createElement('button');
+                minimizeBtn.className = 'minimize-btn';
+                minimizeBtn.textContent = '–';
+                header.appendChild(minimizeBtn);
+                box.prepend(header);
+                const content = document.createElement('div');
+                content.className = 'menu-content';
+                while (header.nextSibling) {
+                    content.appendChild(header.nextSibling);
+                }
+                box.appendChild(content);
+                box.addEventListener('dblclick', () => {
+                    box.classList.toggle('marked');
+                });
+                header.addEventListener('mousedown', (e) => {
                     if (e.target.closest('button')) return;
                     zIndexCounter++;
                     box.style.zIndex = zIndexCounter;
@@ -606,11 +639,11 @@
                         document.removeEventListener('mousemove', onMouseMove);
                     }, { once: true });
                 });
-                box.addEventListener('dblclick', () => {
-                    box.classList.toggle('marked');
+                minimizeBtn.addEventListener('click', () => {
+                    box.classList.toggle('minimized');
                 });
             };
-            Object.values(ui.menus).forEach(makeDraggable);
+            Object.values(ui.menus).forEach(initOverlay);
 
             // Écouteurs d'événements
             document.body.addEventListener('click', (e) => {
