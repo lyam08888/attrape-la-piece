@@ -694,4 +694,251 @@ function generateOakTree(game, x, groundY, worldHeight) {
     
     // Tronc
     for (let dy = 0; dy < treeHeight; dy++) {
-        {
+        const treeY = groundY - 1 - dy;
+        if (treeY > 0) {
+            game.tileMap[treeY][x] = TILE.OAK_WOOD;
+        }
+    }
+    
+    // Feuillage rond
+    const leafRadius = 3;
+    const leafCenterY = groundY - treeHeight;
+    for (let ly = -leafRadius; ly <= leafRadius; ly++) {
+        for (let lx = -leafRadius; lx <= leafRadius; lx++) {
+            if (Math.hypot(lx, ly) < leafRadius + 0.5) {
+                const leafX = x + lx;
+                const leafY = leafCenterY + ly;
+                if (leafY >= 0 && leafY < worldHeight && leafX >= 0 && 
+                    game.tileMap[leafY]?.[leafX] === TILE.AIR) {
+                    game.tileMap[leafY][leafX] = TILE.OAK_LEAVES;
+                }
+            }
+        }
+    }
+}
+
+function generateVegetation(game, x, groundY, biome) {
+    const surfaceTile = game.tileMap[groundY]?.[x];
+    const aboveTile = game.tileMap[groundY - 1]?.[x];
+    
+    if (aboveTile !== TILE.AIR) return;
+    
+    switch (biome) {
+        case 'jungle':
+        case 'plains':
+            if (surfaceTile === TILE.GRASS && SeededRandom.random() < 0.5) {
+                game.tileMap[groundY - 1][x] = SeededRandom.random() < 0.5 ? TILE.FLOWER_RED : TILE.FLOWER_YELLOW;
+            }
+            break;
+        case 'desert':
+            // Petites plantes désertiques (utiliser des fleurs pour représenter)
+            if (surfaceTile === TILE.SAND && SeededRandom.random() < 0.3) {
+                game.tileMap[groundY - 1][x] = TILE.FLOWER_YELLOW;
+            }
+            break;
+        case 'swamp':
+            // Champignons
+            if (surfaceTile === TILE.DIRT && SeededRandom.random() < 0.4) {
+                game.tileMap[groundY - 1][x] = TILE.GLOW_MUSHROOM;
+            }
+            break;
+    }
+}
+
+function generateRockFormation(game, x, groundY, worldHeight) {
+    const formationHeight = 3 + Math.floor(SeededRandom.random() * 5);
+    const formationWidth = 2 + Math.floor(SeededRandom.random() * 3);
+    
+    for (let dy = 0; dy < formationHeight; dy++) {
+        for (let dx = 0; dx < formationWidth; dx++) {
+            const rockY = groundY - dy;
+            const rockX = x + dx;
+            if (rockY >= 0 && rockY < worldHeight && rockX >= 0) {
+                if (game.tileMap[rockY]?.[rockX] === TILE.AIR) {
+                    const stoneType = SeededRandom.random() < 0.7 ? TILE.STONE : TILE.GRANITE;
+                    game.tileMap[rockY][rockX] = stoneType;
+                }
+            }
+        }
+    }
+}
+
+function generateBiomeStructure(game, x, groundY, biome, worldHeight) {
+    switch (biome) {
+        case 'desert':
+            generateOasis(game, x, groundY, worldHeight);
+            break;
+        case 'mountains':
+            generateCave(game, x, groundY, worldHeight);
+            break;
+        case 'jungle':
+            generateTempleRuins(game, x, groundY, worldHeight);
+            break;
+        case 'swamp':
+            generateSwampHut(game, x, groundY, worldHeight);
+            break;
+    }
+}
+
+function generateOasis(game, x, groundY, worldHeight) {
+    const oasisRadius = 4;
+    
+    // Créer un petit lac
+    for (let dx = -oasisRadius; dx <= oasisRadius; dx++) {
+        for (let dy = -2; dy <= 0; dy++) {
+            if (Math.hypot(dx, dy) < oasisRadius) {
+                const oasisX = x + dx;
+                const oasisY = groundY + dy;
+                if (oasisX >= 0 && oasisY >= 0 && oasisY < worldHeight) {
+                    if (dy === 0) {
+                        game.tileMap[oasisY][oasisX] = TILE.WATER;
+                    } else {
+                        game.tileMap[oasisY][oasisX] = TILE.DIRT;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Ajouter quelques palmiers (arbres spéciaux)
+    for (let i = 0; i < 3; i++) {
+        const palmX = x + (SeededRandom.random() - 0.5) * oasisRadius * 2;
+        const palmY = groundY;
+        if (palmX >= 0 && game.tileMap[palmY]?.[Math.floor(palmX)] === TILE.DIRT) {
+            generateOakTree(game, Math.floor(palmX), palmY, worldHeight);
+        }
+    }
+}
+
+function generateCave(game, x, groundY, worldHeight) {
+    const caveDepth = 8 + Math.floor(SeededRandom.random() * 6);
+    const caveWidth = 4 + Math.floor(SeededRandom.random() * 4);
+    
+    for (let dy = 0; dy < caveDepth; dy++) {
+        for (let dx = -Math.floor(caveWidth/2); dx <= Math.floor(caveWidth/2); dx++) {
+            const caveX = x + dx;
+            const caveY = groundY + dy;
+            if (caveX >= 0 && caveY >= 0 && caveY < worldHeight) {
+                if (Math.hypot(dx, dy * 0.5) < caveWidth / 2) {
+                    game.tileMap[caveY][caveX] = TILE.AIR;
+                }
+            }
+        }
+    }
+}
+
+function generateTempleRuins(game, x, groundY, worldHeight) {
+    const ruinHeight = 6;
+    const ruinWidth = 8;
+    
+    // Base du temple
+    for (let dx = 0; dx < ruinWidth; dx++) {
+        for (let dy = 0; dy < 2; dy++) {
+            const ruinX = x + dx;
+            const ruinY = groundY - dy;
+            if (ruinX >= 0 && ruinY >= 0 && ruinY < worldHeight) {
+                game.tileMap[ruinY][ruinX] = TILE.STONE;
+            }
+        }
+    }
+    
+    // Colonnes partiellement détruites
+    for (let col = 1; col < ruinWidth; col += 2) {
+        const columnHeight = 2 + Math.floor(SeededRandom.random() * 4);
+        for (let dy = 0; dy < columnHeight; dy++) {
+            const ruinX = x + col;
+            const ruinY = groundY - 2 - dy;
+            if (ruinX >= 0 && ruinY >= 0 && ruinY < worldHeight) {
+                game.tileMap[ruinY][ruinX] = TILE.STONE;
+            }
+        }
+    }
+}
+
+function generateSwampHut(game, x, groundY, worldHeight) {
+    const hutWidth = 5;
+    const hutHeight = 4;
+    
+    // Base de la hutte
+    for (let dx = 0; dx < hutWidth; dx++) {
+        const hutX = x + dx;
+        const hutY = groundY - 1;
+        if (hutX >= 0 && hutY >= 0 && hutY < worldHeight) {
+            game.tileMap[hutY][hutX] = TILE.OAK_WOOD;
+        }
+    }
+    
+    // Murs
+    for (let dy = 1; dy < hutHeight; dy++) {
+        // Mur gauche
+        const leftX = x;
+        const leftY = groundY - 1 - dy;
+        if (leftX >= 0 && leftY >= 0 && leftY < worldHeight) {
+            game.tileMap[leftY][leftX] = TILE.OAK_WOOD;
+        }
+        
+        // Mur droit
+        const rightX = x + hutWidth - 1;
+        const rightY = groundY - 1 - dy;
+        if (rightX >= 0 && rightY >= 0 && rightY < worldHeight) {
+            game.tileMap[rightY][rightX] = TILE.OAK_WOOD;
+        }
+    }
+    
+    // Toit
+    for (let dx = 0; dx < hutWidth; dx++) {
+        const roofX = x + dx;
+        const roofY = groundY - hutHeight;
+        if (roofX >= 0 && roofY >= 0 && roofY < worldHeight) {
+            game.tileMap[roofY][roofX] = TILE.OAK_LEAVES;
+        }
+    }
+}
+
+export function ensureWorldColumns(game, config, fromX, toX) {
+    const start = Math.max(0, Math.floor(fromX));
+    const end = Math.max(start, Math.floor(toX));
+    const worldHeightInTiles = game.tileMap.length;
+    const currentWidth = game.tileMap[0]?.length || 0;
+
+    console.log(`ensureWorldColumns: ${start} à ${end}, largeur actuelle: ${currentWidth}`);
+
+    // Étendre le tableau vers la droite si nécessaire
+    if (end >= currentWidth) {
+        const newWidth = Math.max(end + 50, currentWidth * 2); // Ajouter une marge
+        console.log(`Extension du monde vers la droite: nouvelle largeur ${newWidth}`);
+        
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            // Étendre chaque ligne
+            const currentRowLength = game.tileMap[y].length;
+            const columnsToAdd = newWidth - currentRowLength;
+            if (columnsToAdd > 0) {
+                const newColumns = Array(columnsToAdd).fill(TILE.AIR);
+                game.tileMap[y] = game.tileMap[y].concat(newColumns);
+            }
+        }
+        
+        // Générer le contenu pour les nouvelles colonnes
+        const startGeneration = Math.max(game.generatedRange.max, currentWidth);
+        const widthToGenerate = newWidth - startGeneration;
+        if (widthToGenerate > 0) {
+            generateColumns(game, config, startGeneration, widthToGenerate);
+            game.generatedRange.max = newWidth;
+        }
+    }
+
+    // Étendre le tableau vers la gauche si nécessaire (plus complexe)
+    if (start < game.generatedRange.min) {
+        const columnsToAdd = game.generatedRange.min - start;
+        console.log(`Extension du monde vers la gauche: ${columnsToAdd} colonnes`);
+        
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            const newColumns = Array(columnsToAdd).fill(TILE.AIR);
+            game.tileMap[y] = newColumns.concat(game.tileMap[y]);
+        }
+        generateColumns(game, config, start, columnsToAdd);
+        game.generatedRange.min = start;
+    }
+
+    config.worldWidth = (game.generatedRange.max - game.generatedRange.min) * config.tileSize;
+}
