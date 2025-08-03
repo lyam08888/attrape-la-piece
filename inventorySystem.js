@@ -1,5 +1,7 @@
 // inventorySystem.js - Système d'inventaire et de crafting
 
+import { SURVIVAL_ITEMS } from './survivalItems.js';
+
 export class InventoryItem {
     constructor(name, quantity = 1, metadata = {}) {
         this.name = name;
@@ -371,6 +373,29 @@ export function updateInventoryUI(inventory, game = null) {
                     }
                     if (typeof game.updateToolbar === 'function') game.updateToolbar();
                     updateInventoryUI(inventory, game);
+                }
+            } else if (data.startsWith('chest:') && game && game.openChest) {
+                const index = parseInt(data.split(':')[1], 10);
+                const lootItem = game.openChest.loot[index];
+                if (lootItem) {
+                    const before = inventory.getItemCount(lootItem.item);
+                    inventory.addItem(lootItem.item, lootItem.quantity);
+                    const added = inventory.getItemCount(lootItem.item) - before;
+                    if (added > 0) {
+                        lootItem.quantity -= added;
+                        game.logger?.log?.(`Trouvé: ${added}x ${lootItem.item}`);
+                        if (SURVIVAL_ITEMS.some(item => item.toLowerCase().replace(/\s+/g, '_') === lootItem.item)) {
+                            game.questSystem?.updateQuestProgress('collect_survival_items', { amount: 1 });
+                            if (game.statistics) {
+                                game.statistics.survivalItemsFound = (game.statistics.survivalItemsFound || 0) + 1;
+                            }
+                        }
+                        if (lootItem.quantity <= 0) {
+                            game.openChest.loot.splice(index, 1);
+                        }
+                        if (game.renderChestUI) game.renderChestUI();
+                        updateInventoryUI(inventory, game);
+                    }
                 }
             }
         });
