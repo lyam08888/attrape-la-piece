@@ -627,6 +627,8 @@
         // Import des nouveaux systèmes
         import { AnimalManager, Animal } from './animalSystem.js';
         import { FoodSystem } from './foodSystem.js';
+        import { ComplexWorldSystem } from './worldComplexSystem.js';
+        import { integrateComplexWorld } from './gameIntegration.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -1414,6 +1416,15 @@
                     game.animalManager = new AnimalManager();
                     game.foodSystem = new FoodSystem();
                     game.particles = [];
+                    game.complexWorldSystem = new ComplexWorldSystem(config);
+                    
+                    // Intégrer le système de monde complexe
+                    try {
+                        game.worldIntegration = integrateComplexWorld(game, config, gameLogic);
+                        console.log('✅ Système de monde complexe intégré');
+                    } catch (error) {
+                        console.warn('⚠️ Erreur lors de l\'intégration du monde complexe:', error);
+                    }
                     
                     // Assigner la référence globale
                     window.game = game;
@@ -1874,14 +1885,54 @@
                             }
                         }
                     
-                        // Dessiner les collectibles
-                        game.collectibles.forEach(item => {
-                            ctx.fillStyle = '#FFD700';
-                            ctx.shadowColor = '#FFD700';
-                            ctx.shadowBlur = 5;
-                            ctx.fillRect(item.x, item.y, item.w, item.h);
-                            ctx.shadowBlur = 0;
-                        });
+                        // Mettre à jour et dessiner les collectibles
+                        if (game.collectibles) {
+                            for (let i = game.collectibles.length - 1; i >= 0; i--) {
+                                const item = game.collectibles[i];
+                                
+                                // Physique des objets
+                                item.vy = (item.vy || 0) + 0.3; // Gravité
+                                item.x += item.vx || 0;
+                                item.y += item.vy || 0;
+                                
+                                // Friction
+                                if (item.vx) item.vx *= 0.98;
+                                if (item.vy) item.vy *= 0.98;
+                                
+                                // Collision avec le sol
+                                const tileY = Math.floor((item.y + item.h) / config.tileSize);
+                                const tileX = Math.floor((item.x + item.w/2) / config.tileSize);
+                                if (game.tileMap[tileY] && game.tileMap[tileY][tileX] > 0) {
+                                    item.y = tileY * config.tileSize - item.h;
+                                    item.vy = 0;
+                                }
+                                
+                                // Durée de vie
+                                if (item.life !== undefined) {
+                                    item.life--;
+                                    if (item.life <= 0) {
+                                        game.collectibles.splice(i, 1);
+                                        continue;
+                                    }
+                                }
+                                
+                                // Dessiner l'objet
+                                ctx.save();
+                                if (item.foodType) {
+                                    // Aliment - couleur spéciale
+                                    ctx.fillStyle = '#32CD32';
+                                    ctx.shadowColor = '#32CD32';
+                                } else {
+                                    // Bloc normal
+                                    ctx.fillStyle = '#FFD700';
+                                    ctx.shadowColor = '#FFD700';
+                                }
+                                ctx.shadowBlur = 5;
+                                ctx.fillRect(item.x, item.y, item.w, item.h);
+                                ctx.shadowBlur = 0;
+                                ctx.restore();
+                            }
+                        }
                         
                         // Dessiner les coffres
                         game.chests.forEach(chest => {
@@ -2080,7 +2131,35 @@
                     }
                     
                     // Dessiner les particules
-                    game.particleSystem.draw(ctx);
+                    if (game.particleSystem) {
+                        game.particleSystem.draw(ctx);
+                    }
+                    
+                    // Dessiner les particules de destruction des blocs
+                    if (game.particles && game.particles.length > 0) {
+                        for (let i = game.particles.length - 1; i >= 0; i--) {
+                            const particle = game.particles[i];
+                            
+                            // Mettre à jour la particule
+                            particle.x += particle.vx;
+                            particle.y += particle.vy;
+                            particle.vy += 0.2; // Gravité
+                            particle.life--;
+                            
+                            // Dessiner la particule
+                            const alpha = particle.life / particle.maxLife;
+                            ctx.save();
+                            ctx.globalAlpha = alpha;
+                            ctx.fillStyle = particle.color;
+                            ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                            ctx.restore();
+                            
+                            // Supprimer si morte
+                            if (particle.life <= 0) {
+                                game.particles.splice(i, 1);
+                            }
+                        }
+                    }
                     
                     // Dessiner les nombres de dégâts
                     game.combatSystem.drawDamageNumbers(ctx, game.camera);
@@ -2154,6 +2233,25 @@
                                 const hungerPercent = (game.player.hunger / game.player.maxHunger) * 100;
                                 hungerFill.style.width = hungerPercent + '%';
                                 hungerText.textContent = `${Math.floor(game.player.hunger)}/${game.player.maxHunger}`;
+                            }
+                            
+                            // Barre de progression du minage
+                            if (game.player.miningTarget && game.player.miningProgress > 0) {
+                                const targetX = game.player.miningTarget.x * config.tileSize - game.camera.x;
+                                const targetY = game.player.miningTarget.y * config.tileSize - game.camera.y;
+                                
+                                // Fond de la barre
+                                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                                ctx.fillRect(targetX, targetY - 10, config.tileSize, 6);
+                                
+                                // Progression
+                                ctx.fillStyle = '#4CAF50';
+                                ctx.fillRect(targetX + 1, targetY - 9, (config.tileSize - 2) * game.player.miningProgress, 4);
+                                
+                                // Bordure
+                                ctx.strokeStyle = '#ffffff';
+                                ctx.lineWidth = 1;
+                                ctx.strokeRect(targetX, targetY - 10, config.tileSize, 6);
                             }
                         }
                         

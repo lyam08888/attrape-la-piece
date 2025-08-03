@@ -68,9 +68,15 @@ function generateColumns(game, config, startX, width) {
             terrainHeight += 80; // Plateaux élevés
         }
         
-        // Terrain EXTRÊMEMENT varié
-        const groundY = Math.max(skyLevel + 5, 
-            Math.min(surfaceLevel + 250, surfaceLevel + Math.floor(terrainHeight)));
+        // Terrain EXTRÊMEMENT varié avec correction de seedmap
+        let groundY = surfaceLevel + Math.floor(terrainHeight);
+        
+        // Appliquer les limites avec plus de flexibilité
+        groundY = Math.max(skyLevel + 10, Math.min(worldHeightInTiles - 50, groundY));
+        
+        // Correction de seedmap pour éviter les terrains trop plats
+        const seedCorrection = Math.sin(x * 0.01) * 15;
+        groundY += Math.floor(seedCorrection);
         
         // === SYSTÈME DE BIOMES INTELLIGENT ===
         
