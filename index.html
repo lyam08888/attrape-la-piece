@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Pixel Adventure 2</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #f9a825;
@@ -280,6 +281,22 @@
             image-rendering: pixelated;
         }
 
+        #environmentInfo {
+            margin-top: 6px;
+        }
+
+        .info-line {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .info-icon {
+            font-size: 14px;
+            margin-right: 6px;
+            color: var(--primary-color);
+        }
+
         #minimap {
             position: absolute;
             top: 20px;
@@ -406,12 +423,11 @@
                         <span class="bar-text" id="hungerText">100/100</span>
                     </div>
                 </div>
-                <div id="timeDisplay">
-                    <span id="gameTime">06:00</span>
-                    <span id="gameDate">Jour 1</span>
-                </div>
-                <div id="biomeDisplay">
-                    <span id="currentBiome">Surface</span>
+                <div id="environmentInfo">
+                    <div class="info-line"><i class="fa-solid fa-clock info-icon"></i><span id="gameTime">06:00</span></div>
+                    <div class="info-line"><i class="fa-solid fa-calendar-day info-icon"></i><span id="gameDate">Jour 1</span></div>
+                    <div class="info-line"><i id="weatherIcon" class="fa-solid fa-sun info-icon"></i><span id="gameWeather">Clair</span></div>
+                    <div class="info-line"><i class="fa-solid fa-mountain info-icon"></i><span id="currentBiome">Surface</span></div>
                 </div>
             </div>
             <div id="disasterMenu">
@@ -1433,20 +1449,39 @@
                             hungerText.textContent = `${Math.floor(this.player.hunger)}/${this.player.maxHunger}`;
                         }
 
-                        // Mettre à jour l'affichage du temps
+                        // Mettre à jour l'affichage du temps et de la météo
                         if (this.timeSystem) {
                             const timeInfo = this.timeSystem.getTime();
                             const dateInfo = this.timeSystem.getDate();
                             const gameTime = document.getElementById('gameTime');
                             const gameDate = document.getElementById('gameDate');
-                            
+                            const gameWeather = document.getElementById('gameWeather');
+                            const weatherIcon = document.getElementById('weatherIcon');
+
                             if (gameTime) {
                                 const pad = n => n.toString().padStart(2, '0');
                                 gameTime.textContent = `${pad(timeInfo.hour)}:${pad(timeInfo.minute)}`;
                             }
-                            
+
                             if (gameDate) {
                                 gameDate.textContent = `Jour ${dateInfo.day}`;
+                            }
+
+                            if (this.weatherSystem && gameWeather) {
+                                const currentWeather = this.weatherSystem.getCurrentWeather();
+                                gameWeather.textContent = currentWeather.name;
+                                if (weatherIcon) {
+                                    const iconMap = {
+                                        'Clair': 'fa-sun',
+                                        'Pluie': 'fa-cloud-showers-heavy',
+                                        'Orage': 'fa-cloud-bolt',
+                                        'Neige': 'fa-snowflake',
+                                        'Brouillard': 'fa-smog',
+                                        'Tempête de sable': 'fa-wind'
+                                    };
+                                    const iconClass = iconMap[currentWeather.name] || 'fa-sun';
+                                    weatherIcon.className = `fa-solid ${iconClass} info-icon`;
+                                }
                             }
                         }
                     }
