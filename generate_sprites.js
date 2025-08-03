@@ -51,7 +51,6 @@ function drawBase(pose){
 // simple frame variations
 const frames={
   player_idle1: drawBase('stand'),
-  player_idle2: drawBase('stand'),
   player_walk1: drawBase('stand'),
   player_walk2: drawBase('stand'),
   player_run1: drawBase('stand'),

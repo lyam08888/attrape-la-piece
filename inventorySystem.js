@@ -1,5 +1,7 @@
 // inventorySystem.js - Système d'inventaire et de crafting
 
+import { SURVIVAL_ITEMS } from './survivalItems.js';
+
 export class InventoryItem {
     constructor(name, quantity = 1, metadata = {}) {
         this.name = name;
@@ -42,7 +44,7 @@ export class InventoryItem {
 }
 
 export class Inventory {
-    constructor(size = 32) {
+    constructor(size = 16) {
         this.size = size;
         this.slots = new Array(size).fill(null);
     }
@@ -337,19 +339,74 @@ export class CraftingSystem {
 }
 
 // Fonctions utilitaires pour l'interface
-export function updateInventoryUI(inventory) {
+export function updateInventoryUI(inventory, game = null) {
     const inventoryGrid = document.getElementById('inventoryGrid');
     if (!inventoryGrid) return;
 
     inventoryGrid.innerHTML = '';
-    
+
     for (let i = 0; i < inventory.size; i++) {
         const slot = document.createElement('div');
         slot.className = 'inventory-slot';
         slot.dataset.slotIndex = i;
-        
+
+        // Autoriser le drop sur chaque slot
+        slot.addEventListener('dragover', e => e.preventDefault());
+        slot.addEventListener('drop', e => {
+            e.preventDefault();
+            const data = e.dataTransfer.getData('text/plain');
+            if (!data) return;
+
+            if (data.startsWith('inv:')) {
+                const from = parseInt(data.split(':')[1], 10);
+                if (!isNaN(from)) {
+                    inventory.moveItem(from, i);
+                    updateInventoryUI(inventory, game);
+                }
+            } else if (data.startsWith('tool:') && game && game.player) {
+                const index = parseInt(data.split(':')[1], 10);
+                const toolName = game.player.tools[index];
+                if (toolName && inventory.addItem(toolName, 1)) {
+                    game.player.tools.splice(index, 1);
+                    if (game.player.selectedToolIndex >= game.player.tools.length) {
+                        game.player.selectedToolIndex = Math.max(0, game.player.tools.length - 1);
+                    }
+                    if (typeof game.updateToolbar === 'function') game.updateToolbar();
+                    updateInventoryUI(inventory, game);
+                }
+            } else if (data.startsWith('chest:') && game && game.openChest) {
+                const index = parseInt(data.split(':')[1], 10);
+                const lootItem = game.openChest.loot[index];
+                if (lootItem) {
+                    const before = inventory.getItemCount(lootItem.item);
+                    inventory.addItem(lootItem.item, lootItem.quantity);
+                    const added = inventory.getItemCount(lootItem.item) - before;
+                    if (added > 0) {
+                        lootItem.quantity -= added;
+                        game.logger?.log?.(`Trouvé: ${added}x ${lootItem.item}`);
+                        if (SURVIVAL_ITEMS.some(item => item.toLowerCase().replace(/\s+/g, '_') === lootItem.item)) {
+                            game.questSystem?.updateQuestProgress('collect_survival_items', { amount: 1 });
+                            if (game.statistics) {
+                                game.statistics.survivalItemsFound = (game.statistics.survivalItemsFound || 0) + 1;
+                            }
+                        }
+                        if (lootItem.quantity <= 0) {
+                            game.openChest.loot.splice(index, 1);
+                        }
+                        if (game.renderChestUI) game.renderChestUI();
+                        updateInventoryUI(inventory, game);
+                    }
+                }
+            }
+        });
+
         const item = inventory.slots[i];
         if (item) {
+            slot.draggable = true;
+            slot.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', `inv:${i}`);
+            });
+
             const icon = document.createElement('img');
             icon.src = `assets/${item.name}.png`;
             icon.onerror = () => {
@@ -362,7 +419,7 @@ export function updateInventoryUI(inventory) {
                 slot.appendChild(text);
             };
             slot.appendChild(icon);
-            
+
             if (item.quantity > 1) {
                 const quantity = document.createElement('div');
                 quantity.textContent = item.quantity;
@@ -376,7 +433,7 @@ export function updateInventoryUI(inventory) {
                 slot.appendChild(quantity);
             }
         }
-        
+
         inventoryGrid.appendChild(slot);
     }
 }

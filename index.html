@@ -188,8 +188,8 @@
             pointer-events: all;
         }
         .toolbar-slot {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 2px solid #888;
             background: rgba(0,0,0,0.5);
             display: flex;
@@ -204,15 +204,15 @@
             transform: scale(1.1);
         }
         .toolbar-slot img {
-            width: 80%;
-            height: 80%;
+            width: 70%;
+            height: 70%;
             image-rendering: pixelated;
         }
 
         #gameInfo {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            bottom: 20px;
+            right: 20px;
             background: rgba(0,0,0,0.7);
             padding: 10px;
             border-radius: 8px;
@@ -281,9 +281,26 @@
             pointer-events: all;
         }
 
+        #disasterMenu {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 10px;
+            pointer-events: none;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        #disasterMenu p {
+            margin: 0 0 4px 0;
+        }
+
         .inventory-slot {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 2px solid #666;
             background: rgba(0,0,0,0.5);
             display: flex;
@@ -367,8 +384,13 @@
                 <div id="biomeDisplay">
                     <span id="currentBiome">Surface</span>
                 </div>
-             </div>
-             <div id="minimap"></div>
+            </div>
+            <div id="disasterMenu">
+                <p><strong>F1</strong> : Orage</p>
+                <p><strong>F2</strong> : Tremblement de terre</p>
+                <p><strong>F3</strong> : Pluie de météores</p>
+            </div>
+            <div id="minimap"></div>
         </div>
 
         <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
@@ -376,7 +398,10 @@
             <div id="menu-pane">
                 <h1 id="gameTitle">Super Pixel Adventure 2</h1>
                 <div id="main-menu-view" class="menu-view active">
-                    <div class="menu-box"><button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button></div>
+                    <div class="menu-box">
+                        <button id="btn-go-to-new-game">COMMENCER L'AVENTURE</button>
+                        <button data-action="open-options">OPTIONS</button>
+                    </div>
                 </div>
                 <div id="new-game-view" class="menu-view">
                     <div class="menu-box">
@@ -432,33 +457,29 @@
                 <div style="margin-bottom: 15px;">
                     <label><input type="checkbox" id="mobileModeCheckbox"> Mode mobile</label>
                 </div>
+                <button data-action="open-controls">COMMANDES</button>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
+        <div id="controlsMenu" class="overlay">
+            <div class="menu-box">
+                <h2>COMMANDES</h2>
+                <div id="controlsList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;"></div>
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
 
         <div id="inventoryMenu" class="overlay">
-            <div class="menu-box" style="max-width: 600px;">
+            <div class="menu-box" style="max-width: 300px;">
                 <h2>INVENTAIRE</h2>
-                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
+                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 20px 0;">
                     <!-- Slots d'inventaire générés dynamiquement -->
                 </div>
-                <div id="craftingArea" style="margin-top: 20px;">
-                    <h3>FABRICATION</h3>
-                    <div id="craftingGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; margin: 10px auto;">
-                        <!-- Grille de crafting 3x3 -->
-                    </div>
-                    <div id="craftingResult" style="margin: 10px 0;">
-                        <div class="inventory-slot" id="resultSlot"></div>
-                    </div>
+                <div id="chestArea" style="display: none; margin-top: 20px;">
+                    <h3>COFFRE</h3>
+                    <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
                 </div>
-                <button data-action="close-menu">FERMER</button>
-            </div>
-        </div>
-
-        <div id="chestMenu" class="overlay">
-            <div class="menu-box" style="max-width: 400px;">
-                <h2>COFFRE</h2>
-                <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
@@ -512,6 +533,7 @@
                 menus: {
                     pause: document.getElementById('pauseMenu'),
                     options: document.getElementById('optionsMenu'),
+                    controls: document.getElementById('controlsMenu'),
                     inventory: document.getElementById('inventoryMenu'),
                     character: document.getElementById('characterMenu'),
                     quests: document.getElementById('questMenu')
@@ -564,6 +586,7 @@
                         case 'open-character': openMenu(ui.menus.character); break;
                         case 'open-quests': openMenu(ui.menus.quests); break;
                         case 'open-options': openMenu(ui.menus.options); break;
+                        case 'open-controls': syncControlsUI(); openMenu(ui.menus.controls); break;
                         case 'back-to-main-menu': window.location.reload(); break;
                     }
                 }
@@ -696,46 +719,101 @@
             return loot;
         }
 
-        function showChestInterface(loot) {
-            const chestMenu = document.getElementById('chestMenu');
+        function showChestInterface(chest, game) {
+            const inventoryMenu = document.getElementById('inventoryMenu');
+            const chestArea = document.getElementById('chestArea');
             const chestContents = document.getElementById('chestContents');
-            if (!chestMenu || !chestContents) return;
+            if (!inventoryMenu || !chestArea || !chestContents) return;
 
-            chestContents.innerHTML = '';
+            game.openChest = chest;
 
-            loot.forEach(lootItem => {
-                const slot = document.createElement('div');
-                slot.className = 'inventory-slot';
-
-                const icon = document.createElement('img');
-                icon.src = `assets/${lootItem.item}.png`;
-                icon.onerror = () => {
-                    icon.style.display = 'none';
-                    const text = document.createElement('div');
-                    text.textContent = lootItem.item.substring(0, 2).toUpperCase();
-                    text.style.fontSize = '10px';
-                    text.style.color = '#fff';
-                    slot.appendChild(text);
-                };
-                slot.appendChild(icon);
-
-                if (lootItem.quantity > 1) {
-                    const quantity = document.createElement('div');
-                    quantity.textContent = lootItem.quantity;
-                    quantity.style.position = 'absolute';
-                    quantity.style.bottom = '2px';
-                    quantity.style.right = '2px';
-                    quantity.style.fontSize = '10px';
-                    quantity.style.color = '#fff';
-                    quantity.style.textShadow = '1px 1px 0 #000';
-                    slot.style.position = 'relative';
-                    slot.appendChild(quantity);
+            chestContents.addEventListener('dragover', e => e.preventDefault());
+            chestContents.addEventListener('drop', e => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData('text/plain');
+                if (!data) return;
+                if (data.startsWith('inv:')) {
+                    const idx = parseInt(data.split(':')[1], 10);
+                    const item = game.inventory.slots[idx];
+                    if (item) {
+                        const existing = chest.loot.find(l => l.item === item.name);
+                        if (existing) existing.quantity += item.quantity;
+                        else chest.loot.push({ item: item.name, quantity: item.quantity });
+                        game.inventory.slots[idx] = null;
+                        updateInventoryUI(game.inventory, game);
+                        renderChest();
+                    }
+                } else if (data.startsWith('tool:')) {
+                    const idx = parseInt(data.split(':')[1], 10);
+                    const toolName = game.player.tools[idx];
+                    if (toolName) {
+                        const existing = chest.loot.find(l => l.item === toolName);
+                        if (existing) existing.quantity += 1;
+                        else chest.loot.push({ item: toolName, quantity: 1 });
+                        game.player.tools.splice(idx, 1);
+                        if (game.player.selectedToolIndex >= game.player.tools.length) {
+                            game.player.selectedToolIndex = Math.max(0, game.player.tools.length - 1);
+                        }
+                        game.updateToolbar();
+                        renderChest();
+                    }
                 }
-
-                chestContents.appendChild(slot);
             });
 
-            chestMenu.classList.add('active');
+            const closeBtn = inventoryMenu.querySelector('[data-action="close-menu"]');
+            const onClose = () => {
+                chestArea.style.display = 'none';
+                game.openChest = null;
+                game.renderChestUI = null;
+                closeBtn.removeEventListener('click', onClose);
+            };
+            closeBtn.addEventListener('click', onClose);
+
+            function renderChest() {
+                chestContents.innerHTML = '';
+                chest.loot.forEach((lootItem, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = 'inventory-slot';
+                    slot.draggable = true;
+                    slot.addEventListener('dragstart', e => {
+                        e.dataTransfer.setData('text/plain', `chest:${index}`);
+                    });
+
+                    const icon = document.createElement('img');
+                    icon.src = `assets/${lootItem.item}.png`;
+                    icon.onerror = () => {
+                        icon.style.display = 'none';
+                        const text = document.createElement('div');
+                        text.textContent = lootItem.item.substring(0, 2).toUpperCase();
+                        text.style.fontSize = '10px';
+                        text.style.color = '#fff';
+                        slot.appendChild(text);
+                    };
+                    slot.appendChild(icon);
+
+                    if (lootItem.quantity > 1) {
+                        const quantity = document.createElement('div');
+                        quantity.textContent = lootItem.quantity;
+                        quantity.style.position = 'absolute';
+                        quantity.style.bottom = '2px';
+                        quantity.style.right = '2px';
+                        quantity.style.fontSize = '10px';
+                        quantity.style.color = '#fff';
+                        quantity.style.textShadow = '1px 1px 0 #000';
+                        slot.style.position = 'relative';
+                        slot.appendChild(quantity);
+                    }
+
+                    chestContents.appendChild(slot);
+                });
+            }
+
+            game.renderChestUI = renderChest;
+            renderChest();
+
+            chestArea.style.display = 'block';
+            inventoryMenu.classList.add('active');
+            updateInventoryUI(game.inventory, game);
         }
 
         // Système d'événements dynamiques
@@ -814,7 +892,7 @@
         // import { getItemIcon } from './itemIcons.js'; // Non utilisé, version simplifiée dans le code
         // import { SoundManager } from './sound.js'; // Version simplifiée utilisée dans le code
         import { QuestSystem, updateQuestUI } from './questSystem.js';
-        import { Inventory, CraftingSystem, updateInventoryUI, initializeCraftingUI } from './inventorySystem.js';
+        import { Inventory, updateInventoryUI } from './inventorySystem.js';
         import { PlayerStats, CombatSystem, BiomeSystem, updatePlayerStatsUI } from './combatSystem.js';
         import { WeatherSystem, LightingSystem } from './weatherSystem.js';
         import { Minimap, initializeMinimap, drawMinimapToElement } from './minimap.js';
@@ -851,7 +929,7 @@
                     "player": {
                         "width": 32,
                         "height": 32,
-                        "hitbox": { "offsetX": 4, "offsetY": 4, "width": 24, "height": 24 }
+                        "hitbox": { "offsetX": 0, "offsetY": 0, "width": 32, "height": 32 }
                     },
                     "playerAnimations": {
                         "idle": ["player_idle1", "player_idle2"],
@@ -882,7 +960,7 @@
                 return await resp.json();
             } catch (e) {
                 console.warn(e);
-                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false};
+                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":"Space","down":"ArrowDown","action":"KeyE","run":"ShiftLeft","fly":"KeyV","repair":"KeyR"}};
             }
         }
 
@@ -917,16 +995,20 @@
             const keys = {};
             const mouse = { x: 0, y: 0, left: false, right: false };
 
-            const getKeys = () => ({
-                left: keys['ArrowLeft'] || keys['a'] || keys['A'],
-                right: keys['ArrowRight'] || keys['d'] || keys['D'],
-                up: keys['ArrowUp'] || keys['w'] || keys['W'],
-                down: keys['ArrowDown'] || keys['s'] || keys['S'],
-                jump: keys[' '] || keys['Space'],
-                run: keys['Shift'],
-                fly: keys['v'] || keys['V'] || keys['KeyV'],
-                interact: keys['e'] || keys['E']
-            });
+            const getKeys = () => {
+                const binds = config.keyBindings || {};
+                return {
+                    left: keys[binds.left],
+                    right: keys[binds.right],
+                    up: keys[binds.jump] || keys[binds.up],
+                    down: keys[binds.down],
+                    jump: keys[binds.jump],
+                    run: keys[binds.run],
+                    fly: keys[binds.fly],
+                    action: keys[binds.action],
+                    repair: keys[binds.repair]
+                };
+            };
 
             const getMouse = () => mouse;
 
@@ -934,6 +1016,23 @@
             document.addEventListener('keydown', (e) => {
                 keys[e.key] = true;
                 keys[e.code] = true;
+
+                if (window.game && window.game.disasterManager) {
+                    switch (e.key) {
+                        case 'F1':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('thunderstorm');
+                            break;
+                        case 'F2':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('earthquake');
+                            break;
+                        case 'F3':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('meteor_shower');
+                            break;
+                    }
+                }
             });
 
             document.addEventListener('keyup', (e) => {
@@ -994,6 +1093,45 @@
                 }
 
                 document.body.classList.toggle('mobile-mode', config.mobileMode);
+            }
+
+            function syncControlsUI() {
+                const list = document.getElementById('controlsList');
+                if (!list) return;
+                list.innerHTML = '';
+                const bindings = config.keyBindings || {};
+                for (const [action, key] of Object.entries(bindings)) {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    const label = document.createElement('span');
+                    label.textContent = action;
+                    const btn = document.createElement('button');
+                    btn.textContent = key;
+                    btn.addEventListener('click', () => {
+                        btn.textContent = '...';
+                        const handler = (e) => {
+                            e.preventDefault();
+                            bindings[action] = e.code;
+                            btn.textContent = e.code;
+                            saveOptions({
+                                zoom: config.zoom,
+                                renderDistance: config.renderDistance,
+                                showParticles: config.showParticles,
+                                weatherEffects: config.weatherEffects,
+                                dynamicLighting: config.dynamicLighting,
+                                soundVolume: config.soundVolume,
+                                mobileMode: config.mobileMode,
+                                keyBindings: bindings
+                            });
+                        };
+                        document.addEventListener('keydown', handler, { once: true });
+                    });
+                    row.appendChild(label);
+                    row.appendChild(btn);
+                    list.appendChild(row);
+                }
             }
 
             function setupOptionHandlers() {
@@ -1081,8 +1219,7 @@
                 particleSystem: new ParticleSystem(),
                 logger: new Logger(),
                 questSystem: new QuestSystem(),
-                inventory: new Inventory(32),
-                craftingSystem: new CraftingSystem(),
+                inventory: new Inventory(16),
                 combatSystem: new CombatSystem(),
                 biomeSystem: new BiomeSystem(),
                 weatherSystem: new WeatherSystem(config),
@@ -1143,11 +1280,50 @@
                         const slot = document.createElement('div');
                         slot.className = 'toolbar-slot';
                         if (index === this.player.selectedToolIndex) slot.classList.add('selected');
-                        
+
+                        slot.draggable = true;
+                        slot.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('text/plain', `tool:${index}`);
+                        });
+                        slot.addEventListener('dragover', e => e.preventDefault());
+                        slot.addEventListener('drop', e => {
+                            e.preventDefault();
+                            const data = e.dataTransfer.getData('text/plain');
+                            if (!data) return;
+                            if (data.startsWith('inv:')) {
+                                const invIndex = parseInt(data.split(':')[1], 10);
+                                const item = this.inventory?.slots[invIndex];
+                                if (item && this.player.toolDurability[item.name] !== undefined) {
+                                    this.player.tools[index] = item.name;
+                                    this.inventory.slots[invIndex] = null;
+                                    updateInventoryUI(this.inventory, this);
+                                    this.updateToolbar();
+                                }
+                            } else if (data.startsWith('chest:') && this.openChest) {
+                                const chestIndex = parseInt(data.split(':')[1], 10);
+                                const lootItem = this.openChest.loot[chestIndex];
+                                if (lootItem && this.player.toolDurability[lootItem.item] !== undefined) {
+                                    this.player.tools[index] = lootItem.item;
+                                    lootItem.quantity -= 1;
+                                    if (lootItem.quantity <= 0) this.openChest.loot.splice(chestIndex, 1);
+                                    if (this.renderChestUI) this.renderChestUI();
+                                    this.updateToolbar();
+                                }
+                            } else if (data.startsWith('tool:')) {
+                                const from = parseInt(data.split(':')[1], 10);
+                                if (!isNaN(from)) {
+                                    const temp = this.player.tools[from];
+                                    this.player.tools[from] = this.player.tools[index];
+                                    this.player.tools[index] = temp;
+                                    this.updateToolbar();
+                                }
+                            }
+                        });
+
                         // Utiliser la texture de l'outil si disponible
                         const toolAssetName = `tool_${toolName}`;
                         const toolTexture = this.assets && this.assets[toolAssetName];
-                        
+
                         if (toolTexture) {
                             const canvas = document.createElement('canvas');
                             canvas.width = 32;
@@ -1162,7 +1338,7 @@
                             icon.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;';
                             slot.appendChild(icon);
                         }
-                        
+
                         // Ajouter le nom de l'outil en tooltip
                         slot.title = toolName;
                         toolbar.appendChild(slot);
@@ -1206,7 +1382,7 @@
                     
                     // Mettre à jour l'inventaire si il est ouvert
                     if (document.getElementById('inventoryMenu').classList.contains('active')) {
-                        updateInventoryUI(this.inventory);
+                        updateInventoryUI(this.inventory, this);
                     }
                     
                     // Mettre à jour la minimap
@@ -1249,7 +1425,8 @@
                     weatherEffects: config.weatherEffects,
                     dynamicLighting: config.dynamicLighting,
                     soundVolume: config.soundVolume,
-                    mobileMode: config.mobileMode
+                    mobileMode: config.mobileMode,
+                    keyBindings: config.keyBindings
                 });
             }
             window.openOptionsMenu = openOptionsMenu;
@@ -1352,14 +1529,6 @@
                     //     const pnj = generatePNJ(game, config);
                     //     if (pnj) game.pnjs.push(pnj);
                     // }
-                    
-                    // Initialiser l'interface de crafting
-                    try {
-                        initializeCraftingUI(game.craftingSystem);
-                        console.log("Interface de crafting initialisée");
-                    } catch (error) {
-                        console.warn("Erreur initialisation crafting:", error);
-                    }
                     
                     // Initialiser la minimap
                     try {
@@ -1800,28 +1969,11 @@
                         if (!chest.opened && game.player.rectCollide(chest)) {
                             if (keys.action) { // Touche E pour ouvrir
                                 chest.opened = true;
-                                let hasSurvivalItem = false;
-                                chest.loot.forEach(lootItem => {
-                                    game.inventory.addItem(lootItem.item, lootItem.quantity);
-                                    game.logger.log(`Trouvé: ${lootItem.quantity}x ${lootItem.item}`);
-                                    
-                                    // Vérifier si c'est un item de survie
-                                    if (SURVIVAL_ITEMS.some(item => item.toLowerCase().replace(/\s+/g, '_') === lootItem.item)) {
-                                        hasSurvivalItem = true;
-                                    }
-                                });
-                                
                                 game.createParticles(chest.x + chest.w/2, chest.y, 15, '#FFD700');
                                 game.sound.play('chest_open');
                                 game.questSystem.updateQuestProgress('open_chests', { amount: 1 });
                                 game.statistics.chestsOpened++;
-
-                                if (hasSurvivalItem) {
-                                    game.questSystem.updateQuestProgress('collect_survival_items', { amount: 1 });
-                                    game.statistics.survivalItemsFound++;
-                                }
-
-                                showChestInterface(chest.loot);
+                                showChestInterface(chest, game);
                             }
                         }
                     });
@@ -2281,7 +2433,7 @@
                                 } else {
                                     // Animation idle avec clignement
                                     const idleFrame = Math.floor(Date.now() / 3000) % 10;
-                                    playerTexture = idleFrame === 0 ? 'player_idle_blink' : 'player_idle1';
+                                    playerTexture = idleFrame === 0 ? 'player_idle2' : 'player_idle1';
                                 }
                                 
                                 const texture = assets[playerTexture];
@@ -2647,8 +2799,13 @@
             // Liste des assets à charger
             const assetList = [
                 // Joueur
-                'player_idle1', 'player_walk1', 'player_walk2', 'player_run1', 'player_run2',
-                'player_jump', 'player_crouch', 'player_prone',
+                'player_idle1', 'player_idle2',
+                'player_walk1', 'player_walk2',
+                'player_run1', 'player_run2',
+                'player_jump', 'player_double_jump1', 'player_double_jump2',
+                'player_fly1', 'player_fly2',
+                'player_crouch', 'player_crouch_walk1', 'player_crouch_walk2',
+                'player_prone', 'player_prone_walk1', 'player_prone_walk2',
                 
                 // Ennemis
                 'enemy_slime', 'enemy_frog', 'enemy_golem',

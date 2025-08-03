@@ -41,10 +41,10 @@ async function loadConfig() {
             "player": {
                 "width": 64,
                 "height": 64,
-                "hitbox": { "offsetX": 8, "offsetY": 8, "width": 48, "height": 48 }
+                "hitbox": { "offsetX": 0, "offsetY": 0, "width": 64, "height": 64 }
             },
             "playerAnimations": {
-                "idle": ["player_idle1", "player_idle2"],
+                "idle": ["player_idle1"],
                 "walking": ["player_walk1", "player_walk2"],
                 "running": ["player_run1", "player_run2"],
                 "jumping": ["player_jump"],
@@ -196,7 +196,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const slot = document.createElement('div');
                 slot.className = 'toolbar-slot';
                 if (index === this.player.selectedToolIndex) slot.classList.add('selected');
-                
+
+                // Rendre les outils déplaçables vers l'inventaire
+                slot.draggable = true;
+                slot.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', `tool:${index}`);
+                });
+
                 // Ajouter un gestionnaire de clic pour sélectionner l'outil
                 slot.addEventListener('click', () => {
                     this.player.selectedToolIndex = index;

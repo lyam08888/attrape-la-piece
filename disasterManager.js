@@ -108,6 +108,16 @@ export class DisasterManager {
         };
     }
 
+    triggerDisaster(type, options = {}) {
+        this.startDisaster(type);
+        if (options.intensity !== undefined) {
+            this.activeDisaster.intensity = options.intensity;
+        }
+        if (options.duration !== undefined) {
+            this.activeDisaster.duration = options.duration;
+        }
+    }
+
     stopDisaster() {
         this.activeDisaster = null;
     }

@@ -11,6 +11,7 @@ export class GameEngine {
         this.keys = {
             left: false, right: false, jump: false, action: false,
             fly: false, down: false, run: false, repair: false,
+            up: false,
         };
         this.mouse = { x: 0, y: 0, left: false, right: false };
         this.gameLogic = {};
@@ -99,14 +100,18 @@ export class GameEngine {
     setupInput() {
         document.addEventListener('keydown', e => {
             if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'F3'].includes(e.code)) return;
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
-            if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
-            if (e.code === 'KeyE') this.keys.action = true;
-            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.jump = true;
-            if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = true;
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = true;
-            if (e.code === 'KeyR') this.keys.repair = true;
-            if (e.code === 'KeyV' && !e.repeat) this.keys.fly = !this.keys.fly;
+            const binds = this.config.keyBindings || {};
+            if (e.code === binds.left) this.keys.left = true;
+            if (e.code === binds.right) this.keys.right = true;
+            if (e.code === binds.action) this.keys.action = true;
+            if (e.code === binds.jump) {
+                this.keys.jump = true;
+                this.keys.up = true;
+            }
+            if (e.code === binds.down) this.keys.down = true;
+            if (e.code === binds.run) this.keys.run = true;
+            if (e.code === binds.repair) this.keys.repair = true;
+            if (e.code === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
             if (e.code.startsWith('Digit')) {
                 const digit = parseInt(e.code.slice(5));
                 if (digit >= 1 && digit <= 6 && this.gameLogic.selectTool) {
@@ -119,13 +124,17 @@ export class GameEngine {
             }
         });
         document.addEventListener('keyup', e => {
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
-            if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
-            if (e.code === 'KeyE') this.keys.action = false;
-            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.keys.jump = false;
-            if (e.code === 'ArrowDown' || e.code === 'KeyS') this.keys.down = false;
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.keys.run = false;
-            if (e.code === 'KeyR') this.keys.repair = false;
+            const binds = this.config.keyBindings || {};
+            if (e.code === binds.left) this.keys.left = false;
+            if (e.code === binds.right) this.keys.right = false;
+            if (e.code === binds.action) this.keys.action = false;
+            if (e.code === binds.jump) {
+                this.keys.jump = false;
+                this.keys.up = false;
+            }
+            if (e.code === binds.down) this.keys.down = false;
+            if (e.code === binds.run) this.keys.run = false;
+            if (e.code === binds.repair) this.keys.repair = false;
         });
         this.canvas.addEventListener('mousemove', e => {
             const rect = this.canvas.getBoundingClientRect();

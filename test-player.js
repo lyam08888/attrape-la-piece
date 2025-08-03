@@ -21,7 +21,7 @@ const mockConfig = {
     player: {
         width: 32,
         height: 32,
-        hitbox: { offsetX: 4, offsetY: 4, width: 24, height: 24 },
+        hitbox: { offsetX: 0, offsetY: 0, width: 32, height: 32 },
         reach: 4
     },
     physics: {
@@ -77,7 +77,7 @@ try {
     };
     
     const mockMouse = { x: 0, y: 0, left: false, right: false };
-    const mockKeys = { left: false, right: false, jump: false, down: false, run: false, fly: false };
+    const mockKeys = { left: false, right: false, jump: false, down: false, run: false, fly: false, up: false };
     
     console.log('Testing updateCombat method...');
     player.updateCombat(mockGame, 16);
