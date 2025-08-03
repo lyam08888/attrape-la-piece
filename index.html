@@ -299,8 +299,8 @@
         }
 
         .inventory-slot {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 2px solid #666;
             background: rgba(0,0,0,0.5);
             display: flex;
@@ -459,9 +459,9 @@
         </div>
 
         <div id="inventoryMenu" class="overlay">
-            <div class="menu-box" style="max-width: 600px;">
+            <div class="menu-box" style="max-width: 300px;">
                 <h2>INVENTAIRE</h2>
-                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
+                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 20px 0;">
                     <!-- Slots d'inventaire générés dynamiquement -->
                 </div>
                 <div id="chestArea" style="display: none; margin-top: 20px;">
@@ -721,6 +721,39 @@
             if (!inventoryMenu || !chestArea || !chestContents) return;
 
             game.openChest = chest;
+
+            chestContents.addEventListener('dragover', e => e.preventDefault());
+            chestContents.addEventListener('drop', e => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData('text/plain');
+                if (!data) return;
+                if (data.startsWith('inv:')) {
+                    const idx = parseInt(data.split(':')[1], 10);
+                    const item = game.inventory.slots[idx];
+                    if (item) {
+                        const existing = chest.loot.find(l => l.item === item.name);
+                        if (existing) existing.quantity += item.quantity;
+                        else chest.loot.push({ item: item.name, quantity: item.quantity });
+                        game.inventory.slots[idx] = null;
+                        updateInventoryUI(game.inventory, game);
+                        renderChest();
+                    }
+                } else if (data.startsWith('tool:')) {
+                    const idx = parseInt(data.split(':')[1], 10);
+                    const toolName = game.player.tools[idx];
+                    if (toolName) {
+                        const existing = chest.loot.find(l => l.item === toolName);
+                        if (existing) existing.quantity += 1;
+                        else chest.loot.push({ item: toolName, quantity: 1 });
+                        game.player.tools.splice(idx, 1);
+                        if (game.player.selectedToolIndex >= game.player.tools.length) {
+                            game.player.selectedToolIndex = Math.max(0, game.player.tools.length - 1);
+                        }
+                        game.updateToolbar();
+                        renderChest();
+                    }
+                }
+            });
 
             const closeBtn = inventoryMenu.querySelector('[data-action="close-menu"]');
             const onClose = () => {
@@ -1138,7 +1171,7 @@
                 particleSystem: new ParticleSystem(),
                 logger: new Logger(),
                 questSystem: new QuestSystem(),
-                inventory: new Inventory(32),
+                inventory: new Inventory(16),
                 craftingSystem: new CraftingSystem(),
                 combatSystem: new CombatSystem(),
                 biomeSystem: new BiomeSystem(),
@@ -1200,11 +1233,50 @@
                         const slot = document.createElement('div');
                         slot.className = 'toolbar-slot';
                         if (index === this.player.selectedToolIndex) slot.classList.add('selected');
-                        
+
+                        slot.draggable = true;
+                        slot.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('text/plain', `tool:${index}`);
+                        });
+                        slot.addEventListener('dragover', e => e.preventDefault());
+                        slot.addEventListener('drop', e => {
+                            e.preventDefault();
+                            const data = e.dataTransfer.getData('text/plain');
+                            if (!data) return;
+                            if (data.startsWith('inv:')) {
+                                const invIndex = parseInt(data.split(':')[1], 10);
+                                const item = this.inventory?.slots[invIndex];
+                                if (item && this.player.toolDurability[item.name] !== undefined) {
+                                    this.player.tools[index] = item.name;
+                                    this.inventory.slots[invIndex] = null;
+                                    updateInventoryUI(this.inventory, this);
+                                    this.updateToolbar();
+                                }
+                            } else if (data.startsWith('chest:') && this.openChest) {
+                                const chestIndex = parseInt(data.split(':')[1], 10);
+                                const lootItem = this.openChest.loot[chestIndex];
+                                if (lootItem && this.player.toolDurability[lootItem.item] !== undefined) {
+                                    this.player.tools[index] = lootItem.item;
+                                    lootItem.quantity -= 1;
+                                    if (lootItem.quantity <= 0) this.openChest.loot.splice(chestIndex, 1);
+                                    if (this.renderChestUI) this.renderChestUI();
+                                    this.updateToolbar();
+                                }
+                            } else if (data.startsWith('tool:')) {
+                                const from = parseInt(data.split(':')[1], 10);
+                                if (!isNaN(from)) {
+                                    const temp = this.player.tools[from];
+                                    this.player.tools[from] = this.player.tools[index];
+                                    this.player.tools[index] = temp;
+                                    this.updateToolbar();
+                                }
+                            }
+                        });
+
                         // Utiliser la texture de l'outil si disponible
                         const toolAssetName = `tool_${toolName}`;
                         const toolTexture = this.assets && this.assets[toolAssetName];
-                        
+
                         if (toolTexture) {
                             const canvas = document.createElement('canvas');
                             canvas.width = 32;
@@ -1219,7 +1291,7 @@
                             icon.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;';
                             slot.appendChild(icon);
                         }
-                        
+
                         // Ajouter le nom de l'outil en tooltip
                         slot.title = toolName;
                         toolbar.appendChild(slot);
