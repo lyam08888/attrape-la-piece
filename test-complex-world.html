@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Monde Complexe</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            pointer-events: auto;
+        }
+        
+        .toolbar-slot {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #666;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .toolbar-slot.selected {
+            border-color: #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+        
+        .toolbar-slot img {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+        }
+        
+        #debugPanel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 250px;
+            pointer-events: auto;
+        }
+        
+        #debugPanel h3 {
+            margin: 0 0 10px 0;
+            color: #FFD700;
+        }
+        
+        #debugPanel button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        #debugPanel button:hover {
+            background: #555;
+        }
+        
+        #worldInfoPanel {
+            position: absolute;
+            top: 200px;
+            right: 20px;
+            width: 200px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 12px;
+            font-family: 'VT323', monospace;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        
+        .control-group {
+            margin-bottom: 5px;
+        }
+        
+        .key {
+            background: #333;
+            border: 1px solid #666;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="hud">
+        <div id="toolbar"></div>
+        
+        <div id="debugPanel">
+            <h3>🔧 Debug - Monde Complexe</h3>
+            <div>
+                <button onclick="testExplosion()">💥 Explosion</button>
+                <button onclick="testEarthquake()">🌍 Tremblement</button>
+                <button onclick="testMeteor()">☄️ Météore</button>
+                <button onclick="testVolcano()">🌋 Volcan</button>
+            </div>
+            <div>
+                <button onclick="spawnAnimals()">🐾 Spawner Animaux</button>
+                <button onclick="generateLandmark()">🏛️ Landmark</button>
+                <button onclick="changeBiome()">🌿 Changer Biome</button>
+            </div>
+            <div>
+                <button onclick="showStats()">📊 Statistiques</button>
+                <button onclick="toggleWeather()">🌦️ Météo</button>
+            </div>
+        </div>
+        
+        <div id="controls">
+            <h4>🎮 Contrôles</h4>
+            <div class="control-group">
+                <span class="key">WASD</span> / <span class="key">↑↓←→</span> Déplacement
+            </div>
+            <div class="control-group">
+                <span class="key">SPACE</span> Saut / Vol
+            </div>
+            <div class="control-group">
+                <span class="key">E</span> Interaction / Minage
+            </div>
+            <div class="control-group">
+                <span class="key">1-9</span> Sélection d'outil
+            </div>
+            <div class="control-group">
+                <span class="key">Mouse</span> Viser / Cliquer
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Configuration de test pour le monde complexe
+        const testConfig = {
+            version: "0.02-complex",
+            tileSize: 16,
+            zoom: 2,
+            worldWidth: 4096,
+            worldHeight: 2048,
+            chunkSize: 32,
+            renderDistance: 12,
+            generation: { 
+                enemyCount: 15, 
+                treeCount: 30,
+                complexWorld: true,
+                biomeCount: 8,
+                landmarkCount: 12
+            },
+            physics: {
+                gravity: 0.35,
+                jumpForce: 8,
+                playerSpeed: 3,
+                friction: 0.85,
+                airResistance: 0.98,
+                maxFallSpeed: 10,
+                groundAcceleration: 0.4,
+                airAcceleration: 0.2
+            },
+            player: {
+                width: 64,
+                height: 64,
+                hitbox: { offsetX: 8, offsetY: 8, width: 48, height: 48 }
+            },
+            playerAnimations: {
+                idle: ["player_idle1", "player_idle2"],
+                walking: ["player_walk1", "player_walk2"],
+                running: ["player_run1", "player_run2"],
+                jumping: ["player_jump"],
+                doubleJump: ["player_double_jump1", "player_double_jump2"],
+                flying: ["player_fly1", "player_fly2"],
+                crouching: ["player_crouch"],
+                crouchWalking: ["player_crouch_walk1", "player_crouch_walk2"],
+                prone: ["player_prone"],
+                proneWalking: ["player_prone_walk1", "player_prone_walk2"]
+            },
+            showParticles: true,
+            weatherEffects: true,
+            dynamicLighting: true,
+            soundVolume: 0.8,
+            mobileMode: false
+        };
+
+        // Fonctions de test pour le debug panel
+        window.testExplosion = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Déclenchement d\'une explosion');
+                window.complexWorld.triggerEvent('explosion');
+            }
+        };
+
+        window.testEarthquake = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Déclenchement d\'un tremblement de terre');
+                window.complexWorld.triggerEvent('earthquake');
+            }
+        };
+
+        window.testMeteor = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Déclenchement d\'une chute de météore');
+                window.complexWorld.triggerEvent('meteor');
+            }
+        };
+
+        window.testVolcano = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Déclenchement d\'une éruption volcanique');
+                window.complexWorld.triggerEvent('volcanic_eruption');
+            }
+        };
+
+        window.spawnAnimals = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Spawn de 10 animaux');
+                const spawned = window.complexWorld.spawnAnimals(10);
+                console.log(`✅ ${spawned} animaux spawnés`);
+            }
+        };
+
+        window.generateLandmark = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Génération d\'un landmark');
+                window.complexWorld.generateLandmark();
+            }
+        };
+
+        window.changeBiome = function() {
+            if (window.complexWorld) {
+                console.log('🧪 Test: Changement de biome');
+                window.complexWorld.changeBiome('CRYSTAL_CAVES');
+            }
+        };
+
+        window.showStats = function() {
+            if (window.complexWorld) {
+                const stats = window.complexWorld.getStats();
+                console.log('📊 Statistiques du monde complexe:', stats);
+                alert(`📊 Statistiques:\n\nAnimaux: ${stats.totalAnimals}\nBiomes: ${stats.activeBiomes}\nLandmarks: ${stats.totalLandmarks}\nDestructions: ${stats.totalDestructions}\nStructures: ${stats.structuresBuilt}`);
+            }
+        };
+
+        window.toggleWeather = function() {
+            console.log('🧪 Test: Changement de météo (à implémenter)');
+        };
+
+        // Charger le jeu avec la configuration de test
+        console.log('🚀 Chargement du test du monde complexe...');
+        
+        // Simuler le chargement des assets pour le test
+        const mockAssets = {};
+        
+        // Créer des images de test pour les tiles
+        const tileTypes = ['grass', 'dirt', 'stone', 'wood', 'water', 'sand', 'ice', 'lava'];
+        tileTypes.forEach(type => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+            
+            // Couleurs de test pour chaque type de tile
+            const colors = {
+                grass: '#4CAF50',
+                dirt: '#8D6E63',
+                stone: '#607D8B',
+                wood: '#795548',
+                water: '#2196F3',
+                sand: '#FFC107',
+                ice: '#E1F5FE',
+                lava: '#FF5722'
+            };
+            
+            ctx.fillStyle = colors[type] || '#666';
+            ctx.fillRect(0, 0, 16, 16);
+            
+            // Ajouter une bordure pour la visibilité
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, 16, 16);
+            
+            mockAssets[`tile_${type}`] = canvas;
+        });
+
+        // Créer des sprites de test pour le joueur
+        const playerStates = ['idle1', 'idle2', 'walk1', 'walk2', 'jump', 'run1', 'run2'];
+        playerStates.forEach(state => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // Dessiner un personnage simple
+            ctx.fillStyle = '#FF9800';
+            ctx.fillRect(20, 10, 24, 30); // Corps
+            ctx.fillStyle = '#FFEB3B';
+            ctx.fillRect(24, 5, 16, 16); // Tête
+            ctx.fillStyle = '#000';
+            ctx.fillRect(28, 10, 2, 2); // Œil gauche
+            ctx.fillRect(34, 10, 2, 2); // Œil droit
+            ctx.fillStyle = '#8BC34A';
+            ctx.fillRect(18, 40, 28, 20); // Jambes
+            
+            mockAssets[`player_${state}`] = canvas;
+        });
+
+        // Créer des assets d'animaux de test
+        const animalTypes = [
+            'rabbit', 'fox', 'deer', 'bear', 'wolf', 'eagle', 'fish', 'butterfly',
+            'snake', 'frog', 'turtle', 'squirrel', 'owl', 'bat', 'spider', 'bee'
+        ];
+        
+        animalTypes.forEach(animal => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            
+            // Couleurs aléatoires pour chaque animal
+            const hue = Math.random() * 360;
+            ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+            ctx.fillRect(4, 8, 24, 16);
+            
+            // Yeux
+            ctx.fillStyle = '#000';
+            ctx.fillRect(8, 12, 2, 2);
+            ctx.fillRect(22, 12, 2, 2);
+            
+            mockAssets[animal] = canvas;
+        });
+
+        console.log('✅ Assets de test créés:', Object.keys(mockAssets).length, 'éléments');
+        
+        // Message de bienvenue
+        setTimeout(() => {
+            console.log(`
+🌍 MONDE COMPLEXE - TEST INTERACTIF
+=====================================
+
+Le monde complexe est maintenant intégré ! Voici ce que vous pouvez tester :
+
+🔧 PANEL DEBUG (en haut à gauche) :
+   • Déclencher des événements naturels (explosions, tremblements, météores, volcans)
+   • Spawner des animaux intelligents
+   • Générer des landmarks
+   • Changer de biomes
+   • Voir les statistiques
+
+🎮 CONTRÔLES :
+   • WASD ou flèches : Déplacement
+   • SPACE : Saut/Vol
+   • E : Interaction/Minage
+   • 1-9 : Sélection d'outils
+   • Souris : Viser/Cliquer
+
+🌟 FONCTIONNALITÉS :
+   • 12 biomes différents (Paradis → Enfer)
+   • 100+ animaux avec IA intelligente
+   • Système de destruction environnementale
+   • Outils d'exploration avancés
+   • Génération procédurale complexe
+   • Météo dynamique et effets visuels
+
+Explorez et testez les différentes fonctionnalités !
+            `);
+        }, 2000);
+
+    </script>
+    
+    <!-- Charger le jeu principal -->
+    <script type="module" src="game.js"></script>
+</body>
+</html>

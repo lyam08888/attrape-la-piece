@@ -12,6 +12,7 @@ import { TimeSystem } from './timeSystem.js';
 import { Logger } from './logger.js';
 import { getItemIcon } from './itemIcons.js';
 import { SoundManager } from './sound.js';
+import { integrateComplexWorld } from './gameIntegration.js';
 
 async function loadConfig() {
     try {
@@ -169,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         enemies: [],
         pnjs: [],
         collectibles: [],
+        animals: [], // Ajout pour les animaux du monde complexe
         camera: { x: 0, y: 0 },
         particleSystem: new ParticleSystem(),
         logger: new Logger(),
@@ -179,6 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         cameraShakeStrength: 0,
         cameraShakeOffsetX: 0,
         cameraShakeOffsetY: 0,
+        worldIntegration: null, // Système d'intégration du monde complexe
 
         createParticles(x, y, count, color, options) {
             if(this.config.showParticles) this.particleSystem.create(x, y, count, color, options);
@@ -258,6 +261,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             game.worldAnimator = new WorldAnimator(config, assets);
             game.timeSystem = new TimeSystem();
+            
+            // Intégrer le système de monde complexe
+            game.logger.log("Initialisation du monde complexe...");
+            try {
+                game.worldIntegration = integrateComplexWorld(game, config);
+                game.logger.log("✅ Monde complexe intégré avec succès !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'intégration du monde complexe:", error);
+                game.logger.log("⚠️ Monde complexe non disponible");
+            }
+            
             game.updateToolbar();
             game.logger.log("Jeu prêt !");
         },
