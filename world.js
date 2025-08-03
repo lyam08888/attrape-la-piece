@@ -694,4 +694,3 @@ function generateOakTree(game, x, groundY, worldHeight) {
     
     // Tronc
     for (let dy = 0; dy < treeHeight; dy++) {
-        const tree
