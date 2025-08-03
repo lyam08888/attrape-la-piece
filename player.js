@@ -8,11 +8,12 @@ export class Player {
         this.vx = 0; this.vy = 0;
         this.w = config.player.width;
         this.h = config.player.height;
+        // Hitbox now matches the player dimensions exactly
         this.hitbox = {
-            offsetX: config.player.hitbox.offsetX,
-            offsetY: config.player.hitbox.offsetY,
-            width: config.player.hitbox.width,
-            height: config.player.hitbox.height
+            offsetX: 0,
+            offsetY: 0,
+            width: this.w,
+            height: this.h
         };
         this.config = config;
         this.sound = sound;
