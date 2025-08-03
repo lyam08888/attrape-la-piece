@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Autonome - Monde Complexe</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: 'VT323', monospace;
-            overflow: hidden;
+            background: var(--background-dark);
+            color: var(--text-light);
         }
         
         #gameCanvas {
@@ -96,7 +96,6 @@
             padding: 15px;
             color: white;
             font-size: 14px;
-            font-family: 'VT323', monospace;
             box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
         }
         
@@ -221,7 +220,7 @@
     </style>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="game-page">
     <canvas id="gameCanvas" width="1200" height="800"></canvas>
     
     <div id="hud">
