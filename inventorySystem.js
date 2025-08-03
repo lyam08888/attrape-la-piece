@@ -44,7 +44,7 @@ export class InventoryItem {
 }
 
 export class Inventory {
-    constructor(size = 32) {
+    constructor(size = 16) {
         this.size = size;
         this.slots = new Array(size).fill(null);
     }
