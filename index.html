@@ -574,20 +574,23 @@
                     } else {
                         openMenu(ui.menus.quests);
                     }
-                } else if (e.key >= '1' && e.key <= '7') {
-                    // Sélection d'outils avec les chiffres
-                    const toolIndex = parseInt(e.key) - 1;
-                    console.log(`Tentative de sélection outil ${toolIndex}`);
-                    if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
-                        window.game.player.selectedToolIndex = toolIndex;
-                        window.game.updateToolbar();
-                        console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
-                    } else {
-                        console.log("Impossible de sélectionner l'outil:", {
-                            hasGame: !!window.game,
-                            hasPlayer: !!(window.game && window.game.player),
-                            toolsLength: window.game?.player?.tools?.length
-                        });
+                } else if (e.code && e.code.startsWith('Digit')) {
+                    const digit = parseInt(e.code.slice(5));
+                    if (digit >= 1 && digit <= 6) {
+                        // Sélection d'outils avec les chiffres
+                        const toolIndex = digit - 1;
+                        console.log(`Tentative de sélection outil ${toolIndex}`);
+                        if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
+                            window.game.player.selectedToolIndex = toolIndex;
+                            window.game.updateToolbar();
+                            console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
+                        } else {
+                            console.log("Impossible de sélectionner l'outil:", {
+                                hasGame: !!window.game,
+                                hasPlayer: !!(window.game && window.game.player),
+                                toolsLength: window.game?.player?.tools?.length
+                            });
+                        }
                     }
                 } else if (e.ctrlKey && e.key === 's' && window.game) {
                     // Sauvegarde rapide
