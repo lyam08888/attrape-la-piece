@@ -8,12 +8,13 @@ export class Player {
         this.vx = 0; this.vy = 0;
         this.w = config.player.width;
         this.h = config.player.height;
-        // Hitbox now matches the player dimensions exactly
+        // Allow a custom hitbox that's smaller than the sprite
+        const hb = config.player.hitbox || {};
         this.hitbox = {
-            offsetX: 0,
-            offsetY: 0,
-            width: this.w,
-            height: this.h
+            offsetX: hb.offsetX ?? 0,
+            offsetY: hb.offsetY ?? 0,
+            width: hb.width ?? this.w,
+            height: hb.height ?? this.h
         };
         this.config = config;
         this.sound = sound;
