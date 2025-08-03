@@ -126,8 +126,7 @@ export class Enemy {
     }
 }
 
-// Exporter la classe de base et les classes spécifiques
-export { Enemy };
+// Les classes sont déjà exportées avec 'export class'
 
 export class Slime extends Enemy {
     draw(ctx, assets) { super.draw(ctx, assets, 'enemy_slime'); }
