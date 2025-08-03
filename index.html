@@ -437,6 +437,14 @@
             </div>
         </div>
 
+        <div id="chestMenu" class="overlay">
+            <div class="menu-box" style="max-width: 400px;">
+                <h2>COFFRE</h2>
+                <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
+                <button data-action="close-menu">FERMER</button>
+            </div>
+        </div>
+
         <div id="characterMenu" class="overlay">
             <div class="menu-box">
                 <h2>PERSONNAGE</h2>
@@ -654,10 +662,52 @@
                 const survivalItem = SURVIVAL_ITEMS[Math.floor(Math.random() * SURVIVAL_ITEMS.length)];
                 loot.push({ item: survivalItem.toLowerCase().replace(/\s+/g, '_'), quantity: 1 });
             }
-            
+
             return loot;
         }
-        
+
+        function showChestInterface(loot) {
+            const chestMenu = document.getElementById('chestMenu');
+            const chestContents = document.getElementById('chestContents');
+            if (!chestMenu || !chestContents) return;
+
+            chestContents.innerHTML = '';
+
+            loot.forEach(lootItem => {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+
+                const icon = document.createElement('img');
+                icon.src = `assets/${lootItem.item}.png`;
+                icon.onerror = () => {
+                    icon.style.display = 'none';
+                    const text = document.createElement('div');
+                    text.textContent = lootItem.item.substring(0, 2).toUpperCase();
+                    text.style.fontSize = '10px';
+                    text.style.color = '#fff';
+                    slot.appendChild(text);
+                };
+                slot.appendChild(icon);
+
+                if (lootItem.quantity > 1) {
+                    const quantity = document.createElement('div');
+                    quantity.textContent = lootItem.quantity;
+                    quantity.style.position = 'absolute';
+                    quantity.style.bottom = '2px';
+                    quantity.style.right = '2px';
+                    quantity.style.fontSize = '10px';
+                    quantity.style.color = '#fff';
+                    quantity.style.textShadow = '1px 1px 0 #000';
+                    slot.style.position = 'relative';
+                    slot.appendChild(quantity);
+                }
+
+                chestContents.appendChild(slot);
+            });
+
+            chestMenu.classList.add('active');
+        }
+
         // Système d'événements dynamiques
         function triggerRandomEvent(game) {
             const events = [
@@ -1727,11 +1777,13 @@
                                 game.sound.play('chest_open');
                                 game.questSystem.updateQuestProgress('open_chests', { amount: 1 });
                                 game.statistics.chestsOpened++;
-                                
+
                                 if (hasSurvivalItem) {
                                     game.questSystem.updateQuestProgress('collect_survival_items', { amount: 1 });
                                     game.statistics.survivalItemsFound++;
                                 }
+
+                                showChestInterface(chest.loot);
                             }
                         }
                     });
