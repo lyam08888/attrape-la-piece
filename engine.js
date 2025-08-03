@@ -145,7 +145,6 @@ export class GameEngine {
                         this.gameLogic.update(delta, this.keys, this.mouse);
                     }
                     // Passe également delta au rendu afin que la logique de dessin
-                    // puisse effectuer des animations dépendantes du temps.
                     this.gameLogic.draw(this.ctx, this.assets, delta);
                     requestAnimationFrame(loop);
                 };
