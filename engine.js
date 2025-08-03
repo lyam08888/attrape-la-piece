@@ -100,9 +100,9 @@ export class GameEngine {
     setupInput() {
         document.addEventListener('keydown', e => {
             if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'F3'].includes(e.code)) return;
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = true;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyQ') this.keys.left = true;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = true;
-            if (e.code === 'KeyE') this.keys.action = true;
+            if (e.code === 'KeyE' || e.code === 'KeyA') this.keys.action = true;
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
                 this.keys.jump = true;
                 this.keys.up = true;
@@ -123,9 +123,9 @@ export class GameEngine {
             }
         });
         document.addEventListener('keyup', e => {
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.keys.left = false;
+            if (e.code === 'ArrowLeft' || e.code === 'KeyQ') this.keys.left = false;
             if (e.code === 'ArrowRight' || e.code === 'KeyD') this.keys.right = false;
-            if (e.code === 'KeyE') this.keys.action = false;
+            if (e.code === 'KeyE' || e.code === 'KeyA') this.keys.action = false;
             if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
                 this.keys.jump = false;
                 this.keys.up = false;
