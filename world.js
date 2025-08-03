@@ -403,8 +403,9 @@ function generateColumns(game, config, startX, width) {
         // Océans et lacs
         if (biome === 'ocean' || (groundY < surfaceLevel - 5)) {
             const waterMaxY = Math.min(worldHeightInTiles, Math.max(surfaceLevel, groundY + 10));
-            for (let y = groundY + 1; y < waterMaxY; y++) {
-                if (game.tileMap[y][x] === TILE.AIR) {
+            const startY = Math.max(0, groundY + 1);
+            for (let y = startY; y < waterMaxY; y++) {
+                if (game.tileMap[y] && game.tileMap[y][x] === TILE.AIR) {
                     game.tileMap[y][x] = TILE.WATER;
                 }
             }
@@ -413,9 +414,11 @@ function generateColumns(game, config, startX, width) {
         // Rivières
         if (isRiver && biome !== 'desert') {
             const riverDepth = 3;
-            for (let y = groundY - riverDepth; y <= groundY; y++) {
-                if (y >= 0 && y < worldHeightInTiles) {
-                    game.tileMap[y][x] = y === groundY - riverDepth ? TILE.WATER : TILE.AIR;
+            const startY = Math.max(0, groundY - riverDepth);
+            const endY = Math.min(worldHeightInTiles - 1, groundY);
+            for (let y = startY; y <= endY; y++) {
+                if (game.tileMap[y]) {
+                    game.tileMap[y][x] = y === startY ? TILE.WATER : TILE.AIR;
                 }
             }
         }
@@ -423,8 +426,10 @@ function generateColumns(game, config, startX, width) {
         // Canyons
         if (isCanyon) {
             const canyonDepth = 15 + Math.floor(SeededRandom.random() * 10);
-            for (let y = groundY - canyonDepth; y < groundY; y++) {
-                if (y >= 0) {
+            const startY = Math.max(0, groundY - canyonDepth);
+            const endY = Math.min(worldHeightInTiles - 1, groundY - 1);
+            for (let y = startY; y <= endY; y++) {
+                if (game.tileMap[y]) {
                     game.tileMap[y][x] = TILE.AIR;
                 }
             }
