@@ -17,11 +17,39 @@ function drawIcon(objName, ctx) {
     // ... (tous vos autres cas de switch)
     
     // --- Outils ---
-    case "pickaxe": ctx.fillStyle="#888"; ctx.fillRect(-2,-8,4,16); ctx.fillStyle="#543"; ctx.fillRect(-8,-8,16,4); break;
-    case "shovel": ctx.fillStyle="#888"; ctx.fillRect(-1,-8,2,16); ctx.fillStyle="#444"; ctx.beginPath(); ctx.arc(0, -8, 5, Math.PI, 2*Math.PI); ctx.fill(); break;
-    case "axe": ctx.fillStyle="#888"; ctx.fillRect(-1,-8,2,16); ctx.fillStyle="#ccc"; ctx.beginPath(); ctx.moveTo(-2,-8); ctx.lineTo(-8,-8); ctx.lineTo(6, -2); ctx.closePath(); ctx.fill(); break;
-    case "sword": ctx.fillStyle="#ccc"; ctx.fillRect(-1,-10,2,16); ctx.fillStyle="#a65"; ctx.fillRect(-4,6,8,2); break;
-    case "knife": ctx.fillStyle="#ccc"; ctx.fillRect(-1,-5,2,8); ctx.fillStyle="#a65"; ctx.fillRect(-2,3,4,2); break;
+    case "pickaxe": 
+        ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche en bois
+        ctx.fillStyle="#696969"; ctx.fillRect(-6,-8,12,3); // Tête de pioche
+        ctx.fillStyle="#A9A9A9"; ctx.fillRect(-6,-5,12,1); // Reflet
+        break;
+    case "shovel": 
+        ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche
+        ctx.fillStyle="#696969"; ctx.beginPath(); ctx.arc(0, -6, 4, 0, Math.PI); ctx.fill(); // Pelle
+        ctx.fillStyle="#A9A9A9"; ctx.fillRect(-3,-6,6,1); // Reflet
+        break;
+    case "axe": 
+        ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche
+        ctx.fillStyle="#696969"; ctx.beginPath(); ctx.moveTo(-1,-6); ctx.lineTo(-6,-6); ctx.lineTo(-4,-2); ctx.lineTo(4,-2); ctx.lineTo(6,-6); ctx.lineTo(1,-6); ctx.closePath(); ctx.fill(); // Lame
+        break;
+    case "sword": 
+        ctx.fillStyle="#C0C0C0"; ctx.fillRect(-1,-10,2,14); // Lame
+        ctx.fillStyle="#8B4513"; ctx.fillRect(-3,4,6,3); // Garde
+        ctx.fillStyle="#654321"; ctx.fillRect(-1,4,2,4); // Poignée
+        break;
+    case "knife": 
+        ctx.fillStyle="#C0C0C0"; ctx.fillRect(-1,-6,2,8); // Lame
+        ctx.fillStyle="#654321"; ctx.fillRect(-2,2,4,3); // Poignée
+        break;
+    case "bow":
+        ctx.strokeStyle="#8B4513"; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(0,-8); ctx.quadraticCurveTo(-4,-4,0,0); ctx.quadraticCurveTo(4,-4,0,-8); ctx.stroke(); // Arc
+        ctx.strokeStyle="#654321"; ctx.lineWidth=1; ctx.moveTo(-3,-6); ctx.lineTo(3,-6); ctx.stroke(); // Corde
+        break;
+    case "fishing_rod":
+        ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Canne
+        ctx.strokeStyle="#654321"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(4,-4); ctx.stroke(); // Ligne
+        ctx.fillStyle="#C0C0C0"; ctx.beginPath(); ctx.arc(4,-4,1,0,2*Math.PI); ctx.fill(); // Hameçon
+        break;
     
     // --- Icône générique pour le reste ---
     default:
@@ -39,19 +67,24 @@ function drawIcon(objName, ctx) {
 
 // Fonction exportée qui utilise le cache
 export function getItemIcon(name, assets) {
+  // Créer une clé de cache unique qui inclut si on utilise un asset ou une icône générée
+  const cacheKey = `${name}_${assets && assets[`tool_${name}`] ? 'asset' : 'generated'}`;
+  
   // Si l'icône est déjà dans le cache, on la retourne directement
-  if (iconCache.has(name)) {
-    return iconCache.get(name);
+  if (iconCache.has(cacheKey)) {
+    return iconCache.get(cacheKey);
   }
   
   // On vérifie d'abord si un asset direct existe (pour les outils)
   const assetKey = `tool_${name}`;
   if (assets && assets[assetKey]) {
-      iconCache.set(name, assets[assetKey]);
+      console.log(`Utilisation de l'asset ${assetKey} pour l'outil ${name}`);
+      iconCache.set(cacheKey, assets[assetKey]);
       return assets[assetKey];
   }
 
   // Sinon, on la génère, on la met en cache et on la retourne
+  console.log(`Génération de l'icône pour l'outil ${name}`);
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 32;
   const ctx = canvas.getContext('2d');
@@ -59,7 +92,7 @@ export function getItemIcon(name, assets) {
   
   const img = new Image();
   img.src = canvas.toDataURL();
-  iconCache.set(name, img);
+  iconCache.set(cacheKey, img);
   
   return img;
 }

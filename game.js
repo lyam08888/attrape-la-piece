@@ -200,15 +200,64 @@ document.addEventListener('DOMContentLoaded', async () => {
                 slot.addEventListener('click', () => {
                     this.player.selectedToolIndex = index;
                     this.updateToolbar();
+                    this.updateToolInfo();
                 });
                 
-                // Ajouter un titre pour l'accessibilité
-                slot.title = toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ');
+                // Ajouter un titre pour l'accessibilité avec durabilité
+                const durability = this.player.durability[toolName] || 0;
+                const maxDurability = this.player.toolDurability[toolName] || 100;
+                slot.title = `${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')} (${durability}/${maxDurability})`;
                 
                 const icon = getItemIcon(toolName, this.assets);
                 if (icon) slot.appendChild(icon.cloneNode(true));
+                
+                // Ajouter une barre de durabilité
+                if (durability < maxDurability) {
+                    const durabilityBar = document.createElement('div');
+                    durabilityBar.className = 'durability-bar';
+                    durabilityBar.style.cssText = `
+                        position: absolute;
+                        bottom: 2px;
+                        left: 2px;
+                        right: 2px;
+                        height: 3px;
+                        background: rgba(255,0,0,0.7);
+                        border-radius: 1px;
+                    `;
+                    const durabilityFill = document.createElement('div');
+                    durabilityFill.style.cssText = `
+                        height: 100%;
+                        background: rgba(0,255,0,0.8);
+                        width: ${(durability / maxDurability) * 100}%;
+                        border-radius: 1px;
+                    `;
+                    durabilityBar.appendChild(durabilityFill);
+                    slot.style.position = 'relative';
+                    slot.appendChild(durabilityBar);
+                }
+                
                 toolbar.appendChild(slot);
             });
+            this.updateToolInfo();
+        },
+        
+        updateToolInfo() {
+            if (!this.player) return;
+            const toolName = this.player.tools[this.player.selectedToolIndex];
+            const toolInfo = document.getElementById('toolInfo');
+            if (toolInfo && toolName) {
+                const durability = this.player.durability[toolName] || 0;
+                const maxDurability = this.player.toolDurability[toolName] || 100;
+                const enchantments = this.player.toolEnchantments[toolName] || [];
+                
+                toolInfo.innerHTML = `
+                    <div style="font-size: 12px; color: #fff;">
+                        <strong>${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')}</strong><br>
+                        Durabilité: ${durability}/${maxDurability}<br>
+                        ${enchantments.length > 0 ? `Enchantements: ${enchantments.join(', ')}` : ''}
+                    </div>
+                `;
+            }
         },
 
         triggerCameraShake(strength = 5, duration = 30) {
