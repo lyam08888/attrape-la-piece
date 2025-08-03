@@ -68,7 +68,25 @@ async function loadOptions() {
         return await resp.json();
     } catch (e) {
         console.warn(e);
-        return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false};
+        return {
+            "zoom": 3,
+            "renderDistance": 8,
+            "showParticles": true,
+            "weatherEffects": true,
+            "dynamicLighting": true,
+            "soundVolume": 0.8,
+            "mobileMode": false,
+            "keyBindings": {
+                "left": "ArrowLeft",
+                "right": "ArrowRight",
+                "jump": "Space",
+                "down": "ArrowDown",
+                "action": "KeyE",
+                "run": "ShiftLeft",
+                "fly": "KeyV",
+                "repair": "KeyR"
+            }
+        };
     }
 }
 
