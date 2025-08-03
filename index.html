@@ -1181,16 +1181,26 @@
                     console.log(`Recherche de surface pour le joueur à la colonne ${startXTile}`);
                     console.log(`TileMap dimensions: ${game.tileMap.length} x ${game.tileMap[0]?.length}`);
                     
-                    // Trouver la surface
+                    // Trouver la surface avec vérifications robustes
                     if (game.tileMap && game.tileMap.length > 0 && game.tileMap[0].length > startXTile) {
+                        let surfaceFound = false;
                         for (let y = 0; y < game.tileMap.length; y++) {
                             const tile = game.tileMap[y][startXTile];
-                            if (tile && tile > TILE.AIR) {
+                            if (tile && tile > TILE.AIR && tile !== TILE.WATER) {
                                 playerY = (y - 2) * config.tileSize; // 2 blocs au-dessus du sol
                                 console.log(`Surface trouvée à y=${y}, joueur positionné à ${playerY}`);
+                                surfaceFound = true;
                                 break;
                             }
                         }
+                        
+                        if (!surfaceFound) {
+                            console.warn("Aucune surface trouvée, utilisation de la position par défaut");
+                            playerY = config.tileSize * 20; // Position de sécurité
+                        }
+                    } else {
+                        console.error("TileMap invalide pour le spawn du joueur");
+                        playerY = config.tileSize * 20;
                     }
                     
                     game.player.x = startXTile * config.tileSize;

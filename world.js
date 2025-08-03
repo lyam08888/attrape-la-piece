@@ -18,111 +18,69 @@ export const TILE = {
 
 function generateColumns(game, config, startX, width) {
     const worldHeightInTiles = game.tileMap.length;
-    const skyLevel = Math.floor(worldHeightInTiles * 0.1);
-    const surfaceLevel = Math.floor(worldHeightInTiles * 0.4);
-    const waterLevel = surfaceLevel + 3;
-    const undergroundLevel = Math.floor(worldHeightInTiles * 0.6);
-    const deepLevel = Math.floor(worldHeightInTiles * 0.8);
-    const hellLevel = Math.floor(worldHeightInTiles * 0.95);
+    const surfaceLevel = Math.floor(worldHeightInTiles * 0.3); // Surface plus haute
     const { tileSize } = config;
 
-    for (let x = startX; x < startX + width; x++) {
-        // Génération de terrain avec plusieurs octaves de bruit
-        const mainTerrain = Perlin.get(x * 0.01, 0) * 30;
-        const detailTerrain = Perlin.get(x * 0.05, 0) * 10;
-        const microTerrain = Perlin.get(x * 0.1, 0) * 3;
-        const groundY = surfaceLevel + Math.floor(mainTerrain + detailTerrain + microTerrain);
-        
-        // Génération des nuages dans le ciel
-        for (let y = 0; y < skyLevel; y++) {
-            const cloudNoise = Perlin.get(x * 0.02, y * 0.02);
-            if (cloudNoise > 0.3) {
-                game.tileMap[y][x] = TILE.CLOUD;
-            }
-        }
-        
-        // Génération du terrain principal
-        if (groundY > waterLevel + 3) {
-            // Zone désertique/plage
-            for (let y = groundY; y < worldHeightInTiles; y++) {
-                if (y === groundY) {
-                    game.tileMap[y][x] = TILE.SAND;
-                } else if (y < groundY + 3) {
-                    game.tileMap[y][x] = TILE.SAND;
-                } else if (y < groundY + 8) {
-                    game.tileMap[y][x] = TILE.DIRT;
-                } else if (y < undergroundLevel) {
-                    game.tileMap[y][x] = TILE.STONE;
-                } else if (y < deepLevel) {
-                    // Couche souterraine avec minerais
-                    const oreChance = SeededRandom.random();
-                    if (oreChance < 0.02) game.tileMap[y][x] = TILE.COAL;
-                    else if (oreChance < 0.035) game.tileMap[y][x] = TILE.IRON;
-                    else if (oreChance < 0.045) game.tileMap[y][x] = TILE.GOLD;
-                    else if (oreChance < 0.05) game.tileMap[y][x] = TILE.DIAMOND;
-                    else game.tileMap[y][x] = TILE.STONE;
-                } else if (y < hellLevel) {
-                    // Couches profondes
-                    game.tileMap[y][x] = TILE.OBSIDIAN;
-                } else if (y < worldHeightInTiles - 1) {
-                    // Enfer
-                    const hellNoise = Perlin.get(x * 0.1, y * 0.1);
-                    if (hellNoise > 0.2) game.tileMap[y][x] = TILE.LAVA;
-                    else game.tileMap[y][x] = TILE.HELLSTONE;
-                } else {
-                    // Bedrock au fond du monde
-                    game.tileMap[y][x] = TILE.BEDROCK;
-                }
-            }
-            // Eau entre le niveau d'eau et le sol
-            for (let y = waterLevel; y < groundY; y++) {
-                game.tileMap[y][x] = TILE.WATER;
-            }
-            continue;
-        }
+    console.log(`Génération colonnes ${startX} à ${startX + width}, surface à ${surfaceLevel}`);
 
-        // Terrain normal (herbe)
-        for (let y = groundY; y < worldHeightInTiles; y++) {
-            if (y === groundY) {
+    for (let x = startX; x < startX + width; x++) {
+        // Génération de terrain simple et fiable
+        const terrainVariation = Math.floor(Perlin.get(x * 0.02, 0) * 8); // Variation plus douce
+        const groundY = Math.max(10, surfaceLevel + terrainVariation); // Minimum à y=10
+        
+        console.log(`Colonne ${x}: groundY=${groundY}`);
+        
+        // S'assurer que la colonne x existe dans toutes les lignes
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            if (!game.tileMap[y]) {
+                console.error(`Ligne ${y} manquante dans tileMap`);
+                continue;
+            }
+            
+            if (y < groundY) {
+                // Ciel - laisser vide (AIR)
+                if (y < 20 && Perlin.get(x * 0.03, y * 0.03) > 0.4) {
+                    game.tileMap[y][x] = TILE.CLOUD; // Quelques nuages
+                } else {
+                    game.tileMap[y][x] = TILE.AIR;
+                }
+            } else if (y === groundY) {
+                // Surface
                 game.tileMap[y][x] = TILE.GRASS;
             } else if (y < groundY + 5) {
+                // Couche de terre
                 game.tileMap[y][x] = TILE.DIRT;
-            } else if (y < undergroundLevel) {
-                game.tileMap[y][x] = TILE.STONE;
-            } else if (y < deepLevel) {
-                // Couche souterraine avec minerais variés
+            } else if (y < worldHeightInTiles * 0.7) {
+                // Couche de pierre avec minerais occasionnels
                 const oreChance = SeededRandom.random();
-                if (oreChance < 0.015) game.tileMap[y][x] = TILE.COAL;
-                else if (oreChance < 0.025) game.tileMap[y][x] = TILE.IRON;
-                else if (oreChance < 0.032) game.tileMap[y][x] = TILE.GOLD;
-                else if (oreChance < 0.036) game.tileMap[y][x] = TILE.LAPIS;
-                else if (oreChance < 0.038) game.tileMap[y][x] = TILE.DIAMOND;
-                else if (oreChance < 0.04) game.tileMap[y][x] = TILE.AMETHYST;
-                else {
-                    const stoneVariant = SeededRandom.random();
-                    if (stoneVariant < 0.1) game.tileMap[y][x] = TILE.GRANITE;
-                    else if (stoneVariant < 0.2) game.tileMap[y][x] = TILE.DIORITE;
-                    else if (stoneVariant < 0.3) game.tileMap[y][x] = TILE.ANDESITE;
-                    else game.tileMap[y][x] = TILE.STONE;
+                if (oreChance < 0.02) {
+                    game.tileMap[y][x] = TILE.COAL;
+                } else if (oreChance < 0.03) {
+                    game.tileMap[y][x] = TILE.IRON;
+                } else if (oreChance < 0.035) {
+                    game.tileMap[y][x] = TILE.GOLD;
+                } else {
+                    game.tileMap[y][x] = TILE.STONE;
                 }
-            } else if (y < hellLevel) {
+            } else if (y < worldHeightInTiles * 0.9) {
                 // Couches profondes
-                const deepNoise = Perlin.get(x * 0.05, y * 0.05);
-                if (deepNoise > 0.3) game.tileMap[y][x] = TILE.OBSIDIAN;
-                else game.tileMap[y][x] = TILE.SCORCHED_STONE;
+                game.tileMap[y][x] = TILE.OBSIDIAN;
             } else if (y < worldHeightInTiles - 1) {
-                // Enfer avec lave et hellstone
+                // Enfer
                 const hellNoise = Perlin.get(x * 0.1, y * 0.1);
-                if (hellNoise > 0.4) game.tileMap[y][x] = TILE.LAVA;
-                else if (hellNoise > 0.1) game.tileMap[y][x] = TILE.HELLSTONE;
-                else game.tileMap[y][x] = TILE.SOUL_SAND;
+                if (hellNoise > 0.3) {
+                    game.tileMap[y][x] = TILE.LAVA;
+                } else {
+                    game.tileMap[y][x] = TILE.HELLSTONE;
+                }
             } else {
-                // Bedrock au fond du monde
+                // Bedrock au fond
                 game.tileMap[y][x] = TILE.BEDROCK;
             }
         }
 
-        if (SeededRandom.random() < 0.05) {
+        // Génération d'arbres simplifiée
+        if (SeededRandom.random() < 0.03) {
             for (let y = 10; y < worldHeightInTiles; y++) {
                 if (
                     game.tileMap[y]?.[x] === TILE.GRASS &&
@@ -180,13 +138,35 @@ export function generateLevel(game, config) {
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
     // Initialiser le tileMap avec la bonne largeur
-    const initialWidth = Math.floor(worldWidth / tileSize) || 256;
-    game.tileMap = Array(worldHeightInTiles).fill(0).map(() => Array(initialWidth).fill(TILE.AIR));
-    game.generatedRange = { min: 0, max: 0 };
+    const initialWidth = Math.floor(worldWidth / tileSize) || 512; // Plus large par défaut
+    game.tileMap = [];
+    
+    // Créer chaque ligne individuellement pour éviter les références partagées
+    for (let y = 0; y < worldHeightInTiles; y++) {
+        game.tileMap[y] = new Array(initialWidth).fill(TILE.AIR);
+    }
+    
+    game.generatedRange = { min: 0, max: initialWidth };
 
     console.log(`Initialisation tileMap: ${worldHeightInTiles} x ${initialWidth}`);
-    generateColumns(game, config, 0, initialWidth);
-    game.generatedRange.max = initialWidth;
+    
+    // Test simple : remplir quelques colonnes manuellement pour déboguer
+    console.log("Génération de test...");
+    for (let x = 0; x < Math.min(10, initialWidth); x++) {
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            if (y < 30) {
+                game.tileMap[y][x] = TILE.AIR;
+            } else if (y === 30) {
+                game.tileMap[y][x] = TILE.GRASS;
+            } else if (y < 35) {
+                game.tileMap[y][x] = TILE.DIRT;
+            } else {
+                game.tileMap[y][x] = TILE.STONE;
+            }
+        }
+    }
+    
+    generateColumns(game, config, 10, initialWidth - 10);
     
     // Vérifier que le monde a été généré
     let solidTiles = 0;
@@ -205,27 +185,45 @@ export function ensureWorldColumns(game, config, fromX, toX) {
     const start = Math.max(0, Math.floor(fromX));
     const end = Math.max(start, Math.floor(toX));
     const worldHeightInTiles = game.tileMap.length;
+    const currentWidth = game.tileMap[0]?.length || 0;
 
-    // Étendre le tableau vers la gauche si nécessaire
+    console.log(`ensureWorldColumns: ${start} à ${end}, largeur actuelle: ${currentWidth}`);
+
+    // Étendre le tableau vers la droite si nécessaire
+    if (end >= currentWidth) {
+        const newWidth = Math.max(end + 50, currentWidth * 2); // Ajouter une marge
+        console.log(`Extension du monde vers la droite: nouvelle largeur ${newWidth}`);
+        
+        for (let y = 0; y < worldHeightInTiles; y++) {
+            // Étendre chaque ligne
+            const currentRowLength = game.tileMap[y].length;
+            const columnsToAdd = newWidth - currentRowLength;
+            if (columnsToAdd > 0) {
+                const newColumns = Array(columnsToAdd).fill(TILE.AIR);
+                game.tileMap[y] = game.tileMap[y].concat(newColumns);
+            }
+        }
+        
+        // Générer le contenu pour les nouvelles colonnes
+        const startGeneration = Math.max(game.generatedRange.max, currentWidth);
+        const widthToGenerate = newWidth - startGeneration;
+        if (widthToGenerate > 0) {
+            generateColumns(game, config, startGeneration, widthToGenerate);
+            game.generatedRange.max = newWidth;
+        }
+    }
+
+    // Étendre le tableau vers la gauche si nécessaire (plus complexe)
     if (start < game.generatedRange.min) {
         const columnsToAdd = game.generatedRange.min - start;
+        console.log(`Extension du monde vers la gauche: ${columnsToAdd} colonnes`);
+        
         for (let y = 0; y < worldHeightInTiles; y++) {
             const newColumns = Array(columnsToAdd).fill(TILE.AIR);
             game.tileMap[y] = newColumns.concat(game.tileMap[y]);
         }
         generateColumns(game, config, start, columnsToAdd);
         game.generatedRange.min = start;
-    }
-
-    // Étendre le tableau vers la droite si nécessaire
-    if (end > game.generatedRange.max) {
-        const columnsToAdd = end - game.generatedRange.max;
-        for (let y = 0; y < worldHeightInTiles; y++) {
-            const newColumns = Array(columnsToAdd).fill(TILE.AIR);
-            game.tileMap[y] = game.tileMap[y].concat(newColumns);
-        }
-        generateColumns(game, config, game.generatedRange.max, columnsToAdd);
-        game.generatedRange.max = end;
     }
 
     config.worldWidth = (game.generatedRange.max - game.generatedRange.min) * config.tileSize;
