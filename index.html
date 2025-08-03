@@ -281,6 +281,24 @@
             pointer-events: all;
         }
 
+        #disasterMenu {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 10px;
+            pointer-events: none;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        #disasterMenu p {
+            margin: 0 0 4px 0;
+        }
+
         .inventory-slot {
             width: 50px;
             height: 50px;
@@ -367,8 +385,13 @@
                 <div id="biomeDisplay">
                     <span id="currentBiome">Surface</span>
                 </div>
-             </div>
-             <div id="minimap"></div>
+            </div>
+            <div id="disasterMenu">
+                <p><strong>F1</strong> : Orage</p>
+                <p><strong>F2</strong> : Tremblement de terre</p>
+                <p><strong>F3</strong> : Pluie de météores</p>
+            </div>
+            <div id="minimap"></div>
         </div>
 
         <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
@@ -934,6 +957,23 @@
             document.addEventListener('keydown', (e) => {
                 keys[e.key] = true;
                 keys[e.code] = true;
+
+                if (window.game && window.game.disasterManager) {
+                    switch (e.key) {
+                        case 'F1':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('thunderstorm');
+                            break;
+                        case 'F2':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('earthquake');
+                            break;
+                        case 'F3':
+                            e.preventDefault();
+                            window.game.disasterManager.startDisaster('meteor_shower');
+                            break;
+                    }
+                }
             });
 
             document.addEventListener('keyup', (e) => {
