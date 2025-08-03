@@ -75,6 +75,14 @@ export class WorldIntegrationSystem {
             }
         });
         
+        // Si aucun animal existant, générer quelques animaux de test
+        if (game.animals.length === 0 && game.player) {
+            const biome = this.biomeSystem.getBiomeAt(game, game.player.x, game.player.y);
+            const testAnimals = this.biomeSystem.spawnAnimalsInBiome(game, biome, game.player.x, game.player.y, 5);
+            game.animals.push(...testAnimals);
+            this.worldStats.animalsSpawned += testAnimals.length;
+        }
+        
         console.log(`🐾 ${game.animals.length} animaux intelligents initialisés`);
     }
 

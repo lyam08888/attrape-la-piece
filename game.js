@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Intégrer le système de monde complexe
             game.logger.log("Initialisation du monde complexe...");
             try {
-                game.worldIntegration = integrateComplexWorld(game, config);
+                game.worldIntegration = integrateComplexWorld(game, config, gameLogic);
                 game.logger.log("✅ Monde complexe intégré avec succès !");
             } catch (error) {
                 console.error("❌ Erreur lors de l'intégration du monde complexe:", error);

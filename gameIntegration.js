@@ -2,7 +2,7 @@
 import { WorldIntegrationSystem } from './worldIntegrationSystem.js';
 
 // Fonction principale d'intégration
-export function integrateComplexWorld(game, config) {
+export function integrateComplexWorld(game, config, gameLogic) {
     console.log('🚀 Intégration du monde complexe...');
     
     // Créer le système d'intégration
@@ -12,9 +12,9 @@ export function integrateComplexWorld(game, config) {
     worldIntegration.initialize(game);
     
     // Intégrer dans la boucle de mise à jour du jeu
-    const originalUpdate = game.update;
+    const originalUpdate = gameLogic.update;
     if (originalUpdate) {
-        game.update = function(delta, keys, mouse) {
+        gameLogic.update = function(delta, keys, mouse) {
             // Appeler la mise à jour originale
             originalUpdate.call(this, delta, keys, mouse);
             
@@ -24,9 +24,9 @@ export function integrateComplexWorld(game, config) {
     }
     
     // Intégrer dans le rendu du jeu
-    const originalDraw = game.draw;
+    const originalDraw = gameLogic.draw;
     if (originalDraw) {
-        game.draw = function(ctx, assets) {
+        gameLogic.draw = function(ctx, assets) {
             // Appeler le rendu original
             originalDraw.call(this, ctx, assets);
             
