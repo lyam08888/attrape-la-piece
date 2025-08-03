@@ -2,6 +2,20 @@
 import { Player } from './player.js';
 import { PlayerStats, CombatSystem, BiomeSystem } from './combatSystem.js';
 
+// Polyfill minimal DOM features for testing death mechanics
+global.CustomEvent = class CustomEvent {
+    constructor(type, params = {}) {
+        this.type = type;
+        this.detail = params.detail || null;
+    }
+};
+
+global.document = {
+    dispatchEvent: (event) => console.log(`Event dispatched: ${event.type}`),
+    addEventListener: () => {},
+    getElementById: () => null
+};
+
 // Mock config for testing
 const mockConfig = {
     player: {
@@ -72,7 +86,14 @@ try {
     console.log('Testing updateFruitHarvesting method...');
     player.updateFruitHarvesting(mockMouse, mockGame);
     console.log('✅ updateFruitHarvesting executed without errors');
-    
+
+    // Test death mechanics
+    console.log('Testing death mechanics...');
+    const lethalDamage = player.health + 10;
+    player.takeDamage(lethalDamage);
+    console.log('Health after death:', player.stats.health === 0 ? '✅' : '❌');
+    console.log('Death count incremented:', player.stats.deathCount === 1 ? '✅' : '❌');
+
     console.log('\n🎉 All tests passed! The player.js file has been successfully fixed.');
     
 } catch (error) {

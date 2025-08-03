@@ -258,6 +258,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     break;
                 }
             }
+
+            // Point de réapparition du joueur
+            game.spawnPoint = { x: game.player.x, y: game.player.y };
             
             game.worldAnimator = new WorldAnimator(config, assets);
             game.timeSystem = new TimeSystem();
@@ -411,6 +414,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     };
+    // Gestion de la mort du joueur
+    document.addEventListener('player-death', () => {
+        game.logger.log('☠️ Vous êtes mort !');
+        if (game.player) {
+            game.player.stats.respawn();
+            game.player.health = game.player.stats.health;
+            if (game.spawnPoint) {
+                game.player.x = game.spawnPoint.x;
+                game.player.y = game.spawnPoint.y;
+            }
+        }
+    });
 
     engine.start(gameLogic);
 });
