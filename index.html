@@ -868,13 +868,15 @@
                 });
             };
 
-            // Initialiser les éléments déplaçables
-            const draggableElements = document.querySelectorAll('.draggable');
-            draggableElements.forEach(element => {
-                makeDraggable(element);
-                makeResizable(element);
-                setupMinimize(element);
-                setupClose(element);
+            // Initialiser les éléments déplaçables après le chargement du DOM
+            window.addEventListener('load', () => {
+                const draggableElements = document.querySelectorAll('.draggable');
+                draggableElements.forEach(element => {
+                    makeDraggable(element);
+                    makeResizable(element);
+                    setupMinimize(element);
+                    setupClose(element);
+                });
             });
 
             const ui = {
@@ -1564,8 +1566,6 @@
                     list.appendChild(row);
                 }
             }
-            // Exposer la fonction au scope global pour le script non-module
-            window.syncControlsUI = syncControlsUI;
 
             function setupOptionHandlers() {
                 if (renderDistanceSlider) {
