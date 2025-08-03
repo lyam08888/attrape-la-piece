@@ -487,6 +487,50 @@ export class Player {
         }
     }
 
+    draw(ctx, assets, playerAnimations) {
+        if (!ctx || !assets) return;
+        const animations = playerAnimations || this.config.playerAnimations || {};
+        const anim = animations[this.state] || animations['idle'] || [];
+        const frameKey = anim[this.animFrame % (anim.length || 1)] || 'player_idle1';
+        const img = assets[frameKey];
+
+        if (!img) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+        } else {
+            ctx.save();
+            if (this.dir === -1) {
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, -this.x - this.w, this.y, this.w, this.h);
+            } else {
+                ctx.drawImage(img, this.x, this.y, this.w, this.h);
+            }
+            ctx.restore();
+        }
+
+        const toolName = this.tools[this.selectedToolIndex];
+        if (toolName) {
+            const toolAsset = assets[`tool_${toolName}`];
+            if (toolAsset) {
+                const toolSize = this.w;
+                const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
+                const handOffsetY = this.h * 0.5;
+                const pivotX = this.x + handOffsetX;
+                const pivotY = this.y + handOffsetY;
+
+                ctx.save();
+                ctx.translate(pivotX, pivotY);
+                if (this.swingTimer > 0) {
+                    const progress = (20 - this.swingTimer) / 20;
+                    const angle = Math.sin(progress * Math.PI) * -this.dir;
+                    ctx.rotate(angle);
+                }
+                ctx.drawImage(toolAsset, -toolSize / 2, -toolSize / 2, toolSize, toolSize);
+                ctx.restore();
+            }
+        }
+    }
+
     // Method to get current weapon
     getCurrentWeapon() {
         return {

@@ -28,6 +28,16 @@ export class GameEngine {
 
         const allAssetKeys = new Set(Object.keys(configAssets));
 
+        if (Array.isArray(this.config.skins)) {
+            for (const skinPath of this.config.skins) {
+                const key = skinPath.replace(/^.*[\\\/]/, '').replace(/\.png$/i, '');
+                allAssetKeys.add(key);
+                if (!configAssets[key]) {
+                    configAssets[key] = `assets/${skinPath}`;
+                }
+            }
+        }
+
         // Ajouter automatiquement les assets des tuiles connues. Ainsi, le
         // moteur peut fonctionner avec une configuration minimale et générer
         // le monde sans écran noir.
