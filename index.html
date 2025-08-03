@@ -480,15 +480,6 @@
                     <h3>COFFRE</h3>
                     <div id="chestContents" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 20px 0;"></div>
                 </div>
-                <div id="craftingArea" style="margin-top: 20px;">
-                    <h3>FABRICATION</h3>
-                    <div id="craftingGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; width: 150px; margin: 10px auto;">
-                        <!-- Grille de crafting 3x3 -->
-                    </div>
-                    <div id="craftingResult" style="margin: 10px 0;">
-                        <div class="inventory-slot" id="resultSlot"></div>
-                    </div>
-                </div>
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
@@ -901,7 +892,7 @@
         // import { getItemIcon } from './itemIcons.js'; // Non utilisé, version simplifiée dans le code
         // import { SoundManager } from './sound.js'; // Version simplifiée utilisée dans le code
         import { QuestSystem, updateQuestUI } from './questSystem.js';
-        import { Inventory, CraftingSystem, updateInventoryUI, initializeCraftingUI } from './inventorySystem.js';
+        import { Inventory, updateInventoryUI } from './inventorySystem.js';
         import { PlayerStats, CombatSystem, BiomeSystem, updatePlayerStatsUI } from './combatSystem.js';
         import { WeatherSystem, LightingSystem } from './weatherSystem.js';
         import { Minimap, initializeMinimap, drawMinimapToElement } from './minimap.js';
@@ -1229,7 +1220,6 @@
                 logger: new Logger(),
                 questSystem: new QuestSystem(),
                 inventory: new Inventory(16),
-                craftingSystem: new CraftingSystem(),
                 combatSystem: new CombatSystem(),
                 biomeSystem: new BiomeSystem(),
                 weatherSystem: new WeatherSystem(config),
@@ -1539,14 +1529,6 @@
                     //     const pnj = generatePNJ(game, config);
                     //     if (pnj) game.pnjs.push(pnj);
                     // }
-                    
-                    // Initialiser l'interface de crafting
-                    try {
-                        initializeCraftingUI(game.craftingSystem);
-                        console.log("Interface de crafting initialisée");
-                    } catch (error) {
-                        console.warn("Erreur initialisation crafting:", error);
-                    }
                     
                     // Initialiser la minimap
                     try {
