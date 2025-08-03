@@ -711,4 +711,3 @@ class GeologicalSystem {
     }
 }
 
-export { ComplexWorldSystem };
