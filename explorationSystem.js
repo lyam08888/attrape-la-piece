@@ -1119,5 +1119,3 @@ export class ExplorationSystem {
         return Array.from(this.secrets.values()).filter(s => s.discovered);
     }
 }
-
-export { ExplorationSystem };
