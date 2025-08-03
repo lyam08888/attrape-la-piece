@@ -1816,7 +1816,8 @@
                     }
                 },
 
-                draw(ctx, assets) {
+                // Passe désormais delta comme troisième argument pour les animations.
+                draw(ctx, assets, delta) {
                     try {
                         // Arrière-plan simple
                         ctx.fillStyle = '#87CEEB';

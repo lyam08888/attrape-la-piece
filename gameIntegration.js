@@ -31,10 +31,11 @@ export function integrateComplexWorld(game, config, gameLogic) {
         // Intégrer dans le rendu du jeu
         if (gameLogic && gameLogic.draw) {
             const originalDraw = gameLogic.draw;
-            gameLogic.draw = function(ctx, assets) {
+            // Prend désormais delta en troisième paramètre pour les animations.
+            gameLogic.draw = function(ctx, assets, delta) {
                 // Appeler le rendu original
-                originalDraw.call(this, ctx, assets);
-                
+                originalDraw.call(this, ctx, assets, delta);
+
                 // Rendu des éléments du monde complexe
                 try {
                     drawComplexWorldElements(ctx, game, assets);
