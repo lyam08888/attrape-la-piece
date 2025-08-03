@@ -15,7 +15,11 @@ export const TILE = {
     AMETHYST: 31, COPPER: 32, SILVER: 33, PLATINUM: 34, EMERALD: 35, RUBY: 36,
     SAPPHIRE: 37, TOPAZ: 38, GARNET: 39, JADE: 40, OPAL: 41,
     MARBLE: 42, LIMESTONE: 43, SANDSTONE: 44, BASALT: 45, SLATE: 46,
-    QUARTZ: 47, FLUORITE: 48, MALACHITE: 49, HEMATITE: 50, PYRITE: 51
+    QUARTZ: 47, FLUORITE: 48, MALACHITE: 49, HEMATITE: 50, PYRITE: 51,
+    SNOW: 52, ICE: 53, CACTUS: 54, PINE_WOOD: 55, PINE_LEAVES: 56,
+    CORAL: 57, SEAWEED: 58, PEARL: 59, TREASURE_CHEST: 60, RARE_PEARL: 61,
+    DEEP_STONE: 62, BIOLUMINESCENT: 63, PRESSURE_CRYSTAL: 64, DEEP_CORAL: 65, ABYSSAL_PEARL: 66, DEEP_TREASURE: 67,
+    HELLFIRE_CRYSTAL: 68, DEMON_GOLD: 69
 };
 
 function generateColumns(game, config, startX, width) {
@@ -566,7 +570,7 @@ function generateCactus(game, x, groundY, worldHeight) {
     for (let dy = 0; dy < cactusHeight; dy++) {
         const cactusY = groundY - 1 - dy;
         if (cactusY > 0) {
-            game.tileMap[cactusY][x] = TILE.OAK_WOOD; // Utiliser wood pour le cactus
+            game.tileMap[cactusY][x] = TILE.CACTUS;
         }
     }
     
@@ -579,10 +583,10 @@ function generateCactus(game, x, groundY, worldHeight) {
         for (let i = 1; i <= branchLength; i++) {
             const branchX = x + (branchSide * i);
             if (branchX >= 0 && branchY > 0) {
-                game.tileMap[branchY][branchX] = TILE.OAK_WOOD;
+                game.tileMap[branchY][branchX] = TILE.CACTUS;
                 if (i === branchLength) {
                     // Bout de branche vers le haut
-                    game.tileMap[branchY - 1][branchX] = TILE.OAK_WOOD;
+                    game.tileMap[branchY - 1][branchX] = TILE.CACTUS;
                 }
             }
         }
@@ -635,7 +639,7 @@ function generatePineTree(game, x, groundY, worldHeight) {
     for (let dy = 0; dy < treeHeight; dy++) {
         const treeY = groundY - 1 - dy;
         if (treeY > 0) {
-            game.tileMap[treeY][x] = TILE.OAK_WOOD;
+            game.tileMap[treeY][x] = TILE.PINE_WOOD;
         }
     }
     
@@ -650,7 +654,7 @@ function generatePineTree(game, x, groundY, worldHeight) {
                 const leafY = layerY + ly;
                 if (leafY >= 0 && leafY < worldHeight && leafX >= 0 && 
                     game.tileMap[leafY]?.[leafX] === TILE.AIR) {
-                    game.tileMap[leafY][leafX] = TILE.OAK_LEAVES;
+                    game.tileMap[leafY][leafX] = TILE.PINE_LEAVES;
                 }
             }
         }

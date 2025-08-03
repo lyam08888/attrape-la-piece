@@ -429,13 +429,13 @@ export class AdvancedBiomeSystem {
                     if (tile === TILE.WATER || tile === TILE.LAVA) analysis.water++;
                     else if (tile > TILE.AIR) analysis.solid++;
                     
-                    if ([TILE.GRASS, TILE.DIRT, TILE.OAK_WOOD, TILE.OAK_LEAVES].includes(tile)) {
+                    if ([TILE.GRASS, TILE.DIRT, TILE.OAK_WOOD, TILE.OAK_LEAVES, TILE.SNOW, TILE.ICE, TILE.CACTUS, TILE.PINE_WOOD, TILE.PINE_LEAVES, TILE.SEAWEED].includes(tile)) {
                         analysis.organic++;
                     }
-                    if ([TILE.STONE, TILE.IRON, TILE.GOLD, TILE.DIAMOND].includes(tile)) {
+                    if ([TILE.STONE, TILE.IRON, TILE.GOLD, TILE.DIAMOND, TILE.GRANITE, TILE.DIORITE, TILE.ANDESITE, TILE.SAND, TILE.SANDSTONE, TILE.CLAY, TILE.COAL, TILE.COPPER, TILE.SILVER, TILE.PLATINUM, TILE.EMERALD, TILE.RUBY, TILE.SAPPHIRE, TILE.TOPAZ, TILE.GARNET, TILE.JADE, TILE.OPAL, TILE.MARBLE, TILE.LIMESTONE, TILE.BASALT, TILE.SLATE, TILE.QUARTZ, TILE.FLUORITE, TILE.MALACHITE, TILE.HEMATITE, TILE.PYRITE, TILE.DEEP_STONE, TILE.PRESSURE_CRYSTAL].includes(tile)) {
                         analysis.mineral++;
                     }
-                    if ([TILE.CRYSTAL, TILE.AMETHYST, TILE.GLOW_MUSHROOM].includes(tile)) {
+                    if ([TILE.CRYSTAL, TILE.AMETHYST, TILE.GLOW_MUSHROOM, TILE.HEAVENLY_STONE, TILE.MOON_ROCK, TILE.BIOLUMINESCENT, TILE.CORAL, TILE.PEARL, TILE.RARE_PEARL, TILE.ABYSSAL_PEARL, TILE.TREASURE_CHEST, TILE.DEEP_TREASURE, TILE.HELLFIRE_CRYSTAL, TILE.DEMON_GOLD].includes(tile)) {
                         analysis.magical++;
                     }
                 }
@@ -950,20 +950,44 @@ export class AdvancedBiomeSystem {
         const treeTypes = biomeData.plantLife || ['oak_tree'];
         const treeType = treeTypes[Math.floor(Math.random() * treeTypes.length)];
         
+        // Déterminer le type de bois et de feuilles selon le biome
+        let woodType = TILE.OAK_WOOD;
+        let leafType = TILE.OAK_LEAVES;
+        
+        switch (biome) {
+            case 'FROZEN_TUNDRA':
+                woodType = TILE.PINE_WOOD;
+                leafType = TILE.PINE_LEAVES;
+                break;
+            case 'ARID_DESERT':
+                woodType = TILE.CACTUS;
+                leafType = TILE.AIR; // Les cactus n'ont pas de feuilles
+                break;
+            case 'TROPICAL_JUNGLE':
+                woodType = TILE.OAK_WOOD;
+                leafType = TILE.OAK_LEAVES;
+                break;
+            default:
+                // Utiliser les valeurs par défaut
+                break;
+        }
+        
         // Générer un arbre simple
         const treeHeight = 3 + Math.floor(Math.random() * 4);
         for (let i = 0; i < treeHeight; i++) {
             if (game.tileMap[y - 1 - i]?.[x] === TILE.AIR) {
-                game.tileMap[y - 1 - i][x] = TILE.OAK_WOOD;
+                game.tileMap[y - 1 - i][x] = woodType;
             }
         }
         
-        // Ajouter des feuilles
-        const leafY = y - treeHeight;
-        for (let dy = -2; dy <= 2; dy++) {
-            for (let dx = -2; dx <= 2; dx++) {
-                if (Math.hypot(dx, dy) <= 2 && game.tileMap[leafY + dy]?.[x + dx] === TILE.AIR) {
-                    game.tileMap[leafY + dy][x + dx] = TILE.OAK_LEAVES;
+        // Ajouter des feuilles (sauf pour les cactus)
+        if (leafType !== TILE.AIR) {
+            const leafY = y - treeHeight;
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    if (Math.hypot(dx, dy) <= 2 && game.tileMap[leafY + dy]?.[x + dx] === TILE.AIR) {
+                        game.tileMap[leafY + dy][x + dx] = leafType;
+                    }
                 }
             }
         }
