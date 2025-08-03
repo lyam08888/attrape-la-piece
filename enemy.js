@@ -127,7 +127,6 @@ export class Enemy {
 }
 
 // Exporter la classe de base et les classes spécifiques
-export default Enemy;
 export { Enemy };
 
 export class Slime extends Enemy {
