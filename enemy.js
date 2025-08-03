@@ -6,13 +6,18 @@ class Enemy {
     constructor(x, y, config) {
         this.x = x;
         this.y = y;
-        this.w = config.player.width; // Utilise la taille du joueur pour la cohérence
-        this.h = config.player.height;
+        this.w = config?.player?.width || 16; // Utilise la taille du joueur pour la cohérence
+        this.h = config?.player?.height || 16;
         this.vx = (SeededRandom.random() - 0.5) * 1;
         this.vy = 0;
         this.config = config;
         this.isDead = false;
         this.grounded = false;
+        this.health = 20;
+        this.maxHealth = 20;
+        this.attackDamage = 5;
+        this.lastAttackTime = 0;
+        this.attackCooldown = 1000; // 1 seconde
     }
 
     update(game) {
@@ -86,13 +91,45 @@ class Enemy {
             ctx.drawImage(img, this.x, this.y, this.w, this.h);
         } else {
             // Fallback si l'asset n'est pas trouvé
-            ctx.fillStyle = 'purple';
+            ctx.fillStyle = this.isDead ? '#666666' : '#8B008B';
             ctx.fillRect(this.x, this.y, this.w, this.h);
+            
+            // Barre de vie
+            if (!this.isDead && this.health < this.maxHealth) {
+                const barWidth = this.w;
+                const barHeight = 4;
+                const healthPercent = this.health / this.maxHealth;
+                
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(this.x, this.y - 8, barWidth, barHeight);
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(this.x, this.y - 8, barWidth * healthPercent, barHeight);
+            }
         }
+    }
+    
+    rectCollide(other) {
+        return this.x < other.x + other.w &&
+               this.x + this.w > other.x &&
+               this.y < other.y + other.h &&
+               this.y + this.h > other.y;
+    }
+    
+    takeDamage(damage) {
+        if (this.isDead) return false;
+        this.health -= damage;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.isDead = true;
+        }
+        return true;
     }
 }
 
-// Exporter les classes spécifiques
+// Exporter la classe de base et les classes spécifiques
+export default Enemy;
+export { Enemy };
+
 export class Slime extends Enemy {
     draw(ctx, assets) { super.draw(ctx, assets, 'enemy_slime'); }
 }

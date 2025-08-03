@@ -589,6 +589,7 @@
         import { GameEngine } from './engine.js';
         import { Player } from './player.js';
         import { TILE, generateLevel, ensureWorldColumns } from './world.js';
+        import { Enemy } from './enemy.js';
         import { PNJ } from './PNJ.js';
         import { generatePNJ } from './generateurPNJ.js';
         import { updateMining } from './miningEngine.js';
@@ -631,6 +632,11 @@
             return loot;
         }
         
+        // Fonction pour créer des ennemis
+        function createEnemy(x, y, config) {
+            return new Enemy(x, y, config);
+        }
+        
         // Système d'événements dynamiques
         function triggerRandomEvent(game) {
             const events = [
@@ -658,7 +664,7 @@
                             const x = game.player.x + Math.cos(angle) * distance;
                             const y = game.player.y + Math.sin(angle) * distance;
                             
-                            const monster = new Enemy(x, y, 'slime');
+                            const monster = createEnemy(x, y, game.config);
                             monster.health = 15;
                             monster.maxHealth = 15;
                             game.enemies.push(monster);
@@ -984,6 +990,29 @@
                 disasterManager: new DisasterManager(),
                 minimap: null,
                 saveSystem: new SaveSystem(),
+                sound: {
+                    play: (soundName, options = {}) => {
+                        // Système de son simple - peut être étendu plus tard
+                        console.log(`🔊 Son joué: ${soundName}`, options);
+                    },
+                    setVolume: (volume) => {
+                        console.log(`🔊 Volume défini: ${volume}`);
+                    }
+                },
+                createParticles: function(x, y, count, color, options = {}) {
+                    if (this.particleSystem) {
+                        for (let i = 0; i < count; i++) {
+                            this.particleSystem.addParticle({
+                                x: x + (Math.random() - 0.5) * 20,
+                                y: y + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * (options.speed || 4),
+                                vy: (Math.random() - 0.5) * (options.speed || 4),
+                                color: color,
+                                life: 60 + Math.random() * 60
+                            });
+                        }
+                    }
+                },
                 lastTime: 0,
                 canvas: canvas,
                 settings: config,
@@ -1261,7 +1290,7 @@
                         }
                         
                         // Créer un ennemi avec les données du monstre généré
-                        const monster = new Enemy(x, y, 'custom_monster');
+                        const monster = createEnemy(x, y, config);
                         monster.monsterData = monsterData;
                         monster.biome = biome;
                         monster.maxHealth = 30 + Math.floor(Math.random() * 50);

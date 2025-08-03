@@ -39,6 +39,14 @@ export class ParticleSystem {
             this.particles.push(new Particle(x, y, { ...options, color }));
         }
     }
+    
+    addParticle(particleData) {
+        this.particles.push(new Particle(particleData.x, particleData.y, {
+            speed: Math.hypot(particleData.vx || 0, particleData.vy || 0),
+            color: particleData.color,
+            gravity: 0.1
+        }));
+    }
 
     // Effet de pluie
     rain(camera, canvas, zoom) {

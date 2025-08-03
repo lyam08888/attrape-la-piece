@@ -62,14 +62,16 @@ class Meteor {
 
 
 export class DisasterManager {
-    constructor(game) {
+    constructor(game = null) {
         this.game = game;
         this.disasterTimer = 3000; // Temps en frames avant le prochain événement possible
         this.activeDisaster = null;
         this.projectiles = []; // Pour les météorites, bombes de lave, etc.
     }
 
-    update() {
+    update(game, delta) {
+        if (!this.game) this.game = game;
+        
         if (this.activeDisaster) {
             this.activeDisaster.duration--;
             if (this.activeDisaster.duration <= 0) {

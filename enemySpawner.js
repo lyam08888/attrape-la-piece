@@ -1,6 +1,6 @@
 // enemySpawner.js - Système de génération d'ennemis
 
-import { Golem } from './enemy.js';
+import { Enemy, Golem } from './enemy.js';
 import { TILE } from './world.js';
 
 export class EnemySpawner {
