@@ -1064,5 +1064,3 @@ export class AdvancedBiomeSystem {
         return this.animalDistribution[biome] || { common: [], uncommon: [], rare: [], legendary: [] };
     }
 }
-
-export { AdvancedBiomeSystem };
