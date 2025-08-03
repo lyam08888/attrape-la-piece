@@ -876,7 +876,7 @@
                         "hitbox": { "offsetX": 0, "offsetY": 0, "width": 32, "height": 32 }
                     },
                     "playerAnimations": {
-                        "idle": ["player_idle1"],
+                        "idle": ["player_idle1", "player_idle2"],
                         "walking": ["player_walk1", "player_walk2"],
                         "running": ["player_run1", "player_run2"],
                         "jumping": ["player_jump"],
@@ -2320,7 +2320,7 @@
                                 } else {
                                     // Animation idle avec clignement
                                     const idleFrame = Math.floor(Date.now() / 3000) % 10;
-                                    playerTexture = idleFrame === 0 ? 'player_idle_blink' : 'player_idle1';
+                                    playerTexture = idleFrame === 0 ? 'player_idle2' : 'player_idle1';
                                 }
                                 
                                 const texture = assets[playerTexture];
@@ -2686,8 +2686,13 @@
             // Liste des assets à charger
             const assetList = [
                 // Joueur
-                'player_idle1', 'player_walk1', 'player_walk2', 'player_run1', 'player_run2',
-                'player_jump', 'player_crouch', 'player_prone',
+                'player_idle1', 'player_idle2',
+                'player_walk1', 'player_walk2',
+                'player_run1', 'player_run2',
+                'player_jump', 'player_double_jump1', 'player_double_jump2',
+                'player_fly1', 'player_fly2',
+                'player_crouch', 'player_crouch_walk1', 'player_crouch_walk2',
+                'player_prone', 'player_prone_walk1', 'player_prone_walk2',
                 
                 // Ennemis
                 'enemy_slime', 'enemy_frog', 'enemy_golem',

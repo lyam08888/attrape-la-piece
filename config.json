@@ -52,9 +52,23 @@
     "attackRange": 20
   },
   "skins": [
+    "player_crouch.png",
+    "player_crouch_walk1.png",
+    "player_crouch_walk2.png",
+    "player_double_jump1.png",
+    "player_double_jump2.png",
+    "player_fly1.png",
+    "player_fly2.png",
     "player_idle1.png",
+    "player_idle_blink.png",
+    "player_jump.png",
+    "player_prone.png",
+    "player_prone_walk1.png",
+    "player_prone_walk2.png",
     "player_run1.png",
-    "player_walk1.png"
+    "player_run2.png",
+    "player_walk1.png",
+    "player_walk2.png"
   ],
   "assets": {
     "cloud": "assets/cloud.png",
