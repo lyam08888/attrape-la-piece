@@ -87,6 +87,7 @@ async function loadOptions() {
                 "right": "ArrowRight",
                 "jump": "Space",
                 "down": "ArrowDown",
+                "up": "ArrowUp",
                 "action": "KeyE",
                 "run": "ShiftLeft",
                 "fly": "KeyV",

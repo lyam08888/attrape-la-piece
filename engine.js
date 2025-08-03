@@ -16,6 +16,7 @@ export class GameEngine {
             right: 'ArrowRight',
             jump: 'Space',
             down: 'ArrowDown',
+            up: 'ArrowUp',
             action: 'KeyE',
             run: 'ShiftLeft',
             fly: 'KeyV',
@@ -120,6 +121,7 @@ export class GameEngine {
             if (e.code === binds.left) this.keys.left = true;
             if (e.code === binds.right) this.keys.right = true;
             if (e.code === binds.action) this.keys.action = true;
+            if (e.code === binds.up) this.keys.up = true;
             if (e.code === binds.jump) {
                 this.keys.jump = true;
                 this.keys.up = true;
@@ -144,6 +146,7 @@ export class GameEngine {
             if (e.code === binds.left) this.keys.left = false;
             if (e.code === binds.right) this.keys.right = false;
             if (e.code === binds.action) this.keys.action = false;
+            if (e.code === binds.up) this.keys.up = false;
             if (e.code === binds.jump) {
                 this.keys.jump = false;
                 this.keys.up = false;
