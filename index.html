@@ -2040,6 +2040,11 @@
                                     ctx.fillStyle = '#FF5722';
                                     ctx.fillRect(game.player.x, game.player.y, game.player.w, game.player.h);
                                 }
+                                
+                                // Carré rouge fin autour du personnage
+                                ctx.strokeStyle = '#FF0000';
+                                ctx.lineWidth = 1;
+                                ctx.strokeRect(game.player.x - 1, game.player.y - 1, game.player.w + 2, game.player.h + 2);
                             }
                         }
 
