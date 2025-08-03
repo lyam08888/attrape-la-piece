@@ -150,13 +150,16 @@ export function updateMining(game, keys, mouse, delta) {
     
     // Si l'outil n'est pas adapté et qu'on ne peut pas miner à la main, arrêter
     if (toolName !== 'hand' && toolEfficiency === undefined && !handMineable.includes(currentType)) {
-        player.miningProgress = 0;
-        game.miningEffect = null;
-        return; // Outil inadapté : pas de progression de minage
+        if (toolName !== 'pickaxe') {
+            player.miningProgress = 0;
+            game.miningEffect = null;
+            return; // Outil inadapté : pas de progression de minage
+        }
+        // La pioche peut miner les blocs inconnus avec une efficacité par défaut
     }
 
     // Vérifier si l'outil a encore de la durabilité
-    let efficiency = toolEfficiency ?? 0.5; // 0.5 = main nue
+    let efficiency = toolEfficiency ?? (toolName === 'pickaxe' ? 1 : 0.5); // 0.5 = main nue
     
     if (toolName !== 'hand') {
         const durability = player.durability?.[toolName] ?? Infinity;
