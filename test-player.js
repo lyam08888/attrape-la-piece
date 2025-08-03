@@ -77,7 +77,7 @@ try {
     };
     
     const mockMouse = { x: 0, y: 0, left: false, right: false };
-    const mockKeys = { left: false, right: false, jump: false, down: false, run: false, fly: false };
+    const mockKeys = { left: false, right: false, jump: false, down: false, run: false, fly: false, up: false };
     
     console.log('Testing updateCombat method...');
     player.updateCombat(mockGame, 16);

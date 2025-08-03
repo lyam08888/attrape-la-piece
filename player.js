@@ -127,12 +127,12 @@ export class Player {
 
         if (this.isFlying) {
             this.vx = keys.left ? -speed : keys.right ? speed : 0;
-            this.vy = keys.jump ? -speed : keys.down ? speed : 0;
+            this.vy = keys.up ? -speed : keys.down ? speed : 0;
             this.grounded = false;
         } else if (this.inWater) {
             const swimSpeed = physics.playerSpeed * 0.5;
             this.vx = keys.left ? -swimSpeed : keys.right ? swimSpeed : this.vx * 0.9;
-            if (keys.jump) {
+            if (keys.up || keys.jump) {
                 this.vy = -swimSpeed;
             } else if (keys.down) {
                 this.vy = swimSpeed;
