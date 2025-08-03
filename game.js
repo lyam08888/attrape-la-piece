@@ -5,7 +5,7 @@ import { Player } from './player.js';
 import { TILE, generateLevel, ensureWorldColumns } from './world.js';
 import { PNJ } from './PNJ.js';
 import { generatePNJ } from './generateurPNJ.js';
-import { updateMining } from './miningEngine.js';
+import { updateMining, updateGravity } from './miningEngine.js';
 import { ParticleSystem } from './fx.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { TimeSystem } from './timeSystem.js';
@@ -289,21 +289,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         triggerCameraShake(strength = 5, duration = 30) {
             this.cameraShakeStrength = strength;
             this.cameraShakeTimer = duration;
-        },
-
-        checkBlockSupport(x, y) {
-            const type = this.tileMap[y]?.[x];
-            if (type > TILE.AIR && (this.tileMap[y + 1]?.[x] === TILE.AIR || this.tileMap[y + 1]?.[x] === undefined)) {
-                this.tileMap[y][x] = TILE.AIR;
-                this.collectibles.push({
-                    x: x * this.config.tileSize,
-                    y: y * this.config.tileSize,
-                    w: this.config.tileSize,
-                    h: this.config.tileSize,
-                    vy: -2,
-                    tileType: type
-                });
-            }
         }
     };
 
@@ -387,17 +372,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.collectibles.forEach(c => {
                 c.vy += config.physics.gravity * 0.5;
                 c.y += c.vy;
-                // Simple collision avec le sol pour les collectibles
+                // Collision avec le sol pour les collectibles
                 const groundY = Math.floor((c.y + c.h) / config.tileSize);
                 const groundX = Math.floor((c.x + c.w/2) / config.tileSize);
                 if(game.tileMap[groundY]?.[groundX] > TILE.AIR) {
                     c.y = groundY * config.tileSize - c.h;
                     c.vy = 0;
                 }
+                // Empêcher les collectibles de tomber indéfiniment
+                if (c.y > game.tileMap.length * config.tileSize) {
+                    c.y = game.tileMap.length * config.tileSize;
+                    c.vy = 0;
+                }
             });
 
             // Passe également les touches clavier pour permettre le minage via la touche d'action
             updateMining(game, keys, mouse, delta);
+            
+            // Système de gravité pour les blocs
+            updateGravity(game);
+            
             game.particleSystem.update();
             if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
             if (game.timeSystem) game.timeSystem.update();

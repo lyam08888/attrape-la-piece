@@ -67,6 +67,7 @@
     "tile_iron": "assets/tile_iron.png",
     
     "tile_sand": "assets/tile_sand.png",
+    "tile_gravel": "assets/tile_stone.png",
     "tile_water": "assets/tile_water.png",
     "tile_oak_wood": "assets/tile_oak_wood.png",
     "tile_oak_leaves": "assets/tile_oak_leaves.png",

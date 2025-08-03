@@ -18,6 +18,7 @@ const BLOCK_BREAK_TIME = {
     [TILE.HELLSTONE]: 4.0,
     [TILE.LAVA]: 0.2,
     [TILE.SAND]: 0.4,
+    [TILE.GRAVEL]: 0.6,
     [TILE.OAK_WOOD]: 1.5,
     [TILE.OAK_LEAVES]: 0.3,
     [TILE.FLOWER_RED]: 0.1,
@@ -58,6 +59,7 @@ const TOOL_EFFICIENCY = {
         [TILE.DIRT]: 3,
         [TILE.GRASS]: 3,
         [TILE.SAND]: 3,
+        [TILE.GRAVEL]: 3,
         [TILE.SOUL_SAND]: 2
     },
     axe: {
@@ -144,7 +146,7 @@ export function updateMining(game, keys, mouse, delta) {
     
     // Blocs qui peuvent être minés à la main (avec efficacité réduite)
     const handMineable = [
-        TILE.DIRT, TILE.GRASS, TILE.SAND, TILE.LEAVES, TILE.OAK_LEAVES, 
+        TILE.DIRT, TILE.GRASS, TILE.SAND, TILE.GRAVEL, TILE.LEAVES, TILE.OAK_LEAVES, 
         TILE.FLOWER_RED, TILE.FLOWER_YELLOW, TILE.GLOW_MUSHROOM, TILE.CLOUD
     ];
     
@@ -225,6 +227,7 @@ function createMiningParticles(game, x, y, blockType) {
         case TILE.DIRT: particleColor = '#8B4513'; break;
         case TILE.GRASS: particleColor = '#228B22'; break;
         case TILE.SAND: particleColor = '#F4A460'; break;
+        case TILE.GRAVEL: particleColor = '#A0A0A0'; break;
         case TILE.COAL: particleColor = '#2F2F2F'; break;
         case TILE.IRON: particleColor = '#CD853F'; break;
         case TILE.GOLD: particleColor = '#FFD700'; break;
@@ -303,6 +306,12 @@ function destroyBlock(game, x, y, type) {
 
     // Logique de physique des blocs
     checkBlockSupport(game, x, y - 1);
+    
+    // Vérifier les blocs adjacents pour la gravité
+    checkBlockSupport(game, x - 1, y);
+    checkBlockSupport(game, x + 1, y);
+    checkBlockSupport(game, x, y + 1);
+    checkBlockSupport(game, x, y - 1);
 }
 
 function getBlockDrops(type) {
@@ -326,17 +335,17 @@ function getBlockDrops(type) {
     return [{ item: type, quantity: 1 }];
 }
 
+// Blocs qui ont de la gravité (tombent lorsqu'ils n'ont plus de support)
+const GRAVITY_BLOCKS = [
+    TILE.SAND, TILE.GRAVEL, TILE.SOUL_SAND
+];
+
 function checkBlockSupport(game, x, y) {
     // Vérifier si un bloc a besoin de support
     const blockAbove = game.tileMap[y]?.[x];
     if (!blockAbove) return;
     
-    // Blocs qui nécessitent un support
-    const needsSupport = [
-        TILE.SAND, TILE.GRAVEL, TILE.SOUL_SAND
-    ];
-    
-    if (needsSupport.includes(blockAbove)) {
+    if (GRAVITY_BLOCKS.includes(blockAbove)) {
         // Faire tomber le bloc
         game.tileMap[y][x] = TILE.AIR;
         game.collectibles.push({
@@ -347,5 +356,46 @@ function checkBlockSupport(game, x, y) {
             vy: 0,
             tileType: blockAbove
         });
+    }
+}
+
+// Fonction pour vérifier et faire tomber tous les blocs avec gravité qui n'ont plus de support
+export function updateGravity(game) {
+    // Limiter la fréquence de vérification de la gravité pour les performances
+    if (!game.gravityTimer) game.gravityTimer = 0;
+    game.gravityTimer++;
+    
+    // Vérifier la gravité seulement toutes les 5 frames
+    if (game.gravityTimer < 5) return;
+    game.gravityTimer = 0;
+    
+    const { tileSize } = game.config;
+    const map = game.tileMap;
+    
+    // Parcourir la carte de bas en haut pour éviter les problèmes de décalage
+    for (let y = map.length - 2; y >= 0; y--) {
+        for (let x = 0; x < map[y].length; x++) {
+            const blockType = map[y][x];
+            
+            // Vérifier si le bloc a de la gravité
+            if (GRAVITY_BLOCKS.includes(blockType)) {
+                // Vérifier si le bloc a un support en dessous
+                const blockBelow = map[y + 1]?.[x];
+                
+                // Si le bloc en dessous est de l'air ou n'existe pas, le bloc tombe
+                if (!blockBelow || blockBelow === TILE.AIR) {
+                    // Faire tomber le bloc
+                    map[y][x] = TILE.AIR;
+                    game.collectibles.push({
+                        x: x * tileSize,
+                        y: y * tileSize,
+                        w: tileSize,
+                        h: tileSize,
+                        vy: 0.5, // Donner une vélocité initiale pour la chute
+                        tileType: blockType
+                    });
+                }
+            }
+        }
     }
 }
