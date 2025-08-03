@@ -63,6 +63,7 @@ export class QuestSystem {
         this.quests = new Map();
         this.activeQuests = new Map();
         this.completedQuests = new Set();
+        this.questProgress = new Map();
         this.questLog = [];
         this.initializeQuests();
     }
@@ -387,9 +388,9 @@ export function updateQuestUI(questSystem) {
 // Ajouter les méthodes de sérialisation à QuestSystem
 QuestSystem.prototype.serialize = function() {
     return {
-        activeQuests: Array.from(this.activeQuests.entries()),
-        completedQuests: Array.from(this.completedQuests),
-        questProgress: Object.fromEntries(this.questProgress)
+        activeQuests: Array.from(this.activeQuests?.entries() || []),
+        completedQuests: Array.from(this.completedQuests || []),
+        questProgress: Object.fromEntries(this.questProgress || new Map())
     };
 };
 

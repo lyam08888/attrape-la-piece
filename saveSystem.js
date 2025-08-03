@@ -16,7 +16,7 @@ export class SaveSystem {
                 player: this.serializePlayer(game.player),
                 world: this.serializeWorld(game),
                 inventory: game.inventory.serialize(),
-                quests: game.questSystem.serialize(),
+                quests: game.questSystem ? game.questSystem.serialize() : null,
                 stats: game.player.stats ? game.player.stats.serialize() : null,
                 timeSystem: game.timeSystem ? game.timeSystem.serialize() : null,
                 settings: game.config

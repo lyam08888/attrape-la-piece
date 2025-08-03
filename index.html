@@ -994,6 +994,13 @@
                     },
                     setVolume: (volume) => {
                         console.log(`🔊 Volume défini: ${volume}`);
+                    },
+                    startAmbient: (ambientSound) => {
+                        // Système de son ambiant simple
+                        console.log(`🎵 Son ambiant démarré: ${ambientSound}`);
+                    },
+                    stopAmbient: () => {
+                        console.log(`🎵 Son ambiant arrêté`);
                     }
                 },
                 createParticles: function(x, y, count, color, options = {}) {
