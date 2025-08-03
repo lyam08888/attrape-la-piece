@@ -1740,7 +1740,13 @@
                     // Mettre à jour les systèmes
                     if (game.particleSystem) game.particleSystem.update();
                     if (game.combatSystem) game.combatSystem.updateDamageNumbers();
-                    if (game.biomeSystem) game.biomeSystem.updatePlayerBiome(game.player, game);
+                    if (game.biomeSystem) {
+                        if (typeof game.biomeSystem.updatePlayerBiome === 'function') {
+                            game.biomeSystem.updatePlayerBiome(game.player, game);
+                        } else if (typeof game.biomeSystem.update === 'function') {
+                            game.biomeSystem.update(game, delta);
+                        }
+                    }
                     if (game.weatherSystem) game.weatherSystem.update(game, delta);
                     if (game.lightingSystem) game.lightingSystem.updateLightMap(game);
                     if (game.advancedLighting) game.advancedLighting.update();

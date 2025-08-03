@@ -464,6 +464,7 @@ export class BiomeSystem {
     }
 
     updateBiomeDisplay(biomeName) {
+        if (typeof document === 'undefined') return;
         const biomeDisplay = document.getElementById('currentBiome');
         if (biomeDisplay) {
             biomeDisplay.textContent = biomeName;
