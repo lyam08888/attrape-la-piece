@@ -44,7 +44,7 @@ async function loadConfig() {
                 "hitbox": { "offsetX": 8, "offsetY": 8, "width": 48, "height": 48 }
             },
             "playerAnimations": {
-                "idle": ["player_idle1", "player_idle2"],
+                "idle": ["player_idle1"],
                 "walking": ["player_walk1", "player_walk2"],
                 "running": ["player_run1", "player_run2"],
                 "jumping": ["player_jump"],
