@@ -255,7 +255,6 @@ export class Player {
     updateMiningTarget(mouse, game) {
         // CORRECTION : Ajout d'une vérification pour éviter le crash si la souris ou la caméra n'est pas prête.
         if (!game.camera || !mouse) {
-            // console.log("updateMiningTarget: camera ou mouse manquant");
             return;
         }
         
@@ -264,16 +263,29 @@ export class Player {
         const mouseWorldX = game.camera.x + mouse.x / zoom;
         const mouseWorldY = game.camera.y + mouse.y / zoom;
         
-        if (Math.hypot(mouseWorldX - (this.x + this.w / 2), mouseWorldY - (this.y + this.h / 2)) > reach) {
+        // Vérifier la portée
+        const playerCenterX = this.x + this.w / 2;
+        const playerCenterY = this.y + this.h / 2;
+        const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
+        
+        if (distance > reach) {
             this.miningTarget = null;
             return;
         }
 
         const tileX = Math.floor(mouseWorldX / tileSize);
         const tileY = Math.floor(mouseWorldY / tileSize);
-        const tileType = game.tileMap[tileY]?.[tileX];
+        
+        // Vérifier que les coordonnées sont valides
+        if (tileY < 0 || tileY >= game.tileMap.length || tileX < 0 || !game.tileMap[tileY]) {
+            this.miningTarget = null;
+            return;
+        }
+        
+        const tileType = game.tileMap[tileY][tileX];
 
-        if (tileType > TILE.AIR) {
+        // Vérifier que le bloc peut être miné (pas de l'air et pas du bedrock)
+        if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
             if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
                 this.miningTarget = { x: tileX, y: tileY, type: tileType };
                 this.miningProgress = 0;

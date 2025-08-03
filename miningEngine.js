@@ -116,7 +116,12 @@ const SPECIAL_DROPS = {
 
 export function updateMining(game, keys, mouse, delta) {
     const player = game.player;
-    if (!player || !(mouse.left || keys?.action) || !player.miningTarget) {
+    if (!player) return;
+    
+    // Vérifier si le joueur est en train de miner (clic gauche maintenu ou touche action)
+    const isMining = mouse.left || keys?.action;
+    
+    if (!isMining || !player.miningTarget) {
         if (player) player.miningProgress = 0;
         game.miningEffect = null;
         return;

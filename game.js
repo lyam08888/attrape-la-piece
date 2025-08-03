@@ -195,6 +195,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const slot = document.createElement('div');
                 slot.className = 'toolbar-slot';
                 if (index === this.player.selectedToolIndex) slot.classList.add('selected');
+                
+                // Ajouter un gestionnaire de clic pour sélectionner l'outil
+                slot.addEventListener('click', () => {
+                    this.player.selectedToolIndex = index;
+                    this.updateToolbar();
+                });
+                
+                // Ajouter un titre pour l'accessibilité
+                slot.title = toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ');
+                
                 const icon = getItemIcon(toolName, this.assets);
                 if (icon) slot.appendChild(icon.cloneNode(true));
                 toolbar.appendChild(slot);
