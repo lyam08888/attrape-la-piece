@@ -337,19 +337,51 @@ export class CraftingSystem {
 }
 
 // Fonctions utilitaires pour l'interface
-export function updateInventoryUI(inventory) {
+export function updateInventoryUI(inventory, game = null) {
     const inventoryGrid = document.getElementById('inventoryGrid');
     if (!inventoryGrid) return;
 
     inventoryGrid.innerHTML = '';
-    
+
     for (let i = 0; i < inventory.size; i++) {
         const slot = document.createElement('div');
         slot.className = 'inventory-slot';
         slot.dataset.slotIndex = i;
-        
+
+        // Autoriser le drop sur chaque slot
+        slot.addEventListener('dragover', e => e.preventDefault());
+        slot.addEventListener('drop', e => {
+            e.preventDefault();
+            const data = e.dataTransfer.getData('text/plain');
+            if (!data) return;
+
+            if (data.startsWith('inv:')) {
+                const from = parseInt(data.split(':')[1], 10);
+                if (!isNaN(from)) {
+                    inventory.moveItem(from, i);
+                    updateInventoryUI(inventory, game);
+                }
+            } else if (data.startsWith('tool:') && game && game.player) {
+                const index = parseInt(data.split(':')[1], 10);
+                const toolName = game.player.tools[index];
+                if (toolName && inventory.addItem(toolName, 1)) {
+                    game.player.tools.splice(index, 1);
+                    if (game.player.selectedToolIndex >= game.player.tools.length) {
+                        game.player.selectedToolIndex = Math.max(0, game.player.tools.length - 1);
+                    }
+                    if (typeof game.updateToolbar === 'function') game.updateToolbar();
+                    updateInventoryUI(inventory, game);
+                }
+            }
+        });
+
         const item = inventory.slots[i];
         if (item) {
+            slot.draggable = true;
+            slot.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', `inv:${i}`);
+            });
+
             const icon = document.createElement('img');
             icon.src = `assets/${item.name}.png`;
             icon.onerror = () => {
@@ -362,7 +394,7 @@ export function updateInventoryUI(inventory) {
                 slot.appendChild(text);
             };
             slot.appendChild(icon);
-            
+
             if (item.quantity > 1) {
                 const quantity = document.createElement('div');
                 quantity.textContent = item.quantity;
@@ -376,7 +408,7 @@ export function updateInventoryUI(inventory) {
                 slot.appendChild(quantity);
             }
         }
-        
+
         inventoryGrid.appendChild(slot);
     }
 }
