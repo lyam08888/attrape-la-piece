@@ -344,7 +344,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             game.player.update(keys, mouse, game, delta);
             game.enemies.forEach(e => e.update(game, delta));
-            game.pnjs.forEach(p => p.update(game, delta));
+            game.pnjs.forEach(p => {
+                p.update(game, delta);
+
+                const dx = (p.x + p.w / 2) - (game.player.x + game.player.w / 2);
+                const dy = (p.y + p.h / 2) - (game.player.y + game.player.h / 2);
+                const dist = Math.hypot(dx, dy);
+                p.playerNearby = dist < config.tileSize * 2;
+
+                if (p.playerNearby && keys.action && p.interactionCooldown <= 0) {
+                    const dialogue = p.data?.quest?.dialogues?.greeting || 'Bonjour';
+                    game.logger.log(`${p.data?.name || 'PNJ'}: ${dialogue}`);
+                    p.interactionCooldown = 30;
+                }
+            });
             
             game.collectibles.forEach(c => {
                 c.vy += config.physics.gravity * 0.5;
