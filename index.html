@@ -469,6 +469,12 @@
                 <button data-action="close-menu">FERMER</button>
             </div>
         </div>
+        <div id="gameOverScreen" class="overlay">
+            <div class="menu-box">
+                <h2>GAME OVER</h2>
+                <button data-action="back-to-main-menu">RECOMMENCER</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -2509,7 +2515,7 @@
                     }
                 },
 
-                isPaused: () => document.getElementById('optionsMenu')?.classList.contains('active') || false,
+                isPaused: () => document.getElementById('optionsMenu')?.classList.contains('active') || document.getElementById('gameOverScreen')?.classList.contains('active') || false,
                 toggleMenu: (menu) => { 
                     if (menu === 'options') {
                         const optionsMenu = document.getElementById('optionsMenu');
@@ -2530,6 +2536,12 @@
                     }
                 }
             };
+
+            document.addEventListener('player-death', () => {
+                const goScreen = document.getElementById('gameOverScreen');
+                if (goScreen) goScreen.classList.add('active');
+                if (game.logger) game.logger.log('☠️ Vous êtes mort !');
+            });
 
             // Créer le moteur de jeu
             const engine = {

@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const engine = new GameEngine(canvas, config);
 
     const optionsMenu = document.getElementById('optionsMenu');
+    const gameOverScreen = document.getElementById('gameOverScreen');
     const renderDistanceSlider = document.getElementById('renderDistanceSlider');
     const zoomSlider = document.getElementById('zoomSlider');
     const particlesCheckbox = document.getElementById('particlesCheckbox');
@@ -457,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             game.logger.draw(ctx, canvas);
         },
 
-        isPaused: () => optionsMenu.classList.contains('active'),
+        isPaused: () => optionsMenu.classList.contains('active') || gameOverScreen?.classList.contains('active'),
         toggleMenu: (menu) => { if (menu === 'options') optionsMenu.classList.toggle('active'); },
         selectTool: (index) => {
             if (game.player && index >= 0 && index < game.player.tools.length) {
@@ -476,14 +477,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Gestion de la mort du joueur
     document.addEventListener('player-death', () => {
         game.logger.log('☠️ Vous êtes mort !');
-        if (game.player) {
-            game.player.stats.respawn();
-            game.player.health = game.player.stats.health;
-            if (game.spawnPoint) {
-                game.player.x = game.spawnPoint.x;
-                game.player.y = game.spawnPoint.y;
-            }
-        }
+        if (gameOverScreen) gameOverScreen.classList.add('active');
     });
 
     engine.start(gameLogic);
