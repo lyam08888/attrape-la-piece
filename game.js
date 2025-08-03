@@ -421,7 +421,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         update(delta, keys, mouse) {
             if (!game.player) return;
 
-            game.player.update(keys, mouse, game, delta);
+            // Fix: Use getKeys() to map keys properly according to config.keyBindings
+            const mappedKeys = getKeys();
+
+            game.player.update(mappedKeys, mouse, game, delta);
             game.enemies.forEach(e => e.update(game, delta));
             game.pnjs.forEach(p => {
                 p.update(game, delta);
@@ -431,7 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const dist = Math.hypot(dx, dy);
                 p.playerNearby = dist < config.tileSize * 2;
 
-                if (p.playerNearby && keys.action && p.interactionCooldown <= 0) {
+                if (p.playerNearby && mappedKeys.action && p.interactionCooldown <= 0) {
                     const dialogue = p.data?.quest?.dialogues?.greeting || 'Bonjour';
                     game.logger.log(`${p.data?.name || 'PNJ'}: ${dialogue}`);
                     p.interactionCooldown = 30;
@@ -456,7 +459,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             // Passe également les touches clavier pour permettre le minage via la touche d'action
-            updateMining(game, keys, mouse, delta);
+            updateMining(game, mappedKeys, mouse, delta);
             
             // Système de gravité pour les blocs
             updateGravity(game);
