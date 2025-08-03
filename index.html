@@ -1767,7 +1767,7 @@
                     // Interaction avec les coffres
                     game.chests.forEach(chest => {
                         if (!chest.opened && game.player.rectCollide(chest)) {
-                            if (keys['KeyE']) { // Touche E pour ouvrir
+                            if (keys.action) { // Touche E pour ouvrir
                                 chest.opened = true;
                                 let hasSurvivalItem = false;
                                 chest.loot.forEach(lootItem => {
