@@ -96,13 +96,13 @@ export function generateLevel(game, config) {
     SeededRandom.setSeed(config.seed || Date.now());
     Perlin.seed();
 
-    const { worldWidth = 0, worldHeight, tileSize } = config;
+    const { worldWidth = 4096, worldHeight, tileSize } = config;
     const worldHeightInTiles = Math.floor(worldHeight / tileSize);
 
     game.tileMap = Array(worldHeightInTiles).fill(0).map(() => []);
     game.generatedRange = { min: 0, max: 0 };
 
-    const initialWidth = Math.floor(worldWidth / tileSize) || 0;
+    const initialWidth = Math.floor(worldWidth / tileSize) || 256;
     generateColumns(game, config, 0, initialWidth);
     game.generatedRange.max = initialWidth;
     config.worldWidth = initialWidth * tileSize;

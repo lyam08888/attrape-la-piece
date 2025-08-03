@@ -54,7 +54,7 @@ export class WeatherSystem {
     }
 
     update(game, delta) {
-        this.weatherTimer += delta;
+        this.weatherTimer += delta / 1000; // Convertir ms en secondes
         
         // Changer de météo
         if (this.weatherTimer >= this.nextWeatherChange) {

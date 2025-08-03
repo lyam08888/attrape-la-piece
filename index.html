@@ -969,7 +969,7 @@
                 },
                 eventSystem: {
                     lastEventTime: 0,
-                    eventCooldown: 30000, // 30 secondes entre les événements
+                    eventCooldown: 120000, // 2 minutes entre les événements
                     activeEvents: []
                 },
                 enemySpawner: null,
@@ -1162,15 +1162,17 @@
                     let playerY = 0;
                     
                     // Trouver la surface
-                    for (let y = 0; y < game.tileMap.length; y++) {
-                        if (game.tileMap[y] && game.tileMap[y][startXTile] > TILE.AIR) {
-                            playerY = (y - 3) * config.tileSize;
-                            break;
+                    if (game.tileMap && game.tileMap.length > 0) {
+                        for (let y = 0; y < game.tileMap.length; y++) {
+                            if (game.tileMap[y] && game.tileMap[y][startXTile] > TILE.AIR) {
+                                playerY = (y - 3) * config.tileSize;
+                                break;
+                            }
                         }
                     }
                     
                     game.player.x = startXTile * config.tileSize;
-                    game.player.y = Math.max(0, playerY);
+                    game.player.y = Math.max(100, playerY); // S'assurer que le joueur n'est pas trop haut
                     
                     // Initialiser les systèmes
                     game.worldAnimator = null; // Désactivé pour l'instant
@@ -1524,7 +1526,7 @@
                     // Système d'événements dynamiques
                     const currentTime = Date.now();
                     if (currentTime - game.eventSystem.lastEventTime > game.eventSystem.eventCooldown) {
-                        if (Math.random() < 0.3) { // 30% de chance
+                        if (Math.random() < 0.05) { // 5% de chance
                             const eventName = triggerRandomEvent(game);
                             game.eventSystem.lastEventTime = currentTime;
                             game.eventSystem.activeEvents.push({
@@ -1953,7 +1955,7 @@
                     console.log("Démarrage du moteur de jeu...");
 
                     // Initialiser la logique de jeu
-                    await logic.init();
+                    await logic.init(assets);
 
                     // Démarrer la boucle de jeu
                     let lastTime = 0;
@@ -2000,6 +2002,14 @@
                     }
                 }
             };
+            
+            console.log("Chargement des assets...");
+            const assets = {};
+            // Charger les assets de base (pour l'instant, on utilise des couleurs)
+            assets.player = null; // Sera rendu avec des couleurs
+            assets.enemy_slime = null;
+            assets.enemy_frog = null;
+            assets.enemy_golem = null;
             
             console.log("Démarrage du moteur...");
             await engine.start(gameLogic);
