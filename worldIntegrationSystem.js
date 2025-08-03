@@ -971,4 +971,3 @@ export class WorldIntegrationSystem {
     }
 }
 
-export { WorldIntegrationSystem };
