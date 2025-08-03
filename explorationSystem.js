@@ -377,7 +377,14 @@ class ExplorationSystem {
             type: type,
             position: { ...position },
             discovered: false,
-            rewards: this.generateLandmarkRewards(type),
+            // Use a static helper to avoid context issues when this method is
+            // called from external systems. Previously the code relied on
+            // `this.generateLandmarkRewards`, but in some integration
+            // scenarios the instance lost its prototype methods which caused
+            // `generateLandmarkRewards` to be undefined. By referencing the
+            // static method on the class we ensure the reward generator is
+            // always available.
+            rewards: ExplorationSystem.generateLandmarkRewards(type),
             description: this.getLandmarkDescription(type),
             interactionRadius: 50
         };
@@ -1020,7 +1027,10 @@ class ExplorationSystem {
         return rewards[height] || { xp: 50, items: {} };
     }
 
-    generateLandmarkRewards(type) {
+    // Static method so that reward generation doesn't depend on instance
+    // state. This prevents context-related issues when called from outside
+    // the class and guarantees the function is always available.
+    static generateLandmarkRewards(type) {
         const rewards = {
             'ancient_ruins': { xp: 200, items: { 'ancient_artifact': 1 } },
             'crystal_formation': { xp: 150, items: { 'crystal': 10 } },
