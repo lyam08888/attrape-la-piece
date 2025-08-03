@@ -134,7 +134,7 @@ function generateColumns(game, config, startX, width) {
         const magic = magicNoise + Math.sin(x * 0.001) * 0.3;
         
         // Détection de formations géologiques spéciales
-        const canyonNoise = Math.abs(Perlin.get(x * 0.007, worldSeed + 500));
+        // canyonNoise is already calculated earlier for terrain generation
         const riverNoise = Math.abs(Perlin.get(x * 0.025, worldSeed + 1000));
         const caveNoise = Perlin.get(x * 0.04, worldSeed + 1500);
         const crystalNoise = Perlin.get(x * 0.03, worldSeed + 2000);
