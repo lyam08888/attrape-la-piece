@@ -4,7 +4,7 @@ export function createPanel(id, title, content) {
     panel.classList.add('draggable');
     panel.innerHTML = `
         <div class="panel-header">
-            <div class="panel-title">${title}</div>
+            <div class="panel-title"></div>
             <div class="panel-controls">
                 <div class="panel-btn minimize-btn">−</div>
             </div>
@@ -12,6 +12,7 @@ export function createPanel(id, title, content) {
         <div class="panel-content">${content}</div>
         <div class="resize-handle"></div>
     `;
+    panel.querySelector('.panel-title').textContent = title;
     return panel;
 }
 
