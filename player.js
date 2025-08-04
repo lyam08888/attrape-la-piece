@@ -307,8 +307,15 @@ export class Player {
         const playerCenterX = this.x + this.w / 2;
         const playerCenterY = this.y + this.h / 2;
 
-        // Priorité au ciblage à la souris
-        if (mouse) {
+        // Nécessite une entrée active (clic gauche ou touche d'action)
+        if (!(mouse?.left || keys?.action)) {
+            this.miningTarget = null;
+            this.miningProgress = 0;
+            return;
+        }
+
+        // Ciblage avec la souris lorsqu'on maintient le clic gauche
+        if (mouse?.left) {
             const mouseWorldX = game.camera.x + mouse.x / zoom;
             const mouseWorldY = game.camera.y + mouse.y / zoom;
             const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
@@ -330,8 +337,8 @@ export class Player {
             }
         }
 
-        // Sinon, cibler le bloc juste devant le joueur si l'action est activée
-        if (keys && keys.action) {
+        // Sinon, cibler le bloc juste devant le joueur si l'action clavier est activée
+        if (keys?.action) {
             const frontX = Math.floor((playerCenterX + this.dir * tileSize) / tileSize);
             const frontY = Math.floor(playerCenterY / tileSize);
 
@@ -349,6 +356,7 @@ export class Player {
 
         // Aucun bloc ciblé
         this.miningTarget = null;
+        this.miningProgress = 0;
     }
 
     updateFruitHarvesting(mouse, game) {
