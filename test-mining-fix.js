@@ -28,7 +28,7 @@ export function testGravity(game) {
         config: testConfig,
         tileMap: testMap,
         collectibles: [],
-        gravityTimer: 0
+        gravityTimer: 5 // Run gravity check immediately
     };
     
     // Vérifier l'état initial
@@ -88,11 +88,11 @@ export function testCheckBlockSupport() {
         tileSize: 16
     };
     
-    // Créer une carte de test avec des blocs de sable au-dessus de l'air
+    // Créer une carte de test avec des blocs de sable sans support en dessous
     const testMap = [
         [TILE.AIR, TILE.AIR, TILE.AIR, TILE.AIR, TILE.AIR],
         [TILE.SAND, TILE.AIR, TILE.AIR, TILE.SAND, TILE.AIR],
-        [TILE.STONE, TILE.STONE, TILE.STONE, TILE.STONE, TILE.STONE]
+        [TILE.AIR, TILE.AIR, TILE.AIR, TILE.AIR, TILE.AIR]
     ];
     
     // Créer un objet game de test
