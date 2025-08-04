@@ -1,5 +1,6 @@
 // gameIntegration.js - Intégration du monde complexe dans le jeu existant
 import WorldIntegrationSystem from './worldIntegrationSystem.js';
+import { createPanel } from './uiPanels.js';
 
 // Fonction principale d'intégration
 export function integrateComplexWorld(game, config, gameLogic) {
@@ -590,20 +591,7 @@ function addComplexWorldUI(game, worldIntegration) {
     if (!hudElement) return;
     
     // Panneau d'informations du monde complexe
-    const worldInfoPanel = document.createElement('div');
-    worldInfoPanel.id = 'worldInfoPanel';
-    worldInfoPanel.classList.add('draggable');
-    worldInfoPanel.innerHTML = `
-        <div class="panel-header">
-            <div class="panel-title">MONDE COMPLEXE</div>
-            <div class="panel-controls">
-                <div class="panel-btn minimize-btn">−</div>
-            </div>
-        </div>
-        <div class="panel-content"></div>
-        <div class="resize-handle"></div>
-    `;
-
+    const worldInfoPanel = createPanel('worldInfoPanel', 'MONDE COMPLEXE', '');
     hudElement.appendChild(worldInfoPanel);
 
     // Activer les fonctionnalités de module
