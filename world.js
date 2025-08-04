@@ -60,7 +60,7 @@ function generateColumns(game, config, startX, width) {
 
     for (let x = startX; x < startX + width; x++) {
         // === GÉNÉRATION DE TERRAIN ULTRA-COMPLEXE ET VARIÉ ===
-        
+
         // Seed unique par chunk basé sur la seed globale
         const chunkX = Math.floor(x / (config.chunkSize || 16));
         const worldSeed = seedMap.getSeed(chunkX);
@@ -145,7 +145,7 @@ function generateColumns(game, config, startX, width) {
         groundY = Math.max(minY, Math.min(maxY, groundY));
         
         // === SYSTÈME DE BIOMES ULTRA-COMPLEXE ET VARIÉ ===
-        
+
         // Facteurs climatiques avancés avec seed variation
         const temperatureNoise = Perlin.get(x * 0.008, worldSeed * 0.01);
         const humidityNoise = Perlin.get(x * 0.011, worldSeed * 0.02);
@@ -424,7 +424,7 @@ function generateColumns(game, config, startX, width) {
         }
         
         // === GÉNÉRATION D'EAU ET DE LAVE ===
-        
+
         // Océans et lacs
         if (biome === 'ocean' || (groundY < surfaceLevel - 5)) {
             const waterMaxY = Math.min(worldHeightInTiles, Math.max(surfaceLevel, groundY + 10));
@@ -472,7 +472,7 @@ function generateColumns(game, config, startX, width) {
         }
 
         // === GÉNÉRATION DE STRUCTURES COMPLEXES ===
-        
+
         // Arbres selon le biome
         const treeChance = getTreeChance(biome);
         if (SeededRandom.random() < treeChance) {
@@ -552,41 +552,38 @@ function generateColumns(game, config, startX, width) {
     }
 }
 
-export function generateLevel(game, config) {
-    SeededRandom.setSeed(config.seed || Date.now());
+export function generateLevel(worldWidthInTiles, worldHeightInTiles, seed = null) {
+    console.log(`🌍 Génération du monde: ${worldWidthInTiles}x${worldHeightInTiles}`);
+    
+    // Initialize seeded random
+    const worldSeed = seed || Date.now();
+    SeededRandom.setSeed(worldSeed);
     Perlin.seed();
-    seedMap.setBaseSeed(SeededRandom.seed);
-
-    const { worldWidth = 4096, worldHeight, tileSize } = config;
-    const worldHeightInTiles = Math.floor(worldHeight / tileSize);
-
-    // Initialiser le tileMap avec la bonne largeur
-    const initialWidth = Math.floor(worldWidth / tileSize) || 512; // Plus large par défaut
-    game.tileMap = [];
     
-    // Créer chaque ligne individuellement pour éviter les références partagées
+    // Create the tile map
+    const tileMap = [];
     for (let y = 0; y < worldHeightInTiles; y++) {
-        game.tileMap[y] = new Array(initialWidth).fill(TILE.AIR);
+        tileMap[y] = new Array(worldWidthInTiles).fill(TILE.AIR);
     }
     
-    game.generatedRange = { min: 0, max: initialWidth };
-
-    console.log(`Initialisation tileMap: ${worldHeightInTiles} x ${initialWidth}`);
+    // Create a mock game object for generation
+    const mockGame = {
+        tileMap: tileMap,
+        config: {
+            tileSize: 16,
+            chunkSize: 16,
+            seed: worldSeed
+        },
+        enemies: [],
+        pnjs: [],
+        spawnPoints: []
+    };
     
-    // Génération complète du monde
-    generateColumns(game, config, 0, initialWidth);
+    // Generate the world using the existing generation system
+    generateColumns(mockGame, mockGame.config, 0, worldWidthInTiles);
     
-    // Vérifier que le monde a été généré
-    let solidTiles = 0;
-    for (let y = 0; y < worldHeightInTiles; y++) {
-        for (let x = 0; x < initialWidth; x++) {
-            if (game.tileMap[y][x] > TILE.AIR) {
-                solidTiles++;
-            }
-        }
-    }
-    console.log(`Monde généré: ${solidTiles} blocs solides sur ${worldHeightInTiles * initialWidth} total`);
-    config.worldWidth = initialWidth * tileSize;
+    console.log(`✅ Monde généré avec succès: ${worldWidthInTiles}x${worldHeightInTiles}`);
+    return tileMap;
 }
 
 // === FONCTIONS UTILITAIRES POUR LES BIOMES ===
