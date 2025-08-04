@@ -1,65 +1,58 @@
 // gameIntegration.js - Intégration du monde complexe dans le jeu existant
 import WorldIntegrationSystem from './worldIntegrationSystem.js';
 import { createPanel } from './uiPanels.js';
+import { AdvancedWorldGenerator } from './advancedWorldGenerator.js';
+import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData } from './worldIntegration.js';
 
 // Fonction principale d'intégration
-export function integrateComplexWorld(game, config, gameLogic) {
-    console.log('🚀 Intégration du monde complexe...');
-    
-    try {
-        // Créer le système d'intégration
-        const worldIntegration = new WorldIntegrationSystem(config);
-        
-        // Initialiser le système
-        worldIntegration.initialize(game);
-        
-        // Intégrer dans la boucle de mise à jour du jeu
-        if (gameLogic && gameLogic.update) {
-            const originalUpdate = gameLogic.update;
-            gameLogic.update = function(delta, keys, mouse) {
-                // Appeler la mise à jour originale
-                originalUpdate.call(this, delta, keys, mouse);
-                
-                // Mettre à jour le monde complexe
-                try {
-                    worldIntegration.update(game, delta);
-                } catch (error) {
-                    console.warn('Erreur mise à jour monde complexe:', error);
-                }
-            };
-        }
-        
-        // Intégrer dans le rendu du jeu
-        if (gameLogic && gameLogic.draw) {
-            const originalDraw = gameLogic.draw;
-            // Prend désormais delta en troisième paramètre pour les animations.
-            gameLogic.draw = function(ctx, assets, delta) {
-                // Appeler le rendu original
-                originalDraw.call(this, ctx, assets, delta);
-
-                // Rendu des éléments du monde complexe
-                try {
-                    drawComplexWorldElements(ctx, game, assets);
-                } catch (error) {
-                    console.warn('Erreur rendu monde complexe:', error);
-                }
-            };
-        }
-        
-        // Ajouter des commandes de débogage
-        addDebugCommands(game, worldIntegration);
-        
-        // Ajouter l'interface utilisateur
-        addComplexWorldUI(game, worldIntegration);
-        
-        console.log('✅ Monde complexe intégré avec succès !');
-        
-        return worldIntegration;
-        
-    } catch (error) {
-        console.error('❌ Erreur lors de l\'intégration du monde complexe:', error);
+export function integrateComplexWorld(game, config) {
+    if (!game || !config) {
+        console.error("❌ Jeu ou configuration manquant pour l'intégration du monde complexe.");
         return null;
     }
+
+    console.log("🔄 Intégration du monde complexe en cours...");
+
+    // 1. Initialiser le générateur de monde avancé
+    const advancedGenerator = new AdvancedWorldGenerator(config.seed || Date.now());
+    game.advancedWorldGenerator = advancedGenerator; // Attacher au jeu
+    console.log("    -> 🌍 Générateur de monde avancé prêt.");
+
+    // 2. Générer les données du monde avancé
+    const worldWidthInTiles = Math.floor(config.worldWidth / config.tileSize);
+    const worldHeightInTiles = Math.floor(config.worldHeight / config.tileSize);
+
+    // Le générateur avancé peut maintenant prendre plus de paramètres pour la variété
+    const advancedWorldData = advancedGenerator.generateFullWorld(
+        worldWidthInTiles,
+        worldHeightInTiles,
+        {
+            temperature: 0.5, // Exemple de paramètre global
+            humidity: 0.5,
+            magic: 0.3
+        }
+    );
+    console.log("    -> ✨ Données du monde avancé générées.");
+
+    // 3. Convertir les données avancées en tileMap de base pour le moteur de jeu
+    // Cette fonction doit exister dans `worldIntegration.js`
+    game.tileMap = convertAdvancedWorldToBasic(advancedWorldData, worldWidthInTiles, worldHeightInTiles);
+    console.log("    -> 🗺️ Monde de base (tileMap) créé à partir des données avancées.");
+    
+    // 4. Enrichir le monde de base avec des données complexes (biomes, etc.)
+    // `game.worldData` contiendra des informations détaillées que les autres systèmes pourront utiliser
+    game.worldData = enrichBasicWorldWithAdvancedData(game.tileMap, advancedWorldData);
+    console.log("    ->  richer de données complexes (biomes, températures, etc.).");
+
+    console.log("✅ Intégration du monde complexe terminée avec succès !");
+
+    // Retourne un objet API pour interagir avec le monde intégré si nécessaire
+    return {
+        getAdvancedTileInfo: (x, y) => {
+            // Placeholder pour une future fonction qui donne des détails sur une tuile
+            return game.worldData?.advancedTiles?.[y]?.[x] || null;
+        }
+    };
 }
 
 // Fonction de rendu des éléments du monde complexe
