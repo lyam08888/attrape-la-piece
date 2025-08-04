@@ -1,0 +1,427 @@
+/* windows11-style.css - Styles Windows 11 pour les fenêtres modulaires */
+
+/* Animation de pulsation pour le joueur sur la minimap */
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 10px #00FF00; 
+    }
+    50% { 
+        transform: scale(1.2); 
+        box-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00; 
+    }
+}
+
+/* Styles pour les boutons */
+.btn-primary {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    padding: 10px 20px;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, rgba(147, 112, 219, 0.8), rgba(138, 43, 226, 0.8));
+    border: 1px solid #9370DB;
+    border-radius: 8px;
+    color: #E0E0E0;
+    padding: 10px 20px;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(147, 112, 219, 0.3);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, rgba(147, 112, 219, 1), rgba(138, 43, 226, 1));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(147, 112, 219, 0.4);
+}
+
+/* Styles pour les barres de défilement */
+.game-window-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.game-window-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+}
+
+.game-window-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    border-radius: 6px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.game-window-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #FFA500, #FF8C00);
+}
+
+/* Effets de survol pour les fenêtres */
+.game-window:hover {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
+}
+
+.game-window.active {
+    border-color: #32CD32;
+    box-shadow: 0 0 30px rgba(50, 205, 50, 0.3);
+}
+
+/* Styles pour les onglets */
+.journal-tab {
+    transition: all 0.3s ease;
+}
+
+.journal-tab:hover {
+    background: rgba(255, 215, 0, 0.1) !important;
+    color: #FFD700 !important;
+}
+
+/* Styles pour les éléments d'inventaire */
+.inventory-slot:hover {
+    border-color: #32CD32 !important;
+    box-shadow: 0 0 15px rgba(50, 205, 50, 0.5);
+}
+
+/* Styles pour les objets de quête */
+.quest-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Styles pour les éléments de commerce */
+.trade-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Animation pour les notifications */
+.notification {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Styles pour les poignées de redimensionnement */
+.resize-handle {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.game-window:hover .resize-handle {
+    opacity: 1;
+}
+
+/* Styles pour les menus contextuels */
+.context-menu {
+    animation: contextMenuAppear 0.2s ease-out;
+}
+
+@keyframes contextMenuAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Styles pour la taskbar */
+.game-taskbar {
+    animation: taskbarSlideUp 0.5s ease-out;
+}
+
+@keyframes taskbarSlideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.taskbar-item:hover {
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+/* Styles pour les dialogues PNJ */
+.npc-dialogue {
+    animation: dialogueAppear 0.4s ease-out;
+}
+
+@keyframes dialogueAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dialogue-option:hover {
+    transform: translateX(5px);
+}
+
+/* Styles pour les cartes */
+.world-map {
+    position: relative;
+    overflow: hidden;
+}
+
+.biome-marker {
+    animation: markerPulse 2s ease-in-out infinite;
+}
+
+@keyframes markerPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+}
+
+/* Styles pour l'artisanat */
+.crafting-slot:hover {
+    border-color: #32CD32 !important;
+    background: linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(34, 139, 34, 0.2)) !important;
+}
+
+.recipe-item:hover {
+    border-color: #32CD32 !important;
+    transform: translateX(5px);
+}
+
+/* Styles pour les statistiques de personnage */
+.stat-bar {
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Styles pour les effets de particules */
+.particle {
+    pointer-events: none;
+    z-index: 50;
+}
+
+/* Styles responsives */
+@media (max-width: 1200px) {
+    .game-window {
+        max-width: 90vw;
+        max-height: 80vh;
+    }
+    
+    .inventory-window,
+    .character-window,
+    .quest-window,
+    .map-window,
+    .crafting-window,
+    .journal-window,
+    .trade-window {
+        width: 80vw !important;
+        height: 70vh !important;
+        top: 10vh !important;
+        left: 10vw !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-taskbar {
+        height: 50px;
+        padding: 0 5px;
+    }
+    
+    .taskbar-item {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+    
+    .taskbar-item span {
+        display: none;
+    }
+    
+    .game-window-header {
+        padding: 8px 12px;
+    }
+    
+    .game-window-title {
+        font-size: 1rem;
+    }
+    
+    .game-window-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+}
+
+/* Styles pour les thèmes de biomes */
+.biome-divine .game-window {
+    border-color: #FFD700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.biome-infernal .game-window {
+    border-color: #FF4500;
+    box-shadow: 0 0 30px rgba(255, 69, 0, 0.3);
+}
+
+.biome-crystal .game-window {
+    border-color: #9370DB;
+    box-shadow: 0 0 30px rgba(147, 112, 219, 0.3);
+}
+
+.biome-nature .game-window {
+    border-color: #32CD32;
+    box-shadow: 0 0 30px rgba(50, 205, 50, 0.3);
+}
+
+.biome-shadow .game-window {
+    border-color: #8B008B;
+    box-shadow: 0 0 30px rgba(139, 0, 139, 0.3);
+}
+
+/* Effets de transition fluides */
+* {
+    transition: all 0.2s ease;
+}
+
+/* Désactiver les transitions pendant le redimensionnement */
+.resizing * {
+    transition: none !important;
+}
+
+/* Styles pour les tooltips */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: #FFD700;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    pointer-events: none;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tooltip.show {
+    opacity: 1;
+}
+
+/* Styles pour les indicateurs de chargement */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 215, 0, 0.3);
+    border-top: 4px solid #FFD700;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Styles pour les badges et indicateurs */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, #FF4500, #FF6347);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+}
+
+.badge.success {
+    background: linear-gradient(135deg, #32CD32, #90EE90);
+}
+
+.badge.warning {
+    background: linear-gradient(135deg, #FFA500, #FFD700);
+    color: #000;
+}
+
+.badge.info {
+    background: linear-gradient(135deg, #4169E1, #6495ED);
+}
+
+/* Styles pour les graphiques et barres de progression */
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #32CD32, #90EE90);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: progressShimmer 2s infinite;
+}
+
+@keyframes progressShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}

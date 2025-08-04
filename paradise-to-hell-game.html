@@ -13,6 +13,7 @@
     
     <!-- Styles de l'interface modulaire -->
     <link rel="stylesheet" href="modularUI.css">
+    <link rel="stylesheet" href="windows11-style.css">
     
     <!-- Styles pour l'intégration des fenêtres dans le jeu -->
     <style>
@@ -950,6 +951,7 @@
         import { AdvancedRenderer } from './advancedRenderer.js';
         import { AdvancedNPCSystem } from './advancedNPCSystem.js';
         import { UIManager } from './uiManager.js';
+        import { WindowManager } from './windowManager.js';
 
         class ParadiseToHellGame {
             constructor() {
@@ -959,6 +961,7 @@
                 this.renderer = null;
                 this.npcSystem = null;
                 this.uiManager = null;
+                this.windowManager = null;
                 
                 this.world = null;
                 this.player = null;
@@ -1076,6 +1079,10 @@
                 // Initialiser l'interface utilisateur
                 this.uiManager = new UIManager(this);
                 window.uiManager = this.uiManager;
+                
+                // Initialiser le gestionnaire de fenêtres
+                this.windowManager = new WindowManager();
+                window.windowManager = this.windowManager;
                 
                 this.updateLoadingProgress(95, "Systèmes initialisés", "Finalisation...");
                 await this.delay(500);
@@ -1395,10 +1402,92 @@
             interactWithNPC(npc) {
                 const response = this.npcSystem.interactWithNPC(npc.id, "player1", "talk");
                 
-                if (response && this.uiManager) {
-                    // Afficher le dialogue via l'interface modulaire
-                    this.uiManager.showNPCDialogue(response);
+                if (response && this.windowManager) {
+                    // Afficher le dialogue via une fenêtre modulaire
+                    this.showNPCDialogue(response);
                 }
+            }
+
+            showNPCDialogue(response) {
+                const dialogueContent = `
+                    <div class="npc-dialogue" style="text-align: center; margin-bottom: 20px;">
+                        <div class="npc-portrait" style="
+                            width: 80px;
+                            height: 80px;
+                            background: linear-gradient(135deg, #9370DB, #8A2BE2);
+                            border-radius: 50%;
+                            margin: 0 auto 15px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 2rem;
+                            color: white;
+                        ">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 style="color: #FFD700; margin-bottom: 10px;">${response.npcName}</h3>
+                        <div class="dialogue-text" style="
+                            background: rgba(0,0,0,0.3);
+                            border: 1px solid #9370DB;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            color: #E0E0E0;
+                            line-height: 1.5;
+                        ">
+                            ${response.text}
+                        </div>
+                        ${response.options ? `
+                            <div class="dialogue-options">
+                                ${response.options.map((option, index) => `
+                                    <button class="dialogue-option" style="
+                                        background: linear-gradient(135deg, rgba(147, 112, 219, 0.3), rgba(138, 43, 226, 0.3));
+                                        border: 1px solid #9370DB;
+                                        border-radius: 6px;
+                                        color: #E0E0E0;
+                                        padding: 10px 15px;
+                                        margin: 5px;
+                                        cursor: pointer;
+                                        transition: all 0.2s ease;
+                                        display: block;
+                                        width: 100%;
+                                    " onmouseover="this.style.background='linear-gradient(135deg, rgba(147, 112, 219, 0.5), rgba(138, 43, 226, 0.5))'"
+                                       onmouseout="this.style.background='linear-gradient(135deg, rgba(147, 112, 219, 0.3), rgba(138, 43, 226, 0.3))'"
+                                       onclick="window.game.handleDialogueChoice(${index})">
+                                        ${option.text}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <button class="dialogue-option" style="
+                                background: linear-gradient(135deg, rgba(147, 112, 219, 0.3), rgba(138, 43, 226, 0.3));
+                                border: 1px solid #9370DB;
+                                border-radius: 6px;
+                                color: #E0E0E0;
+                                padding: 10px 20px;
+                                cursor: pointer;
+                                transition: all 0.2s ease;
+                            " onclick="window.windowManager.closeWindow('dialogueWindow')">
+                                Continuer
+                            </button>
+                        `}
+                    </div>
+                `;
+                
+                // Mettre à jour le contenu de la fenêtre de dialogue
+                const dialogueContentEl = document.getElementById('dialogueContent');
+                if (dialogueContentEl) {
+                    dialogueContentEl.innerHTML = dialogueContent;
+                }
+                
+                // Afficher la fenêtre de dialogue
+                this.windowManager.showWindow('dialogueWindow');
+            }
+
+            handleDialogueChoice(choiceIndex) {
+                // Gérer le choix du joueur dans le dialogue
+                console.log(`Choix sélectionné: ${choiceIndex}`);
+                this.windowManager.closeWindow('dialogueWindow');
             }
 
             render() {
@@ -1439,22 +1528,44 @@
             handleKeyPress(key) {
                 switch (key) {
                     case 'm':
-                        // Toggle minimap
-                        const minimap = document.getElementById('minimap');
-                        minimap.style.display = minimap.style.display === 'none' ? 'block' : 'none';
+                        // Ouvrir la carte
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('mapWindow');
+                        }
                         break;
                         
                     case 'i':
                         // Ouvrir l'inventaire
-                        if (this.uiManager) {
-                            this.uiManager.gameMenus.toggleInventory();
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('inventoryWindow');
                         }
                         break;
                         
                     case 'c':
                         // Ouvrir le menu personnage
-                        if (this.uiManager) {
-                            this.uiManager.gameMenus.toggleCharacter();
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('characterWindow');
+                        }
+                        break;
+                        
+                    case 'q':
+                        // Ouvrir les quêtes
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('questWindow');
+                        }
+                        break;
+                        
+                    case 'j':
+                        // Ouvrir le journal
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('journalWindow');
+                        }
+                        break;
+                        
+                    case 'o':
+                        // Ouvrir l'artisanat
+                        if (this.windowManager) {
+                            this.windowManager.toggleWindow('craftingWindow');
                         }
                         break;
                         

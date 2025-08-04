@@ -1,33 +1,49 @@
-// windowManager.js - Gestionnaire de fenêtres modulaires type Windows 10
+// windowManager.js - Gestionnaire de fenêtres modulaires type Windows 11
 export class WindowManager {
     constructor() {
         this.windows = new Map();
-        this.zIndexCounter = 1000;
         this.activeWindow = null;
-        this.windowPositions = new Map();
-        this.init();
+        this.zIndexCounter = 1000;
+        this.minimizedWindows = new Set();
+        this.maximizedWindows = new Set();
+        
+        this.initializeWindowSystem();
+        this.setupEventListeners();
     }
 
-    init() {
-        // Créer le conteneur principal pour les fenêtres
-        this.container = document.createElement('div');
-        this.container.id = 'windowContainer';
-        this.container.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
-        `;
-        document.body.appendChild(this.container);
-
-        // Créer la barre des tâches
-        this.createTaskbar();
+    initializeWindowSystem() {
+        console.log("🪟 Initialisation du système de fenêtres modulaires...");
         
-        // Charger les positions sauvegardées
-        this.loadWindowPositions();
+        // Attendre que le DOM soit chargé
+        setTimeout(() => {
+            // Initialiser toutes les fenêtres
+            const windowElements = document.querySelectorAll('.game-window');
+            console.log(`🔍 Trouvé ${windowElements.length} fenêtres à initialiser`);
+            
+            windowElements.forEach(windowEl => {
+                this.registerWindow(windowEl.id, {
+                    element: windowEl,
+                    isVisible: false,
+                    isMinimized: false,
+                    isMaximized: false,
+                    originalPosition: null,
+                    originalSize: null
+                });
+            });
+            
+            // Rendre les fenêtres déplaçables
+            this.makeWindowsDraggable();
+            
+            // Rendre les fenêtres redimensionnables
+            this.makeWindowsResizable();
+            
+            console.log("✅ Système de fenêtres initialisé");
+        }, 100);
+    }
+
+    registerWindow(windowId, windowData) {
+        this.windows.set(windowId, windowData);
+        console.log(`📝 Fenêtre enregistrée: ${windowId}`);
     }
 
     createTaskbar() {
