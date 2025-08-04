@@ -1,4 +1,4 @@
-vimport { TILE } from './world.js';
+import { TILE } from './world.js';
 
 // Temps de base pour casser chaque type de bloc (en secondes)
 const BLOCK_BREAK_TIME = {
