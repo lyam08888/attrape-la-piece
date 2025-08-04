@@ -205,6 +205,12 @@ export class GameEngine {
             .then(() => {
                 this.setupInput();
                 if (this.gameLogic.init) this.gameLogic.init(this.assets);
+                
+                // Intégrer l'interface RPG si disponible
+                if (window.game && window.game.rpgInterface) {
+                    this.rpgInterface = window.game.rpgInterface;
+                    console.log("✅ Interface RPG intégrée dans le moteur");
+                }
 
                 let lastTime = 0;
                 const loop = (time) => {

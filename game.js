@@ -620,6 +620,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Mettre à jour l'interface utilisateur
             game.updateUI();
+            
+            // Mettre à jour l'interface RPG
+            if (game.rpgInterface && !game.paused) {
+                game.rpgInterface.updateHUD();
+            }
 
             const playerTileX = Math.floor(game.player.x / config.tileSize);
             const bufferTiles = config.renderDistance * config.chunkSize;
