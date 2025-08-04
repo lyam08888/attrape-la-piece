@@ -131,7 +131,13 @@ export class GameEngine {
     }
 
     setupInput() {
-        const normalizeKey = k => (k.length === 1 ? k.toLowerCase() : k);
+        // Normalise les noms de touches pour gérer les variations selon les navigateurs.
+        // Certains retournent "Space" ou "Spacebar" pour la barre d'espace, ce qui empêchait
+        // les commandes de saut ou de vol d'être détectées correctement.
+        const normalizeKey = k => {
+            if (k === ' ' || k === 'Spacebar' || k === 'Space') return ' ';
+            return k.length === 1 ? k.toLowerCase() : k;
+        };
         document.addEventListener('keydown', e => {
             const binds = this.config.keyBindings || {};
             const key = normalizeKey(e.key);
