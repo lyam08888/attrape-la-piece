@@ -1,945 +1,214 @@
 import { TILE } from './world.js';
-import { updateMining } from './miningEngine.js';
-import { PlayerStats, CombatSystem, BiomeSystem } from './combatSystem.js';
+import { getItemIcon } from './itemIcons.js';
 
 export class Player {
-    constructor(x, y, config, sound) {
-        this.x = x; this.y = y;
-        this.vx = 0; this.vy = 0;
+    constructor(x, y, config, soundManager) {
+        // --- Core Properties ---
+        this.x = x;
+        this.y = y;
         this.w = config.player.width;
         this.h = config.player.height;
-        // Allow a custom hitbox that's smaller than the sprite
-        const hb = config.player.hitbox || {};
-        this.hitbox = {
-            offsetX: hb.offsetX ?? 0,
-            offsetY: hb.offsetY ?? 0,
-            width: hb.width ?? this.w,
-            height: hb.height ?? this.h
-        };
         this.config = config;
-        this.sound = sound;
-        this.grounded = false;
-        this.dir = 1;
-        this.swingTimer = 0;
-        this.tools = ['tool_pickaxe', 'tool_shovel', 'tool_axe', 'tool_sword', 'tool_knife', 'tool_bow', 'tool_fishing_rod'];
-        this.selectedToolIndex = 0;
-        this.inventory = {};
-        this.miningTarget = null;
-        this.miningProgress = 0;
-        
-        // Statistiques RPG
-        this.health = 100;
-        this.maxHealth = 100;
-        this.mana = 80;
-        this.maxMana = 100;
-        this.stamina = 100;
-        this.maxStamina = 100;
-        this.level = 1;
-        this.experience = 0;
-        this.experienceToNext = 100;
-        this.gold = 0;
-        
-        // Statistiques de base
-        this.strength = 10;
-        this.agility = 10;
-        this.intelligence = 10;
-        this.vitality = 10;
-        this.luck = 10;
-        
-        // Points de statistiques disponibles
-        this.statPoints = 0;
-        
-        // Nouveau système d'outils avec durabilité et enchantements
-        this.toolDurability = {
-            tool_pickaxe: 100,
-            tool_shovel: 80,
-            tool_axe: 90,
-            tool_sword: 70,
-            tool_knife: 60,
-            tool_bow: 50,
-            tool_fishing_rod: 40
-        };
-        
-        this.toolEnchantments = {
-            tool_pickaxe: ['efficiency', 'unbreaking'],
-            tool_shovel: ['efficiency'],
-            tool_axe: ['efficiency', 'fire_aspect'],
-            tool_sword: ['sharpness', 'fire_aspect'],
-            tool_knife: ['sharpness'],
-            tool_bow: ['power', 'infinity'],
-            tool_fishing_rod: ['luck_of_the_sea']
-        };
-        
-        this.durability = {
-            tool_pickaxe: 100,
-            tool_shovel: 80,
-            tool_axe: 90,
-            tool_sword: 70,
-            tool_knife: 60,
-            tool_bow: 50,
-            tool_fishing_rod: 40
-        };
-        
-        this.experience = {
-            mining: 0,
-            level: 1
-        };
-        
-        this.hunger = 100;
-        this.maxHunger = 100;
-        this.hungerTimer = 0;
-        this.foodInventory = {};
-        this.attackCooldown = 0;
-        this.attackRange = 40;
-        
-        // Initialize combat system components
-        this.stats = new PlayerStats();
-        this.combatSystem = new CombatSystem();
-        this.biomeSystem = new BiomeSystem();
-        
-        // Initialize health from stats
-        this.health = this.stats.health;
-        this.maxHealth = this.stats.maxHealth;
+        this.sound = soundManager;
 
-        this.state = 'idle';
-        this.animTimer = 0;
-        this.animFrame = 0;
-        this.isCrouching = false;
-        this.isProne = false;
-        this.isFlying = false;
+        // --- Physics & Movement ---
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = config.physics.playerSpeed;
+        this.isGrounded = false;
+        this.isOnWall = 0; // -1 for left, 1 for right, 0 for none
+        this.canDoubleJump = true;
         this.isGliding = false;
-        this.isWallSliding = false;
-        this.wallSlideDirection = 0; // -1 for left wall, 1 for right wall
-        this.jumpCount = 0;
-        this.prevJump = false;
-        this.inWater = false;
-        this.wallJumpCooldown = 0;
-    }
+        this.isCrouching = false;
 
-    getHitbox() {
-        return { x: this.x + this.hitbox.offsetX, y: this.y + this.hitbox.offsetY, w: this.hitbox.width, h: this.hitbox.height };
-    }
+        // --- RPG Stats ---
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
+        this.maxMana = 50;
+        this.mana = this.maxMana;
+        this.maxStamina = 80;
+        this.stamina = this.maxStamina;
+        this.stats = {
+            level: 1,
+            xp: 0,
+            xpToNextLevel: 100,
+            strength: 10,
+            defense: 5,
+            speed: 10,
+        };
 
-    rectCollide(other) {
-        if (!other) return false;
-        const box = this.getHitbox();
-        return (
-            box.x < other.x + other.w &&
-            box.x + box.w > other.x &&
-            box.y < other.y + other.h &&
-            box.y + box.h > other.y
-        );
+        // --- Tools & Inventory ---
+        this.tools = ['tool_pickaxe', 'tool_axe', 'tool_shovel'];
+        this.selectedToolIndex = 0;
+        this.toolDurability = { tool_pickaxe: 100, tool_axe: 100, tool_shovel: 100 };
+        this.durability = { ...this.toolDurability };
+        this.inventory = {}; // itemType -> count
+
+        // --- Animation ---
+        this.facing = 1; // 1 for right, -1 for left
+        this.currentAnimation = 'idle';
+        this.frame = 0;
+        this.frameTimer = 0;
     }
 
     update(keys, game, delta) {
-        const { physics, tileSize } = this.config;
-        this.isFlying = keys.fly;
-        
-        // Update cooldowns
-        if (this.wallJumpCooldown > 0) this.wallJumpCooldown--;
-        
-        const centerX = Math.floor((this.x + this.w / 2) / tileSize);
-        const centerY = Math.floor((this.y + this.h / 2) / tileSize);
-        this.inWater = game.tileMap[centerY]?.[centerX] === TILE.WATER;
+        if (!game || !game.tileMap) return;
 
-        // Crouch / prone handling
-        if (this.grounded && keys.down && !this.isFlying) {
-            this.isProne = keys.run;
-            this.isCrouching = !keys.run;
-        } else {
-            this.isCrouching = false;
-            this.isProne = false;
+        const physics = this.config.physics;
+
+        // --- Horizontal Movement ---
+        let targetSpeed = 0;
+        if (keys.left) {
+            targetSpeed = -this.speed;
+            this.facing = -1;
+        }
+        if (keys.right) {
+            targetSpeed = this.speed;
+            this.facing = 1;
+        }
+        
+        // Apply acceleration
+        const accel = this.isGrounded ? physics.groundAcceleration : physics.airAcceleration;
+        this.vx += (targetSpeed - this.vx) * accel;
+
+        // Apply friction
+        const friction = this.isGrounded ? physics.friction : physics.airResistance;
+        this.vx *= friction;
+        if (Math.abs(this.vx) < 0.1) this.vx = 0;
+
+
+        // --- Vertical Movement (Jumping) ---
+        if (keys.jump && this.isGrounded) {
+            this.vy = -physics.jumpForce;
+            this.isGrounded = false;
+            this.canDoubleJump = true;
+        } else if (keys.jump && !this.isGrounded && this.canDoubleJump) {
+            this.vy = -physics.jumpForce * 0.8; // Double jump is slightly weaker
+            this.canDoubleJump = false;
         }
 
-        // Gliding handling
-        this.isGliding = !this.grounded && keys.down && !this.isFlying && this.vy > 0;
-        
-        let speed = physics.playerSpeed;
-        if (keys.run && !this.isCrouching && !this.isProne && !this.isFlying) speed *= 1.5;
-        if (this.isCrouching) speed *= 0.5;
-        if (this.isProne) speed *= 0.3;
-
-        if (this.isFlying) {
-            this.vx = keys.left ? -speed : keys.right ? speed : 0;
-            this.vy = keys.up ? -speed : keys.down ? speed : 0;
-            this.grounded = false;
-            this.isWallSliding = false;
-        } else if (this.inWater) {
-            const swimSpeed = physics.playerSpeed * 0.5;
-            this.vx = keys.left ? -swimSpeed : keys.right ? swimSpeed : this.vx * 0.9;
-            if (keys.up || keys.jump) {
-                this.vy = -swimSpeed;
-            } else if (keys.down) {
-                this.vy = swimSpeed;
-            } else {
-                this.vy *= 0.9;
-                this.vy += physics.gravity * 0.2;
-            }
-            this.grounded = false;
-            this.isWallSliding = false;
-        } else {
-            // Wall sliding detection
-            this.checkWallSliding(game);
-            
-            const accel = this.grounded ? physics.groundAcceleration : physics.airAcceleration;
-            if (keys.left) {
-                this.vx = Math.max(this.vx - accel, -speed);
-                this.dir = -1;
-            } else if (keys.right) {
-                this.vx = Math.min(this.vx + accel, speed);
-                this.dir = 1;
-            } else {
-                this.vx *= this.grounded ? physics.friction : physics.airResistance;
-                if (Math.abs(this.vx) < 0.1) this.vx = 0;
-            }
-
-            // Apply gravity
-            if (this.isGliding) {
-                this.vy += physics.glideGravity;
-                if (this.vy > physics.glideFallSpeed) this.vy = physics.glideFallSpeed;
-            } else if (this.isWallSliding) {
-                this.vy = Math.min(this.vy + physics.gravity * 0.5, physics.wallSlideSpeed);
-            } else {
-                this.vy += physics.gravity;
-            }
-            
-            if (this.vy > physics.maxFallSpeed) this.vy = physics.maxFallSpeed;
-
-            // Jumping logic
-            if (keys.jump && !this.prevJump) {
-                if (this.grounded) {
-                    this.vy = -physics.jumpForce;
-                    this.sound?.play('jump');
-                    this.jumpCount = 1;
-                    this.isWallSliding = false;
-                } else if (this.isWallSliding && this.wallJumpCooldown <= 0) {
-                    // Wall jump
-                    this.vy = -physics.jumpForce;
-                    this.vx = -physics.wallJumpForce * this.wallSlideDirection;
-                    this.sound?.play('jump');
-                    this.jumpCount = 1;
-                    this.isWallSliding = false;
-                    this.wallJumpCooldown = 10; // Prevent immediate wall sticking after wall jump
-                } else if (this.jumpCount < 2) {
-                    this.vy = -physics.jumpForce;
-                    this.sound?.play('jump');
-                    this.jumpCount = 2;
-                }
-            }
+        // Apply Gravity
+        this.vy += physics.gravity;
+        if (this.vy > physics.maxFallSpeed) {
+            this.vy = physics.maxFallSpeed;
         }
-
-        this.prevJump = keys.jump;
-
-        // Collisions réactivées avec améliorations
+        
+        // --- Collision Detection ---
         this.handleCollisions(game);
         
-        if (this.grounded && !this.isFlying) {
-            this.jumpCount = 0;
-            this.isWallSliding = false;
-        }
-
-        this.checkCollectibleCollisions(game);
-        
-        // FIXED: Create mouse object if not provided
-        const mouse = game.mouse || { left: false, right: false, x: 0, y: 0 };
-        
-        this.updateMiningTarget(keys, mouse, game);
-        updateMining(game, keys, mouse, delta); // Utiliser le système de minage avancé
-        this.updateFruitHarvesting(mouse, game);
-        this.updateStateAndAnimation();
-        this.updateHunger(delta);
-        this.updateToolRepair(keys, game);
-
-        if (this.swingTimer > 0) this.swingTimer--;
-        if (mouse.left && this.swingTimer <= 0) this.swingTimer = 20;
-        
-        this.updateCombat(game, delta);
-    }
-
-    checkCollectibleCollisions(game) {
-        if (!game.collectibles) return;
-        for (let i = game.collectibles.length - 1; i >= 0; i--) {
-            const item = game.collectibles[i];
-            if (this.rectCollide(item)) {
-                // Gérer les aliments
-                if (item.foodType) {
-                    if (!this.foodInventory) this.foodInventory = {};
-                    this.foodInventory[item.foodType] = (this.foodInventory[item.foodType] || 0) + 1;
-                    
-                    // Consommer automatiquement si la faim est basse
-                    if (this.hunger < 50 && game.foodSystem) {
-                        game.foodSystem.consumeFood(this, item.foodType);
-                        if (game.logger) game.logger.log(`Consommé: ${item.foodType.replace('food_', '').replace('_', ' ')}`);
-                    } else {
-                        if (game.logger) game.logger.log(`+1 ${item.foodType.replace('food_', '').replace('_', ' ')}`);
-                    }
-                } else {
-                    // Gérer les blocs normaux
-                    const key = item.tileType;
-                    this.inventory[key] = (this.inventory[key] || 0) + 1;
-                    const tileName = Object.keys(TILE).find(k=>TILE[k]===key) || "Objet";
-                    if (game.logger) game.logger.log(`+1 ${tileName}`);
-                }
-                
-                game.collectibles.splice(i, 1);
-            }
-        }
-    }
-
-    updateStateAndAnimation() {
-        if (this.isFlying) {
-            this.state = 'flying';
-        } else if (this.inWater) {
-            this.state = 'swimming';
-        } else if (this.isGliding) {
-            this.state = 'gliding';
-        } else if (this.isWallSliding) {
-            this.state = 'wallSliding';
-        } else if (this.isProne) {
-            this.state = Math.abs(this.vx) > 0.1 ? 'proneWalking' : 'prone';
-        } else if (this.isCrouching) {
-            this.state = Math.abs(this.vx) > 0.1 ? 'crouchWalking' : 'crouching';
-        } else if (!this.grounded) {
-            this.state = this.jumpCount === 2 ? 'doubleJump' : 'jumping';
-        } else if (Math.abs(this.vx) > this.config.physics.playerSpeed) {
-            this.state = 'running';
-        } else if (Math.abs(this.vx) > 0.1) {
-            this.state = 'walking';
-        } else {
-            this.state = 'idle';
-        }
-
-        const anim = this.config.playerAnimations[this.state];
-        if (anim && anim.length > 0) {
-            this.animTimer++;
-            const frameDuration = this.state === 'running' ? 5 : 8;
-            if (this.animTimer > frameDuration) {
-                this.animFrame = (this.animFrame + 1) % anim.length;
-                this.animTimer = 0;
-            }
-        } else {
-            this.animFrame = 0;
-        }
-    }
-
-    updateMiningTarget(keys, mouse, game) {
-        // Vérification de base
-        if (!game.camera) {
-            return;
-        }
-
-        const { tileSize, zoom } = game.config;
-        const reach = (this.config.player.reach || 4) * tileSize;
-        const playerCenterX = this.x + this.w / 2;
-        const playerCenterY = this.y + this.h / 2;
-
-        // Nécessite une entrée active (clic gauche ou touche d'action)
-        if (!(mouse?.left || keys?.action)) {
-            this.miningTarget = null;
-            this.miningProgress = 0;
-            return;
-        }
-
-        // Ciblage avec la souris lorsqu'on maintient le clic gauche
-        if (mouse?.left) {
-            const mouseWorldX = game.camera.x + mouse.x;
-            const mouseWorldY = game.camera.y + mouse.y;
-            const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
-
-            if (distance <= reach) {
-                const tileX = Math.floor(mouseWorldX / tileSize);
-                const tileY = Math.floor(mouseWorldY / tileSize);
-
-                if (tileY >= 0 && tileY < game.tileMap.length && tileX >= 0 && game.tileMap[tileY]) {
-                    const tileType = game.tileMap[tileY][tileX];
-                    if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
-                        if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
-                            this.miningTarget = { x: tileX, y: tileY, type: tileType };
-                            this.miningProgress = 0;
-                            console.log(`Nouveau ciblage de minage: (${tileX}, ${tileY}), type: ${tileType}, outil: ${this.tools[this.selectedToolIndex]}`);
-                        }
-                        return;
-                    }
-                }
-            }
-        }
-
-        // Sinon, cibler le bloc juste devant le joueur si l'action clavier est activée
-        if (keys?.action) {
-            const frontX = Math.floor((playerCenterX + this.dir * tileSize) / tileSize);
-            const frontY = Math.floor(playerCenterY / tileSize);
-
-            if (frontY >= 0 && frontY < game.tileMap.length && frontX >= 0 && game.tileMap[frontY]) {
-                const tileType = game.tileMap[frontY][frontX];
-                if (tileType > TILE.AIR && tileType !== TILE.BEDROCK) {
-                    if (!this.miningTarget || this.miningTarget.x !== frontX || this.miningTarget.y !== frontY) {
-                        this.miningTarget = { x: frontX, y: frontY, type: tileType };
-                        this.miningProgress = 0;
-                    }
-                    return;
-                }
-            }
-        }
-
-        // Aucun bloc ciblé
-        this.miningTarget = null;
-        this.miningProgress = 0;
-    }
-
-    updateFruitHarvesting(mouse, game) {
-        if (!mouse.right || !game.foodSystem) return; // Clic droit pour récolter
-        
-        const { tileSize, zoom } = game.config;
-        const reach = (this.config.player.reach || 4) * tileSize;
-        const mouseWorldX = game.camera.x + mouse.x;
-        const mouseWorldY = game.camera.y + mouse.y;
-        
-        if (Math.hypot(mouseWorldX - (this.x + this.w / 2), mouseWorldY - (this.y + this.h / 2)) > reach) {
-            return;
-        }
-        
-        // Essayer de récolter un fruit
-        if (game.foodSystem.harvestFruit(game, mouseWorldX, mouseWorldY)) {
-            if (game.logger) game.logger.log("Fruit récolté !");
-        }
-    }
-
-    updateHunger(delta) {
-        this.hungerTimer += delta;
-        
-        // Perdre de la faim toutes les 5 secondes
-        if (this.hungerTimer > 300) { // 5 secondes à 60 FPS
-            this.hunger = Math.max(0, this.hunger - 1);
-            this.hungerTimer = 0;
-            
-            // Effets de la faim
-            if (this.hunger <= 0) {
-                // Perdre de la santé si affamé
-                this.health = Math.max(1, this.health - 1);
-            } else if (this.hunger < 20) {
-                // Mouvement ralenti si très affamé
-                this.vx *= 0.8;
-            }
-        }
-    }
-    
-    updateToolRepair(keys, game) {
-        // Réparation automatique lente des outils au fil du temps
-        if (!this.repairTimer) this.repairTimer = 0;
-        this.repairTimer += 1;
-        
-        // Réparer un peu tous les outils toutes les 10 secondes
-        if (this.repairTimer > 600) { // 10 secondes à 60 FPS
-            this.repairTimer = 0;
-            
-            this.tools.forEach(toolName => {
-                const maxDurability = this.toolDurability[toolName] || 100;
-                const currentDurability = this.durability[toolName] || 0;
-                
-                // Réparation lente automatique (1 point toutes les 10 secondes)
-                if (currentDurability < maxDurability && currentDurability > 0) {
-                    this.durability[toolName] = Math.min(maxDurability, currentDurability + 1);
-                }
-            });
-            
-            // Mettre à jour la barre d'outils
-            if (game.updateToolbar) game.updateToolbar();
-        }
-        
-        // Réparation rapide avec la touche R si on a des matériaux
-        if (keys.repair && !this.prevRepair) {
-            const currentTool = this.tools[this.selectedToolIndex];
-            if (currentTool && this.durability[currentTool] < this.toolDurability[currentTool]) {
-                // Vérifier si on a des matériaux pour réparer
-                const repairMaterial = this.getRepairMaterial(currentTool);
-                if (this.inventory[repairMaterial] > 0) {
-                    this.inventory[repairMaterial]--;
-                    this.durability[currentTool] = this.toolDurability[currentTool];
-                    if (game.logger) game.logger.log(`${currentTool} réparé !`);
-                    if (game.updateToolbar) game.updateToolbar();
-                }
-            }
-        }
-        this.prevRepair = keys.repair;
-    }
-    
-    getRepairMaterial(toolName) {
-        // Matériaux nécessaires pour réparer chaque outil
-        const repairMaterials = {
-            tool_pickaxe: TILE.IRON,
-            tool_shovel: TILE.IRON,
-            tool_axe: TILE.IRON,
-            tool_sword: TILE.IRON,
-            tool_knife: TILE.IRON,
-            tool_bow: TILE.WOOD,
-            tool_fishing_rod: TILE.WOOD
-        };
-        return repairMaterials[toolName] || TILE.WOOD;
+        // --- Update other systems ---
+        this.regenerateStats(delta);
     }
     
     handleCollisions(game) {
         const { tileSize } = this.config;
         const map = game.tileMap;
-        if (!map || map.length === 0) {
-            console.warn("Pas de tileMap pour les collisions");
-            return;
-        }
-        
-        // Debug: vérifier la position du joueur et empêcher la chute infinie
-        if (this.y > 2000) { // Si le joueur tombe trop bas
-            console.log(`Joueur tombe: y=${this.y}, vy=${this.vy}`);
-            console.log(`TileMap dimensions: ${map.length} x ${map[0]?.length}`);
-            const playerTileX = Math.floor(this.x / tileSize);
-            const playerTileY = Math.floor(this.y / tileSize);
-            console.log(`Position tile: (${playerTileX}, ${playerTileY})`);
-            if (map[playerTileY]) {
-                console.log(`Tile sous le joueur: ${map[playerTileY][playerTileX]}`);
-            }
-            
-            // Téléporter le joueur à la surface si il tombe trop bas
-            if (this.y > map.length * tileSize - 100) {
-                console.log("Téléportation du joueur à la surface");
-                // Trouver la surface
-                for (let y = 0; y < map.length; y++) {
-                    if (map[y] && map[y][playerTileX] > TILE.AIR) {
-                        this.y = (y - 2) * tileSize;
-                        this.vy = 0;
-                        console.log(`Joueur téléporté à y=${this.y}`);
-                        break;
-                    }
-                }
-            }
-        }
 
-        // Collision Y
-        this.y += this.vy;
-        let hb = this.getHitbox();
-        this.grounded = false;
-        if (this.vy > 0) {
-            const ty = Math.floor((hb.y + hb.h) / tileSize);
-            const tx1 = Math.floor(hb.x / tileSize);
-            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
-            if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
-                ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
-                this.y = ty * tileSize - this.hitbox.height - this.hitbox.offsetY;
-                this.vy = 0;
-                this.grounded = true;
-            }
-        } else if (this.vy < 0) {
-            const ty = Math.floor(hb.y / tileSize);
-            const tx1 = Math.floor(hb.x / tileSize);
-            const tx2 = Math.floor((hb.x + hb.w - 1) / tileSize);
-            const tx3 = Math.floor((hb.x + hb.w / 2) / tileSize); // Check middle as well
-            
-            // Vérifications de limites pour collision vers le haut
-            if (ty >= 0 && ty < map.length && tx1 >= 0 && tx1 < map[0]?.length && tx2 >= 0 && tx2 < map[0]?.length) {
-                if (((map[ty]?.[tx1] > TILE.AIR) && map[ty]?.[tx1] !== TILE.WATER) ||
-                    ((map[ty]?.[tx2] > TILE.AIR) && map[ty]?.[tx2] !== TILE.WATER) ||
-                    ((map[ty]?.[tx3] > TILE.AIR) && map[ty]?.[tx3] !== TILE.WATER)) {
-                    this.y = (ty + 1) * tileSize - this.hitbox.offsetY;
-                    this.vy = 0;
-                }
-            }
-        }
-
-        // Collision X
+        // --- X-Axis Collision ---
         this.x += this.vx;
-        hb = this.getHitbox();
-        
-        // Debug collisions (désactivé)
-        // if (this.vx !== 0) {
-        //     console.log(`Collision X: oldX=${oldX}, newX=${this.x}, vx=${this.vx}, hitbox=`, hb);
-        // }
+        const hitboxX = { x: this.x, y: this.y, w: this.w, h: this.h };
+
+        // Check right collision
         if (this.vx > 0) {
-            const tx = Math.floor((hb.x + hb.w) / tileSize);
-            const ty1 = Math.floor(hb.y / tileSize);
-            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-            const ty3 = Math.floor((hb.y + hb.h / 2) / tileSize); // Check middle as well
-            
-            // Vérifications de limites
-            if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
-                if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER) ||
-                    ((map[ty3]?.[tx] > TILE.AIR) && map[ty3]?.[tx] !== TILE.WATER)) {
-                    this.x = tx * tileSize - this.hitbox.width - this.hitbox.offsetX;
-                    this.vx = 0;
-                    // console.log(`Collision droite détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
-                }
-            }
-        } else if (this.vx < 0) {
-            const tx = Math.floor(hb.x / tileSize);
-            const ty1 = Math.floor(hb.y / tileSize);
-            const ty2 = Math.floor((hb.y + hb.h - 1) / tileSize);
-            const ty3 = Math.floor((hb.y + hb.h / 2) / tileSize); // Check middle as well
-            
-            // Vérifications de limites
-            if (tx >= 0 && tx < map[0]?.length && ty1 >= 0 && ty1 < map.length && ty2 >= 0 && ty2 < map.length) {
-                if (((map[ty1]?.[tx] > TILE.AIR) && map[ty1]?.[tx] !== TILE.WATER) ||
-                    ((map[ty2]?.[tx] > TILE.AIR) && map[ty2]?.[tx] !== TILE.WATER) ||
-                    ((map[ty3]?.[tx] > TILE.AIR) && map[ty3]?.[tx] !== TILE.WATER)) {
-                    this.x = (tx + 1) * tileSize - this.hitbox.offsetX;
-                    this.vx = 0;
-                    // console.log(`Collision gauche détectée à tx=${tx}, ty1=${ty1}, ty2=${ty2}`);
-                }
+            const tx = Math.floor((hitboxX.x + hitboxX.w) / tileSize);
+            const ty1 = Math.floor(hitboxX.y / tileSize);
+            const ty2 = Math.floor((hitboxX.y + hitboxX.h - 1) / tileSize);
+            if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+                this.x = tx * tileSize - hitboxX.w;
+                this.vx = 0;
             }
         }
-    }
-
-    updateCombat(game, delta) {
-        // Update attack cooldown
-        if (this.attackCooldown > 0) {
-            this.attackCooldown -= delta;
-        }
-        
-        // Update player stats effects
-        if (this.stats) {
-            this.stats.updateEffects(delta);
-            this.stats.updatePlayTime(delta);
-        }
-        
-        // Update biome effects
-        if (this.biomeSystem) {
-            this.biomeSystem.updatePlayerBiome(this, game);
-        }
-        
-        // Update combat system damage numbers
-        if (this.combatSystem) {
-            this.combatSystem.updateDamageNumbers();
-        }
-        
-        // Handle combat with enemies
-        if (game.enemies && this.attackCooldown <= 0) {
-            for (let i = 0; i < game.enemies.length; i++) {
-                const enemy = game.enemies[i];
-                if (this.rectCollide(enemy)) {
-                    // Player attacks enemy
-                    if (this.swingTimer > 0) {
-                        const currentTool = this.tools[this.selectedToolIndex];
-                        const weapon = { name: currentTool };
-                        
-                        if (this.combatSystem) {
-                            const damage = this.combatSystem.attack(this, enemy, weapon);
-                            
-                            // Add XP for combat
-                            if (this.stats && enemy.health <= 0) {
-                                this.stats.addXP(enemy.xpReward || 10);
-                                this.stats.addEnemyKilled();
-                            }
-                        }
-                        
-                        this.attackCooldown = 30; // 0.5 seconds at 60fps
-                    }
-                    
-                    // Enemy attacks player
-                    if (enemy.attackCooldown <= 0) {
-                        if (this.stats) {
-                            this.stats.takeDamage(enemy.damage || 10, enemy.name || 'Enemy');
-                            this.health = this.stats.health; // Sync health
-                        }
-                        enemy.attackCooldown = 60; // 1 second at 60fps
-                    }
-                }
+        // Check left collision
+        else if (this.vx < 0) {
+            const tx = Math.floor(hitboxX.x / tileSize);
+            const ty1 = Math.floor(hitboxX.y / tileSize);
+            const ty2 = Math.floor((hitboxX.y + hitboxX.h - 1) / tileSize);
+             if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
+                this.x = (tx + 1) * tileSize;
+                this.vx = 0;
             }
         }
-        
-        // Sync health with stats
-        if (this.stats) {
-            this.health = this.stats.health;
-            this.maxHealth = this.stats.maxHealth;
-        }
-    }
 
-    draw(ctx, assets, playerAnimations) {
-        if (!ctx || !assets) return;
-        const animations = playerAnimations || this.config.playerAnimations || {};
-        const anim = animations[this.state] || animations['idle'] || [];
-        const frameKey = anim[this.animFrame % (anim.length || 1)] || 'player_idle1';
-        const img = assets[frameKey];
+        // --- Y-Axis Collision ---
+        this.y += this.vy;
+        const hitboxY = { x: this.x, y: this.y, w: this.w, h: this.h };
+        this.isGrounded = false;
 
-        if (img) {
-            ctx.save();
-            if (this.dir === -1) {
-                ctx.scale(-1, 1);
-                ctx.drawImage(img, -this.x - this.w, this.y, this.w, this.h);
-            } else {
-                ctx.drawImage(img, this.x, this.y, this.w, this.h);
-            }
-            ctx.restore();
-        }
-
-        const toolName = this.tools[this.selectedToolIndex];
-        if (toolName) {
-            const toolAsset = assets[toolName];
-            if (toolAsset) {
-                const toolSize = this.w * 0.45; // Shrink tool relative to player size
-                const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;
-                const handOffsetY = this.h * 0.5;
-                const pivotX = this.x + handOffsetX;
-                const pivotY = this.y + handOffsetY;
-
-                ctx.save();
-                ctx.translate(pivotX, pivotY);
-                if (this.swingTimer > 0) {
-                    const progress = (20 - this.swingTimer) / 20;
-                    const angle = Math.sin(progress * Math.PI) * -this.dir;
-                    ctx.rotate(angle);
-                }
-                ctx.drawImage(toolAsset, -toolSize / 2, -toolSize / 2, toolSize, toolSize);
-                ctx.restore();
+        // Check down collision
+        if (this.vy > 0) {
+            const ty = Math.floor((hitboxY.y + hitboxY.h) / tileSize);
+            const tx1 = Math.floor(hitboxY.x / tileSize);
+            const tx2 = Math.floor((hitboxY.x + hitboxY.w - 1) / tileSize);
+            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+                this.y = ty * tileSize - hitboxY.h;
+                this.vy = 0;
+                this.isGrounded = true;
+                this.canDoubleJump = true; // Reset double jump on landing
             }
         }
-    }
-
-    // Method to get current weapon
-    getCurrentWeapon() {
-        return {
-            name: this.tools[this.selectedToolIndex],
-            durability: this.durability[this.tools[this.selectedToolIndex]],
-            enchantments: this.toolEnchantments[this.tools[this.selectedToolIndex]]
-        };
-    }
-
-    // Wall sliding detection method
-    checkWallSliding(game) {
-        if (this.grounded || this.isFlying || this.inWater) {
-            this.isWallSliding = false;
-            return;
-        }
-        
-        const { tileSize } = this.config;
-        const map = game.tileMap;
-        
-        // Get player hitbox
-        const hb = this.getHitbox();
-        
-        // Check for wall on the left
-        if (this.vx < 0) {
-            const leftTileX = Math.floor(hb.x / tileSize);
-            const leftTileY1 = Math.floor((hb.y + 5) / tileSize); // Check slightly below top
-            const leftTileY2 = Math.floor((hb.y + hb.h - 5) / tileSize); // Check slightly above bottom
-            
-            // Check if there's a solid block to the left
-            if (leftTileX >= 0 && leftTileY1 >= 0 && leftTileY2 < map.length &&
-                ((map[leftTileY1]?.[leftTileX] > TILE.AIR) && map[leftTileY1]?.[leftTileX] !== TILE.WATER) &&
-                ((map[leftTileY2]?.[leftTileX] > TILE.AIR) && map[leftTileY2]?.[leftTileX] !== TILE.WATER)) {
-                this.isWallSliding = true;
-                this.wallSlideDirection = -1; // Sliding on left wall
-                return;
+        // Check up collision
+        else if (this.vy < 0) {
+            const ty = Math.floor(hitboxY.y / tileSize);
+            const tx1 = Math.floor(hitboxY.x / tileSize);
+            const tx2 = Math.floor((hitboxY.x + hitboxY.w - 1) / tileSize);
+            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
+                this.y = (ty + 1) * tileSize;
+                this.vy = 0;
             }
         }
-        
-        // Check for wall on the right
-        if (this.vx > 0) {
-            const rightTileX = Math.floor((hb.x + hb.w) / tileSize);
-            const rightTileY1 = Math.floor((hb.y + 5) / tileSize); // Check slightly below top
-            const rightTileY2 = Math.floor((hb.y + hb.h - 5) / tileSize); // Check slightly above bottom
-            
-            // Check if there's a solid block to the right
-            if (rightTileX >= 0 && rightTileY1 >= 0 && rightTileY2 < map.length &&
-                ((map[rightTileY1]?.[rightTileX] > TILE.AIR) && map[rightTileY1]?.[rightTileX] !== TILE.WATER) &&
-                ((map[rightTileY2]?.[rightTileX] > TILE.AIR) && map[rightTileY2]?.[rightTileX] !== TILE.WATER)) {
-                this.isWallSliding = true;
-                this.wallSlideDirection = 1; // Sliding on right wall
-                return;
-            }
-        }
-        
-        // Not sliding on a wall
-        this.isWallSliding = false;
-    }
-
-    // Method to take damage (used by combat system)
-    takeDamage(amount, source = 'unknown') {
-        if (this.stats) {
-            return this.stats.takeDamage(amount, source);
-        } else {
-            // Fallback if stats not initialized
-            const actualDamage = Math.max(1, amount);
-            this.health = Math.max(0, this.health - actualDamage);
-            return actualDamage;
-        }
-    }
-
-    // Method to heal
-    heal(amount) {
-        if (this.stats) {
-            return this.stats.heal(amount);
-        } else {
-            // Fallback if stats not initialized
-            const oldHealth = this.health;
-            this.health = Math.min(this.maxHealth, this.health + amount);
-            return this.health - oldHealth;
-        }
-    }
-
-    // Method to add XP
-    addXP(amount) {
-        if (this.stats) {
-            return this.stats.addXP(amount);
-        }
-        return 0;
-    }
-
-    // === MÉTHODES RPG ===
-    
-    gainExperience(amount) {
-        this.experience += amount;
-        
-        // Vérifier si on monte de niveau
-        while (this.experience >= this.experienceToNext) {
-            this.levelUp();
-        }
-    }
-    
-    levelUp() {
-        this.experience -= this.experienceToNext;
-        this.level++;
-        this.experienceToNext = Math.floor(this.experienceToNext * 1.2); // +20% par niveau
-        
-        // Gains par niveau
-        this.maxHealth += 10;
-        this.maxMana += 5;
-        this.maxStamina += 5;
-        this.statPoints += 3;
-        
-        // Restaurer complètement les stats
-        this.health = this.maxHealth;
-        this.mana = this.maxMana;
-        this.stamina = this.maxStamina;
-        
-        // Notification de montée de niveau
-        if (window.game && window.game.rpgInterface) {
-            window.game.rpgInterface.showNotification(
-                `Niveau ${this.level} atteint ! +3 points de statistiques`,
-                'success',
-                4000
-            );
-        }
-        
-        console.log(`🎉 Niveau ${this.level} atteint !`);
-    }
-    
-    addGold(amount) {
-        this.gold += amount;
-        
-        if (window.game && window.game.rpgInterface) {
-            window.game.rpgInterface.showNotification(
-                `+${amount} or`,
-                'success',
-                2000
-            );
-        }
-    }
-    
-    spendGold(amount) {
-        if (this.gold >= amount) {
-            this.gold -= amount;
-            return true;
-        }
-        return false;
-    }
-    
-    increaseStat(statName, amount = 1) {
-        if (this.statPoints >= amount) {
-            switch (statName) {
-                case 'strength':
-                    this.strength += amount;
-                    this.maxHealth += amount * 5; // +5 HP par point de force
-                    break;
-                case 'agility':
-                    this.agility += amount;
-                    this.maxStamina += amount * 3; // +3 stamina par point d'agilité
-                    break;
-                case 'intelligence':
-                    this.intelligence += amount;
-                    this.maxMana += amount * 4; // +4 mana par point d'intelligence
-                    break;
-                case 'vitality':
-                    this.vitality += amount;
-                    this.maxHealth += amount * 8; // +8 HP par point de vitalité
-                    break;
-                case 'luck':
-                    this.luck += amount;
-                    break;
-            }
-            
-            this.statPoints -= amount;
-            
-            if (window.game && window.game.rpgInterface) {
-                window.game.rpgInterface.showNotification(
-                    `${statName} augmenté !`,
-                    'success'
-                );
-            }
-            
-            return true;
-        }
-        return false;
     }
     
     regenerateStats(delta) {
-        // Régénération de mana
+        // Regenerate Mana and Stamina over time
         if (this.mana < this.maxMana) {
-            this.mana = Math.min(this.maxMana, this.mana + (this.intelligence * 0.01 * delta / 16));
+            this.mana += 5 * delta; // 5 mana per second
+            if (this.mana > this.maxMana) this.mana = this.maxMana;
         }
-        
-        // Régénération de stamina
         if (this.stamina < this.maxStamina) {
-            this.stamina = Math.min(this.maxStamina, this.stamina + (this.vitality * 0.02 * delta / 16));
+            this.stamina += 10 * delta; // 10 stamina per second
+            if (this.stamina > this.maxStamina) this.stamina = this.maxStamina;
         }
+    }
+
+    takeDamage(amount) {
+        const damageTaken = Math.max(0, amount - this.stats.defense);
+        this.health -= damageTaken;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.die();
+        }
+    }
+
+    die() {
+        console.log("Player has died.");
+        // In a real game, you would trigger a respawn sequence here.
+        // For now, we'll just reset health.
+        this.health = this.maxHealth;
+        // Move to spawn point (if it exists on the game object)
+        if (window.game && window.game.spawnPoint) {
+            this.x = window.game.spawnPoint.x;
+            this.y = window.game.spawnPoint.y;
+            this.vx = 0;
+            this.vy = 0;
+        }
+    }
+    
+    draw(ctx, assets) {
+        // Simple rectangle for now, animation can be added later
+        ctx.fillStyle = '#FF6B6B';
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        // Health bar above player
+        const barWidth = this.w;
+        const barHeight = 5;
+        const barX = this.x;
+        const barY = this.y - 10;
         
-        // Régénération de santé (très lente)
-        if (this.health < this.maxHealth && this.health > 0) {
-            this.health = Math.min(this.maxHealth, this.health + (this.vitality * 0.005 * delta / 16));
-        }
-    }
-    
-    consumeStamina(amount) {
-        if (this.stamina >= amount) {
-            this.stamina -= amount;
-            return true;
-        }
-        return false;
-    }
-    
-    consumeMana(amount) {
-        if (this.mana >= amount) {
-            this.mana -= amount;
-            return true;
-        }
-        return false;
-    }
-    
-    getStatTotal(statName) {
-        // Retourne la statistique de base + bonus d'équipement
-        let base = this[statName] || 0;
-        let bonus = 0;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
         
-        // TODO: Ajouter les bonus d'équipement
-        
-        return base + bonus;
-    }
-    
-    getRPGStats() {
-        return {
-            health: Math.floor(this.health),
-            maxHealth: this.maxHealth,
-            mana: Math.floor(this.mana),
-            maxMana: this.maxMana,
-            stamina: Math.floor(this.stamina),
-            maxStamina: this.maxStamina,
-            level: this.level,
-            experience: this.experience,
-            experienceToNext: this.experienceToNext,
-            gold: this.gold,
-            strength: this.getStatTotal('strength'),
-            agility: this.getStatTotal('agility'),
-            intelligence: this.getStatTotal('intelligence'),
-            vitality: this.getStatTotal('vitality'),
-            luck: this.getStatTotal('luck'),
-            statPoints: this.statPoints
-        };
+        const healthPercent = this.health / this.maxHealth;
+        ctx.fillStyle = healthPercent > 0.5 ? '#4CAF50' : healthPercent > 0.2 ? '#FFC107' : '#F44336';
+        ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
     }
 }
