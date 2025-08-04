@@ -1928,7 +1928,10 @@
                                 });
                             }
 
-                            const toolAssetName = `tool_${toolName}`;
+                            // Les noms d'outils dans player.tools incluent déjà le préfixe "tool_".
+                            // Éviter d'ajouter un préfixe supplémentaire sinon la recherche d'asset échoue
+                            // (ex. "tool_pickaxe" deviendrait "tool_tool_pickaxe").
+                            const toolAssetName = toolName.startsWith('tool_') ? toolName : `tool_${toolName}`;
                             const toolTexture = this.assets && this.assets[toolAssetName];
                             if (toolTexture) {
                                 const canvas = document.createElement('canvas');
