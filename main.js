@@ -4,17 +4,20 @@ import { Player } from './player.js';
 import { TILE, generateLevel, ensureWorldColumns } from './world.js';
 import { RPGInterfaceManager } from './rpgInterfaceManager.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
+import { updateMining, integrateMiningWithRPG } from './miningEngine.js';
+import { CombatSystem } from './combatSystem.js';
+import { FoodSystem } from './foodSystem.js';
 
 // --- Configuration Globale ---
 let game = {};
 let engine = null;
 const config = {
-    version: "3.0-stable",
+    version: "3.1-stable",
     tileSize: 16,
     zoom: 3,
     worldWidth: 2048,
     worldHeight: 1024,
-    physics: { gravity: 0.35, jumpForce: 8, playerSpeed: 3, friction: 0.85, maxFallSpeed: 10 },
+    physics: { gravity: 0.35, jumpForce: 8, playerSpeed: 3, friction: 0.85, maxFallSpeed: 10, groundAcceleration: 0.4, airAcceleration: 0.2 },
     player: { width: 16, height: 24 },
     chunkSize: 16,
     renderDistance: 8
@@ -67,6 +70,11 @@ async function initializeGame() {
     // Intégration des systèmes avancés
     console.log("🔗 Intégration des systèmes avancés...");
     integrateAdvancedSystems(game);
+    
+    // Attacher les systèmes de gameplay principaux
+    game.combatSystem = new CombatSystem();
+    game.foodSystem = new FoodSystem();
+    integrateMiningWithRPG(game); // Attache le miningEngine
 
     console.log("✅ Jeu initialisé avec succès !");
 }
@@ -77,13 +85,6 @@ const gameLogic = {
     init: async (assets) => {
         game.assets = assets;
         console.log("🖼️ Assets chargés.");
-        // Attacher les moteurs aux systèmes de jeu
-        if (typeof integrateMiningWithRPG === 'function') {
-            integrateMiningWithRPG(game); // Cela attache le moteur de minage
-        }
-        game.combatSystem = new CombatSystem(); // Assurer que le système de combat est instancié
-        game.foodSystem = new FoodSystem();
-
         return true;
     },
     update: (delta, keys, mouse) => {
@@ -92,7 +93,7 @@ const gameLogic = {
         game.mouse = mouse;
         game.player.update(keys, game, delta);
 
-        // Mettre à jour les systèmes et entités
+        // Mettre à jour les autres systèmes et entités
         game.pnjs.forEach(p => p.update(game, delta));
         game.enemies.forEach(e => e.update(game, delta));
         game.animals.forEach(a => a.update(game, delta));
@@ -101,17 +102,14 @@ const gameLogic = {
         game.weatherSystem?.update(delta);
         game.disasterManager?.update(delta);
         game.foodSystem?.update(game, delta);
-        game.combatSystem?.updateDamageNumbers(); // Mettre à jour les nombres de dégâts flottants
+        game.combatSystem?.updateDamageNumbers();
 
-        // Le minage est maintenant géré dans player.update, qui appelle le miningEngine
-        
         updateCamera();
         game.rpgInterface.updateHUD();
     },
     draw: (ctx, assets) => {
         if (!game || !game.player) return;
 
-        // Fond dynamique simple
         ctx.fillStyle = game.timeSystem ? game.timeSystem.getSkyColor() : '#87CEEB';
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -128,13 +126,11 @@ const gameLogic = {
         
         game.weatherSystem?.draw(ctx);
         game.worldAnimator?.draw(ctx, game.tileMap, game.camera);
-
-        // Dessiner les nombres de dégâts
+        
         game.combatSystem?.drawDamageNumbers(ctx, game.camera);
 
         ctx.restore();
         
-        // Dessiner l'UI par-dessus tout
         game.rpgInterface.draw(ctx);
     },
     isPaused: () => game.paused
@@ -181,12 +177,12 @@ async function main() {
     const loadingScreen = document.getElementById('loadingScreen');
     try {
         await initializeGame();
-        await engine.start(gameLogic); // Le moteur charge les assets
-        loadingScreen.style.display = 'none'; // Cacher l'écran de chargement
+        await engine.start(gameLogic);
+        loadingScreen.style.display = 'none';
         game.rpgInterface.showNotification("Le jeu est prêt !", "success");
     } catch (error) {
         console.error("❌ Erreur fatale au démarrage:", error);
-        loadingScreen.innerHTML = `<h1>Erreur de démarrage</h1><p>${error.message}</p>`;
+        loadingScreen.innerHTML = `<h1>Erreur de démarrage</h1><p>${error.message}</p><p>Consultez la console (F12) pour les détails.</p>`;
         loadingScreen.style.color = 'red';
     }
 }
