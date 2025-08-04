@@ -216,6 +216,19 @@ export class QuestSystem {
         return true;
     }
 
+    abandonQuest(questId) {
+        const quest = this.activeQuests.get(questId);
+        if (!quest) return false;
+
+        this.activeQuests.delete(questId);
+        quest.status = 'available';
+        quest.progress = {};
+        quest.startTime = null;
+        quest.completionTime = null;
+        this.questLog.push(`Quête abandonnée: ${quest.title}`);
+        return true;
+    }
+
     updateQuestProgress(objectiveType, data = {}) {
         this.activeQuests.forEach(quest => {
             quest.objectives.forEach(objective => {
@@ -349,7 +362,94 @@ export function updateQuestUI(questSystem) {
 
     questList.innerHTML = '';
 
-    // Quêtes actives
+    const formatRewards = (rewards = {}) => {
+        const parts = [];
+        if (rewards.xp) parts.push(`${rewards.xp} XP`);
+        if (rewards.items) {
+            rewards.items.forEach(item => parts.push(`${item.quantity}x ${item.name}`));
+        }
+        return parts.join(', ');
+    };
+
+    const createQuestItem = (quest, type) => {
+        const item = document.createElement('div');
+        item.className = 'quest-item';
+
+        const header = document.createElement('div');
+        header.className = 'quest-header';
+        header.textContent = quest.title;
+        item.appendChild(header);
+
+        const details = document.createElement('div');
+        details.className = 'quest-details';
+        details.innerHTML = `<div class="quest-description">${quest.description}</div>`;
+        item.appendChild(details);
+
+        header.addEventListener('click', () => {
+            item.classList.toggle('open');
+        });
+
+        if (type === 'active') {
+            quest.objectives.forEach(obj => {
+                const progress = quest.progress[obj.id];
+                const percent = progress.target ? (progress.current / progress.target) * 100 : 0;
+                const objDiv = document.createElement('div');
+                objDiv.className = 'quest-objective';
+                objDiv.innerHTML = `
+                    <span>${obj.description} (${progress.current}/${progress.target})</span>
+                    <div class="quest-progress-bar"><span style="width:${percent}%"></span></div>
+                `;
+                details.appendChild(objDiv);
+            });
+            const rewards = document.createElement('div');
+            rewards.className = 'quest-rewards';
+            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
+            details.appendChild(rewards);
+
+            const actions = document.createElement('div');
+            actions.className = 'quest-actions';
+            const abandonBtn = document.createElement('button');
+            abandonBtn.textContent = 'Abandonner';
+            abandonBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                questSystem.abandonQuest(quest.id);
+                updateQuestUI(questSystem);
+            });
+            actions.appendChild(abandonBtn);
+            details.appendChild(actions);
+        } else if (type === 'available') {
+            const rewards = document.createElement('div');
+            rewards.className = 'quest-rewards';
+            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
+            details.appendChild(rewards);
+
+            const actions = document.createElement('div');
+            actions.className = 'quest-actions';
+            const startBtn = document.createElement('button');
+            startBtn.textContent = 'Commencer';
+            startBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                if (questSystem.startQuest(quest.id)) {
+                    updateQuestUI(questSystem);
+                }
+            });
+            actions.appendChild(startBtn);
+            details.appendChild(actions);
+        } else if (type === 'completed') {
+            const rewards = document.createElement('div');
+            rewards.className = 'quest-rewards';
+            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
+            details.appendChild(rewards);
+
+            const done = document.createElement('div');
+            done.className = 'quest-progress';
+            done.textContent = '✓ Terminée';
+            details.appendChild(done);
+        }
+
+        return item;
+    };
+
     const activeQuests = questSystem.getActiveQuests();
     if (activeQuests.length > 0) {
         const activeHeader = document.createElement('h3');
@@ -357,19 +457,11 @@ export function updateQuestUI(questSystem) {
         activeHeader.style.color = '#f9a825';
         questList.appendChild(activeHeader);
 
-        activeQuests.forEach(quest => {
-            const questItem = document.createElement('div');
-            questItem.className = 'quest-item';
-            questItem.innerHTML = `
-                <div class="quest-title">${quest.title}</div>
-                <div class="quest-description">${quest.description}</div>
-                <div class="quest-progress">${quest.getProgressText()}</div>
-            `;
-            questList.appendChild(questItem);
+        activeQuests.forEach(q => {
+            questList.appendChild(createQuestItem(q, 'active'));
         });
     }
 
-    // Quêtes disponibles
     const availableQuests = questSystem.getAvailableQuests();
     if (availableQuests.length > 0) {
         const availableHeader = document.createElement('h3');
@@ -377,25 +469,11 @@ export function updateQuestUI(questSystem) {
         availableHeader.style.color = '#27ae60';
         questList.appendChild(availableHeader);
 
-        availableQuests.forEach(quest => {
-            const questItem = document.createElement('div');
-            questItem.className = 'quest-item';
-            questItem.style.cursor = 'pointer';
-            questItem.innerHTML = `
-                <div class="quest-title">${quest.title}</div>
-                <div class="quest-description">${quest.description}</div>
-                <div class="quest-progress">Cliquez pour commencer</div>
-            `;
-            questItem.addEventListener('click', () => {
-                if (questSystem.startQuest(quest.id)) {
-                    updateQuestUI(questSystem);
-                }
-            });
-            questList.appendChild(questItem);
+        availableQuests.forEach(q => {
+            questList.appendChild(createQuestItem(q, 'available'));
         });
     }
 
-    // Quêtes terminées
     const completedQuests = questSystem.getCompletedQuests();
     if (completedQuests.length > 0) {
         const completedHeader = document.createElement('h3');
@@ -403,16 +481,8 @@ export function updateQuestUI(questSystem) {
         completedHeader.style.color = '#95a5a6';
         questList.appendChild(completedHeader);
 
-        completedQuests.slice(-5).forEach(quest => { // Afficher seulement les 5 dernières
-            const questItem = document.createElement('div');
-            questItem.className = 'quest-item';
-            questItem.style.opacity = '0.7';
-            questItem.innerHTML = `
-                <div class="quest-title">${quest.title}</div>
-                <div class="quest-description">${quest.description}</div>
-                <div class="quest-progress">✓ Terminée</div>
-            `;
-            questList.appendChild(questItem);
+        completedQuests.slice(-5).forEach(q => {
+            questList.appendChild(createQuestItem(q, 'completed'));
         });
     }
 
