@@ -151,24 +151,38 @@ export function updateMining(game, keys, mouse, delta) {
 
     // Vérifier si l'outil actuel peut miner ce type de bloc
     const toolEfficiency = TOOL_EFFICIENCY[toolName]?.[currentType];
-    
+
     // Blocs qui peuvent être minés à la main (avec efficacité réduite)
     const handMineable = [
-        TILE.DIRT, TILE.GRASS, TILE.SAND, TILE.GRAVEL, TILE.LEAVES, TILE.OAK_LEAVES, 
+        TILE.DIRT, TILE.GRASS, TILE.SAND, TILE.GRAVEL, TILE.LEAVES, TILE.OAK_LEAVES,
         TILE.FLOWER_RED, TILE.FLOWER_YELLOW, TILE.GLOW_MUSHROOM, TILE.CLOUD
     ];
-    
-    if (toolName !== 'hand' && toolEfficiency === undefined && !handMineable.includes(currentType)) {
+
+    // Efficacité de base des outils lorsqu'ils ne sont pas adaptés
+    const BASE_EFFICIENCY = {
+        hand: 0.5,
+        tool_pickaxe: 1,
+        tool_shovel: 0.5,
+        tool_axe: 0.5,
+        tool_sword: 0.4,
+        tool_knife: 0.3
+    };
+
+    // Si on tente de miner à la main un bloc non autorisé
+    if (toolName === 'hand' && !handMineable.includes(currentType)) {
         player.miningProgress = 0;
         game.miningEffect = null;
-        if (game.logger) game.logger.log(`Impossible de miner ce bloc avec ${toolName}.`);
-        if (toolName !== 'tool_pickaxe') return;
-        // La pioche peut miner les blocs inconnus avec une efficacité par défaut
+        if (game.logger) game.logger.log('Impossible de miner ce bloc à la main.');
+        return;
+    }
+
+    // Calculer l'efficacité en tenant compte des outils inadaptés
+    let efficiency = toolEfficiency ?? BASE_EFFICIENCY[toolName] ?? 0.3;
+    if (toolEfficiency === undefined && toolName !== 'hand' && game.logger) {
+        game.logger.log(`${toolName} n'est pas adapté pour ce bloc. Minage ralenti.`);
     }
 
     // Vérifier si l'outil a encore de la durabilité
-    let efficiency = toolEfficiency ?? (toolName === 'tool_pickaxe' ? 1 : 0.5); // 0.5 = main nue
-    
     if (toolName !== 'hand') {
         const durability = player.durability?.[toolName] ?? Infinity;
         if (durability <= 0) {
