@@ -359,7 +359,8 @@ const GRAVITY_BLOCKS = [
     TILE.SAND, TILE.GRAVEL, TILE.SOUL_SAND
 ];
 
-function checkBlockSupport(game, x, y) {
+// Exported for tests and external gravity checks
+export function checkBlockSupport(game, x, y) {
     // Vérifier si un bloc a besoin de support
     const block = game.tileMap[y]?.[x];
     if (!block) return;
