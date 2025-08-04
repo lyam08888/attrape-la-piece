@@ -40,14 +40,49 @@ export class RPGInterfaceManager {
         const windowDiv = document.createElement('div');
         windowDiv.id = id;
         windowDiv.className = 'rpg-window';
-        windowDiv.style.display = 'none'; // Caché par défaut
+        windowDiv.style.display = 'none';
 
-        windowDiv.innerHTML = `
-            <div class="rpg-window-header">${title}</div>
-            <div class="rpg-window-content">Contenu de ${title}...</div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'rpg-window-header';
+        header.textContent = title;
+        
+        const content = document.createElement('div');
+        content.className = 'rpg-window-content';
+        content.innerHTML = `Contenu de ${title}...`;
+
+        windowDiv.appendChild(header);
+        windowDiv.appendChild(content);
+
         document.body.appendChild(windowDiv);
         this.windows[id] = windowDiv;
+        
+        // Rendre la fenêtre déplaçable
+        this.makeDraggable(windowDiv, header);
+    }
+
+    makeDraggable(element, handle) {
+        let offsetX = 0, offsetY = 0, mouseX = 0, mouseY = 0;
+
+        handle.onmousedown = (e) => {
+            e.preventDefault();
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            document.onmouseup = () => {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            };
+
+            document.onmousemove = (e) => {
+                e.preventDefault();
+                offsetX = mouseX - e.clientX;
+                offsetY = mouseY - e.clientY;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                element.style.top = (element.offsetTop - offsetY) + "px";
+                element.style.left = (element.offsetLeft - offsetX) + "px";
+            };
+        };
     }
 
     toggleWindow(id) {

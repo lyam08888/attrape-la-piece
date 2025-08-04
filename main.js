@@ -137,75 +137,85 @@ function drawWorld(ctx, assets) {
     }
 }
 
+// --- Fonctions de Scène ---
+function showMainMenu() {
+    document.getElementById('mainMenu').style.display = 'flex';
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'none';
+}
+
+function showLoadingScreen() {
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('gameContainer').style.display = 'none';
+}
+
+function showGame() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'block';
+    resizeCanvas();
+}
+
 // --- Point d'Entrée Principal ---
-async function main() {
-    const loadingScreen = document.getElementById('loadingScreen');
+async function startGameSequence() {
+    showLoadingScreen();
     
+    const loadingStatus = document.getElementById('loadingStatus');
+    const updateStatus = (msg) => {
+        if(loadingStatus) loadingStatus.textContent = msg;
+        logger.log(msg, 'init');
+    };
+
     try {
-        logger.log("Démarrage du jeu...", 'debug');
-        
-        // --- STEP 1: Initialiser le Canvas et l'Engine ---
-        updateLoadingStatus("Initialisation du moteur...");
+        updateStatus("Initialisation du moteur...");
         const canvas = document.getElementById('gameCanvas');
         if (!canvas) throw new Error("Canvas non trouvé!");
         resizeCanvas();
-        engine = new GameEngine(canvas, config, logger); // Passer le logger au moteur
-        logger.success("Moteur initialisé.");
-
-        // --- STEP 2: Créer l'objet de jeu ---
+        engine = new GameEngine(canvas, config, logger);
+        
         game = { config, canvas, ctx: canvas.getContext('2d'), paused: false, logger };
         window.game = game;
 
-        // --- STEP 3: Générer le monde ---
-        updateLoadingStatus("Génération du monde...");
-        game.tileMap = generateLevel(
-            Math.floor(config.worldWidth / config.tileSize),
-            Math.floor(config.worldHeight / config.tileSize)
-        );
-        logger.success(`Monde de ${game.tileMap[0].length}x${game.tileMap.length} généré.`);
-
-        // --- STEP 4: Créer le joueur ---
-        updateLoadingStatus("Création du joueur...");
+        updateStatus("Génération du monde...");
+        game.tileMap = generateLevel(Math.floor(config.worldWidth / config.tileSize), Math.floor(config.worldHeight / config.tileSize));
+        
+        updateStatus("Création de l'aventurier...");
         const spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.height, config.tileSize);
         game.spawnPoint = spawnPoint;
         game.player = new Player(spawnPoint.x, spawnPoint.y, config, null);
-        logger.success(`Joueur créé au point de spawn: (${spawnPoint.x}, ${spawnPoint.y})`);
 
-        // --- STEP 5: Initialiser les systèmes ---
-        updateLoadingStatus("Initialisation des systèmes...");
+        updateStatus("Activation des systèmes...");
         game.rpgInterface = new RPGInterfaceManager();
         integrateAdvancedSystems(game);
         game.combatSystem = new CombatSystem();
         game.foodSystem = new FoodSystem();
         integrateMiningWithRPG(game);
-        logger.success("Tous les systèmes de jeu sont initialisés.");
 
-        // --- STEP 6: Démarrer le moteur et charger les assets ---
-        updateLoadingStatus("Chargement des assets...");
+        updateStatus("Chargement des assets...");
         await engine.start(gameLogic);
 
-        // --- STEP 7: Finalisation ---
-        updateLoadingStatus("Prêt !");
-        loadingScreen.style.display = 'none';
-        game.rpgInterface.showNotification("Bienvenue, aventurier !", "success");
-        logger.log("Jeu démarré. Appuyez sur 'F2' pour afficher/cacher ce logger.", 'debug');
+        showGame();
+        game.rpgInterface.showNotification("Bienvenue dans l'aventure !", "success");
+        logger.log("Jeu démarré. Appuyez sur 'F2' pour le logger.", 'debug');
 
     } catch (error) {
         console.error("❌ Erreur fatale au démarrage:", error);
-        updateLoadingStatus(`Erreur: ${error.message}`);
-        const loadingScreen = document.getElementById('loadingScreen');
-        if(loadingScreen) {
-            loadingScreen.innerHTML = `<h1>Erreur de démarrage</h1><p>${error.message}</p><p>Consultez la console (F12) pour les détails.</p>`;
-            loadingScreen.style.color = 'red';
-        }
+        if(loadingStatus) loadingStatus.innerHTML = `Erreur: ${error.message}`;
     }
 }
 
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'F2') {
-        logger.toggleVisibility();
-    }
-});
+document.addEventListener('DOMContentLoaded', () => {
+    showMainMenu();
+    
+    document.getElementById('startGameBtn').onclick = () => {
+        startGameSequence();
+    };
 
-window.addEventListener('resize', resizeCanvas);
-document.addEventListener('DOMContentLoaded', main);
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'F2') {
+            logger.toggleVisibility();
+        }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+});

@@ -8,18 +8,25 @@
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="rpgInterface.css">
+    <link rel="stylesheet" href="windows11-style.css">
 </head>
 <body class="game-page">
-    <!-- Écran de chargement -->
-    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; color: white; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'VT323', monospace;">
-        <h1>Super Pixel Adventure 2</h1>
-        <p>Chargement du jeu...</p>
+    
+    <!-- Menu Principal -->
+    <div id="mainMenu" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: 'VT323', monospace;">
+        <h1 style="font-size: 4em; color: #4CAF50;">Super Pixel Adventure 2</h1>
+        <p style="font-size: 1.5em; color: #aaa;">- RPG Edition -</p>
+        <button id="startGameBtn" class="rpg-button" style="margin-top: 50px;">Démarrer l'Aventure</button>
     </div>
 
-    <!-- Conteneur de Jeu -->
-    <div id="gameContainer">
+    <!-- Écran de chargement -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: white; z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; font-family: 'VT323', monospace;">
+        <h1 id="loadingStatus">Chargement...</h1>
+    </div>
+
+    <!-- Conteneur de Jeu (initialement caché) -->
+    <div id="gameContainer" style="display: none;">
         <canvas id="gameCanvas" tabindex="0"></canvas>
-        <!-- L'interface RPG sera injectée ici par le gestionnaire -->
     </div>
 
     <!-- Point d'entrée unique pour le jeu -->
