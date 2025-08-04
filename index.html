@@ -807,9 +807,25 @@
                             <span>Vitesse: <span id="playerSpeed">10</span></span>
                         </div>
                     </div>
-                </div>
-                <div class="tab-content" data-content="skills">
-                    <p style="text-align: center; margin-top: 20px;">Aucune compétence disponible pour le moment.</p>
+                    <div class="stat-line">
+                        <img src="assets/bonus.png" alt="Points" class="stat-icon">
+                        <span>Points: <span id="skillPoints">0</span></span>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/heart.png" alt="Santé" class="stat-icon">
+                        <span>Santé: <span id="playerHealth">100/100</span></span>
+                        <button class="stat-up" data-stat="maxHealth">+</button>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/tool_sword.png" alt="Force" class="stat-icon">
+                        <span>Force: <span id="playerStrength">10</span></span>
+                        <button class="stat-up" data-stat="strength">+</button>
+                    </div>
+                    <div class="stat-line">
+                        <img src="assets/player_run1.png" alt="Vitesse" class="stat-icon">
+                        <span>Vitesse: <span id="playerSpeed">10</span></span>
+                        <button class="stat-up" data-stat="speed">+</button>
+                    </div>
                 </div>
                 <button data-action="close-menu">FERMER</button>
             </div>
@@ -1072,6 +1088,17 @@
                 const target = e.target;
                 const action = target.dataset.action;
 
+                if (target.classList.contains('stat-up') && window.game && window.game.player && window.game.player.stats) {
+                    const stat = target.dataset.stat;
+                    if (window.game.player.stats.allocatePoint(stat)) {
+                        document.getElementById('skillPoints').textContent = window.game.player.stats.skillPoints;
+                        document.getElementById('playerStrength').textContent = window.game.player.stats.strength;
+                        document.getElementById('playerSpeed').textContent = window.game.player.stats.speed;
+                        document.getElementById('playerHealth').textContent = `${window.game.player.stats.health}/${window.game.player.stats.maxHealth}`;
+                    }
+                    return;
+                }
+
                 if (action) {
                     switch(action) {
                         case 'close-menu': target.closest('.overlay').classList.remove('active'); break;
@@ -1111,7 +1138,7 @@
                     } else {
                         openMenu(ui.menus.inventory);
                     }
-                } else if (e.key === 'c' || e.key === 'C') {
+                } else if (e.key === 'p' || e.key === 'P') {
                     e.preventDefault();
                     const isCharacterOpen = ui.menus.character.classList.contains('active');
                     if (isCharacterOpen) {

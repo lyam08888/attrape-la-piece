@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const optionsMenu = document.getElementById('optionsMenu');
     const gameOverScreen = document.getElementById('gameOverScreen');
+    const characterMenu = document.getElementById('characterMenu');
     const renderDistanceSlider = document.getElementById('renderDistanceSlider');
     const zoomSlider = document.getElementById('zoomSlider');
     const particlesCheckbox = document.getElementById('particlesCheckbox');
@@ -678,8 +679,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         },
 
-        isPaused: () => optionsMenu.classList.contains('active') || gameOverScreen?.classList.contains('active'),
-        toggleMenu: (menu) => { if (menu === 'options') optionsMenu.classList.toggle('active'); },
+        isPaused: () => optionsMenu.classList.contains('active') || characterMenu?.classList.contains('active') || gameOverScreen?.classList.contains('active'),
+        toggleMenu: (menu) => {
+            if (menu === 'options') optionsMenu.classList.toggle('active');
+            if (menu === 'character') characterMenu?.classList.toggle('active');
+        },
         selectTool: (index) => {
             if (game.player && index >= 0 && index < game.player.tools.length) {
                 game.player.selectedToolIndex = index;

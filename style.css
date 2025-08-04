@@ -31,3 +31,10 @@ body.game-page {
     align-items: center;
     justify-content: center;
 }
+
+.stat-up {
+    margin-left: 8px;
+    padding: 0 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
