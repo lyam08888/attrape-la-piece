@@ -197,7 +197,10 @@ export function updateMining(game, keys, mouse, delta) {
         }
     }
     
-    const timeToBreak = breakTime / efficiency;
+    // Appliquer les bonus de statistiques et de saison
+    const miningStat = player.stats?.miningSpeed ? player.stats.miningSpeed / 10 : 1;
+    const seasonBonus = game.timeSystem?.getSeasonalBonus ? (game.timeSystem.getSeasonalBonus().mining || 1) : 1;
+    const timeToBreak = breakTime / (efficiency * miningStat * seasonBonus);
     player.miningProgress += delta / timeToBreak;
     game.miningEffect = { x: target.x, y: target.y, progress: player.miningProgress };
 
