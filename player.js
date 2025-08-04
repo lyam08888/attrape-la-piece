@@ -131,7 +131,7 @@ export class Player {
         );
     }
 
-    update(keys, mouse, game, delta) {
+    update(keys, game, delta) {
         const { physics, tileSize } = this.config;
         this.isFlying = keys.fly;
         
@@ -239,6 +239,10 @@ export class Player {
         }
 
         this.checkCollectibleCollisions(game);
+        
+        // FIXED: Create mouse object if not provided
+        const mouse = game.mouse || { left: false, right: false, x: 0, y: 0 };
+        
         this.updateMiningTarget(keys, mouse, game);
         updateMining(game, keys, mouse, delta); // Utiliser le système de minage avancé
         this.updateFruitHarvesting(mouse, game);
@@ -251,7 +255,7 @@ export class Player {
         
         this.updateCombat(game, delta);
     }
-    
+
     checkCollectibleCollisions(game) {
         if (!game.collectibles) return;
         for (let i = game.collectibles.length - 1; i >= 0; i--) {
