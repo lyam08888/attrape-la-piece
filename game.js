@@ -558,6 +558,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Dessiner le soleil et la lune en fonction de l'heure
+            const { hour, minute } = game.timeSystem.getTime();
+            const t = (hour + minute / 60) / 24;
+            const sunPos = game.timeSystem.getSunPosition(canvas.width, canvas.height);
+            const moonPos = game.timeSystem.getMoonPosition(canvas.width, canvas.height);
+
+            // Soleil
+            ctx.globalAlpha = Math.max(0, Math.sin(t * Math.PI));
+            ctx.fillStyle = '#FDB813';
+            ctx.beginPath();
+            ctx.arc(sunPos.x, sunPos.y, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Lune
+            ctx.globalAlpha = Math.max(0, Math.sin((t + 0.5) * Math.PI));
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.arc(moonPos.x, moonPos.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1;
+
             ctx.save();
             ctx.scale(zoom, zoom);
             ctx.translate(-game.camera.x + game.cameraShakeOffsetX, -game.camera.y + game.cameraShakeOffsetY);
