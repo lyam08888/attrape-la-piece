@@ -316,8 +316,8 @@ export class Player {
 
         // Ciblage avec la souris lorsqu'on maintient le clic gauche
         if (mouse?.left) {
-            const mouseWorldX = game.camera.x + mouse.x / zoom;
-            const mouseWorldY = game.camera.y + mouse.y / zoom;
+            const mouseWorldX = game.camera.x + mouse.x;
+            const mouseWorldY = game.camera.y + mouse.y;
             const distance = Math.hypot(mouseWorldX - playerCenterX, mouseWorldY - playerCenterY);
 
             if (distance <= reach) {
@@ -330,6 +330,7 @@ export class Player {
                         if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
                             this.miningTarget = { x: tileX, y: tileY, type: tileType };
                             this.miningProgress = 0;
+                            console.log(`Nouveau ciblage de minage: (${tileX}, ${tileY}), type: ${tileType}, outil: ${this.tools[this.selectedToolIndex]}`);
                         }
                         return;
                     }
@@ -364,8 +365,8 @@ export class Player {
         
         const { tileSize, zoom } = game.config;
         const reach = (this.config.player.reach || 4) * tileSize;
-        const mouseWorldX = game.camera.x + mouse.x / zoom;
-        const mouseWorldY = game.camera.y + mouse.y / zoom;
+        const mouseWorldX = game.camera.x + mouse.x;
+        const mouseWorldY = game.camera.y + mouse.y;
         
         if (Math.hypot(mouseWorldX - (this.x + this.w / 2), mouseWorldY - (this.y + this.h / 2)) > reach) {
             return;

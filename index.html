@@ -1577,6 +1577,15 @@
                 const key = normalizeKey(e.key);
                 keys[key] = true;
 
+                // Gestion de la sélection d'outils avec les touches numériques
+                if (window.game && window.game.player) {
+                    const toolIndex = parseInt(key) - 1;
+                    if (toolIndex >= 0 && toolIndex < window.game.player.tools.length) {
+                        window.game.selectTool(toolIndex);
+                        e.preventDefault();
+                    }
+                }
+
                 if (window.game && window.game.disasterManager) {
                     switch (key) {
                         case 'F1':
@@ -1619,6 +1628,15 @@
             });
 
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Gestion de la molette de souris pour changer d'outil
+            canvas.addEventListener('wheel', (e) => {
+                if (window.game && window.game.player) {
+                    e.preventDefault();
+                    const direction = e.deltaY > 0 ? 1 : -1;
+                    window.game.cycleTool(direction);
+                }
+            });
 
             const optionsMenu = document.getElementById('optionsMenu');
             const renderDistanceSlider = document.getElementById('renderDistanceSlider');
@@ -3385,7 +3403,7 @@
                 'tile_quartz', 'tile_fluorite', 'tile_malachite', 'tile_hematite', 'tile_pyrite',
                 
                 // Outils
-                'tool_pickaxe', 'tool_axe', 'tool_shovel', 'tool_sword', 'tool_bow', 'tool_fishing_rod',
+                'tool_pickaxe', 'tool_axe', 'tool_shovel', 'tool_sword', 'tool_knife', 'tool_bow', 'tool_fishing_rod',
                 
                 // Nourriture - Fruits
                 'food_apple', 'food_pear', 'food_cherry', 'food_peach', 'food_orange', 'food_banana',

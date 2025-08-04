@@ -123,6 +123,11 @@ export function updateMining(game, keys, mouse, delta) {
     // Vérifier si le joueur est en train de miner (clic gauche maintenu ou touche action)
     const isMining = mouse.left || keys?.action;
     
+    // Debug: afficher l'état du minage (seulement au début)
+    if (isMining && player.miningTarget && player.miningProgress === 0) {
+        console.log(`Début du minage: cible (${player.miningTarget.x}, ${player.miningTarget.y}), type: ${player.miningTarget.type}`);
+    }
+    
     if (!isMining || !player.miningTarget) {
         if (player) player.miningProgress = 0;
         game.miningEffect = null;
