@@ -91,7 +91,18 @@ async function loadOptions() {
                 "action": "KeyE",
                 "run": "ShiftLeft",
                 "fly": "KeyV",
-                "repair": "KeyR"
+                "repair": "KeyR",
+                "inventory": "KeyI",
+                "character": "KeyP",
+                "quests": "KeyQ",
+                "pause": "Escape",
+                "options": "KeyO",
+                "tool1": "Digit1",
+                "tool2": "Digit2",
+                "tool3": "Digit3",
+                "tool4": "Digit4",
+                "tool5": "Digit5",
+                "tool6": "Digit6"
             }
         };
     }
