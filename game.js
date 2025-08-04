@@ -21,6 +21,7 @@ import { AdvancedNPCSystem } from './advancedNPCSystem.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
 import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
 import { RPGInterfaceManager } from './rpgInterfaceManager.js';
+import { integrateMiningWithRPG } from './miningEngine.js';
 
 async function loadConfig() {
     try {
@@ -531,6 +532,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error("❌ Erreur lors de l'initialisation des systèmes avancés:", error);
                 game.logger.log("⚠️ Systèmes avancés non disponibles - utilisation du mode de base");
+            }
+            
+            // === INTÉGRATION INTERFACE RPG ===
+            game.logger.log("Initialisation de l'interface RPG...");
+            try {
+                game.rpgInterface = new RPGInterfaceManager();
+                window.rpgInterface = game.rpgInterface; // Rendre accessible globalement
+                
+                // Intégrer le système de minage avec l'interface RPG
+                integrateMiningWithRPG(game);
+                
+                game.logger.log("✅ Interface RPG initialisée avec succès !");
+                
+                // Notification de bienvenue
+                setTimeout(() => {
+                    if (game.rpgInterface) {
+                        game.rpgInterface.showNotification(
+                            '🎮 Interface RPG activée ! Utilisez I, C, Q, M, O, J, ESC',
+                            'success',
+                            5000
+                        );
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.error("❌ Erreur lors de l'initialisation de l'interface RPG:", error);
+                game.logger.log("⚠️ Interface RPG non disponible - utilisation de l'interface de base");
             }
             
             game.updateToolbar();

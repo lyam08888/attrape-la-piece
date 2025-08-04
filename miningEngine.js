@@ -547,3 +547,104 @@ export function updateGravity(game) {
         }
     }
 }
+
+// === INTÉGRATION RPG ===
+
+// Fonction pour intégrer le système de minage avec l'interface RPG
+export function integrateMiningWithRPG(game) {
+    if (!game.rpgInterface) return;
+    
+    // Surcharger la fonction de destruction de bloc pour les notifications RPG
+    const originalDestroyBlock = destroyBlock;
+    
+    window.destroyBlockRPG = function(game, x, y, type) {
+        const result = originalDestroyBlock(game, x, y, type);
+        
+        // Notifications RPG pour les blocs spéciaux
+        if (game.rpgInterface) {
+            const specialBlocks = {
+                [TILE.DIVINE_STONE]: { name: 'Pierre Divine', rarity: 'legendary' },
+                [TILE.CELESTIAL_CRYSTAL]: { name: 'Cristal Céleste', rarity: 'epic' },
+                [TILE.DEMON_CRYSTAL]: { name: 'Cristal Démoniaque', rarity: 'epic' },
+                [TILE.VOID_CRYSTAL]: { name: 'Cristal du Vide', rarity: 'legendary' },
+                [TILE.TIME_CRYSTAL]: { name: 'Cristal Temporel', rarity: 'mythic' },
+                [TILE.SPACE_CRYSTAL]: { name: 'Cristal Spatial', rarity: 'mythic' },
+                [TILE.CHAOS_CRYSTAL]: { name: 'Cristal du Chaos', rarity: 'mythic' },
+                [TILE.ETERNAL_DARKNESS]: { name: 'Ténèbres Éternelles', rarity: 'mythic' }
+            };
+            
+            if (specialBlocks[type]) {
+                const block = specialBlocks[type];
+                let notificationType = 'success';
+                
+                switch (block.rarity) {
+                    case 'epic': notificationType = 'warning'; break;
+                    case 'legendary': notificationType = 'info'; break;
+                    case 'mythic': notificationType = 'error'; break;
+                }
+                
+                game.rpgInterface.showNotification(
+                    `✨ ${block.name} découvert !`,
+                    notificationType,
+                    3000
+                );
+            }
+        }
+        
+        // Gain d'expérience pour le minage
+        if (game.player && game.player.gainExperience) {
+            const expGain = getMiningExperience(type);
+            if (expGain > 0) {
+                game.player.gainExperience(expGain);
+            }
+        }
+        
+        return result;
+    };
+}
+
+// Fonction pour calculer l'expérience gagnée en minant
+function getMiningExperience(blockType) {
+    const expTable = {
+        // Blocs de base
+        [TILE.STONE]: 2,
+        [TILE.COAL]: 5,
+        [TILE.IRON]: 8,
+        [TILE.GOLD]: 12,
+        [TILE.DIAMOND]: 20,
+        
+        // Blocs RPG - Paradis
+        [TILE.DIVINE_STONE]: 25,
+        [TILE.CELESTIAL_CRYSTAL]: 30,
+        [TILE.DIVINE_GOLD]: 18,
+        [TILE.LIGHT_CRYSTAL]: 15,
+        
+        // Blocs RPG - Forêt Enchantée
+        [TILE.MOONSTONE]: 20,
+        [TILE.ELVEN_CRYSTAL]: 25,
+        [TILE.ANCIENT_ROOT]: 12,
+        [TILE.DRUID_STONE]: 15,
+        
+        // Blocs RPG - Cristaux
+        [TILE.PURE_CRYSTAL]: 35,
+        [TILE.POWER_CRYSTAL]: 40,
+        [TILE.VOID_CRYSTAL]: 45,
+        [TILE.TIME_CRYSTAL]: 100,
+        [TILE.SPACE_CRYSTAL]: 120,
+        
+        // Blocs RPG - Enfer
+        [TILE.DEMON_CRYSTAL]: 50,
+        [TILE.INFERNAL_STONE]: 30,
+        [TILE.MOLTEN_GOLD]: 25,
+        [TILE.DEVIL_HORN]: 35,
+        
+        // Blocs RPG - Abysse
+        [TILE.SHADOW_CRYSTAL]: 60,
+        [TILE.DARK_MATTER]: 150,
+        [TILE.NIGHTMARE_CRYSTAL]: 80,
+        [TILE.CHAOS_CRYSTAL]: 200,
+        [TILE.ETERNAL_DARKNESS]: 250
+    };
+    
+    return expTable[blockType] || 1;
+}
