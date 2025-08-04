@@ -5,7 +5,7 @@ import { Player } from './player.js';
 import { TILE, generateLevel, ensureWorldColumns } from './world.js';
 import { PNJ } from './PNJ.js';
 import { generatePNJ } from './generateurPNJ.js';
-import { updateMining, updateGravity } from './miningEngine.js';
+import { updateGravity } from './miningEngine.js';
 import { ParticleSystem } from './fx.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { TimeSystem } from './timeSystem.js';
@@ -495,9 +495,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            // Passe également les touches clavier pour permettre le minage via la touche d'action
-            updateMining(game, mappedKeys, mouse, delta);
-            
             // Système de gravité pour les blocs
             updateGravity(game);
             

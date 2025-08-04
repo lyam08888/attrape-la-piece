@@ -1104,7 +1104,6 @@
         import { Enemy } from './enemy.js';
         import { PNJ } from './PNJ.js';
         import { generatePNJ } from './generateurPNJ.js';
-        import { updateMining } from './miningEngine.js';
         import { ParticleSystem } from './fx.js';
         // import { WorldAnimator } from './worldAnimator.js'; // Désactivé pour l'instant
         import { TimeSystem } from './timeSystem.js';
@@ -2435,9 +2434,6 @@
                         }
                     });
 
-                    // Mettre à jour le système de minage
-                    updateMining(game, keys, mouse, delta);
-                    
                     // Mettre à jour les systèmes
                     if (game.particleSystem) game.particleSystem.update();
                     if (game.combatSystem) game.combatSystem.updateDamageNumbers();
