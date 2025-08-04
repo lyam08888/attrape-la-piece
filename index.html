@@ -17,41 +17,46 @@
     </div>
 
     <script type="module">
-        // Import seulement des modules essentiels qui existent
-        let GameEngine, Player, TILE, generateLevel, RPGInterfaceManager;
+        // Import des modules ES6
+        import { GameEngine } from './engine.js';
+        import { Player } from './player.js';
+        import { TILE, generateLevel, ensureWorldColumns } from './world.js';
+        import { Enemy } from './enemy.js';
+        import { PNJ } from './PNJ.js';
+        import { generatePNJ } from './generateurPNJ.js';
+        import { ParticleSystem } from './fx.js';
+        import { TimeSystem } from './timeSystem.js';
+        import { TimeSystem as CalendarSystem } from './calendar.js';
+        import { CHEST_TYPES } from './chestGenerator.js';
+        import { DisasterManager } from './disasterManager.js';
+        import { generateAnimal } from './generateurAnimaux.js';
+        import { LightingSystem as AdvancedLighting } from './lighting.js';
+        import { SURVIVAL_ITEMS } from './survivalItems.js';
+        import { generateMonster } from './generateurMonstres.js';
+        import { Enemy as BaseEnemy, Slime } from './enemy.js';
+        import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
+        import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
+        import { RPGInterfaceManager } from './rpgInterfaceManager.js';
         
-        try {
-            const engineModule = await import('./engine.js');
-            GameEngine = engineModule.GameEngine;
-            console.log("✅ Engine chargé");
-        } catch (e) {
-            console.error("❌ Erreur chargement engine:", e);
-        }
+        // Import des nouveaux systèmes
+        import { AnimalManager, Animal } from './animalSystem.js';
+        import { FoodSystem } from './foodSystem.js';
+        import { ComplexWorldSystem } from './worldComplexSystem.js';
+        import { integrateComplexWorld } from './gameIntegration.js';
+        import { createEnvironmentPanel, createDisasterMenu, createCharacterPanel } from './uiPanels.js';
         
-        try {
-            const playerModule = await import('./player.js');
-            Player = playerModule.Player;
-            console.log("✅ Player chargé");
-        } catch (e) {
-            console.error("❌ Erreur chargement player:", e);
-        }
-        
-        try {
-            const worldModule = await import('./world.js');
-            TILE = worldModule.TILE;
-            generateLevel = worldModule.generateLevel;
-            console.log("✅ World chargé");
-        } catch (e) {
-            console.error("❌ Erreur chargement world:", e);
-        }
-        
-        try {
-            const rpgModule = await import('./rpgInterfaceManager.js');
-            RPGInterfaceManager = rpgModule.RPGInterfaceManager;
-            console.log("✅ RPG Interface chargée");
-        } catch (e) {
-            console.error("❌ Erreur chargement RPG Interface:", e);
-        }
+        import { Logger } from './logger.js';
+        import { ChatSystem } from './chat.js';
+        import { QuestSystem, updateQuestUI } from './questSystem.js';
+        import { Inventory, updateInventoryUI } from './inventorySystem.js';
+        import { PlayerStats, CombatSystem, BiomeSystem, updatePlayerStatsUI } from './combatSystem.js';
+        import { WeatherSystem, LightingSystem } from './weatherSystem.js';
+        import { Minimap, initializeMinimap, drawMinimapToElement } from './minimap.js';
+        import { EnemySpawner } from './enemySpawner.js';
+        import { SaveSystem, createSaveUI } from './saveSystem.js';
+
+        window.updateQuestUI = updateQuestUI;
+        window.gameModuleReady = true;
 
         // Configuration par défaut
         const defaultConfig = {
@@ -132,11 +137,6 @@
             console.log("🎮 Initialisation du jeu RPG...");
             
             try {
-                // Vérifier que les modules essentiels sont chargés
-                if (!GameEngine || !Player || !TILE || !generateLevel) {
-                    throw new Error("Modules essentiels manquants");
-                }
-                
                 // Charger la configuration
                 config = await loadConfig();
                 console.log("✅ Configuration chargée");
@@ -145,19 +145,25 @@
                 resizeCanvas();
                 
                 // Créer le moteur de jeu
-                const canvas = document.getElementById('gameCanvas');
-                engine = new GameEngine(canvas, config);
+                engine = new GameEngine(document.getElementById('gameCanvas'), config);
+                
+                // Initialiser l'interface RPG complète
+                console.log("🎮 Initialisation de l'interface RPG...");
+                const rpgInterface = new RPGInterfaceManager();
+                window.rpgInterface = rpgInterface;
                 
                 // Créer l'objet game
                 game = {
                     config: config,
-                    canvas: canvas,
-                    ctx: canvas.getContext('2d'),
+                    canvas: document.getElementById('gameCanvas'),
+                    ctx: document.getElementById('gameCanvas').getContext('2d'),
+                    rpgInterface: rpgInterface,
                     
                     // Systèmes de base
                     tileMap: [],
                     player: null,
                     camera: { x: 0, y: 0 },
+                    mouse: { x: 0, y: 0, left: false, right: false },
                     
                     // Entités
                     enemies: [],
@@ -168,24 +174,24 @@
                     particles: [],
                     chests: [],
                     
+                    // Systèmes avancés
+                    particleSystem: null,
+                    combatSystem: null,
+                    biomeSystem: null,
+                    weatherSystem: null,
+                    lightingSystem: null,
+                    questSystem: null,
+                    inventory: null,
+                    saveSystem: null,
+                    
                     // État du jeu
                     time: 0,
                     paused: false,
                     
                     // Fonctions utilitaires
                     createParticles: function(x, y, count, color) {
-                        // Particules simples
-                        for (let i = 0; i < count; i++) {
-                            this.particles.push({
-                                x: x + (Math.random() - 0.5) * 20,
-                                y: y + (Math.random() - 0.5) * 20,
-                                vx: (Math.random() - 0.5) * 4,
-                                vy: (Math.random() - 0.5) * 4 - 2,
-                                color: color || '#FFFFFF',
-                                life: 30 + Math.floor(Math.random() * 20),
-                                maxLife: 50,
-                                size: 2 + Math.random() * 3
-                            });
+                        if (this.particleSystem) {
+                            this.particleSystem.createParticles(x, y, count, color);
                         }
                     },
                     
@@ -198,25 +204,26 @@
                 
                 window.game = game;
                 
-                // Générer le monde
+                // FIXED: Générer le monde avec les bons paramètres
                 console.log("🌍 Génération du monde...");
-                game.tileMap = generateLevel(config.worldWidth / config.tileSize, config.worldHeight / config.tileSize, seed);
+                const worldWidthInTiles = Math.floor(config.worldWidth / config.tileSize);
+                const worldHeightInTiles = Math.floor(config.worldHeight / config.tileSize);
+                game.tileMap = generateLevel(worldWidthInTiles, worldHeightInTiles, seed);
                 
                 // Créer le joueur
                 console.log("👤 Création du joueur...");
                 game.player = new Player(400, 300, config, null);
                 
-                // Initialiser l'interface RPG si disponible
-                if (RPGInterfaceManager) {
-                    try {
-                        console.log("🎮 Initialisation de l'interface RPG...");
-                        game.rpgInterface = new RPGInterfaceManager();
-                        window.rpgInterface = game.rpgInterface;
-                        console.log("✅ Interface RPG initialisée !");
-                    } catch (error) {
-                        console.warn("⚠️ Erreur interface RPG:", error);
-                    }
+                // Intégrer les systèmes avancés
+                try {
+                    integrateAdvancedSystems(game);
+                    console.log("✅ Systèmes avancés intégrés !");
+                } catch (error) {
+                    console.warn("⚠️ Erreur intégration systèmes avancés:", error);
                 }
+                
+                // Initialiser les systèmes RPG
+                initializeRPGSystems();
                 
                 console.log("✅ Jeu RPG initialisé avec succès !");
                 return true;
@@ -224,6 +231,45 @@
             } catch (error) {
                 console.error("❌ Erreur lors de l'initialisation du jeu:", error);
                 throw error;
+            }
+        }
+
+        // Fonction pour initialiser les systèmes RPG
+        function initializeRPGSystems() {
+            console.log("🎯 Initialisation des systèmes RPG...");
+            
+            try {
+                // Système de quêtes
+                game.questSystem = new QuestSystem();
+                game.questSystem.addQuest({
+                    id: 'welcome',
+                    title: 'Bienvenue dans le monde RPG',
+                    description: 'Explorez ce monde fantastique du Paradis à l\'Enfer',
+                    progress: 0,
+                    maxProgress: 1,
+                    type: 'tutorial',
+                    active: true
+                });
+                
+                // Système d'inventaire
+                game.inventory = new Inventory();
+                
+                // Système de combat
+                game.combatSystem = new CombatSystem();
+                
+                // Système de biomes
+                game.biomeSystem = new BiomeSystem();
+                
+                // Système de particules
+                game.particleSystem = new ParticleSystem();
+                
+                // Système de sauvegarde
+                game.saveSystem = new SaveSystem();
+                
+                console.log("✅ Systèmes RPG initialisés !");
+                
+            } catch (error) {
+                console.warn("⚠️ Erreur lors de l'initialisation des systèmes RPG:", error);
             }
         }
 
@@ -242,6 +288,11 @@
                 if (!game || !game.player || game.paused) return;
                 
                 try {
+                    // FIXED: Update mouse position in game object
+                    if (mouse) {
+                        game.mouse = mouse;
+                    }
+                    
                     // Mettre à jour le joueur
                     game.player.update(keys, game, delta);
                     
@@ -250,14 +301,12 @@
                         game.player.regenerateStats(delta);
                     }
                     
-                    // Mettre à jour les particules
-                    game.particles = game.particles.filter(p => {
-                        p.life--;
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.vy += 0.1; // Gravité
-                        return p.life > 0;
-                    });
+                    // Mettre à jour les systèmes
+                    if (game.particleSystem) game.particleSystem.update();
+                    if (game.combatSystem) game.combatSystem.update(delta);
+                    if (game.biomeSystem) game.biomeSystem.update(game, delta);
+                    if (game.weatherSystem) game.weatherSystem.update(game, delta);
+                    if (game.questSystem) game.questSystem.update(delta);
                     
                     // Mettre à jour la caméra
                     updateCamera();
@@ -308,7 +357,9 @@
                     drawPlayer(ctx);
                     
                     // Dessiner les particules
-                    drawParticles(ctx);
+                    if (game.particleSystem) {
+                        game.particleSystem.draw(ctx);
+                    }
                     
                     ctx.restore();
                     
@@ -316,7 +367,8 @@
                     console.error("Erreur dans le rendu du jeu:", error);
                 }
             },
-            
+
+            // FIXED: Add isPaused method
             isPaused() {
                 return game ? game.paused : false;
             }
@@ -419,17 +471,6 @@
             ctx.fillText('VOUS', game.player.x + game.player.w/2, game.player.y - 5);
         }
 
-        // Fonction de rendu des particules
-        function drawParticles(ctx) {
-            game.particles.forEach(p => {
-                const alpha = p.life / p.maxLife;
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
-            });
-            ctx.globalAlpha = 1;
-        }
-
         // Gestionnaire d'événements clavier
         function setupKeyboardHandlers() {
             const keys = {};
@@ -504,7 +545,7 @@
                 
             } catch (error) {
                 console.error("❌ Erreur lors du démarrage du jeu:", error);
-                alert("Erreur lors du démarrage du jeu: " + error.message);
+                alert("Erreur lors du démarrage du jeu. Veuillez recharger la page.");
             }
         }
 
