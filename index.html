@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modularUI.css">
+    <link rel="stylesheet" href="windows11-style.css">
     <style>
         
         
@@ -843,6 +845,234 @@
         </div>
     </div>
 
+    <!-- Fenêtres modulaires du système Windows 11 -->
+    <div id="inventoryWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-backpack"></i>
+                Inventaire
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('inventoryWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('inventoryWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('inventoryWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="inventoryContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="characterWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-user"></i>
+                Personnage
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('characterWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('characterWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('characterWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="characterContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="questWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-scroll"></i>
+                Quêtes
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('questWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('questWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('questWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="questContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="mapWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-map"></i>
+                Carte du Monde
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('mapWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('mapWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('mapWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="mapContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="craftingWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-hammer"></i>
+                Artisanat
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('craftingWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('craftingWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('craftingWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="craftingContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="journalWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-book"></i>
+                Journal
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('journalWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('journalWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('journalWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="journalContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="tradeWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-store"></i>
+                Commerce
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('tradeWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('tradeWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('tradeWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="tradeContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="dialogueWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-comments"></i>
+                Dialogue
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn close-btn" onclick="closeWindow('dialogueWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="dialogueContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <!-- Taskbar du système de fenêtres -->
+    <div id="gameTaskbar" class="game-taskbar">
+        <div class="taskbar-item" id="inventoryTask" onclick="toggleWindow('inventoryWindow')">
+            <i class="fas fa-backpack"></i>
+            <span>Inventaire</span>
+        </div>
+        <div class="taskbar-item" id="characterTask" onclick="toggleWindow('characterWindow')">
+            <i class="fas fa-user"></i>
+            <span>Personnage</span>
+        </div>
+        <div class="taskbar-item" id="questTask" onclick="toggleWindow('questWindow')">
+            <i class="fas fa-scroll"></i>
+            <span>Quêtes</span>
+        </div>
+        <div class="taskbar-item" id="mapTask" onclick="toggleWindow('mapWindow')">
+            <i class="fas fa-map"></i>
+            <span>Carte</span>
+        </div>
+        <div class="taskbar-item" id="craftingTask" onclick="toggleWindow('craftingWindow')">
+            <i class="fas fa-hammer"></i>
+            <span>Artisanat</span>
+        </div>
+        <div class="taskbar-item" id="journalTask" onclick="toggleWindow('journalWindow')">
+            <i class="fas fa-book"></i>
+            <span>Journal</span>
+        </div>
+    </div>
+
+    <!-- Menu contextuel -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-item" onclick="contextAction('inspect')">
+            <i class="fas fa-search"></i>
+            Examiner
+        </div>
+        <div class="context-item" onclick="contextAction('use')">
+            <i class="fas fa-hand-pointer"></i>
+            Utiliser
+        </div>
+        <div class="context-item" onclick="contextAction('drop')">
+            <i class="fas fa-trash"></i>
+            Jeter
+        </div>
+    </div>
+
+    <!-- Système de notifications -->
+    <div id="notification" class="notification">
+        <div id="notificationContent"></div>
+    </div>
+
     <script>
         // Interface utilisateur et gestion des menus
         document.addEventListener('DOMContentLoaded', () => {
@@ -1170,27 +1400,42 @@
                     }
                 } else if (key === binds.inventory) {
                     e.preventDefault();
-                    const isInventoryOpen = ui.menus.inventory.classList.contains('active');
-                    if (isInventoryOpen) {
-                        closeMenu(ui.menus.inventory);
+                    if (window.windowManager) {
+                        window.windowManager.toggleWindow('inventoryWindow');
                     } else {
-                        openMenu(ui.menus.inventory);
+                        // Fallback vers l'ancien système
+                        const isInventoryOpen = ui.menus.inventory.classList.contains('active');
+                        if (isInventoryOpen) {
+                            closeMenu(ui.menus.inventory);
+                        } else {
+                            openMenu(ui.menus.inventory);
+                        }
                     }
                 } else if (key === binds.character) {
                     e.preventDefault();
-                    const isCharacterOpen = ui.menus.character.classList.contains('active');
-                    if (isCharacterOpen) {
-                        closeMenu(ui.menus.character);
+                    if (window.windowManager) {
+                        window.windowManager.toggleWindow('characterWindow');
                     } else {
-                        openMenu(ui.menus.character);
+                        // Fallback vers l'ancien système
+                        const isCharacterOpen = ui.menus.character.classList.contains('active');
+                        if (isCharacterOpen) {
+                            closeMenu(ui.menus.character);
+                        } else {
+                            openMenu(ui.menus.character);
+                        }
                     }
                 } else if (key === binds.quests) {
                     e.preventDefault();
-                    const isQuestOpen = ui.menus.quests.classList.contains('active');
-                    if (isQuestOpen) {
-                        closeMenu(ui.menus.quests);
+                    if (window.windowManager) {
+                        window.windowManager.toggleWindow('questWindow');
                     } else {
-                        openMenu(ui.menus.quests);
+                        // Fallback vers l'ancien système
+                        const isQuestOpen = ui.menus.quests.classList.contains('active');
+                        if (isQuestOpen) {
+                            closeMenu(ui.menus.quests);
+                        } else {
+                            openMenu(ui.menus.quests);
+                        }
                     }
                 } else if (key === binds.options) {
                     e.preventDefault();
@@ -1207,6 +1452,27 @@
                     // Chargement rapide
                     e.preventDefault();
                     window.game.saveSystem.loadGame(window.game);
+                }
+                
+                // Nouveaux raccourcis pour les fenêtres modulaires
+                if (window.windowManager) {
+                    if (key === 'm') {
+                        e.preventDefault();
+                        window.windowManager.toggleWindow('mapWindow');
+                    } else if (key === 'j') {
+                        e.preventDefault();
+                        window.windowManager.toggleWindow('journalWindow');
+                    } else if (key === 'o') {
+                        e.preventDefault();
+                        window.windowManager.toggleWindow('craftingWindow');
+                    } else if (key === 't') {
+                        e.preventDefault();
+                        window.windowManager.toggleWindow('tradeWindow');
+                    } else if (key === 'Escape') {
+                        // Fermer toutes les fenêtres avec Échap
+                        e.preventDefault();
+                        window.windowManager.closeAllWindows();
+                    }
                 }
             });
         });

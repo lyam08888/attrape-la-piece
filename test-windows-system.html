@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Système de Fenêtres Windows 11</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="modularUI.css">
+    <link rel="stylesheet" href="windows11-style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, 
+                #FFE4B5 0%,    /* Paradis */
+                #87CEEB 15%,   /* Ciel */
+                #32CD32 30%,   /* Forêts */
+                #9370DB 45%,   /* Cristaux */
+                #DAA520 60%,   /* Plaines */
+                #8B4513 75%,   /* Terres sombres */
+                #8B0000 90%,   /* Enfer */
+                #000000 100%   /* Abysse */
+            );
+            min-height: 100vh;
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            z-index: 1000;
+        }
+        
+        .test-controls h3 {
+            color: #FFD700;
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .test-controls button:hover {
+            background: linear-gradient(135deg, #FFA500, #FF8C00);
+            transform: translateY(-2px);
+        }
+        
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #32CD32;
+            color: #32CD32;
+            max-width: 300px;
+        }
+        
+        .info-panel h4 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        
+        .info-panel ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h3><i class="fas fa-cog"></i> Contrôles de Test</h3>
+        <button onclick="testWindow('inventoryWindow')">
+            <i class="fas fa-backpack"></i> Inventaire (I)
+        </button>
+        <button onclick="testWindow('characterWindow')">
+            <i class="fas fa-user"></i> Personnage (C)
+        </button>
+        <button onclick="testWindow('questWindow')">
+            <i class="fas fa-scroll"></i> Quêtes (Q)
+        </button>
+        <button onclick="testWindow('mapWindow')">
+            <i class="fas fa-map"></i> Carte (M)
+        </button>
+        <button onclick="testWindow('craftingWindow')">
+            <i class="fas fa-hammer"></i> Artisanat (O)
+        </button>
+        <button onclick="testWindow('journalWindow')">
+            <i class="fas fa-book"></i> Journal (J)
+        </button>
+        <button onclick="testWindow('tradeWindow')">
+            <i class="fas fa-store"></i> Commerce (T)
+        </button>
+        <button onclick="testDialogue()">
+            <i class="fas fa-comments"></i> Test Dialogue
+        </button>
+        <button onclick="closeAllWindows()">
+            <i class="fas fa-times-circle"></i> Fermer Tout (Échap)
+        </button>
+    </div>
+    
+    <div class="info-panel">
+        <h4><i class="fas fa-info-circle"></i> Instructions</h4>
+        <ul>
+            <li>Cliquez sur les boutons ou utilisez les raccourcis clavier</li>
+            <li>Glissez les fenêtres par leur barre de titre</li>
+            <li>Redimensionnez avec les poignées</li>
+            <li>Utilisez les boutons minimiser/maximiser/fermer</li>
+            <li>Clic droit dans les fenêtres pour le menu contextuel</li>
+        </ul>
+        <p><strong>Raccourcis :</strong> I, C, Q, M, O, J, T, Échap</p>
+    </div>
+
+    <!-- Fenêtres modulaires du système Windows 11 -->
+    <div id="inventoryWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-backpack"></i>
+                Inventaire
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('inventoryWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('inventoryWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('inventoryWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="inventoryContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="characterWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-user"></i>
+                Personnage
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('characterWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('characterWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('characterWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="characterContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="questWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-scroll"></i>
+                Quêtes
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('questWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('questWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('questWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="questContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="mapWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-map"></i>
+                Carte du Monde
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('mapWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('mapWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('mapWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="mapContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="craftingWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-hammer"></i>
+                Artisanat
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('craftingWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('craftingWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('craftingWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="craftingContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="journalWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-book"></i>
+                Journal
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('journalWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('journalWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('journalWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="journalContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="tradeWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-store"></i>
+                Commerce
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn minimize-btn" onclick="minimizeWindow('tradeWindow')">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="game-window-btn maximize-btn" onclick="maximizeWindow('tradeWindow')">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="game-window-btn close-btn" onclick="closeWindow('tradeWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="tradeContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <div id="dialogueWindow" class="game-window">
+        <div class="game-window-header">
+            <div class="game-window-title">
+                <i class="fas fa-comments"></i>
+                Dialogue
+            </div>
+            <div class="game-window-controls">
+                <button class="game-window-btn close-btn" onclick="closeWindow('dialogueWindow')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="game-window-content" id="dialogueContent">
+            <!-- Contenu généré dynamiquement -->
+        </div>
+    </div>
+
+    <!-- Taskbar du système de fenêtres -->
+    <div id="gameTaskbar" class="game-taskbar">
+        <div class="taskbar-item" id="inventoryTask" onclick="toggleWindow('inventoryWindow')">
+            <i class="fas fa-backpack"></i>
+            <span>Inventaire</span>
+        </div>
+        <div class="taskbar-item" id="characterTask" onclick="toggleWindow('characterWindow')">
+            <i class="fas fa-user"></i>
+            <span>Personnage</span>
+        </div>
+        <div class="taskbar-item" id="questTask" onclick="toggleWindow('questWindow')">
+            <i class="fas fa-scroll"></i>
+            <span>Quêtes</span>
+        </div>
+        <div class="taskbar-item" id="mapTask" onclick="toggleWindow('mapWindow')">
+            <i class="fas fa-map"></i>
+            <span>Carte</span>
+        </div>
+        <div class="taskbar-item" id="craftingTask" onclick="toggleWindow('craftingWindow')">
+            <i class="fas fa-hammer"></i>
+            <span>Artisanat</span>
+        </div>
+        <div class="taskbar-item" id="journalTask" onclick="toggleWindow('journalWindow')">
+            <i class="fas fa-book"></i>
+            <span>Journal</span>
+        </div>
+    </div>
+
+    <!-- Menu contextuel -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-item" onclick="contextAction('inspect')">
+            <i class="fas fa-search"></i>
+            Examiner
+        </div>
+        <div class="context-item" onclick="contextAction('use')">
+            <i class="fas fa-hand-pointer"></i>
+            Utiliser
+        </div>
+        <div class="context-item" onclick="contextAction('drop')">
+            <i class="fas fa-trash"></i>
+            Jeter
+        </div>
+    </div>
+
+    <!-- Système de notifications -->
+    <div id="notification" class="notification">
+        <div id="notificationContent"></div>
+    </div>
+
+    <script type="module">
+        import { WindowManager } from './simpleWindowManager.js';
+        
+        // Initialiser le gestionnaire de fenêtres
+        window.windowManager = new WindowManager();
+        
+        // Fonctions de test
+        window.testWindow = (windowId) => {
+            window.windowManager.toggleWindow(windowId);
+        };
+        
+        window.closeAllWindows = () => {
+            window.windowManager.closeAllWindows();
+        };
+        
+        window.testDialogue = () => {
+            // Simuler un dialogue PNJ
+            const dialogueContent = `
+                <div class="npc-dialogue" style="text-align: center; margin-bottom: 20px;">
+                    <div class="npc-portrait" style="
+                        width: 80px;
+                        height: 80px;
+                        background: linear-gradient(135deg, #FFD700, #FFA500);
+                        border-radius: 50%;
+                        margin: 0 auto 15px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 2rem;
+                        color: white;
+                    ">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3 style="color: #FFD700; margin-bottom: 10px;">Gabriel l'Archange</h3>
+                    <div class="dialogue-text" style="
+                        background: rgba(0,0,0,0.3);
+                        border: 1px solid #FFD700;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                        color: #E0E0E0;
+                        line-height: 1.5;
+                    ">
+                        Bienvenue, voyageur ! Je vois que vous explorez notre nouveau système de fenêtres. 
+                        Que la lumière divine guide vos pas dans cette interface modernisée !
+                    </div>
+                    <button class="btn-primary" onclick="window.windowManager.closeWindow('dialogueWindow')">
+                        Merci, Gabriel !
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('dialogueContent').innerHTML = dialogueContent;
+            window.windowManager.showWindow('dialogueWindow');
+        };
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (!window.windowManager) return;
+            
+            switch (e.key.toLowerCase()) {
+                case 'i':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('inventoryWindow');
+                    break;
+                case 'c':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('characterWindow');
+                    break;
+                case 'q':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('questWindow');
+                    break;
+                case 'm':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('mapWindow');
+                    break;
+                case 'o':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('craftingWindow');
+                    break;
+                case 'j':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('journalWindow');
+                    break;
+                case 't':
+                    e.preventDefault();
+                    window.windowManager.toggleWindow('tradeWindow');
+                    break;
+                case 'escape':
+                    e.preventDefault();
+                    window.windowManager.closeAllWindows();
+                    break;
+            }
+        });
+        
+        console.log("🪟 Système de fenêtres Windows 11 initialisé !");
+        console.log("📋 Utilisez les raccourcis clavier : I, C, Q, M, O, J, T, Échap");
+    </script>
+</body>
+</html>

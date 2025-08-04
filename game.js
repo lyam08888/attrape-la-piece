@@ -14,6 +14,7 @@ import { getItemIcon } from './itemIcons.js';
 import { SoundManager } from './sound.js';
 import { integrateComplexWorld } from './gameIntegration.js';
 import { UIManager } from './uiManager.js';
+import { WindowManager } from './simpleWindowManager.js';
 
 async function loadConfig() {
     try {
@@ -476,6 +477,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error("❌ Erreur lors de l'initialisation de l'interface:", error);
                 game.logger.log("⚠️ Interface modulaire non disponible");
+            }
+            
+            // Initialiser le gestionnaire de fenêtres Windows 11
+            game.logger.log("Initialisation du système de fenêtres...");
+            try {
+                game.windowManager = new WindowManager();
+                window.windowManager = game.windowManager; // Rendre accessible globalement
+                window.game = game; // Rendre le jeu accessible pour les dialogues
+                game.logger.log("✅ Système de fenêtres initialisé !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'initialisation des fenêtres:", error);
+                game.logger.log("⚠️ Système de fenêtres non disponible");
             }
             
             game.updateToolbar();
