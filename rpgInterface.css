@@ -1,0 +1,571 @@
+/* rpgInterface.css - Interface RPG Complète et Harmonieuse */
+
+:root {
+    /* Palette de couleurs RPG harmonieuse */
+    --rpg-primary: #2c1810;
+    --rpg-secondary: #4a3728;
+    --rpg-accent: #d4af37;
+    --rpg-accent-light: #f4d03f;
+    --rpg-text: #f8f9fa;
+    --rpg-text-secondary: #adb5bd;
+    --rpg-border: #6c5ce7;
+    --rpg-border-light: #a29bfe;
+    --rpg-success: #00b894;
+    --rpg-warning: #fdcb6e;
+    --rpg-danger: #e17055;
+    --rpg-info: #74b9ff;
+    
+    /* Transparences */
+    --rpg-bg-alpha: rgba(44, 24, 16, 0.95);
+    --rpg-bg-light: rgba(74, 55, 40, 0.9);
+    --rpg-overlay: rgba(0, 0, 0, 0.7);
+    
+    /* Ombres et effets */
+    --rpg-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --rpg-shadow-light: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --rpg-glow: 0 0 20px rgba(212, 175, 55, 0.3);
+    
+    /* Bordures */
+    --rpg-border-radius: 8px;
+    --rpg-border-width: 2px;
+}
+
+/* === BASE STYLES === */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'VT323', monospace;
+    background: linear-gradient(180deg, 
+        #FFE4B5 0%,    /* Paradis */
+        #87CEEB 15%,   /* Ciel */
+        #32CD32 30%,   /* Forêts */
+        #9370DB 45%,   /* Cristaux */
+        #DAA520 60%,   /* Plaines */
+        #8B4513 75%,   /* Terres sombres */
+        #8B0000 90%,   /* Enfer */
+        #000000 100%   /* Abysse */
+    );
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* === CONTENEUR PRINCIPAL === */
+#gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* === INTERFACE RPG OVERLAY === */
+#rpgInterface {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* === FENÊTRES RPG MODULAIRES === */
+.rpg-window {
+    position: absolute;
+    background: var(--rpg-bg-alpha);
+    border: var(--rpg-border-width) solid var(--rpg-border);
+    border-radius: var(--rpg-border-radius);
+    box-shadow: var(--rpg-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--rpg-text);
+    font-family: 'VT323', monospace;
+    min-width: 300px;
+    min-height: 200px;
+    max-width: 90vw;
+    max-height: 90vh;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+    resize: both;
+    overflow: hidden;
+}
+
+.rpg-window.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.rpg-window.minimized {
+    transform: scale(0) translateY(100px);
+    opacity: 0;
+}
+
+/* === BARRE DE TITRE === */
+.rpg-window-header {
+    background: linear-gradient(135deg, var(--rpg-secondary), var(--rpg-primary));
+    border-bottom: 1px solid var(--rpg-border);
+    padding: 12px 16px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.rpg-window-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--rpg-accent);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.rpg-window-title i {
+    font-size: 16px;
+}
+
+.rpg-window-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.rpg-window-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: var(--rpg-bg-light);
+    color: var(--rpg-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.rpg-window-btn:hover {
+    background: var(--rpg-accent);
+    color: var(--rpg-primary);
+    transform: scale(1.1);
+}
+
+.rpg-window-btn.close-btn:hover {
+    background: var(--rpg-danger);
+    color: white;
+}
+
+/* === CONTENU DES FENÊTRES === */
+.rpg-window-content {
+    padding: 16px;
+    height: calc(100% - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.rpg-window-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rpg-window-content::-webkit-scrollbar-track {
+    background: var(--rpg-primary);
+    border-radius: 4px;
+}
+
+.rpg-window-content::-webkit-scrollbar-thumb {
+    background: var(--rpg-accent);
+    border-radius: 4px;
+}
+
+.rpg-window-content::-webkit-scrollbar-thumb:hover {
+    background: var(--rpg-accent-light);
+}
+
+/* === HUD PRINCIPAL === */
+#rpgHUD {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: var(--rpg-bg-alpha);
+    border-top: var(--rpg-border-width) solid var(--rpg-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* === BARRES DE VIE/MANA === */
+.rpg-stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rpg-stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+}
+
+.rpg-stat-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.rpg-stat-icon.health { color: var(--rpg-danger); }
+.rpg-stat-icon.mana { color: var(--rpg-info); }
+.rpg-stat-icon.stamina { color: var(--rpg-warning); }
+
+.rpg-progress-bar {
+    flex: 1;
+    height: 20px;
+    background: var(--rpg-primary);
+    border: 1px solid var(--rpg-border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.rpg-progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    position: relative;
+    border-radius: 9px;
+}
+
+.rpg-progress-fill.health {
+    background: linear-gradient(90deg, var(--rpg-danger), #ff6b6b);
+}
+
+.rpg-progress-fill.mana {
+    background: linear-gradient(90deg, var(--rpg-info), #74b9ff);
+}
+
+.rpg-progress-fill.stamina {
+    background: linear-gradient(90deg, var(--rpg-warning), #fdcb6e);
+}
+
+.rpg-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+}
+
+/* === RACCOURCIS D'ACTIONS === */
+.rpg-action-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.rpg-action-slot {
+    width: 48px;
+    height: 48px;
+    background: var(--rpg-primary);
+    border: 2px solid var(--rpg-border);
+    border-radius: var(--rpg-border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    font-size: 20px;
+    color: var(--rpg-text-secondary);
+}
+
+.rpg-action-slot:hover {
+    border-color: var(--rpg-accent);
+    background: var(--rpg-bg-light);
+    transform: translateY(-2px);
+    box-shadow: var(--rpg-glow);
+}
+
+.rpg-action-slot.active {
+    border-color: var(--rpg-accent);
+    background: var(--rpg-accent);
+    color: var(--rpg-primary);
+}
+
+.rpg-action-slot .keybind {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: var(--rpg-accent);
+    color: var(--rpg-primary);
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* === INFORMATIONS JOUEUR === */
+.rpg-player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.rpg-player-level {
+    background: var(--rpg-accent);
+    color: var(--rpg-primary);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.rpg-player-gold {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--rpg-accent);
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* === MINIMAP === */
+.rpg-minimap {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    background: var(--rpg-bg-alpha);
+    border: var(--rpg-border-width) solid var(--rpg-border);
+    border-radius: var(--rpg-border-radius);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: auto;
+    overflow: hidden;
+}
+
+.rpg-minimap-header {
+    background: var(--rpg-secondary);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rpg-border);
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--rpg-accent);
+    text-align: center;
+}
+
+.rpg-minimap-content {
+    width: 100%;
+    height: calc(100% - 40px);
+    position: relative;
+    background: radial-gradient(circle, var(--rpg-primary), var(--rpg-secondary));
+}
+
+/* === MENU CONTEXTUEL === */
+.rpg-context-menu {
+    position: absolute;
+    background: var(--rpg-bg-alpha);
+    border: var(--rpg-border-width) solid var(--rpg-border);
+    border-radius: var(--rpg-border-radius);
+    box-shadow: var(--rpg-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    min-width: 150px;
+    z-index: 1000;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    pointer-events: auto;
+}
+
+.rpg-context-menu.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.rpg-context-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--rpg-text);
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rpg-context-item:last-child {
+    border-bottom: none;
+}
+
+.rpg-context-item:hover {
+    background: var(--rpg-accent);
+    color: var(--rpg-primary);
+}
+
+/* === NOTIFICATIONS === */
+.rpg-notification {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--rpg-bg-alpha);
+    border: var(--rpg-border-width) solid var(--rpg-border);
+    border-radius: var(--rpg-border-radius);
+    padding: 12px 20px;
+    color: var(--rpg-text);
+    font-weight: bold;
+    box-shadow: var(--rpg-shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1001;
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.rpg-notification.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.rpg-notification.success {
+    border-color: var(--rpg-success);
+    color: var(--rpg-success);
+}
+
+.rpg-notification.warning {
+    border-color: var(--rpg-warning);
+    color: var(--rpg-warning);
+}
+
+.rpg-notification.error {
+    border-color: var(--rpg-danger);
+    color: var(--rpg-danger);
+}
+
+/* === ANIMATIONS === */
+@keyframes rpg-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes rpg-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rpg-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px var(--rpg-accent);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--rpg-accent), 0 0 30px var(--rpg-accent);
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .rpg-window {
+        min-width: 280px;
+        max-width: 95vw;
+    }
+    
+    #rpgHUD {
+        height: 100px;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .rpg-action-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .rpg-minimap {
+        width: 150px;
+        height: 120px;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* === UTILITAIRES === */
+.rpg-hidden {
+    display: none !important;
+}
+
+.rpg-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.rpg-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.rpg-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: rpg-loading 1.5s infinite;
+}
+
+@keyframes rpg-loading {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
