@@ -649,6 +649,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const playerHungerText = document.getElementById('playerHungerText');
             const playerStrength = document.getElementById('playerStrength');
             const playerSpeed = document.getElementById('playerSpeed');
+            const chestsOpened = document.getElementById('chestsOpened');
+            const animalsObserved = document.getElementById('animalsObserved');
+            const survivalItemsFound = document.getElementById('survivalItemsFound');
 
             if (playerLevel) playerLevel.textContent = game.player.stats ? game.player.stats.level : '1';
             if (playerXP) playerXP.textContent = game.player.stats ? `${game.player.stats.xp}/${game.player.stats.xpToNextLevel || 100}` : '0/100';
@@ -680,6 +683,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (playerStrength) playerStrength.textContent = game.player.stats ? game.player.stats.strength : '10';
             if (playerSpeed) playerSpeed.textContent = game.player.stats ? game.player.stats.speed : '10';
+            if (chestsOpened) chestsOpened.textContent = game.statistics ? game.statistics.chestsOpened : '0';
+            if (animalsObserved) animalsObserved.textContent = game.statistics ? game.statistics.animalsObserved : '0';
+            if (survivalItemsFound) survivalItemsFound.textContent = game.statistics ? game.statistics.survivalItemsFound : '0';
 
             // Mettre à jour les informations environnementales
             if (game.timeSystem) {
