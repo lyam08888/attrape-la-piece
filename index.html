@@ -706,9 +706,9 @@
         </div>
 
         <div id="inventoryMenu" class="overlay">
-            <div class="menu-box" style="max-width: 300px;">
+            <div class="menu-box" style="max-width: 450px;">
                 <h2>INVENTAIRE</h2>
-                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 20px 0;">
+                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
                     <!-- Slots d'inventaire générés dynamiquement -->
                 </div>
                 <div id="chestArea" style="display: none; margin-top: 20px;">
@@ -1636,7 +1636,7 @@
                 particleSystem: new ParticleSystem(),
                 logger: new Logger(),
                 questSystem: new QuestSystem(),
-                inventory: new Inventory(16),
+                inventory: new Inventory(32),
                 combatSystem: new CombatSystem(),
                 biomeSystem: new BiomeSystem(),
                 weatherSystem: new WeatherSystem(config),
