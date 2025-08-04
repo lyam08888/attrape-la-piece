@@ -25,6 +25,26 @@ const config = {
 
 // --- Fonctions d'Initialisation ---
 
+function findSafeSpawnPoint(tileMap, playerWidth, tileSize) {
+    const worldCenter = Math.floor(tileMap[0].length / 2);
+    for (let x = worldCenter; x < tileMap[0].length; x++) {
+        for (let y = 0; y < tileMap.length - 1; y++) {
+            // Check for a solid block with at least 3 air blocks above it
+            const isGround = tileMap[y][x] > TILE.AIR && tileMap[y][x] !== TILE.WATER && tileMap[y][x] !== TILE.LAVA;
+            const isAirAbove = tileMap[y - 1]?.[x] === TILE.AIR &&
+                               tileMap[y - 2]?.[x] === TILE.AIR &&
+                               tileMap[y - 3]?.[x] === TILE.AIR;
+
+            if (isGround && isAirAbove) {
+                console.log(`✅ Safe spawn found at (${x}, ${y-1})`);
+                return { x: x * tileSize, y: (y - 1) * tileSize - playerWidth };
+            }
+        }
+    }
+    // Fallback if no safe spot is found
+    return { x: worldCenter * tileSize, y: 100 };
+}
+
 function resizeCanvas() {
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) return;
@@ -53,7 +73,6 @@ async function initializeGame() {
         mouse: { x: 0, y: 0, left: false, right: false },
         enemies: [], pnjs: [], animals: [], collectibles: [],
         time: 0, paused: false,
-        spawnPoint: { x: 400, y: 300 }
     };
     window.game = game; // Rendre accessible globalement
 
@@ -62,6 +81,9 @@ async function initializeGame() {
     const worldWidthInTiles = Math.floor(config.worldWidth / config.tileSize);
     const worldHeightInTiles = Math.floor(config.worldHeight / config.tileSize);
     game.tileMap = generateLevel(worldWidthInTiles, worldHeightInTiles);
+    
+    // Trouver un point de spawn sûr
+    game.spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.width, config.tileSize);
 
     // Création du joueur
     console.log("👤 Création du joueur...");

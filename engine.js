@@ -17,6 +17,7 @@ export class GameEngine {
             down: 'ArrowDown',
             up: 'ArrowUp',
             action: 'e',
+            attack: 'f',
             run: 'Shift',
             fly: 'v',
             repair: 'r',
@@ -157,6 +158,7 @@ export class GameEngine {
             if (key === binds.run) this.keys.run = true;
             if (key === binds.repair) this.keys.repair = true;
             if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
+            if (key === binds.attack) this.keys.attack = true;
             for (let i = 1; i <= 6; i++) {
                 if (key === binds[`tool${i}`] && this.gameLogic.selectTool) {
                     this.gameLogic.selectTool(i - 1);
@@ -178,6 +180,7 @@ export class GameEngine {
             if (key === binds.down) this.keys.down = false;
             if (key === binds.run) this.keys.run = false;
             if (key === binds.repair) this.keys.repair = false;
+            if (key === binds.attack) this.keys.attack = false;
         });
         this.canvas.addEventListener('mousemove', e => {
             const rect = this.canvas.getBoundingClientRect();

@@ -236,6 +236,47 @@ export class Player {
         }
     }
     
+    handleCollisions(game) {
+        // --- X-Axis Collision ---
+        this.x += this.vx;
+        const hitboxX = { x: this.x, y: this.y, w: this.w, h: this.h };
+        this.isOnWall = 0;
+        
+        // Prevent falling out of the world from the left
+        if (this.x < 0) {
+            this.takeDamage(this.maxHealth); // Kill player if they fall out
+            return;
+        }
+
+        // Check left collision
+        if (game.tileMap[this.y]?.[this.x - 1] === TILE.WALL) {
+            this.x = this.x - this.w;
+            this.isOnWall = -1;
+        }
+        // Check right collision
+        if (game.tileMap[this.y]?.[this.x + 1] === TILE.WALL) {
+            this.x = this.x + this.w;
+            this.isOnWall = 1;
+        }
+
+        // --- Y-Axis Collision ---
+        this.y += this.vy;
+        const hitboxY = { x: this.x, y: this.y, w: this.w, h: this.h };
+        this.isGrounded = false;
+        
+        // Prevent falling out of the world from the bottom
+        if (this.y > game.config.worldHeight) {
+            this.takeDamage(this.maxHealth); // Kill player if they fall out
+            return;
+        }
+
+        // Check down collision
+        if (game.tileMap[this.y + 1]?.[this.x] === TILE.WALL) {
+            this.y = this.y - this.h;
+            this.isGrounded = true;
+        }
+    }
+
     draw(ctx, assets) {
         // Simple rectangle for now, animation can be added later
         ctx.fillStyle = '#FF6B6B';
