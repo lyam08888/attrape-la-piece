@@ -1474,6 +1474,7 @@
         }
         
         import { Logger } from './logger.js';
+        import { ChatSystem } from './chat.js';
         // import { getItemIcon } from './itemIcons.js'; // Non utilisé, version simplifiée dans le code
         // import { SoundManager } from './sound.js'; // Version simplifiée utilisée dans le code
         import { QuestSystem, updateQuestUI } from './questSystem.js';
@@ -1576,6 +1577,9 @@
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
 
+            const chatSystem = new ChatSystem();
+            window.chatSystem = chatSystem;
+
             // Gestion des entrées
             const keys = {};
             const mouse = { x: 0, y: 0, left: false, right: false };
@@ -1599,6 +1603,7 @@
 
             // Événements clavier
             document.addEventListener('keydown', (e) => {
+                if (document.activeElement === chatSystem.input) return;
                 keys[e.key] = true;
                 keys[e.code] = true;
 
@@ -1621,6 +1626,7 @@
             });
 
             document.addEventListener('keyup', (e) => {
+                if (document.activeElement === chatSystem.input) return;
                 keys[e.key] = false;
                 keys[e.code] = false;
             });
@@ -1802,7 +1808,8 @@
                 enemySpawner: null,
                 camera: { x: 0, y: 0 },
                 particleSystem: new ParticleSystem(),
-                logger: new Logger(),
+                chat: chatSystem,
+                logger: new Logger(chatSystem),
                 questSystem: new QuestSystem(),
                 inventory: new Inventory(32),
                 combatSystem: new CombatSystem(),

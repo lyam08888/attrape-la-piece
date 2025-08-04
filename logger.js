@@ -31,20 +31,23 @@ class LogMessage {
 }
 
 export class Logger {
-    constructor() {
+    constructor(chatSystem = null) {
         this.messages = [];
+        this.chatSystem = chatSystem;
     }
 
     log(text) {
         console.log(text);
         this.messages.unshift(new LogMessage(text, 'info'));
         if (this.messages.length > 5) this.messages.pop();
+        this.chatSystem?.addLog(text, 'info');
     }
 
     error(text) {
         console.error(text); // On continue de logger dans la console
         this.messages.unshift(new LogMessage(text, 'error'));
         if (this.messages.length > 5) this.messages.pop();
+        this.chatSystem?.addLog(text, 'error');
     }
 
     update() {
