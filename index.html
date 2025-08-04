@@ -1016,7 +1016,14 @@
                 Object.values(ui.views).forEach(v => v.classList.remove('active'));
                 if (viewToShow) viewToShow.classList.add('active');
             };
-            const openMenu = (menu) => { if (menu) menu.classList.add('active'); };
+            const openMenu = (menu) => {
+                if (menu) {
+                    menu.classList.add('active');
+                    if (menu === ui.menus.quests && window.game?.questSystem) {
+                        window.updateQuestUI?.(window.game.questSystem);
+                    }
+                }
+            };
             const closeMenu = (menu) => { if (menu) menu.classList.remove('active'); };
             const generateRandomSeed = () => Math.floor(Date.now() * Math.random()).toString(16);
             const shareSeed = (seed) => {
@@ -1486,6 +1493,7 @@
         import { EnemySpawner } from './enemySpawner.js';
         import { SaveSystem, createSaveUI } from './saveSystem.js';
 
+        window.updateQuestUI = updateQuestUI;
         window.gameModuleReady = true;
         document.dispatchEvent(new Event('game-module-ready'));
 
