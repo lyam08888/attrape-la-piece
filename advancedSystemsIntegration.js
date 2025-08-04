@@ -293,7 +293,8 @@ export class NPCAISystem {
 import { WeatherSystem } from './weatherSystem.js';
 import { DisasterManager } from './disasterManager.js';
 import { FoodSystem } from './foodSystem.js';
-import { AnimalManager } from './animalSystem.js';
+// The animal module exports AnimalManager; alias as AnimalSystem for clarity
+import { AnimalManager as AnimalSystem } from './animalSystem.js';
 import { ExplorationSystem } from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
@@ -355,7 +356,7 @@ export function integrateAdvancedSystems(game) {
     console.log('    -> ✨ Animateur du monde initialisé.');
 
     // 6. Système de faune (animaux)
-    game.animalManager = new AnimalManager();
+    game.animalManager = new AnimalSystem();
     game.animals = game.animalManager.animals;
     if (typeof generateAnimals === 'function') {
         const animals = generateAnimals(5, game.config, game.tileMap); // Génère 5 animaux
