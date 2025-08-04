@@ -20,6 +20,17 @@ export class GameEngine {
             run: 'ShiftLeft',
             fly: 'KeyV',
             repair: 'KeyR',
+            inventory: 'KeyI',
+            character: 'KeyP',
+            quests: 'KeyQ',
+            pause: 'Escape',
+            options: 'KeyO',
+            tool1: 'Digit1',
+            tool2: 'Digit2',
+            tool3: 'Digit3',
+            tool4: 'Digit4',
+            tool5: 'Digit5',
+            tool6: 'Digit6',
         };
 
         // Merge provided bindings with defaults in a new config object to
@@ -121,8 +132,8 @@ export class GameEngine {
 
     setupInput() {
         document.addEventListener('keydown', e => {
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && !['KeyO', 'Escape', 'F3'].includes(e.code)) return;
             const binds = this.config.keyBindings || {};
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && ![binds.pause, 'F3'].includes(e.code)) return;
             if (e.code === binds.left) this.keys.left = true;
             if (e.code === binds.right) this.keys.right = true;
             if (e.code === binds.action) this.keys.action = true;
@@ -135,16 +146,12 @@ export class GameEngine {
             if (e.code === binds.run) this.keys.run = true;
             if (e.code === binds.repair) this.keys.repair = true;
             if (e.code === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
-            if (e.code.startsWith('Digit')) {
-                const digit = parseInt(e.code.slice(5));
-                if (digit >= 1 && digit <= 6 && this.gameLogic.selectTool) {
-                    this.gameLogic.selectTool(digit - 1);
+            for (let i = 1; i <= 6; i++) {
+                if (e.code === binds[`tool${i}`] && this.gameLogic.selectTool) {
+                    this.gameLogic.selectTool(i - 1);
                 }
             }
-            if (e.code === 'KeyO' || e.code === 'Escape') {
-                e.preventDefault();
-                if (this.gameLogic.toggleMenu) this.gameLogic.toggleMenu('options');
-            }
+            // L'ouverture des menus est gérée côté interface.
         });
         document.addEventListener('keyup', e => {
             const binds = this.config.keyBindings || {};

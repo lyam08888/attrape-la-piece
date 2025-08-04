@@ -1186,15 +1186,21 @@
 
             document.addEventListener('keydown', (e) => {
                 if (!isGameRunning) return;
-                
-                if (e.key === 'Escape') {
+
+                const binds = window.game?.config.keyBindings || {};
+
+                if (e.code === binds.pause) {
                     const activeSubMenu = document.querySelector('.overlay.active');
-                    if (activeSubMenu) {
-                        closeMenu(activeSubMenu);
+                    if (activeSubMenu && activeSubMenu !== ui.menus.pause) {
+                        if (activeSubMenu === ui.menus.options) {
+                            window.closeOptionsMenu?.();
+                        } else {
+                            closeMenu(activeSubMenu);
+                        }
                     } else {
                         togglePauseMenu();
                     }
-                } else if (e.key === 'i' || e.key === 'I') {
+                } else if (e.code === binds.inventory) {
                     e.preventDefault();
                     const isInventoryOpen = ui.menus.inventory.classList.contains('active');
                     if (isInventoryOpen) {
@@ -1202,7 +1208,7 @@
                     } else {
                         openMenu(ui.menus.inventory);
                     }
-                } else if (e.key === 'p' || e.key === 'P') {
+                } else if (e.code === binds.character) {
                     e.preventDefault();
                     const isCharacterOpen = ui.menus.character.classList.contains('active');
                     if (isCharacterOpen) {
@@ -1210,7 +1216,7 @@
                     } else {
                         openMenu(ui.menus.character);
                     }
-                } else if (e.key === 'q' || e.key === 'Q') {
+                } else if (e.code === binds.quests) {
                     e.preventDefault();
                     const isQuestOpen = ui.menus.quests.classList.contains('active');
                     if (isQuestOpen) {
@@ -1218,29 +1224,18 @@
                     } else {
                         openMenu(ui.menus.quests);
                     }
-                } else if (e.code && e.code.startsWith('Digit')) {
-                    const digit = parseInt(e.code.slice(5));
-                    if (digit >= 1 && digit <= 6) {
-                        // Sélection d'outils avec les chiffres
-                        const toolIndex = digit - 1;
-                        console.log(`Tentative de sélection outil ${toolIndex}`);
-                        if (window.game && window.game.player && toolIndex < window.game.player.tools.length) {
-                            window.game.player.selectedToolIndex = toolIndex;
-                            window.game.updateToolbar();
-                            console.log(`Outil sélectionné: ${window.game.player.tools[toolIndex]}`);
-                        } else {
-                            console.log("Impossible de sélectionner l'outil:", {
-                                hasGame: !!window.game,
-                                hasPlayer: !!(window.game && window.game.player),
-                                toolsLength: window.game?.player?.tools?.length
-                            });
-                        }
+                } else if (e.code === binds.options) {
+                    e.preventDefault();
+                    if (ui.menus.options.classList.contains('active')) {
+                        window.closeOptionsMenu?.();
+                    } else {
+                        window.openOptionsMenu?.();
                     }
-                } else if (e.ctrlKey && e.key === 's' && window.game) {
+                } else if (e.ctrlKey && e.key.toLowerCase() === 's' && window.game) {
                     // Sauvegarde rapide
                     e.preventDefault();
                     window.game.saveSystem.saveGame(window.game);
-                } else if (e.ctrlKey && e.key === 'l' && window.game) {
+                } else if (e.ctrlKey && e.key.toLowerCase() === 'l' && window.game) {
                     // Chargement rapide
                     e.preventDefault();
                     window.game.saveSystem.loadGame(window.game);
@@ -1545,7 +1540,7 @@
                 return await resp.json();
             } catch (e) {
                 console.warn(e);
-                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":"Space","down":"ArrowDown","action":"KeyE","run":"ShiftLeft","fly":"KeyV","repair":"KeyR"}};
+                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":"Space","down":"ArrowDown","action":"KeyE","run":"ShiftLeft","fly":"KeyV","repair":"KeyR","inventory":"KeyI","character":"KeyP","quests":"KeyQ","pause":"Escape","options":"KeyO","tool1":"Digit1","tool2":"Digit2","tool3":"Digit3","tool4":"Digit4","tool5":"Digit5","tool6":"Digit6"}};
             }
         }
 
