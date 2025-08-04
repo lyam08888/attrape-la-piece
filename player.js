@@ -56,7 +56,24 @@ export class Player {
 
         const physics = this.config.physics;
 
-        // --- Horizontal Movement ---
+        // --- Mouvements ---
+        this.handleMovement(keys, physics);
+
+        // --- Actions du joueur ---
+        this.handleActions(keys, game, delta);
+        
+        // --- Gravité et Collisions ---
+        this.applyGravity(physics);
+        this.handleCollisions(game);
+        
+        // --- Systèmes de survie ---
+        this.updateSurvivalStats(delta, game.foodSystem);
+
+        // --- Régénération des stats RPG ---
+        this.regenerateStats(delta);
+    }
+
+    handleMovement(keys, physics) {
         let targetSpeed = 0;
         if (keys.left) {
             targetSpeed = -this.speed;
@@ -67,97 +84,123 @@ export class Player {
             this.facing = 1;
         }
         
-        // Apply acceleration
-        const accel = this.isGrounded ? physics.groundAcceleration : physics.airAcceleration;
+        const accel = this.isGrounded ? (physics.groundAcceleration || 0.4) : (physics.airAcceleration || 0.2);
         this.vx += (targetSpeed - this.vx) * accel;
 
-        // Apply friction
-        const friction = this.isGrounded ? physics.friction : physics.airResistance;
+        const friction = this.isGrounded ? (physics.friction || 0.85) : (physics.airResistance || 0.98);
         this.vx *= friction;
         if (Math.abs(this.vx) < 0.1) this.vx = 0;
 
-
-        // --- Vertical Movement (Jumping) ---
-        if (keys.jump && this.isGrounded) {
-            this.vy = -physics.jumpForce;
-            this.isGrounded = false;
-            this.canDoubleJump = true;
-        } else if (keys.jump && !this.isGrounded && this.canDoubleJump) {
-            this.vy = -physics.jumpForce * 0.8; // Double jump is slightly weaker
-            this.canDoubleJump = false;
+        if (keys.jump && (this.isGrounded || this.canDoubleJump)) {
+            if (this.isGrounded) {
+                this.vy = -physics.jumpForce;
+                this.isGrounded = false;
+                this.canDoubleJump = true;
+            } else if (this.canDoubleJump) {
+                this.vy = -physics.jumpForce * 0.8;
+                this.canDoubleJump = false;
+            }
         }
+    }
 
-        // Apply Gravity
+    applyGravity(physics) {
         this.vy += physics.gravity;
         if (this.vy > physics.maxFallSpeed) {
             this.vy = physics.maxFallSpeed;
         }
-        
-        // --- Collision Detection ---
-        this.handleCollisions(game);
-        
-        // --- Update other systems ---
-        this.regenerateStats(delta);
+    }
+
+    handleActions(keys, game, delta) {
+        // --- Minage et Construction ---
+        if (game.mouse.left || keys.action) {
+            this.handleMining(game, delta);
+        } else {
+            // Réinitialiser le minage si le bouton est relâché
+            this.miningTarget = null;
+            this.miningProgress = 0;
+            if (game.miningEffect) game.miningEffect = null;
+        }
+
+        if (game.mouse.right) {
+            this.handleBuilding(game);
+        }
+
+        // --- Combat ---
+        if (keys.attack) { // Supposons une touche "attack"
+             this.handleCombat(game);
+        }
     }
     
-    handleCollisions(game) {
+    handleMining(game, delta) {
         const { tileSize } = this.config;
-        const map = game.tileMap;
+        const mouseX = game.mouse.x / this.config.zoom + game.camera.x;
+        const mouseY = game.mouse.y / this.config.zoom + game.camera.y;
+        
+        const tileX = Math.floor(mouseX / tileSize);
+        const tileY = Math.floor(mouseY / tileSize);
 
-        // --- X-Axis Collision ---
-        this.x += this.vx;
-        const hitboxX = { x: this.x, y: this.y, w: this.w, h: this.h };
-
-        // Check right collision
-        if (this.vx > 0) {
-            const tx = Math.floor((hitboxX.x + hitboxX.w) / tileSize);
-            const ty1 = Math.floor(hitboxX.y / tileSize);
-            const ty2 = Math.floor((hitboxX.y + hitboxX.h - 1) / tileSize);
-            if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
-                this.x = tx * tileSize - hitboxX.w;
-                this.vx = 0;
-            }
+        const dist = Math.hypot(this.x - mouseX, this.y - mouseY);
+        if (dist > tileSize * 3) { // Portée de minage
+            this.miningTarget = null;
+            return;
         }
-        // Check left collision
-        else if (this.vx < 0) {
-            const tx = Math.floor(hitboxX.x / tileSize);
-            const ty1 = Math.floor(hitboxX.y / tileSize);
-            const ty2 = Math.floor((hitboxX.y + hitboxX.h - 1) / tileSize);
-             if ((map[ty1]?.[tx] > TILE.AIR) || (map[ty2]?.[tx] > TILE.AIR)) {
-                this.x = (tx + 1) * tileSize;
-                this.vx = 0;
-            }
-        }
+        
+        const blockType = game.tileMap[tileY]?.[tileX];
+        if (!blockType || blockType === TILE.AIR) return;
 
-        // --- Y-Axis Collision ---
-        this.y += this.vy;
-        const hitboxY = { x: this.x, y: this.y, w: this.w, h: this.h };
-        this.isGrounded = false;
-
-        // Check down collision
-        if (this.vy > 0) {
-            const ty = Math.floor((hitboxY.y + hitboxY.h) / tileSize);
-            const tx1 = Math.floor(hitboxY.x / tileSize);
-            const tx2 = Math.floor((hitboxY.x + hitboxY.w - 1) / tileSize);
-            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
-                this.y = ty * tileSize - hitboxY.h;
-                this.vy = 0;
-                this.isGrounded = true;
-                this.canDoubleJump = true; // Reset double jump on landing
-            }
+        if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
+            this.miningTarget = { x: tileX, y: tileY, type: blockType };
+            this.miningProgress = 0;
         }
-        // Check up collision
-        else if (this.vy < 0) {
-            const ty = Math.floor(hitboxY.y / tileSize);
-            const tx1 = Math.floor(hitboxY.x / tileSize);
-            const tx2 = Math.floor((hitboxY.x + hitboxY.w - 1) / tileSize);
-            if ((map[ty]?.[tx1] > TILE.AIR) || (map[ty]?.[tx2] > TILE.AIR)) {
-                this.y = (ty + 1) * tileSize;
-                this.vy = 0;
+        
+        if (game.miningEngine && typeof game.miningEngine.updateMining === 'function') {
+            // Le moteur de minage a besoin de `delta` en secondes
+            game.miningEngine.updateMining(game, keys, game.mouse, delta * 1000);
+        }
+    }
+    
+    handleBuilding(game) {
+        const { tileSize } = this.config;
+        const mouseX = game.mouse.x / this.config.zoom + game.camera.x;
+        const mouseY = game.mouse.y / this.config.zoom + game.camera.y;
+
+        const tileX = Math.floor(mouseX / tileSize);
+        const tileY = Math.floor(mouseY / tileSize);
+
+        // Vérifier si le joueur a le bloc dans son inventaire
+        const blockToPlace = TILE.DIRT; // Exemple: toujours placer de la terre
+        if (this.inventory[blockToPlace] > 0) {
+            if (game.tileMap[tileY]?.[tileX] === TILE.AIR) {
+                game.tileMap[tileY][tileX] = blockToPlace;
+                this.inventory[blockToPlace]--;
             }
         }
     }
     
+    handleCombat(game) {
+        if (!game.combatSystem) return;
+        
+        game.enemies.forEach(enemy => {
+            const dist = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+            if (dist < this.w * 2) { // Portée d'attaque
+                game.combatSystem.attack(this, enemy);
+            }
+        });
+    }
+
+    updateSurvivalStats(delta, foodSystem) {
+        // Logique de faim
+        this.hunger = (this.hunger || 100) - (5 * delta); // Perd 5 de faim par seconde
+        if (this.hunger < 0) this.hunger = 0;
+        
+        if (this.hunger === 0) {
+            this.takeDamage(1 * delta); // Perd 1 de vie par seconde si affamé
+        }
+        
+        // Logique de consommation de nourriture
+        // (Pourrait être déclenché par une touche ou un clic sur l'inventaire)
+    }
+
     regenerateStats(delta) {
         // Regenerate Mana and Stamina over time
         if (this.mana < this.maxMana) {

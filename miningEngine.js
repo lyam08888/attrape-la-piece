@@ -552,17 +552,18 @@ export function updateGravity(game) {
 
 // Fonction pour intégrer le système de minage avec l'interface RPG
 export function integrateMiningWithRPG(game) {
-    if (!game.rpgInterface) {
-        console.warn("RPG Interface non disponible pour l'intégration du minage");
-        return;
-    }
+    if (!game) return;
+    
+    // Attacher une instance du moteur au jeu pour qu'il soit accessible
+    game.miningEngine = {
+        updateMining: updateMining, // Expose la fonction de mise à jour
+        destroyBlock: destroyBlock  // Expose la fonction de destruction
+    };
     
     console.log("🔧 Intégration du système de minage avec l'interface RPG...");
     
-    // FIXED: Create a wrapper function that enhances the existing destroyBlock
     const originalDestroyBlock = destroyBlock;
     
-    // Override the destroyBlock function to add RPG features
     function enhancedDestroyBlock(game, x, y, type) {
         try {
             // Call the original function
@@ -615,7 +616,7 @@ export function integrateMiningWithRPG(game) {
     }
     
     // Replace the global destroyBlock function
-    destroyBlock = enhancedDestroyBlock;
+    game.miningEngine.destroyBlock = enhancedDestroyBlock;
     
     console.log("✅ Système de minage intégré avec l'interface RPG !");
 }

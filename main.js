@@ -71,13 +71,19 @@ async function initializeGame() {
     console.log("✅ Jeu initialisé avec succès !");
 }
 
-
 // --- Logique de Jeu (Update & Draw) ---
 
 const gameLogic = {
     init: async (assets) => {
         game.assets = assets;
         console.log("🖼️ Assets chargés.");
+        // Attacher les moteurs aux systèmes de jeu
+        if (typeof integrateMiningWithRPG === 'function') {
+            integrateMiningWithRPG(game); // Cela attache le moteur de minage
+        }
+        game.combatSystem = new CombatSystem(); // Assurer que le système de combat est instancié
+        game.foodSystem = new FoodSystem();
+
         return true;
     },
     update: (delta, keys, mouse) => {
@@ -86,15 +92,19 @@ const gameLogic = {
         game.mouse = mouse;
         game.player.update(keys, game, delta);
 
-        // Mettre à jour les autres systèmes et entités
-        game.pnjs.forEach(p => p.update(game));
-        game.enemies.forEach(e => e.update(game));
-        game.animals.forEach(a => a.update(game));
+        // Mettre à jour les systèmes et entités
+        game.pnjs.forEach(p => p.update(game, delta));
+        game.enemies.forEach(e => e.update(game, delta));
+        game.animals.forEach(a => a.update(game, delta));
         
         game.timeSystem?.update(delta);
         game.weatherSystem?.update(delta);
         game.disasterManager?.update(delta);
+        game.foodSystem?.update(game, delta);
+        game.combatSystem?.updateDamageNumbers(); // Mettre à jour les nombres de dégâts flottants
 
+        // Le minage est maintenant géré dans player.update, qui appelle le miningEngine
+        
         updateCamera();
         game.rpgInterface.updateHUD();
     },
@@ -118,6 +128,9 @@ const gameLogic = {
         
         game.weatherSystem?.draw(ctx);
         game.worldAnimator?.draw(ctx, game.tileMap, game.camera);
+
+        // Dessiner les nombres de dégâts
+        game.combatSystem?.drawDamageNumbers(ctx, game.camera);
 
         ctx.restore();
         
@@ -161,7 +174,6 @@ function drawWorld(ctx, assets) {
         }
     }
 }
-
 
 // --- Point d'Entrée Principal ---
 
