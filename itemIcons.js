@@ -7,7 +7,7 @@ function drawIcon(objName, ctx) {
   ctx.save();
   ctx.translate(16,16);
   ctx.scale(1.2, 1.2); // Légère réduction pour mieux voir les bords
-  
+
   // La logique de dessin reste la vôtre, elle est très bien !
   switch(objName) {
     // --- ARMES TRANCHANTES ---
@@ -17,35 +17,35 @@ function drawIcon(objName, ctx) {
     // ... (tous vos autres cas de switch)
     
     // --- Outils ---
-    case "pickaxe": 
+    case "tool_pickaxe":
         ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche en bois
         ctx.fillStyle="#696969"; ctx.fillRect(-6,-8,12,3); // Tête de pioche
         ctx.fillStyle="#A9A9A9"; ctx.fillRect(-6,-5,12,1); // Reflet
         break;
-    case "shovel": 
+    case "tool_shovel":
         ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche
         ctx.fillStyle="#696969"; ctx.beginPath(); ctx.arc(0, -6, 4, 0, Math.PI); ctx.fill(); // Pelle
         ctx.fillStyle="#A9A9A9"; ctx.fillRect(-3,-6,6,1); // Reflet
         break;
-    case "axe": 
+    case "tool_axe":
         ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Manche
         ctx.fillStyle="#696969"; ctx.beginPath(); ctx.moveTo(-1,-6); ctx.lineTo(-6,-6); ctx.lineTo(-4,-2); ctx.lineTo(4,-2); ctx.lineTo(6,-6); ctx.lineTo(1,-6); ctx.closePath(); ctx.fill(); // Lame
         break;
-    case "sword": 
+    case "tool_sword":
         ctx.fillStyle="#C0C0C0"; ctx.fillRect(-1,-10,2,14); // Lame
         ctx.fillStyle="#8B4513"; ctx.fillRect(-3,4,6,3); // Garde
         ctx.fillStyle="#654321"; ctx.fillRect(-1,4,2,4); // Poignée
         break;
-    case "knife": 
+    case "tool_knife":
         ctx.fillStyle="#C0C0C0"; ctx.fillRect(-1,-6,2,8); // Lame
         ctx.fillStyle="#654321"; ctx.fillRect(-2,2,4,3); // Poignée
         break;
-    case "bow":
+    case "tool_bow":
         ctx.strokeStyle="#8B4513"; ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(0,-8); ctx.quadraticCurveTo(-4,-4,0,0); ctx.quadraticCurveTo(4,-4,0,-8); ctx.stroke(); // Arc
         ctx.strokeStyle="#654321"; ctx.lineWidth=1; ctx.moveTo(-3,-6); ctx.lineTo(3,-6); ctx.stroke(); // Corde
         break;
-    case "fishing_rod":
+    case "tool_fishing_rod":
         ctx.fillStyle="#8B4513"; ctx.fillRect(-1,-8,2,12); // Canne
         ctx.strokeStyle="#654321"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(4,-4); ctx.stroke(); // Ligne
         ctx.fillStyle="#C0C0C0"; ctx.beginPath(); ctx.arc(4,-4,1,0,2*Math.PI); ctx.fill(); // Hameçon
@@ -68,7 +68,7 @@ function drawIcon(objName, ctx) {
 // Fonction exportée qui utilise le cache
 export function getItemIcon(name, assets) {
   // Créer une clé de cache unique qui inclut si on utilise un asset ou une icône générée
-  const cacheKey = `${name}_${assets && assets[`tool_${name}`] ? 'asset' : 'generated'}`;
+  const cacheKey = `${name}_${assets && assets[name] ? 'asset' : 'generated'}`;
   
   // Si l'icône est déjà dans le cache, on la retourne directement
   if (iconCache.has(cacheKey)) {
@@ -76,7 +76,7 @@ export function getItemIcon(name, assets) {
   }
   
   // On vérifie d'abord si un asset direct existe (pour les outils)
-  const assetKey = `tool_${name}`;
+  const assetKey = name;
   if (assets && assets[assetKey]) {
       console.log(`Utilisation de l'asset ${assetKey} pour l'outil ${name}`);
       iconCache.set(cacheKey, assets[assetKey]);

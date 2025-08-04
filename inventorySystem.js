@@ -13,8 +13,8 @@ export class InventoryItem {
     getMaxStack() {
         const stackSizes = {
             // Outils (ne se stackent pas)
-            'pickaxe': 1, 'shovel': 1, 'axe': 1, 'sword': 1, 'knife': 1,
-            'bow': 1, 'fishing_rod': 1,
+            'tool_pickaxe': 1, 'tool_shovel': 1, 'tool_axe': 1, 'tool_sword': 1, 'tool_knife': 1,
+            'tool_bow': 1, 'tool_fishing_rod': 1,
             
             // Matériaux (se stackent)
             'wood': 64, 'stone': 64, 'dirt': 64, 'sand': 64,
@@ -231,32 +231,32 @@ export class CraftingSystem {
             ['wood', 'wood', 'wood'],
             [null, 'stick', null],
             [null, 'stick', null]
-        ], { name: 'pickaxe', quantity: 1, metadata: { material: 'wood' } }));
+        ], { name: 'tool_pickaxe', quantity: 1, metadata: { material: 'wood' } }));
 
         this.addRecipe(new CraftingRecipe('wooden_axe', [
             ['wood', 'wood', null],
             ['wood', 'stick', null],
             [null, 'stick', null]
-        ], { name: 'axe', quantity: 1, metadata: { material: 'wood' } }));
+        ], { name: 'tool_axe', quantity: 1, metadata: { material: 'wood' } }));
 
         this.addRecipe(new CraftingRecipe('wooden_shovel', [
             [null, 'wood', null],
             [null, 'stick', null],
             [null, 'stick', null]
-        ], { name: 'shovel', quantity: 1, metadata: { material: 'wood' } }));
+        ], { name: 'tool_shovel', quantity: 1, metadata: { material: 'wood' } }));
 
         this.addRecipe(new CraftingRecipe('wooden_sword', [
             [null, 'wood', null],
             [null, 'wood', null],
             [null, 'stick', null]
-        ], { name: 'sword', quantity: 1, metadata: { material: 'wood' } }));
+        ], { name: 'tool_sword', quantity: 1, metadata: { material: 'wood' } }));
 
         // Outils en pierre
         this.addRecipe(new CraftingRecipe('stone_pickaxe', [
             ['stone', 'stone', 'stone'],
             [null, 'stick', null],
             [null, 'stick', null]
-        ], { name: 'pickaxe', quantity: 1, metadata: { material: 'stone' } }));
+        ], { name: 'tool_pickaxe', quantity: 1, metadata: { material: 'stone' } }));
 
         // Matériaux
         this.addRecipe(new CraftingRecipe('sticks', [

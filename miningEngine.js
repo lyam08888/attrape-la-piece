@@ -39,7 +39,7 @@ const BLOCK_BREAK_TIME = {
 
 // Efficacité des outils selon le type de bloc
 const TOOL_EFFICIENCY = {
-    pickaxe: {
+    tool_pickaxe: {
         [TILE.STONE]: 3,
         [TILE.COAL]: 3,
         [TILE.IRON]: 3,
@@ -55,24 +55,24 @@ const TOOL_EFFICIENCY = {
         [TILE.OBSIDIAN]: 1.5,
         [TILE.AMETHYST]: 2.5
     },
-    shovel: {
+    tool_shovel: {
         [TILE.DIRT]: 3,
         [TILE.GRASS]: 3,
         [TILE.SAND]: 3,
         [TILE.GRAVEL]: 3,
         [TILE.SOUL_SAND]: 2
     },
-    axe: {
+    tool_axe: {
         [TILE.WOOD]: 3,
         [TILE.LEAVES]: 3,
         [TILE.OAK_WOOD]: 3,
         [TILE.OAK_LEAVES]: 3
     },
-    sword: {
+    tool_sword: {
         [TILE.LEAVES]: 2,
         [TILE.OAK_LEAVES]: 2
     },
-    knife: {
+    tool_knife: {
         [TILE.LEAVES]: 1.5,
         [TILE.OAK_LEAVES]: 1.5
     }
@@ -162,12 +162,12 @@ export function updateMining(game, keys, mouse, delta) {
         player.miningProgress = 0;
         game.miningEffect = null;
         if (game.logger) game.logger.log(`Impossible de miner ce bloc avec ${toolName}.`);
-        if (toolName !== 'pickaxe') return;
+        if (toolName !== 'tool_pickaxe') return;
         // La pioche peut miner les blocs inconnus avec une efficacité par défaut
     }
 
     // Vérifier si l'outil a encore de la durabilité
-    let efficiency = toolEfficiency ?? (toolName === 'pickaxe' ? 1 : 0.5); // 0.5 = main nue
+    let efficiency = toolEfficiency ?? (toolName === 'tool_pickaxe' ? 1 : 0.5); // 0.5 = main nue
     
     if (toolName !== 'hand') {
         const durability = player.durability?.[toolName] ?? Infinity;

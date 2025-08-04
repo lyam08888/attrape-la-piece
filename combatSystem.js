@@ -265,12 +265,12 @@ export class CombatSystem {
 
     getWeaponDamage(weapon) {
         const weaponDamage = {
-            'sword': 15,
-            'axe': 12,
-            'pickaxe': 8,
-            'shovel': 6,
-            'knife': 10,
-            'bow': 20
+            'tool_sword': 15,
+            'tool_axe': 12,
+            'tool_pickaxe': 8,
+            'tool_shovel': 6,
+            'tool_knife': 10,
+            'tool_bow': 20
         };
         
         let baseDamage = weaponDamage[weapon.name] || 5;

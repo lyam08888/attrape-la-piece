@@ -78,7 +78,7 @@ export class QuestSystem {
                 { id: 'mine_blocks', description: 'Miner des blocs', target: 10 },
                 { id: 'collect_wood', description: 'Collecter du bois', target: 5 }
             ],
-            { xp: 50, items: [{ name: 'pickaxe', quantity: 1 }] }
+            { xp: 50, items: [{ name: 'tool_pickaxe', quantity: 1 }] }
         ));
 
         this.addQuest(new Quest(
@@ -100,7 +100,7 @@ export class QuestSystem {
             [
                 { id: 'kill_enemies', description: 'Éliminer des ennemis', target: 20 }
             ],
-            { xp: 150, items: [{ name: 'sword', quantity: 1 }] }
+            { xp: 150, items: [{ name: 'tool_sword', quantity: 1 }] }
         ));
 
         this.addQuest(new Quest(
