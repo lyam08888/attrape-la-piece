@@ -437,6 +437,10 @@ export function updateInventoryUI(inventory, game = null) {
 
         inventoryGrid.appendChild(slot);
     }
+
+    if (game && typeof game.updateToolbar === 'function') {
+        game.updateToolbar();
+    }
 }
 
 export function initializeCraftingUI(craftingSystem) {
