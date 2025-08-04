@@ -524,7 +524,6 @@
                     <div class="panel-title">PERSONNAGE</div>
                     <div class="panel-controls">
                         <div class="panel-btn minimize-btn">−</div>
-                        <div class="panel-btn close-btn">×</div>
                     </div>
                 </div>
                 <div class="panel-content">
@@ -580,7 +579,6 @@
                     <div class="panel-title">ENVIRONNEMENT</div>
                     <div class="panel-controls">
                         <div class="panel-btn minimize-btn">−</div>
-                        <div class="panel-btn close-btn">×</div>
                     </div>
                 </div>
                 <div class="panel-content">
@@ -614,7 +612,6 @@
                     <div class="panel-title">CATASTROPHES</div>
                     <div class="panel-controls">
                         <div class="panel-btn minimize-btn">−</div>
-                        <div class="panel-btn close-btn">×</div>
                     </div>
                 </div>
                 <div class="panel-content">
@@ -779,21 +776,19 @@
 
             // Fonction pour rendre les éléments déplaçables
             const makeDraggable = (element) => {
-                const header = element.querySelector('.panel-header');
-                if (!header) return;
+                const handle = element.querySelector('.panel-header') || element;
 
-                header.style.cursor = 'move';
-                
-                header.addEventListener('mousedown', (e) => {
-                    if (e.target.closest('button')) return;
-                    
+                handle.style.cursor = 'move';
+
+                handle.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('button') || e.target.closest('.resize-handle')) return;
+
                     zIndexCounter++;
                     element.style.zIndex = zIndexCounter;
-                    
                     const rect = element.getBoundingClientRect();
                     const offsetX = e.clientX - rect.left;
                     const offsetY = e.clientY - rect.top;
-                    
+
                     const onMouseMove = (ev) => {
                         // Clamp position to viewport
                         const newLeft = Math.min(
@@ -858,15 +853,6 @@
                 });
             };
 
-            // Fonction pour gérer la fermeture
-            const setupClose = (element) => {
-                const closeBtn = element.querySelector('.close-btn');
-                if (!closeBtn) return;
-
-                closeBtn.addEventListener('click', () => {
-                    element.style.display = 'none';
-                });
-            };
 
             // Initialiser les éléments déplaçables après le chargement du DOM
             window.addEventListener('load', () => {
@@ -875,7 +861,6 @@
                     makeDraggable(element);
                     makeResizable(element);
                     setupMinimize(element);
-                    setupClose(element);
                 });
             });
 
