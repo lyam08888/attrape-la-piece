@@ -21,7 +21,7 @@ export class Player {
         this.grounded = false;
         this.dir = 1;
         this.swingTimer = 0;
-        this.tools = ['pickaxe', 'shovel', 'axe', 'sword', 'knife', 'bow', 'fishing_rod'];
+        this.tools = ['tool_pickaxe', 'tool_shovel', 'tool_axe', 'tool_sword', 'tool_knife', 'tool_bow', 'tool_fishing_rod'];
         this.selectedToolIndex = 0;
         this.inventory = {};
         this.miningTarget = null;
@@ -29,33 +29,33 @@ export class Player {
         
         // Nouveau système d'outils avec durabilité et enchantements
         this.toolDurability = {
-            pickaxe: 100,
-            shovel: 80,
-            axe: 90,
-            sword: 70,
-            knife: 60,
-            bow: 50,
-            fishing_rod: 40
+            tool_pickaxe: 100,
+            tool_shovel: 80,
+            tool_axe: 90,
+            tool_sword: 70,
+            tool_knife: 60,
+            tool_bow: 50,
+            tool_fishing_rod: 40
         };
         
         this.toolEnchantments = {
-            pickaxe: ['efficiency', 'unbreaking'],
-            shovel: ['efficiency'],
-            axe: ['efficiency', 'fire_aspect'],
-            sword: ['sharpness', 'fire_aspect'],
-            knife: ['sharpness'],
-            bow: ['power', 'infinity'],
-            fishing_rod: ['luck_of_the_sea']
+            tool_pickaxe: ['efficiency', 'unbreaking'],
+            tool_shovel: ['efficiency'],
+            tool_axe: ['efficiency', 'fire_aspect'],
+            tool_sword: ['sharpness', 'fire_aspect'],
+            tool_knife: ['sharpness'],
+            tool_bow: ['power', 'infinity'],
+            tool_fishing_rod: ['luck_of_the_sea']
         };
         
         this.durability = {
-            pickaxe: 100,
-            shovel: 80,
-            axe: 90,
-            sword: 70,
-            knife: 60,
-            bow: 50,
-            fishing_rod: 40
+            tool_pickaxe: 100,
+            tool_shovel: 80,
+            tool_axe: 90,
+            tool_sword: 70,
+            tool_knife: 60,
+            tool_bow: 50,
+            tool_fishing_rod: 40
         };
         
         this.experience = {
@@ -431,13 +431,13 @@ export class Player {
     getRepairMaterial(toolName) {
         // Matériaux nécessaires pour réparer chaque outil
         const repairMaterials = {
-            pickaxe: TILE.IRON,
-            shovel: TILE.IRON,
-            axe: TILE.IRON,
-            sword: TILE.IRON,
-            knife: TILE.IRON,
-            bow: TILE.WOOD,
-            fishing_rod: TILE.WOOD
+            tool_pickaxe: TILE.IRON,
+            tool_shovel: TILE.IRON,
+            tool_axe: TILE.IRON,
+            tool_sword: TILE.IRON,
+            tool_knife: TILE.IRON,
+            tool_bow: TILE.WOOD,
+            tool_fishing_rod: TILE.WOOD
         };
         return repairMaterials[toolName] || TILE.WOOD;
     }
@@ -636,7 +636,7 @@ export class Player {
 
         const toolName = this.tools[this.selectedToolIndex];
         if (toolName) {
-            const toolAsset = assets[`tool_${toolName}`];
+            const toolAsset = assets[toolName];
             if (toolAsset) {
                 const toolSize = this.w * 0.45; // Shrink tool relative to player size
                 const handOffsetX = this.dir === 1 ? this.w * 0.7 : this.w * 0.3;

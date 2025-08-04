@@ -15,9 +15,9 @@ const MONSTERS = {
     hell: [{ id: 'monster_hell', name: 'Démon' }],
 };
 
-// Les quêtes doivent référencer les mêmes identifiants d'outils que le joueur.
-// On retire le préfixe "stone_" pour rester cohérent avec les assets.
-const TOOLS = [{ id: 'pickaxe', name: 'Pioche en Pierre' }, { id: 'iron_axe', name: 'Hache en Fer' }];
+// Les quêtes doivent référencer les mêmes identifiants d'outils que le joueur,
+// en utilisant le préfixe "tool_" comme pour les assets.
+const TOOLS = [{ id: 'tool_pickaxe', name: 'Pioche en Pierre' }, { id: 'tool_axe', name: 'Hache en Fer' }];
 
 // --- MODÈLES DE QUÊTES PAR ARCHÉTYPE ---
 
@@ -41,7 +41,7 @@ const QUEST_BLUEPRINTS = {
             type: 'hunt', actionText: 'éliminer',
             targets: MONSTERS.surface,
             amountRange: [5, 10],
-            rewardPool: [{ id: 'sword', name: 'Épée' }, { id: 'bow', name: 'Arc' }]
+            rewardPool: [{ id: 'tool_sword', name: 'Épée' }, { id: 'tool_bow', name: 'Arc' }]
         },
         {
             type: 'hunt', actionText: 'chasser',
