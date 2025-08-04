@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démo Interface Modulaire - Super Pixel Adventure 2</title>
+    
+    <!-- Polices -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles de l'interface modulaire -->
+    <link rel="stylesheet" href="modularUI.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+            position: relative;
+            height: 100vh;
+        }
+
+        /* Fond animé pour la démo */
+        .demo-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            animation: backgroundShift 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes backgroundShift {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(-20px) translateY(-20px); }
+        }
+
+        /* Interface de démo */
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(to bottom, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 300;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .demo-title {
+            color: #FF9800;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .demo-section {
+            margin-bottom: 20px;
+        }
+
+        .demo-section h4 {
+            color: #fff;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+
+        .demo-button {
+            display: block;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+            border: 1px solid #666;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+        }
+
+        .demo-button:hover {
+            background: linear-gradient(to bottom, #FF9800, #F57C00);
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .demo-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(to bottom, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 300;
+            backdrop-filter: blur(10px);
+            color: #fff;
+            max-width: 300px;
+        }
+
+        .demo-info h4 {
+            color: #FF9800;
+            margin-bottom: 10px;
+        }
+
+        .demo-info ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .demo-info li {
+            margin: 5px 0;
+        }
+
+        /* Indicateur de performance */
+        .performance-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            z-index: 300;
+        }
+
+        /* Styles pour les éléments de démo */
+        .demo-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FF9800;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .demo-controls {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                padding: 15px;
+            }
+
+            .demo-info {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fond animé -->
+    <div class="demo-background"></div>
+
+    <!-- Contrôles de démo -->
+    <div class="demo-controls">
+        <h3 class="demo-title">Interface Modulaire</h3>
+        
+        <div class="demo-section">
+            <h4>Menus Principaux</h4>
+            <button class="demo-button" onclick="toggleInventory()">
+                <i class="fas fa-backpack"></i> Inventaire (I)
+            </button>
+            <button class="demo-button" onclick="toggleCharacter()">
+                <i class="fas fa-user"></i> Personnage (C)
+            </button>
+            <button class="demo-button" onclick="toggleQuests()">
+                <i class="fas fa-scroll"></i> Quêtes (Q)
+            </button>
+            <button class="demo-button" onclick="toggleMap()">
+                <i class="fas fa-map"></i> Carte (M)
+            </button>
+        </div>
+
+        <div class="demo-section">
+            <h4>Menus Secondaires</h4>
+            <button class="demo-button" onclick="toggleCrafting()">
+                <i class="fas fa-hammer"></i> Artisanat
+            </button>
+            <button class="demo-button" onclick="toggleJournal()">
+                <i class="fas fa-book"></i> Journal (J)
+            </button>
+            <button class="demo-button" onclick="toggleSkills()">
+                <i class="fas fa-star"></i> Compétences
+            </button>
+            <button class="demo-button" onclick="toggleOptions()">
+                <i class="fas fa-cog"></i> Options (O)
+            </button>
+        </div>
+
+        <div class="demo-section">
+            <h4>Actions</h4>
+            <button class="demo-button" onclick="showAllMenus()">
+                <i class="fas fa-eye"></i> Tout Afficher
+            </button>
+            <button class="demo-button" onclick="hideAllMenus()">
+                <i class="fas fa-eye-slash"></i> Tout Masquer
+            </button>
+            <button class="demo-button" onclick="resetWindows()">
+                <i class="fas fa-refresh"></i> Réinitialiser
+            </button>
+        </div>
+
+        <div class="demo-section">
+            <h4>Tests</h4>
+            <button class="demo-button" onclick="testNotifications()">
+                <i class="fas fa-bell"></i> Notifications
+            </button>
+            <button class="demo-button" onclick="testContextMenu()">
+                <i class="fas fa-mouse-pointer"></i> Menu Contextuel
+            </button>
+            <button class="demo-button" onclick="simulateGameplay()">
+                <i class="fas fa-play"></i> Simuler Gameplay
+            </button>
+        </div>
+    </div>
+
+    <!-- Informations de démo -->
+    <div class="demo-info">
+        <h4>Fonctionnalités Démontrées</h4>
+        <ul>
+            <li>Fenêtres redimensionnables et déplaçables</li>
+            <li>Système de notifications avancé</li>
+            <li>Menus contextuels interactifs</li>
+            <li>Raccourcis clavier (I, C, Q, M, J, O)</li>
+            <li>Sauvegarde automatique des positions</li>
+            <li>Interface responsive</li>
+            <li>Données de jeu intégrées</li>
+            <li>Animations et effets visuels</li>
+        </ul>
+    </div>
+
+    <!-- Indicateur de performance -->
+    <div class="performance-indicator">
+        <div>FPS: <span id="fps">60</span></div>
+        <div>Fenêtres: <span id="windowCount">0</span></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { windowManager } from './windowManager.js';
+        import { GameMenus } from './gameMenus.js';
+        import { UIManager } from './uiManager.js';
+
+        // Simuler un objet de jeu minimal pour la démo
+        const mockGame = {
+            player: {
+                x: 100,
+                y: 100,
+                w: 32,
+                h: 32
+            },
+            canvas: document.createElement('canvas'),
+            paused: false,
+            debugMode: false
+        };
+
+        // Initialiser les systèmes
+        let gameMenus, uiManager;
+
+        async function initDemo() {
+            try {
+                // Créer les gestionnaires
+                gameMenus = new GameMenus(mockGame);
+                uiManager = new UIManager(mockGame);
+                
+                // Rendre accessibles globalement
+                window.gameMenus = gameMenus;
+                window.uiManager = uiManager;
+                window.windowManager = windowManager;
+
+                // Afficher un message de bienvenue
+                setTimeout(() => {
+                    uiManager.showNotification('Bienvenue dans la démo de l\'interface modulaire!', 'info', 8000);
+                }, 1000);
+
+                // Créer quelques particules décoratives
+                createDemoParticles();
+
+                console.log('✅ Démo initialisée avec succès!');
+                
+            } catch (error) {
+                console.error('❌ Erreur lors de l\'initialisation de la démo:', error);
+            }
+        }
+
+        // Fonctions de contrôle de la démo
+        window.toggleInventory = () => gameMenus?.toggleInventory();
+        window.toggleCharacter = () => gameMenus?.toggleCharacter();
+        window.toggleQuests = () => gameMenus?.toggleQuests();
+        window.toggleMap = () => gameMenus?.toggleMap();
+        window.toggleCrafting = () => gameMenus?.toggleCrafting();
+        window.toggleJournal = () => gameMenus?.toggleJournal();
+        window.toggleSkills = () => gameMenus?.toggleSkills();
+        window.toggleOptions = () => gameMenus?.toggleOptions();
+
+        window.showAllMenus = () => {
+            if (!gameMenus) return;
+            
+            const menus = ['inventory', 'character', 'quests', 'map', 'crafting', 'journal', 'skills'];
+            menus.forEach((menu, index) => {
+                setTimeout(() => {
+                    gameMenus[`toggle${menu.charAt(0).toUpperCase() + menu.slice(1)}`]();
+                }, index * 200);
+            });
+        };
+
+        window.hideAllMenus = () => {
+            windowManager.windows.forEach((window, id) => {
+                windowManager.closeWindow(id);
+            });
+        };
+
+        window.resetWindows = () => {
+            localStorage.removeItem('gameWindowPositions');
+            window.hideAllMenus();
+            uiManager?.showNotification('Positions des fenêtres réinitialisées', 'info');
+        };
+
+        window.testNotifications = () => {
+            if (!uiManager) return;
+            
+            const notifications = [
+                { message: 'Notification d\'information', type: 'info' },
+                { message: 'Notification de succès', type: 'success' },
+                { message: 'Notification d\'avertissement', type: 'warning' },
+                { message: 'Notification d\'erreur', type: 'error' }
+            ];
+
+            notifications.forEach((notif, index) => {
+                setTimeout(() => {
+                    uiManager.showNotification(notif.message, notif.type, 5000);
+                }, index * 1000);
+            });
+        };
+
+        window.testContextMenu = () => {
+            uiManager?.showNotification('Faites un clic droit sur les éléments de l\'interface pour voir les menus contextuels', 'info', 6000);
+        };
+
+        window.simulateGameplay = () => {
+            if (!gameMenus || !uiManager) return;
+
+            uiManager.showNotification('Simulation du gameplay...', 'info');
+
+            // Simuler gain d'expérience
+            setTimeout(() => {
+                gameMenus.gameData.gainExperience(50);
+                uiManager.showNotification('+50 XP', 'success');
+            }, 1000);
+
+            // Simuler ajout d'objet
+            setTimeout(() => {
+                gameMenus.gameData.addItemToInventory({
+                    id: 'magic_potion',
+                    name: 'Potion Magique',
+                    category: 'consumables',
+                    quantity: 1,
+                    weight: 0.3,
+                    value: 75,
+                    quality: 'rare',
+                    description: 'Une potion aux propriétés magiques mystérieuses.',
+                    effects: { heal: 100, mana: 50 },
+                    icon: 'fas fa-magic'
+                });
+                uiManager.showNotification('Objet trouvé: Potion Magique', 'success');
+                gameMenus.refreshInventory();
+            }, 2000);
+
+            // Simuler progression de quête
+            setTimeout(() => {
+                gameMenus.gameData.updateQuestProgress('first_steps', 'explore', 3);
+                uiManager.showNotification('Progression de quête mise à jour', 'info');
+            }, 3000);
+
+            // Simuler déblocage de succès
+            setTimeout(() => {
+                gameMenus.gameData.unlockAchievement('treasure_hunter');
+            }, 4000);
+        };
+
+        function createDemoParticles() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'demo-particle';
+                    particle.style.left = Math.random() * window.innerWidth + 'px';
+                    particle.style.top = Math.random() * window.innerHeight + 'px';
+                    particle.style.animationDelay = Math.random() * 3 + 's';
+                    document.body.appendChild(particle);
+
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 6000);
+                }, i * 300);
+            }
+        }
+
+        // Gestion des raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'i': toggleInventory(); break;
+                case 'c': toggleCharacter(); break;
+                case 'q': toggleQuests(); break;
+                case 'm': toggleMap(); break;
+                case 'j': toggleJournal(); break;
+                case 'o': toggleOptions(); break;
+                case 'f1':
+                    e.preventDefault();
+                    uiManager?.showKeyboardShortcuts();
+                    break;
+            }
+        });
+
+        // Mise à jour des statistiques
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        function updateStats() {
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime - lastTime >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                document.getElementById('fps').textContent = fps;
+                document.getElementById('windowCount').textContent = windowManager.windows.size;
+                
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+            
+            requestAnimationFrame(updateStats);
+        }
+
+        // Créer des particules périodiquement
+        setInterval(createDemoParticles, 10000);
+
+        // Initialiser la démo
+        initDemo();
+        updateStats();
+
+        console.log('🎮 Démo Interface Modulaire - Super Pixel Adventure 2');
+        console.log('📋 Utilisez les boutons ou les raccourcis clavier pour tester l\'interface');
+        console.log('⌨️  Raccourcis: I (Inventaire), C (Personnage), Q (Quêtes), M (Carte), J (Journal), O (Options)');
+        console.log('🖱️  Clic droit sur les éléments pour les menus contextuels');
+        console.log('🪟 Fenêtres redimensionnables et déplaçables');
+    </script>
+</body>
+</html>

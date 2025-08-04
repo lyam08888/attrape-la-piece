@@ -13,6 +13,7 @@ import { Logger } from './logger.js';
 import { getItemIcon } from './itemIcons.js';
 import { SoundManager } from './sound.js';
 import { integrateComplexWorld } from './gameIntegration.js';
+import { UIManager } from './uiManager.js';
 
 async function loadConfig() {
     try {
@@ -220,6 +221,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         cameraShakeOffsetX: 0,
         cameraShakeOffsetY: 0,
         worldIntegration: null, // Système d'intégration du monde complexe
+        uiManager: null, // Gestionnaire d'interface modulaire
+        paused: false, // État de pause du jeu
+        debugMode: false, // Mode debug
 
         // Function to map keys according to config.keyBindings
         getKeys(rawKeys) {
@@ -463,6 +467,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.logger.log("⚠️ Monde complexe non disponible");
             }
             
+            // Initialiser le gestionnaire d'interface modulaire
+            game.logger.log("Initialisation de l'interface modulaire...");
+            try {
+                game.uiManager = new UIManager(game);
+                window.uiManager = game.uiManager; // Rendre accessible globalement
+                game.logger.log("✅ Interface modulaire initialisée !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'initialisation de l'interface:", error);
+                game.logger.log("⚠️ Interface modulaire non disponible");
+            }
+            
             game.updateToolbar();
             game.logger.log("Jeu prêt !");
         },
@@ -514,6 +529,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (game.worldAnimator) game.worldAnimator.update(game.camera, canvas, config.zoom);
             if (game.timeSystem) game.timeSystem.update();
             game.logger.update();
+
+            // Mettre à jour l'interface modulaire
+            if (game.uiManager && !game.paused) {
+                game.uiManager.update();
+            }
 
             // Mettre à jour l'interface utilisateur
             game.updateUI();

@@ -1,0 +1,1097 @@
+/* modularUI.css - Styles pour l'interface modulaire complète */
+
+/* Variables CSS pour la cohérence */
+:root {
+    --primary-color: #FF9800;
+    --primary-dark: #F57C00;
+    --secondary-color: #2196F3;
+    --success-color: #4CAF50;
+    --warning-color: #FF9800;
+    --error-color: #F44336;
+    --info-color: #2196F3;
+    
+    --bg-primary: rgba(40, 40, 40, 0.98);
+    --bg-secondary: rgba(20, 20, 20, 0.98);
+    --bg-tertiary: rgba(60, 60, 60, 0.95);
+    
+    --border-color: #555;
+    --border-light: #666;
+    --border-dark: #444;
+    
+    --text-primary: #fff;
+    --text-secondary: #ccc;
+    --text-muted: #999;
+    
+    --shadow-light: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-medium: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-heavy: 0 8px 32px rgba(0,0,0,0.6);
+    
+    --transition-fast: 0.2s ease;
+    --transition-medium: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition-slow: 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    
+    --font-family: 'VT323', monospace;
+    --font-size-small: 12px;
+    --font-size-normal: 14px;
+    --font-size-large: 16px;
+    --font-size-xlarge: 18px;
+}
+
+/* Reset et base */
+* {
+    box-sizing: border-box;
+}
+
+/* Conteneur principal des fenêtres */
+#windowContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    font-family: var(--font-family);
+}
+
+/* Styles des fenêtres */
+.game-window {
+    position: absolute;
+    background: linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary));
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-heavy);
+    backdrop-filter: blur(10px);
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: var(--transition-medium);
+    min-width: 200px;
+    min-height: 150px;
+}
+
+.game-window:hover {
+    border-color: var(--border-light);
+}
+
+.game-window.focused {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.3), var(--shadow-heavy);
+}
+
+/* Header des fenêtres */
+.window-header {
+    height: 35px;
+    background: linear-gradient(to bottom, var(--bg-tertiary), var(--bg-primary));
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    cursor: move;
+    user-select: none;
+    position: relative;
+}
+
+.window-header:hover {
+    background: linear-gradient(to bottom, #5a5a5a, var(--bg-tertiary));
+}
+
+.window-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* Titre et icône */
+.window-header .window-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    color: var(--text-primary);
+    font-size: var(--font-size-normal);
+    font-weight: bold;
+}
+
+.window-header .window-title i {
+    color: var(--primary-color);
+}
+
+/* Boutons de contrôle */
+.window-controls {
+    display: flex;
+    gap: 2px;
+}
+
+.window-control-btn {
+    width: 25px;
+    height: 25px;
+    background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-small);
+    font-weight: bold;
+    transition: var(--transition-fast);
+}
+
+.window-control-btn:hover {
+    background: linear-gradient(to bottom, #6a6a6a, #4a4a4a);
+    transform: scale(1.05);
+}
+
+.window-control-btn.close:hover {
+    background: linear-gradient(to bottom, #e74c3c, #c0392b);
+}
+
+.window-control-btn.maximize:hover {
+    background: linear-gradient(to bottom, var(--success-color), #388E3C);
+}
+
+.window-control-btn.minimize:hover {
+    background: linear-gradient(to bottom, var(--warning-color), #F57C00);
+}
+
+/* Contenu des fenêtres */
+.window-content {
+    flex: 1;
+    padding: 15px;
+    overflow: auto;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    background: rgba(0,0,0,0.1);
+}
+
+.window-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.window-content::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+.window-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.window-content::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* Handle de redimensionnement */
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    background: linear-gradient(135deg, transparent 50%, var(--border-light) 50%);
+    cursor: se-resize;
+    z-index: 10;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.resize-handle:hover {
+    opacity: 1;
+}
+
+/* Barre des tâches */
+#gameTaskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary));
+    border-top: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 5px;
+    pointer-events: all;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
+}
+
+#gameTaskbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* Boutons de la barre des tâches */
+.taskbar-button {
+    height: 35px;
+    padding: 0 12px;
+    background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-small);
+    transition: var(--transition-fast);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+}
+
+.taskbar-button:hover {
+    background: linear-gradient(to bottom, #4a4a4a, #3a3a3a);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.taskbar-button.active {
+    background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+    color: #000;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.taskbar-button.active::before {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 2px 2px 0 0;
+}
+
+/* Barre d'accès rapide */
+#quick-access-bar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary));
+    border: 2px solid var(--border-color);
+    border-radius: 25px;
+    padding: 8px 15px;
+    display: flex;
+    gap: 10px;
+    z-index: 150;
+    backdrop-filter: blur(10px);
+    transition: var(--transition-medium);
+    box-shadow: var(--shadow-medium);
+}
+
+#quick-access-bar:hover {
+    border-color: var(--border-light);
+    box-shadow: var(--shadow-heavy);
+}
+
+.quick-access-btn {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+    border: 1px solid var(--border-light);
+    border-radius: 50%;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-access-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255,152,0,0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all var(--transition-fast);
+}
+
+.quick-access-btn:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.quick-access-btn:hover {
+    background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255,152,0,0.5);
+}
+
+/* Système de notifications */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.notification {
+    background: linear-gradient(to right, var(--bg-primary), var(--bg-secondary));
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: 6px;
+    box-shadow: var(--shadow-medium);
+    border-left: 4px solid var(--info-color);
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    max-width: 300px;
+    pointer-events: all;
+    transform: translateX(100%);
+    transition: var(--transition-medium);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.notification.notification-success {
+    border-left-color: var(--success-color);
+}
+
+.notification.notification-warning {
+    border-left-color: var(--warning-color);
+}
+
+.notification.notification-error {
+    border-left-color: var(--error-color);
+}
+
+.notification.notification-info {
+    border-left-color: var(--info-color);
+}
+
+.notification:hover {
+    transform: translateX(-5px) scale(1.02);
+    box-shadow: var(--shadow-heavy);
+}
+
+.notification .notification-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification .notification-close {
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.notification:hover .notification-close {
+    opacity: 1;
+}
+
+/* Menu contextuel */
+.context-menu {
+    position: fixed;
+    background: linear-gradient(to bottom, var(--bg-tertiary), var(--bg-primary));
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    box-shadow: var(--shadow-heavy);
+    z-index: 10000;
+    min-width: 150px;
+    padding: 5px 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    backdrop-filter: blur(10px);
+    animation: contextMenuAppear 0.2s ease-out;
+}
+
+@keyframes contextMenuAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.context-menu-item {
+    padding: 8px 15px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.context-menu-item:hover {
+    background: rgba(255,152,0,0.2);
+    color: var(--primary-color);
+}
+
+.context-menu-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: var(--border-color);
+    margin: 5px 10px;
+}
+
+/* Menu principal */
+#main-menu {
+    position: fixed;
+    bottom: 60px;
+    left: 10px;
+    width: 300px;
+    background: linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary));
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-heavy);
+    backdrop-filter: blur(10px);
+    display: none;
+    z-index: 250;
+    padding: 15px;
+    font-family: var(--font-family);
+    animation: mainMenuAppear 0.3s ease-out;
+}
+
+@keyframes mainMenuAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.main-menu-category h4 {
+    color: var(--primary-color);
+    margin: 10px 0 5px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    font-size: var(--font-size-large);
+}
+
+.main-menu-item {
+    padding: 8px 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 4px;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.main-menu-item:hover {
+    background: rgba(255,152,0,0.2);
+    transform: translateX(5px);
+}
+
+.main-menu-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+/* Onglets génériques */
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+}
+
+.tab-btn:hover {
+    background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+    color: #000;
+    border-bottom-color: var(--primary-color);
+    z-index: 1;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary-color);
+}
+
+.tab-content {
+    flex: 1;
+    display: none;
+    animation: tabContentAppear 0.3s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes tabContentAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Boutons d'action génériques */
+.action-btn {
+    padding: 8px 12px;
+    background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition-fast);
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    background: linear-gradient(to bottom, #5a5a5a, #3a3a3a);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.action-btn.primary {
+    background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+    color: #000;
+}
+
+.action-btn.success {
+    background: linear-gradient(to bottom, var(--success-color), #388E3C);
+}
+
+.action-btn.warning {
+    background: linear-gradient(to bottom, var(--warning-color), #F57C00);
+}
+
+.action-btn.error {
+    background: linear-gradient(to bottom, var(--error-color), #D32F2F);
+}
+
+/* Barres de progression */
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    margin: 5px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--success-color), #66BB6A);
+    transition: width var(--transition-medium);
+    border-radius: 10px;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+    border-radius: 10px 10px 0 0;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--font-size-small);
+    color: var(--text-primary);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    font-weight: bold;
+}
+
+/* Champs de saisie */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+select,
+textarea {
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-normal);
+    transition: var(--transition-fast);
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(255,152,0,0.3);
+}
+
+/* Cases à cocher et boutons radio */
+input[type="checkbox"],
+input[type="radio"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 3px;
+    background: rgba(0,0,0,0.3);
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition-fast);
+}
+
+input[type="radio"] {
+    border-radius: 50%;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #000;
+    border-radius: 50%;
+}
+
+/* Sliders */
+input[type="range"] {
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(255,152,0,0.5);
+}
+
+/* Tooltips */
+[title] {
+    position: relative;
+}
+
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: var(--font-size-small);
+    white-space: nowrap;
+    z-index: 10001;
+    animation: tooltipAppear 0.2s ease-out;
+}
+
+[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0,0,0,0.9);
+    z-index: 10001;
+}
+
+@keyframes tooltipAppear {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Animations globales */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes slideInFromLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes slideInFromTop {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes slideInFromBottom {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(255,152,0,0.3); }
+    50% { box-shadow: 0 0 20px rgba(255,152,0,0.6); }
+}
+
+/* Classes utilitaires */
+.fade-in { animation: fadeIn 0.3s ease-out; }
+.slide-in-right { animation: slideInFromRight 0.3s ease-out; }
+.slide-in-left { animation: slideInFromLeft 0.3s ease-out; }
+.slide-in-top { animation: slideInFromTop 0.3s ease-out; }
+.slide-in-bottom { animation: slideInFromBottom 0.3s ease-out; }
+.scale-in { animation: scaleIn 0.3s ease-out; }
+.pulse { animation: pulse 2s infinite; }
+.glow { animation: glow 2s infinite; }
+
+.hidden { display: none !important; }
+.invisible { opacity: 0 !important; }
+.disabled { opacity: 0.5 !important; pointer-events: none !important; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-center { align-items: center; justify-content: center; }
+.flex-between { justify-content: space-between; }
+.flex-around { justify-content: space-around; }
+.flex-wrap { flex-wrap: wrap; }
+
+.grid { display: grid; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.gap-5 { gap: 5px; }
+.gap-10 { gap: 10px; }
+.gap-15 { gap: 15px; }
+.gap-20 { gap: 20px; }
+
+.m-5 { margin: 5px; }
+.m-10 { margin: 10px; }
+.m-15 { margin: 15px; }
+.m-20 { margin: 20px; }
+
+.p-5 { padding: 5px; }
+.p-10 { padding: 10px; }
+.p-15 { padding: 15px; }
+.p-20 { padding: 20px; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .game-window {
+        min-width: 300px;
+    }
+    
+    #quick-access-bar {
+        padding: 6px 12px;
+    }
+    
+    .quick-access-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .game-window {
+        min-width: 250px;
+        border-radius: 6px;
+    }
+    
+    .window-header {
+        height: 30px;
+        padding: 0 8px;
+    }
+    
+    .window-control-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+    }
+    
+    .window-content {
+        padding: 10px;
+        font-size: 12px;
+    }
+    
+    #gameTaskbar {
+        height: 45px;
+        padding: 0 8px;
+    }
+    
+    .taskbar-button {
+        height: 30px;
+        padding: 0 8px;
+        font-size: 11px;
+        max-width: 120px;
+    }
+    
+    #quick-access-bar {
+        top: 10px;
+        padding: 5px 10px;
+    }
+    
+    .quick-access-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+    
+    #notification-container {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .notification {
+        max-width: 250px;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    #main-menu {
+        width: 250px;
+        left: 5px;
+        bottom: 50px;
+        padding: 12px;
+    }
+    
+    .context-menu {
+        min-width: 120px;
+        font-size: 12px;
+    }
+    
+    .context-menu-item {
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-window {
+        min-width: 200px;
+        border-width: 1px;
+    }
+    
+    .window-header {
+        height: 28px;
+        padding: 0 6px;
+    }
+    
+    .window-content {
+        padding: 8px;
+        font-size: 11px;
+    }
+    
+    #gameTaskbar {
+        height: 40px;
+        padding: 0 5px;
+        gap: 3px;
+    }
+    
+    .taskbar-button {
+        height: 28px;
+        padding: 0 6px;
+        font-size: 10px;
+        max-width: 100px;
+    }
+    
+    #quick-access-bar {
+        padding: 4px 8px;
+        gap: 6px;
+    }
+    
+    .quick-access-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
+    
+    .notification {
+        max-width: 200px;
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+    
+    #main-menu {
+        width: 200px;
+        padding: 10px;
+    }
+    
+    .main-menu-item {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+}
+
+/* Mode sombre/clair (optionnel) */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-primary: rgba(240, 240, 240, 0.98);
+        --bg-secondary: rgba(220, 220, 220, 0.98);
+        --bg-tertiary: rgba(200, 200, 200, 0.95);
+        --text-primary: #333;
+        --text-secondary: #666;
+        --text-muted: #999;
+        --border-color: #ccc;
+        --border-light: #ddd;
+        --border-dark: #bbb;
+    }
+}
+
+/* Impression */
+@media print {
+    #windowContainer,
+    #gameTaskbar,
+    #quick-access-bar,
+    #notification-container,
+    #main-menu {
+        display: none !important;
+    }
+}

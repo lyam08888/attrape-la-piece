@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Pixel Adventure 2 - Interface Modulaire</title>
+    
+    <!-- Polices -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles de l'interface modulaire -->
+    <link rel="stylesheet" href="modularUI.css">
+    
+    <style>
+        /* Styles spécifiques à cette page */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+            position: relative;
+            height: 100vh;
+        }
+
+        /* Canvas du jeu */
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: linear-gradient(to bottom, #87CEEB, #98FB98);
+        }
+
+        /* Interface de démarrage */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95), rgba(42, 82, 152, 0.95));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.5s ease-out;
+        }
+
+        #startScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .game-title {
+            font-size: 4rem;
+            color: #FF9800;
+            text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            margin-bottom: 2rem;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from { text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 20px #FF9800; }
+            to { text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 40px #FF9800; }
+        }
+
+        .start-menu {
+            background: linear-gradient(to bottom, rgba(40, 40, 40, 0.9), rgba(20, 20, 20, 0.9));
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .start-button {
+            display: block;
+            width: 250px;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+            border: 2px solid #666;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .start-button:hover {
+            background: linear-gradient(to bottom, #FF9800, #F57C00);
+            color: #000;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .start-button.primary {
+            background: linear-gradient(to bottom, #FF9800, #F57C00);
+            color: #000;
+            border-color: #FF9800;
+        }
+
+        .start-button.primary:hover {
+            background: linear-gradient(to bottom, #FFB74D, #FF9800);
+            box-shadow: 0 5px 20px rgba(255, 152, 0, 0.6);
+        }
+
+        /* Interface de chargement */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95), rgba(42, 82, 152, 0.95));
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #fff;
+        }
+
+        .loading-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #FF9800;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .loading-fill {
+            height: 100%;
+            background: linear-gradient(to right, #FF9800, #FFB74D);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        /* Interface de pause */
+        #pauseOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            backdrop-filter: blur(5px);
+        }
+
+        .pause-menu {
+            background: linear-gradient(to bottom, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .pause-title {
+            font-size: 2.5rem;
+            color: #FF9800;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Styles pour les menus spécifiques */
+        .inventory-slot {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #666;
+            transition: all 0.2s ease;
+        }
+
+        .inventory-slot:hover {
+            border-color: #FF9800;
+            background: rgba(255, 152, 0, 0.1);
+            transform: scale(1.05);
+        }
+
+        .inventory-slot.has-item {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: #FF9800;
+        }
+
+        .inventory-slot .item-quantity {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 3px;
+            border-radius: 2px;
+            min-width: 12px;
+            text-align: center;
+        }
+
+        .inventory-slot .item-quality {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .item-quality.common { background: #9E9E9E; }
+        .item-quality.uncommon { background: #4CAF50; }
+        .item-quality.rare { background: #2196F3; }
+        .item-quality.epic { background: #9C27B0; }
+        .item-quality.legendary { background: #FF9800; }
+
+        /* Animations pour les éléments de l'interface */
+        @keyframes windowAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .game-window {
+            animation: windowAppear 0.3s ease-out;
+        }
+
+        /* Responsive pour mobile */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.5rem;
+            }
+
+            .start-menu {
+                padding: 1.5rem;
+                margin: 0 1rem;
+            }
+
+            .start-button {
+                width: 200px;
+                font-size: 1rem;
+                padding: 12px 16px;
+            }
+
+            .pause-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* Styles pour les indicateurs de performance */
+        #performanceStats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            z-index: 300;
+            display: none;
+        }
+
+        #performanceStats.visible {
+            display: block;
+        }
+
+        /* Styles pour les tooltips avancés */
+        .advanced-tooltip {
+            position: absolute;
+            background: linear-gradient(to bottom, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+            border: 1px solid #666;
+            border-radius: 6px;
+            padding: 10px;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            max-width: 250px;
+            z-index: 10002;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .tooltip-title {
+            color: #FF9800;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .tooltip-description {
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+
+        .tooltip-stats {
+            border-top: 1px solid #555;
+            padding-top: 5px;
+            font-size: 12px;
+        }
+
+        .tooltip-stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+
+        /* Styles pour les effets visuels */
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .shake-effect {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Styles pour les barres de progression avancées */
+        .advanced-progress-bar {
+            position: relative;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+        }
+
+        .advanced-progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .advanced-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .advanced-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Écran de démarrage -->
+    <div id="startScreen">
+        <h1 class="game-title">Super Pixel Adventure 2</h1>
+        <div class="start-menu">
+            <button class="start-button primary" onclick="startNewGame()">
+                <i class="fas fa-play"></i> Nouvelle Partie
+            </button>
+            <button class="start-button" onclick="loadGame()">
+                <i class="fas fa-folder-open"></i> Charger une Partie
+            </button>
+            <button class="start-button" onclick="showOptions()">
+                <i class="fas fa-cog"></i> Options
+            </button>
+            <button class="start-button" onclick="showCredits()">
+                <i class="fas fa-info-circle"></i> Crédits
+            </button>
+            <button class="start-button" onclick="showDemo()">
+                <i class="fas fa-eye"></i> Démo Interface
+            </button>
+        </div>
+    </div>
+
+    <!-- Écran de chargement -->
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <h2 class="loading-title">Chargement en cours...</h2>
+            <div class="loading-bar">
+                <div class="loading-fill" id="loadingFill"></div>
+            </div>
+            <p class="loading-text" id="loadingText">Initialisation...</p>
+        </div>
+    </div>
+
+    <!-- Overlay de pause -->
+    <div id="pauseOverlay">
+        <div class="pause-menu">
+            <h2 class="pause-title">Jeu en Pause</h2>
+            <button class="start-button primary" onclick="resumeGame()">
+                <i class="fas fa-play"></i> Reprendre
+            </button>
+            <button class="start-button" onclick="showGameOptions()">
+                <i class="fas fa-cog"></i> Options
+            </button>
+            <button class="start-button" onclick="saveAndQuit()">
+                <i class="fas fa-save"></i> Sauvegarder et Quitter
+            </button>
+            <button class="start-button" onclick="quitToMenu()">
+                <i class="fas fa-home"></i> Menu Principal
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas du jeu -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Statistiques de performance (mode debug) -->
+    <div id="performanceStats">
+        <div>FPS: <span id="fpsCounter">60</span></div>
+        <div>Entités: <span id="entityCount">0</span></div>
+        <div>Mémoire: <span id="memoryUsage">0 MB</span></div>
+    </div>
+
+    <!-- Interface de jeu existante (sera intégrée dans le système modulaire) -->
+    <div id="gameUI" style="display: none;">
+        <!-- L'ancienne interface sera remplacée par le système modulaire -->
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { GameEngine } from './engine.js';
+        
+        let gameEngine = null;
+        let gameStarted = false;
+        let loadingProgress = 0;
+
+        // Variables globales pour l'interface
+        window.gameState = {
+            paused: false,
+            loading: false,
+            started: false
+        };
+
+        // Fonctions de l'écran de démarrage
+        window.startNewGame = async function() {
+            showLoading();
+            await initializeGame();
+            hideStartScreen();
+            hideLoading();
+            startGameLoop();
+        };
+
+        window.loadGame = function() {
+            // Logique de chargement de sauvegarde
+            alert('Fonctionnalité de chargement à implémenter');
+        };
+
+        window.showOptions = function() {
+            // Ouvrir le menu des options via l'UIManager
+            if (window.uiManager) {
+                window.uiManager.gameMenus.toggleOptions();
+            } else {
+                alert('Options disponibles une fois le jeu lancé');
+            }
+        };
+
+        window.showCredits = function() {
+            // Afficher les crédits
+            if (window.uiManager) {
+                const credits = `
+                    <div style="text-align: center; font-family: 'VT323', monospace;">
+                        <h2 style="color: #FF9800;">Crédits</h2>
+                        <br>
+                        <h3>Développement</h3>
+                        <p>Interface Modulaire Avancée</p>
+                        <p>Système de Fenêtres Dynamiques</p>
+                        <p>Menus Interactifs Complets</p>
+                        <br>
+                        <h3>Technologies</h3>
+                        <p>HTML5 Canvas</p>
+                        <p>JavaScript ES6+</p>
+                        <p>CSS3 Avancé</p>
+                        <p>Font Awesome Icons</p>
+                        <br>
+                        <h3>Fonctionnalités</h3>
+                        <p>✅ Interface type Windows</p>
+                        <p>✅ Système de notifications</p>
+                        <p>✅ Menus contextuels</p>
+                        <p>✅ Raccourcis clavier</p>
+                        <p>✅ Sauvegarde des positions</p>
+                        <p>✅ Responsive design</p>
+                        <br>
+                        <p style="color: #999;">Merci de jouer à Super Pixel Adventure 2!</p>
+                    </div>
+                `;
+                
+                window.uiManager.gameMenus.windowManager.createWindow('credits', 'Crédits', credits, {
+                    width: 400,
+                    height: 500,
+                    icon: 'fas fa-info-circle'
+                });
+            } else {
+                alert('Crédits disponibles une fois le jeu lancé');
+            }
+        };
+
+        window.showDemo = async function() {
+            // Démarrer le jeu en mode démo pour montrer l'interface
+            showLoading();
+            updateLoadingText('Chargement de la démo...');
+            await initializeGame();
+            hideStartScreen();
+            hideLoading();
+            startGameLoop();
+            
+            // Ouvrir automatiquement quelques fenêtres pour la démo
+            setTimeout(() => {
+                if (window.uiManager) {
+                    window.uiManager.showNotification('Bienvenue dans la démo de l\'interface modulaire!', 'info', 8000);
+                    
+                    setTimeout(() => {
+                        window.uiManager.gameMenus.toggleInventory();
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        window.uiManager.gameMenus.toggleCharacter();
+                    }, 2000);
+                    
+                    setTimeout(() => {
+                        window.uiManager.gameMenus.toggleQuests();
+                    }, 3000);
+                    
+                    setTimeout(() => {
+                        window.uiManager.showNotification('Utilisez les raccourcis clavier: I, C, Q, M, J, O', 'info', 10000);
+                    }, 4000);
+                }
+            }, 1000);
+        };
+
+        // Fonctions de l'overlay de pause
+        window.resumeGame = function() {
+            hidePause();
+            if (gameEngine && gameEngine.game) {
+                gameEngine.game.paused = false;
+            }
+            window.gameState.paused = false;
+        };
+
+        window.showGameOptions = function() {
+            if (window.uiManager) {
+                window.uiManager.gameMenus.toggleOptions();
+            }
+        };
+
+        window.saveAndQuit = function() {
+            // Logique de sauvegarde
+            if (window.uiManager) {
+                window.uiManager.showNotification('Partie sauvegardée!', 'success');
+            }
+            setTimeout(() => {
+                quitToMenu();
+            }, 1000);
+        };
+
+        window.quitToMenu = function() {
+            hidePause();
+            showStartScreen();
+            if (gameEngine) {
+                gameEngine.stop();
+            }
+            gameStarted = false;
+            window.gameState.started = false;
+        };
+
+        // Fonctions utilitaires
+        function showLoading() {
+            document.getElementById('loadingScreen').style.display = 'flex';
+            window.gameState.loading = true;
+            loadingProgress = 0;
+            updateLoadingProgress(0);
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingScreen').style.display = 'none';
+            window.gameState.loading = false;
+        }
+
+        function hideStartScreen() {
+            document.getElementById('startScreen').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('startScreen').style.display = 'none';
+            }, 500);
+        }
+
+        function showStartScreen() {
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function showPause() {
+            document.getElementById('pauseOverlay').style.display = 'flex';
+            window.gameState.paused = true;
+        }
+
+        function hidePause() {
+            document.getElementById('pauseOverlay').style.display = 'none';
+            window.gameState.paused = false;
+        }
+
+        function updateLoadingProgress(progress) {
+            loadingProgress = Math.min(100, Math.max(0, progress));
+            document.getElementById('loadingFill').style.width = loadingProgress + '%';
+        }
+
+        function updateLoadingText(text) {
+            document.getElementById('loadingText').textContent = text;
+        }
+
+        async function initializeGame() {
+            try {
+                updateLoadingText('Chargement des ressources...');
+                updateLoadingProgress(20);
+
+                gameEngine = new GameEngine();
+                
+                updateLoadingText('Initialisation du moteur...');
+                updateLoadingProgress(40);
+
+                await gameEngine.init();
+                
+                updateLoadingText('Chargement de l\'interface...');
+                updateLoadingProgress(60);
+
+                // L'UIManager sera initialisé automatiquement dans game.js
+                
+                updateLoadingText('Génération du monde...');
+                updateLoadingProgress(80);
+
+                await new Promise(resolve => setTimeout(resolve, 500)); // Simulation
+                
+                updateLoadingText('Finalisation...');
+                updateLoadingProgress(100);
+
+                gameStarted = true;
+                window.gameState.started = true;
+
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation:', error);
+                updateLoadingText('Erreur de chargement');
+                setTimeout(() => {
+                    hideLoading();
+                    alert('Erreur lors du chargement du jeu. Veuillez réessayer.');
+                }, 2000);
+            }
+        }
+
+        function startGameLoop() {
+            if (gameEngine && gameStarted) {
+                gameEngine.start();
+            }
+        }
+
+        // Gestion des raccourcis clavier globaux
+        document.addEventListener('keydown', (e) => {
+            if (!gameStarted) return;
+
+            switch(e.key) {
+                case 'Escape':
+                    if (window.gameState.paused) {
+                        resumeGame();
+                    } else {
+                        showPause();
+                        if (gameEngine && gameEngine.game) {
+                            gameEngine.game.paused = true;
+                        }
+                    }
+                    break;
+                    
+                case 'F2':
+                    // Toggle debug mode
+                    const stats = document.getElementById('performanceStats');
+                    stats.classList.toggle('visible');
+                    if (gameEngine && gameEngine.game) {
+                        gameEngine.game.debugMode = !gameEngine.game.debugMode;
+                    }
+                    break;
+            }
+        });
+
+        // Mise à jour des statistiques de performance
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+
+        function updatePerformanceStats() {
+            if (!document.getElementById('performanceStats').classList.contains('visible')) return;
+
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime - lastFrameTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTime - lastFrameTime));
+                frameCount = 0;
+                lastFrameTime = currentTime;
+                
+                document.getElementById('fpsCounter').textContent = fps;
+                
+                // Estimation de l'utilisation mémoire
+                if (performance.memory) {
+                    const memoryMB = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+                    document.getElementById('memoryUsage').textContent = memoryMB + ' MB';
+                }
+                
+                // Comptage des entités
+                if (gameEngine && gameEngine.game) {
+                    const entityCount = (gameEngine.game.enemies?.length || 0) + 
+                                      (gameEngine.game.pnjs?.length || 0) + 
+                                      (gameEngine.game.collectibles?.length || 0);
+                    document.getElementById('entityCount').textContent = entityCount;
+                }
+            }
+            
+            requestAnimationFrame(updatePerformanceStats);
+        }
+
+        // Démarrer le monitoring des performances
+        updatePerformanceStats();
+
+        // Gestion du redimensionnement de la fenêtre
+        window.addEventListener('resize', () => {
+            if (gameEngine && gameEngine.canvas) {
+                gameEngine.canvas.width = window.innerWidth;
+                gameEngine.canvas.height = window.innerHeight;
+            }
+        });
+
+        // Prévenir la fermeture accidentelle
+        window.addEventListener('beforeunload', (e) => {
+            if (gameStarted && !window.gameState.paused) {
+                e.preventDefault();
+                e.returnValue = 'Êtes-vous sûr de vouloir quitter le jeu?';
+                return e.returnValue;
+            }
+        });
+
+        console.log('🎮 Super Pixel Adventure 2 - Interface Modulaire Chargée!');
+        console.log('📋 Fonctionnalités disponibles:');
+        console.log('   • Interface type Windows avec fenêtres redimensionnables');
+        console.log('   • Menus complets: Inventaire, Personnage, Quêtes, Carte, etc.');
+        console.log('   • Système de notifications avancé');
+        console.log('   • Raccourcis clavier (F1 pour l\'aide)');
+        console.log('   • Sauvegarde automatique des positions');
+        console.log('   • Design responsive et accessible');
+    </script>
+</body>
+</html>
