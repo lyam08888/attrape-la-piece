@@ -20,6 +20,7 @@ import { AdvancedRenderer } from './advancedRenderer.js';
 import { AdvancedNPCSystem } from './advancedNPCSystem.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
 import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
+import { RPGInterfaceManager } from './rpgInterfaceManager.js';
 
 async function loadConfig() {
     try {

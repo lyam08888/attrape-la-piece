@@ -27,6 +27,28 @@ export class Player {
         this.miningTarget = null;
         this.miningProgress = 0;
         
+        // Statistiques RPG
+        this.health = 100;
+        this.maxHealth = 100;
+        this.mana = 80;
+        this.maxMana = 100;
+        this.stamina = 100;
+        this.maxStamina = 100;
+        this.level = 1;
+        this.experience = 0;
+        this.experienceToNext = 100;
+        this.gold = 0;
+        
+        // Statistiques de base
+        this.strength = 10;
+        this.agility = 10;
+        this.intelligence = 10;
+        this.vitality = 10;
+        this.luck = 10;
+        
+        // Points de statistiques disponibles
+        this.statPoints = 0;
+        
         // Nouveau système d'outils avec durabilité et enchantements
         this.toolDurability = {
             tool_pickaxe: 100,
@@ -754,5 +776,166 @@ export class Player {
             return this.stats.addXP(amount);
         }
         return 0;
+    }
+
+    // === MÉTHODES RPG ===
+    
+    gainExperience(amount) {
+        this.experience += amount;
+        
+        // Vérifier si on monte de niveau
+        while (this.experience >= this.experienceToNext) {
+            this.levelUp();
+        }
+    }
+    
+    levelUp() {
+        this.experience -= this.experienceToNext;
+        this.level++;
+        this.experienceToNext = Math.floor(this.experienceToNext * 1.2); // +20% par niveau
+        
+        // Gains par niveau
+        this.maxHealth += 10;
+        this.maxMana += 5;
+        this.maxStamina += 5;
+        this.statPoints += 3;
+        
+        // Restaurer complètement les stats
+        this.health = this.maxHealth;
+        this.mana = this.maxMana;
+        this.stamina = this.maxStamina;
+        
+        // Notification de montée de niveau
+        if (window.game && window.game.rpgInterface) {
+            window.game.rpgInterface.showNotification(
+                `Niveau ${this.level} atteint ! +3 points de statistiques`,
+                'success',
+                4000
+            );
+        }
+        
+        console.log(`🎉 Niveau ${this.level} atteint !`);
+    }
+    
+    addGold(amount) {
+        this.gold += amount;
+        
+        if (window.game && window.game.rpgInterface) {
+            window.game.rpgInterface.showNotification(
+                `+${amount} or`,
+                'success',
+                2000
+            );
+        }
+    }
+    
+    spendGold(amount) {
+        if (this.gold >= amount) {
+            this.gold -= amount;
+            return true;
+        }
+        return false;
+    }
+    
+    increaseStat(statName, amount = 1) {
+        if (this.statPoints >= amount) {
+            switch (statName) {
+                case 'strength':
+                    this.strength += amount;
+                    this.maxHealth += amount * 5; // +5 HP par point de force
+                    break;
+                case 'agility':
+                    this.agility += amount;
+                    this.maxStamina += amount * 3; // +3 stamina par point d'agilité
+                    break;
+                case 'intelligence':
+                    this.intelligence += amount;
+                    this.maxMana += amount * 4; // +4 mana par point d'intelligence
+                    break;
+                case 'vitality':
+                    this.vitality += amount;
+                    this.maxHealth += amount * 8; // +8 HP par point de vitalité
+                    break;
+                case 'luck':
+                    this.luck += amount;
+                    break;
+            }
+            
+            this.statPoints -= amount;
+            
+            if (window.game && window.game.rpgInterface) {
+                window.game.rpgInterface.showNotification(
+                    `${statName} augmenté !`,
+                    'success'
+                );
+            }
+            
+            return true;
+        }
+        return false;
+    }
+    
+    regenerateStats(delta) {
+        // Régénération de mana
+        if (this.mana < this.maxMana) {
+            this.mana = Math.min(this.maxMana, this.mana + (this.intelligence * 0.01 * delta / 16));
+        }
+        
+        // Régénération de stamina
+        if (this.stamina < this.maxStamina) {
+            this.stamina = Math.min(this.maxStamina, this.stamina + (this.vitality * 0.02 * delta / 16));
+        }
+        
+        // Régénération de santé (très lente)
+        if (this.health < this.maxHealth && this.health > 0) {
+            this.health = Math.min(this.maxHealth, this.health + (this.vitality * 0.005 * delta / 16));
+        }
+    }
+    
+    consumeStamina(amount) {
+        if (this.stamina >= amount) {
+            this.stamina -= amount;
+            return true;
+        }
+        return false;
+    }
+    
+    consumeMana(amount) {
+        if (this.mana >= amount) {
+            this.mana -= amount;
+            return true;
+        }
+        return false;
+    }
+    
+    getStatTotal(statName) {
+        // Retourne la statistique de base + bonus d'équipement
+        let base = this[statName] || 0;
+        let bonus = 0;
+        
+        // TODO: Ajouter les bonus d'équipement
+        
+        return base + bonus;
+    }
+    
+    getRPGStats() {
+        return {
+            health: Math.floor(this.health),
+            maxHealth: this.maxHealth,
+            mana: Math.floor(this.mana),
+            maxMana: this.maxMana,
+            stamina: Math.floor(this.stamina),
+            maxStamina: this.maxStamina,
+            level: this.level,
+            experience: this.experience,
+            experienceToNext: this.experienceToNext,
+            gold: this.gold,
+            strength: this.getStatTotal('strength'),
+            agility: this.getStatTotal('agility'),
+            intelligence: this.getStatTotal('intelligence'),
+            vitality: this.getStatTotal('vitality'),
+            luck: this.getStatTotal('luck'),
+            statPoints: this.statPoints
+        };
     }
 }

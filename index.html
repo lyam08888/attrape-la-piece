@@ -7,8 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="modularUI.css">
-    <link rel="stylesheet" href="windows11-style.css">
+    <link rel="stylesheet" href="rpgInterface.css">
     <style>
         
         
@@ -1500,6 +1499,7 @@
         import { Enemy as BaseEnemy, Slime } from './enemy.js';
         import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
         import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
+        import { RPGInterfaceManager } from './rpgInterfaceManager.js';
         
         // Import des nouveaux systèmes
         import { AnimalManager, Animal } from './animalSystem.js';
@@ -2283,8 +2283,13 @@
                 async init(assets = {}) {
                     console.log("Initialisation du jeu...");
                     
-                    // Intégrer les systèmes avancés en premier
+                    // Initialiser l'interface RPG complète
                     try {
+                        console.log("🎮 Initialisation de l'interface RPG...");
+                        game.rpgInterface = new RPGInterfaceManager();
+                        window.rpgInterface = game.rpgInterface;
+                        
+                        // Intégrer les systèmes avancés
                         integrateAdvancedSystems(game);
                         
                         // Rendre les fonctions d'intégration accessibles globalement
@@ -2292,9 +2297,9 @@
                         window.enrichBasicWorldWithAdvancedData = enrichBasicWorldWithAdvancedData;
                         window.syncWorldChanges = syncWorldChanges;
                         
-                        console.log("✅ Systèmes avancés intégrés !");
+                        console.log("✅ Interface RPG et systèmes avancés intégrés !");
                     } catch (error) {
-                        console.warn("⚠️ Erreur intégration systèmes avancés:", error);
+                        console.warn("⚠️ Erreur intégration interface RPG:", error);
                     }
                     
                     game.assets = assets;
@@ -2958,6 +2963,11 @@
                     
                     // Mettre à jour l'interface utilisateur
                     game.updateUI();
+                    
+                    // Mettre à jour l'interface RPG
+                    if (game.rpgInterface) {
+                        game.rpgInterface.updateHUD();
+                    }
                     
                     // Sauvegarde automatique
                     if (game.saveSystem && game.saveSystem.autoSave) {
