@@ -71,9 +71,9 @@ export class GameEngine {
         });
 
         // Ajouter automatiquement les assets des outils
-        const toolNames = ['pickaxe', 'shovel', 'axe', 'sword', 'knife', 'bow', 'fishing_rod'];
-        toolNames.forEach(toolName => {
-            allAssetKeys.add(`tool_${toolName}`);
+        const toolKeys = ['tool_pickaxe', 'tool_shovel', 'tool_axe', 'tool_sword', 'tool_knife', 'tool_bow', 'tool_fishing_rod'];
+        toolKeys.forEach(key => {
+            allAssetKeys.add(key);
         });
 
         if (this.config.playerAnimations) {

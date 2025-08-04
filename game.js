@@ -254,7 +254,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Ajouter un titre pour l'accessibilité avec durabilité
                 const durability = this.player.durability[toolName] || 0;
                 const maxDurability = this.player.toolDurability[toolName] || 100;
-                slot.title = `${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')} (${durability}/${maxDurability})`;
+                const displayName = toolName.replace(/^tool_/, '');
+                slot.title = `${displayName.charAt(0).toUpperCase() + displayName.slice(1).replace('_', ' ')} (${durability}/${maxDurability})`;
                 
                 const icon = getItemIcon(toolName, this.assets);
                 if (icon) slot.appendChild(icon.cloneNode(true));
@@ -311,7 +312,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const repairMaterial = this.player.getRepairMaterial(toolName);
                 const repairMaterialName = Object.keys(TILE).find(k => TILE[k] === repairMaterial) || 'Matériau';
                 const hasRepairMaterial = (this.player.inventory[repairMaterial] || 0) > 0;
-                
+                const displayName = toolName.replace(/^tool_/, '');
+
                 let statusText = '';
                 if (durability <= 0) {
                     statusText = '<span style="color: #ff4444;">CASSÉ</span>';
@@ -320,10 +322,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (durability < maxDurability * 0.5) {
                     statusText = '<span style="color: #ffff00;">Usé</span>';
                 }
-                
+
                 toolInfo.innerHTML = `
                     <div style="font-size: 12px; color: #fff;">
-                        <strong>${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')}</strong><br>
+                        <strong>${displayName.charAt(0).toUpperCase() + displayName.slice(1).replace('_', ' ')}</strong><br>
                         Durabilité: ${durability}/${maxDurability} ${statusText}<br>
                         ${enchantments.length > 0 ? `Enchantements: ${enchantments.join(', ')}<br>` : ''}
                         ${durability < maxDurability ? `Réparation: ${repairMaterialName} ${hasRepairMaterial ? '✓' : '✗'}<br>` : ''}
@@ -711,8 +713,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const durability = game.player.durability[toolName] || 0;
             const maxDurability = game.player.toolDurability[toolName] || 100;
             const enchantments = game.player.toolEnchantments[toolName] || [];
-            
-            let infoText = `${toolName.charAt(0).toUpperCase() + toolName.slice(1).replace('_', ' ')}`;
+            const displayName = toolName.replace(/^tool_/, '');
+
+            let infoText = `${displayName.charAt(0).toUpperCase() + displayName.slice(1).replace('_', ' ')}`;
             infoText += ` - Durabilité: ${durability}/${maxDurability}`;
             
             if (enchantments.length > 0) {
