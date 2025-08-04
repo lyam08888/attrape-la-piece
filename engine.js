@@ -218,7 +218,8 @@ export class GameEngine {
                     const delta = (time - lastTime) / 1000;
                     lastTime = time;
 
-                    if (!this.gameLogic.isPaused()) {
+                    // FIXED: Check if isPaused method exists before calling
+                    if (!this.gameLogic.isPaused || !this.gameLogic.isPaused()) {
                         // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
                         this.gameLogic.update(delta, this.keys, this.mouse);
                     }
