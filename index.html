@@ -760,6 +760,7 @@
                             <input type="text" id="seed-input" placeholder="Entrez une seed ou laissez vide">
                             <button id="btn-random-seed" title="Générer une seed aléatoire">?</button>
                          </div>
+                         <button id="btn-share-seed">PARTAGER LA SEED</button>
                          <button id="btn-launch-game">LANCER</button>
                          <button data-action="back-to-main-menu-view" style="background: #444; border-bottom-color: #222;">RETOUR</button>
                     </div>
@@ -1036,6 +1037,23 @@
             const openMenu = (menu) => { if (menu) menu.classList.add('active'); };
             const closeMenu = (menu) => { if (menu) menu.classList.remove('active'); };
             const generateRandomSeed = () => Math.floor(Date.now() * Math.random()).toString(16);
+            const shareSeed = (seed) => {
+                const url = `${window.location.origin}${window.location.pathname}?seed=${encodeURIComponent(seed)}`;
+                if (navigator.share) {
+                    navigator.share({ title: 'Rejoins ma partie', text: `Seed: ${seed}`, url }).catch(console.error);
+                } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).then(() => alert('Lien copié dans le presse-papiers')).catch(console.error);
+                } else {
+                    alert(url);
+                }
+            };
+
+            const params = new URLSearchParams(window.location.search);
+            const urlSeed = params.get('seed');
+            if (urlSeed) {
+                ui.seedInput.value = urlSeed;
+                switchView(ui.views.newGame);
+            }
             const togglePauseMenu = () => {
                 const isPaused = ui.menus.pause.classList.toggle('active');
                 ui.canvas.classList.toggle('paused', isPaused);
@@ -1179,6 +1197,12 @@
                 switch(target.id) {
                     case 'btn-go-to-new-game': ui.seedInput.value = generateRandomSeed(); switchView(ui.views.newGame); break;
                     case 'btn-random-seed': ui.seedInput.value = generateRandomSeed(); break;
+                    case 'btn-share-seed': {
+                        const seed = ui.seedInput.value.trim() || generateRandomSeed();
+                        ui.seedInput.value = seed;
+                        shareSeed(seed);
+                        break;
+                    }
                     case 'btn-launch-game': startGame(ui.seedInput.value.trim() || generateRandomSeed()); break;
                 }
             });
