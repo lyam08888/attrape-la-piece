@@ -295,7 +295,7 @@ import { DisasterManager } from './disasterManager.js';
 import { FoodSystem } from './foodSystem.js';
 // The animal module exports AnimalManager; alias as AnimalSystem for clarity
 import { AnimalManager as AnimalSystem } from './animalSystem.js';
-import { ExplorationSystem } from './explorationSystem.js';
+import ExplorationSystem from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
 import { WorldAnimator } from './worldAnimator.js';
