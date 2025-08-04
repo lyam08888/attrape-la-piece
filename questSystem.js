@@ -1,13 +1,16 @@
 // questSystem.js - Système de quêtes complet
 
+import { getStoryQuests } from './storyQuests.js';
+
 export class Quest {
-    constructor(id, title, description, objectives, rewards, prerequisites = []) {
+    constructor(id, title, description, objectives, rewards, prerequisites = [], category = 'side') {
         this.id = id;
         this.title = title;
         this.description = description;
         this.objectives = objectives; // Array d'objectifs
         this.rewards = rewards;
         this.prerequisites = prerequisites;
+        this.category = category;
         this.status = 'available'; // available, active, completed, failed
         this.progress = {};
         this.startTime = null;
@@ -182,6 +185,19 @@ export class QuestSystem {
             { xp: 250, items: [{ name: 'gold', quantity: 10 }] },
             ['time_keeper']
         ));
+
+        // Ajout des 150 quêtes principales générées
+        getStoryQuests().forEach(data => {
+            this.addQuest(new Quest(
+                data.id,
+                data.title,
+                data.description,
+                data.objectives,
+                data.rewards,
+                data.prerequisites,
+                data.category
+            ));
+        });
     }
 
     addQuest(quest) {
@@ -450,40 +466,49 @@ export function updateQuestUI(questSystem) {
         return item;
     };
 
+    const groupAndAppend = (quests, type) => {
+        const main = quests.filter(q => q.category === 'main');
+        const side = quests.filter(q => q.category !== 'main');
+
+        if (main.length > 0) {
+            const h = document.createElement('h4');
+            h.textContent = 'HISTOIRE PRINCIPALE';
+            questList.appendChild(h);
+            main.forEach(q => questList.appendChild(createQuestItem(q, type)));
+        }
+        if (side.length > 0) {
+            const h = document.createElement('h4');
+            h.textContent = 'QUÊTES SECONDAIRES';
+            questList.appendChild(h);
+            side.forEach(q => questList.appendChild(createQuestItem(q, type)));
+        }
+    };
+
     const activeQuests = questSystem.getActiveQuests();
     if (activeQuests.length > 0) {
         const activeHeader = document.createElement('h3');
-        activeHeader.textContent = 'QUÊTES ACTIVES';
+        activeHeader.textContent = `QUÊTES ACTIVES (${activeQuests.length})`;
         activeHeader.style.color = '#f9a825';
         questList.appendChild(activeHeader);
-
-        activeQuests.forEach(q => {
-            questList.appendChild(createQuestItem(q, 'active'));
-        });
+        groupAndAppend(activeQuests, 'active');
     }
 
     const availableQuests = questSystem.getAvailableQuests();
     if (availableQuests.length > 0) {
         const availableHeader = document.createElement('h3');
-        availableHeader.textContent = 'QUÊTES DISPONIBLES';
+        availableHeader.textContent = `QUÊTES DISPONIBLES (${availableQuests.length})`;
         availableHeader.style.color = '#27ae60';
         questList.appendChild(availableHeader);
-
-        availableQuests.forEach(q => {
-            questList.appendChild(createQuestItem(q, 'available'));
-        });
+        groupAndAppend(availableQuests, 'available');
     }
 
     const completedQuests = questSystem.getCompletedQuests();
     if (completedQuests.length > 0) {
         const completedHeader = document.createElement('h3');
-        completedHeader.textContent = 'QUÊTES TERMINÉES';
+        completedHeader.textContent = `QUÊTES TERMINÉES (${completedQuests.length})`;
         completedHeader.style.color = '#95a5a6';
         questList.appendChild(completedHeader);
-
-        completedQuests.slice(-5).forEach(q => {
-            questList.appendChild(createQuestItem(q, 'completed'));
-        });
+        groupAndAppend(completedQuests.slice(-5), 'completed');
     }
 
     if (activeQuests.length === 0 && availableQuests.length === 0 && completedQuests.length === 0) {
