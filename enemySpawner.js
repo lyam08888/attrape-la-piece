@@ -14,13 +14,20 @@ export class EnemySpawner {
     }
 
     update(game, delta) {
-        this.spawnTimer += delta;
-        
-        if (this.spawnTimer >= this.spawnInterval) {
+        const isNight = game.timeSystem?.getStage() === 'nuit';
+
+        if (isNight) {
+            this.spawnTimer += delta;
+
+            if (this.spawnTimer >= this.spawnInterval) {
+                this.spawnTimer = 0;
+                this.trySpawnEnemy(game);
+            }
+        } else {
+            // Réinitialiser le timer en journée pour éviter un spawn immédiat à la tombée de la nuit
             this.spawnTimer = 0;
-            this.trySpawnEnemy(game);
         }
-        
+
         // Nettoyer les ennemis morts ou trop éloignés
         this.cleanupEnemies(game);
     }

@@ -363,16 +363,23 @@ export class AnimalManager {
         this.spawnTimer = 0;
         this.maxAnimals = 50;
     }
-    
+
     update(game, delta) {
-        this.spawnTimer++;
-        
-        // Spawn de nouveaux animaux
-        if (this.spawnTimer > 300 && this.animals.length < this.maxAnimals) { // Toutes les 5 secondes
-            this.trySpawnAnimal(game);
+        const isNight = game.timeSystem?.getStage() === 'nuit';
+
+        if (!isNight) {
+            this.spawnTimer++;
+
+            // Spawn de nouveaux animaux uniquement le jour
+            if (this.spawnTimer > 300 && this.animals.length < this.maxAnimals) { // Toutes les 5 secondes
+                this.trySpawnAnimal(game);
+                this.spawnTimer = 0;
+            }
+        } else {
+            // Réinitialiser le timer la nuit pour éviter un spawn immédiat au lever du soleil
             this.spawnTimer = 0;
         }
-        
+
         // Mettre à jour les animaux existants
         for (let i = this.animals.length - 1; i >= 0; i--) {
             const animal = this.animals[i];
