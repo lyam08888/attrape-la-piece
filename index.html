@@ -522,6 +522,38 @@
             color: #ddd;
         }
 
+        /* Raccourcis de menu */
+        #menuShortcuts {
+            position: absolute;
+            top: 20px;
+            left: 290px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: all;
+            cursor: move;
+        }
+
+        #menuShortcuts.minimized {
+            height: 40px;
+            overflow: hidden;
+        }
+
+        #menuShortcuts h3 {
+            margin: 0 0 10px 0;
+            color: #FF9800;
+            font-size: 18px;
+        }
+
+        #menuShortcuts p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #ddd;
+            cursor: pointer;
+        }
+
         .key-hint {
             display: inline-block;
             background: #333;
@@ -695,6 +727,14 @@
                     <p><span class="key-hint">F3</span> : Pluie de météores</p>
                 </div>
                 <div class="resize-handle"></div>
+            </div>
+
+            <!-- Raccourcis de menus -->
+            <div id="menuShortcuts" class="draggable">
+                <h3>RACCOURCIS</h3>
+                <p data-action="open-inventory"><span class="key-hint">I</span> Inventaire</p>
+                <p data-action="open-character"><span class="key-hint">P</span> Personnage</p>
+                <p data-action="open-quests"><span class="key-hint">Q</span> Quêtes</p>
             </div>
 
             <!-- Minimap -->
