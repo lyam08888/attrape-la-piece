@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     syncOptionUI();
 
     const game = {
-        config: config,
+        config: engine.config,
         assets: {},
         tileMap: [],
         player: null,
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger: new Logger(),
         lastTime: 0,
         canvas: canvas,
-        settings: config,
+        settings: engine.config,
         cameraShakeTimer: 0,
         cameraShakeStrength: 0,
         cameraShakeOffsetX: 0,
