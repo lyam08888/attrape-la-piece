@@ -1499,6 +1499,7 @@
         // Import de la classe de base Enemy sous un alias pour éviter les conflits globaux
         import { Enemy as BaseEnemy, Slime } from './enemy.js';
         import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
+        import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
         
         // Import des nouveaux systèmes
         import { AnimalManager, Animal } from './animalSystem.js';
@@ -2285,6 +2286,12 @@
                     // Intégrer les systèmes avancés en premier
                     try {
                         integrateAdvancedSystems(game);
+                        
+                        // Rendre les fonctions d'intégration accessibles globalement
+                        window.convertAdvancedWorldToBasic = convertAdvancedWorldToBasic;
+                        window.enrichBasicWorldWithAdvancedData = enrichBasicWorldWithAdvancedData;
+                        window.syncWorldChanges = syncWorldChanges;
+                        
                         console.log("✅ Systèmes avancés intégrés !");
                     } catch (error) {
                         console.warn("⚠️ Erreur intégration systèmes avancés:", error);
@@ -2304,15 +2311,26 @@
                         if (game.advancedWorldGenerator) {
                             game.logger.log("🌍 Utilisation du générateur de monde avancé...");
                             const advancedWorld = game.advancedWorldGenerator.generateParadiseToHellWorld(config);
-                            game.tileMap = advancedWorld.tileMap;
-                            game.biomes = advancedWorld.biomes;
-                            game.structures = advancedWorld.structures;
-                            game.worldMetadata = advancedWorld.metadata;
-                            console.log("✅ Monde avancé généré avec succès !");
+                            
+                            // Convertir vers le format compatible
+                            const basicWorld = window.convertAdvancedWorldToBasic ? 
+                                window.convertAdvancedWorldToBasic(advancedWorld) : advancedWorld;
+                            
+                            game.tileMap = basicWorld.tileMap;
+                            game.biomes = basicWorld.biomes || advancedWorld.biomeMap;
+                            game.structures = basicWorld.structures || advancedWorld.structures;
+                            game.worldMetadata = basicWorld.metadata || advancedWorld.metadata;
+                            
+                            console.log("✅ Monde avancé généré et converti avec succès !");
                         } else {
                             // Fallback vers le générateur de base
                             game.logger.log("🌍 Utilisation du générateur de monde de base...");
                             generateLevel(game, config);
+                            
+                            // Enrichir avec des données avancées si possible
+                            if (window.enrichBasicWorldWithAdvancedData) {
+                                game = window.enrichBasicWorldWithAdvancedData(game, game);
+                            }
                         }
                         console.log("Monde généré avec succès, taille:", game.tileMap?.length, "x", game.tileMap?.[0]?.length);
                     } catch (error) {

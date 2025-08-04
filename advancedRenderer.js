@@ -1442,4 +1442,87 @@ class AnimationSystem {
     }
 }
 
+// Ajout des méthodes d'intégration pour le jeu principal
+AdvancedRenderer.prototype.renderEntities = function(player, enemies, pnjs, collectibles) {
+    const { ctx } = this;
+    
+    ctx.save();
+    
+    // Rendu des collectibles
+    if (collectibles) {
+        collectibles.forEach(c => {
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(c.x, c.y, c.w || 16, c.h || 16);
+        });
+    }
+    
+    // Rendu des PNJ
+    if (pnjs) {
+        pnjs.forEach(pnj => {
+            if (pnj.draw) {
+                pnj.draw(ctx);
+            } else {
+                // Rendu de base pour les PNJ
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(pnj.x || 0, pnj.y || 0, 32, 32);
+            }
+        });
+    }
+    
+    // Rendu des ennemis
+    if (enemies) {
+        enemies.forEach(enemy => {
+            if (enemy.draw) {
+                enemy.draw(ctx, this.assets);
+            } else {
+                // Rendu de base pour les ennemis
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(enemy.x || 0, enemy.y || 0, 32, 32);
+            }
+        });
+    }
+    
+    // Rendu du joueur
+    if (player && player.draw) {
+        player.draw(ctx, this.assets);
+    }
+    
+    ctx.restore();
+};
+
+AdvancedRenderer.prototype.renderEffects = function(particleSystem, miningEffect) {
+    const { ctx } = this;
+    
+    ctx.save();
+    
+    // Rendu du système de particules
+    if (particleSystem && particleSystem.draw) {
+        particleSystem.draw(ctx);
+    }
+    
+    // Rendu de l'effet de minage
+    if (miningEffect) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = 'white';
+        const crackSize = 16 * miningEffect.progress;
+        ctx.fillRect(
+            miningEffect.x * 16 + (16 - crackSize) / 2,
+            miningEffect.y * 16 + (16 - crackSize) / 2,
+            crackSize, crackSize
+        );
+        ctx.globalAlpha = 1;
+    }
+    
+    ctx.restore();
+};
+
+AdvancedRenderer.prototype.renderUI = function(logger, canvas) {
+    const { ctx } = this;
+    
+    // Rendu du logger si disponible
+    if (logger && logger.draw) {
+        logger.draw(ctx, canvas);
+    }
+};
+
 export { AdvancedRenderer };

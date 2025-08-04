@@ -1279,6 +1279,150 @@ class NPCAISystem {
             npc.ai.emotionalState = emotions[Math.floor(Math.random() * emotions.length)];
         }
     }
+
+    // === MÉTHODES D'INTÉGRATION AVEC LE JEU PRINCIPAL ===
+    
+    spawnInitialNPCs(tileMap, config) {
+        console.log("👥 Génération des PNJ initiaux...");
+        
+        const worldHeight = tileMap.length;
+        const worldWidth = tileMap[0]?.length || 0;
+        
+        // Spawner des PNJ selon les biomes
+        const npcSpawns = [
+            { template: "ARCHANGEL_GABRIEL", biome: "DIVINE_PEAKS", count: 1 },
+            { template: "FOREST_DRUID", biome: "ENCHANTED_FOREST", count: 2 },
+            { template: "CRYSTAL_SAGE", biome: "CRYSTAL_CAVERNS", count: 1 },
+            { template: "DEMON_MERCHANT", biome: "INFERNAL_DEPTHS", count: 1 },
+            { template: "SHADOW_ASSASSIN", biome: "ABYSS", count: 1 }
+        ];
+
+        npcSpawns.forEach(spawn => {
+            for (let i = 0; i < spawn.count; i++) {
+                const npc = this.createNPCFromTemplate(spawn.template);
+                if (npc) {
+                    // Trouver une position appropriée
+                    const position = this.findSpawnPosition(tileMap, spawn.biome, worldWidth, worldHeight);
+                    if (position) {
+                        npc.x = position.x;
+                        npc.y = position.y;
+                        npc.id = `${spawn.template}_${i}`;
+                        
+                        // Ajouter le PNJ au système
+                        this.npcs.set(npc.id, npc);
+                        
+                        console.log(`✅ PNJ ${npc.name} spawné en (${npc.x}, ${npc.y})`);
+                    }
+                }
+            }
+        });
+        
+        console.log(`✅ ${this.npcs.size} PNJ générés au total !`);
+    }
+
+    createNPCFromTemplate(templateName) {
+        const template = this.npcTemplates[templateName];
+        if (!template) {
+            console.warn(`⚠️ Template PNJ non trouvé: ${templateName}`);
+            return null;
+        }
+
+        const npc = {
+            ...template,
+            id: templateName,
+            x: 0,
+            y: 0,
+            health: template.stats?.health || 100,
+            mana: template.stats?.mana || 50,
+            level: template.stats?.level || 1,
+            dialogue: this.generateDialogue(template),
+            ai: {
+                currentState: "idle",
+                stateTimer: 0,
+                emotionalState: "calm",
+                lastPlayerInteraction: 0
+            },
+            // Méthodes de base pour la compatibilité
+            update: (game, delta) => this.updateNPC(npc, game, delta),
+            draw: (ctx) => this.drawNPC(npc, ctx)
+        };
+
+        return npc;
+    }
+
+    findSpawnPosition(tileMap, biome, worldWidth, worldHeight) {
+        // Trouver une position de spawn appropriée selon le biome
+        const biomeYRanges = {
+            "DIVINE_PEAKS": [0, Math.floor(worldHeight * 0.1)],
+            "CELESTIAL_GARDENS": [Math.floor(worldHeight * 0.1), Math.floor(worldHeight * 0.2)],
+            "ENCHANTED_FOREST": [Math.floor(worldHeight * 0.2), Math.floor(worldHeight * 0.35)],
+            "CRYSTAL_CAVERNS": [Math.floor(worldHeight * 0.35), Math.floor(worldHeight * 0.5)],
+            "INFERNAL_DEPTHS": [Math.floor(worldHeight * 0.8), Math.floor(worldHeight * 0.95)],
+            "ABYSS": [Math.floor(worldHeight * 0.95), worldHeight]
+        };
+
+        const yRange = biomeYRanges[biome] || [0, worldHeight];
+        
+        // Essayer de trouver une position valide
+        for (let attempts = 0; attempts < 50; attempts++) {
+            const x = Math.floor(Math.random() * worldWidth);
+            const y = Math.floor(Math.random() * (yRange[1] - yRange[0])) + yRange[0];
+            
+            // Vérifier si la position est valide (pas dans un bloc solide)
+            if (y < tileMap.length && x < tileMap[y].length && tileMap[y][x] === 0) {
+                return { x: x * 16, y: y * 16 }; // Convertir en pixels
+            }
+        }
+        
+        // Position par défaut si aucune position valide trouvée
+        return { x: worldWidth * 8, y: yRange[0] * 16 };
+    }
+
+    generateDialogue(template) {
+        // Générer un dialogue de base selon le template
+        const dialogues = {
+            "ARCHANGEL_GABRIEL": "Que la lumière divine guide tes pas, voyageur.",
+            "FOREST_DRUID": "La nature murmure des secrets anciens...",
+            "CRYSTAL_SAGE": "Les cristaux révèlent la vérité à ceux qui savent écouter.",
+            "DEMON_MERCHANT": "J'ai des objets... particuliers à vendre.",
+            "SHADOW_ASSASSIN": "Les ombres cachent bien des mystères..."
+        };
+        
+        return dialogues[template.name] || "Bonjour, voyageur.";
+    }
+
+    updateNPC(npc, game, delta) {
+        // Mise à jour de base du PNJ
+        if (npc.ai) {
+            npc.ai.stateTimer += delta;
+            this.aiSystem.update([npc], game, delta);
+        }
+    }
+
+    drawNPC(npc, ctx) {
+        // Rendu de base du PNJ
+        ctx.save();
+        
+        // Couleur selon le type de PNJ
+        const colors = {
+            "ARCHANGEL_GABRIEL": "#FFD700",
+            "FOREST_DRUID": "#32CD32",
+            "CRYSTAL_SAGE": "#9370DB",
+            "DEMON_MERCHANT": "#FF4500",
+            "SHADOW_ASSASSIN": "#2F2F2F"
+        };
+        
+        ctx.fillStyle = colors[npc.name] || "#FFFFFF";
+        ctx.fillRect(npc.x, npc.y, 32, 32);
+        
+        // Nom du PNJ
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(npc.name || "PNJ", npc.x + 16, npc.y - 5);
+        
+        ctx.restore();
+    }
 }
 
 export { AdvancedNPCSystem };

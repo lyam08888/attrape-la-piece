@@ -19,6 +19,7 @@ import { AdvancedWorldGenerator } from './advancedWorldGenerator.js';
 import { AdvancedRenderer } from './advancedRenderer.js';
 import { AdvancedNPCSystem } from './advancedNPCSystem.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
+import { convertAdvancedWorldToBasic, enrichBasicWorldWithAdvancedData, syncWorldChanges } from './worldIntegration.js';
 
 async function loadConfig() {
     try {

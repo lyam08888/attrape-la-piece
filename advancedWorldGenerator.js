@@ -1145,6 +1145,125 @@ export class AdvancedWorldGenerator {
             artifacts: []
         };
     }
+
+    // === MÉTHODE PRINCIPALE D'INTÉGRATION ===
+    generateParadiseToHellWorld(config) {
+        console.log("🌍 Génération du monde Du Paradis à l'Enfer...");
+        
+        const width = config.worldWidth || 2048;
+        const height = config.worldHeight || 1024;
+        
+        // Créer la structure du monde
+        const world = {
+            tileMap: [],
+            biomeMap: [],
+            structures: [],
+            creatures: [],
+            vegetation: [],
+            treasures: [],
+            metadata: {
+                width,
+                height,
+                generatedAt: Date.now(),
+                version: "1.0",
+                type: "paradise_to_hell"
+            }
+        };
+
+        // Initialiser les cartes
+        for (let y = 0; y < height; y++) {
+            world.tileMap[y] = [];
+            world.biomeMap[y] = [];
+            for (let x = 0; x < width; x++) {
+                world.tileMap[y][x] = 0; // AIR par défaut
+                world.biomeMap[y][x] = this.getBiomeAtPosition(x, y, height);
+            }
+        }
+
+        // Générer le terrain de base
+        this.generateBaseTerrain(world, width, height);
+        
+        // Générer les structures
+        this.generateStructures(world, width, height);
+        
+        // Générer la végétation
+        this.generateVegetation(world, width, height);
+        
+        // Générer les créatures
+        this.generateCreatures(world, width, height);
+        
+        // Générer les trésors
+        this.generateTreasures(world, width, height);
+
+        console.log("✅ Monde Du Paradis à l'Enfer généré avec succès !");
+        console.log(`📊 Statistiques: ${world.structures.length} structures, ${world.creatures.length} créatures, ${world.treasures.length} trésors`);
+        
+        return world;
+    }
+
+    getBiomeAtPosition(x, y, worldHeight) {
+        // Calculer le biome basé sur la position Y (vertical du paradis à l'enfer)
+        const normalizedY = y / worldHeight;
+        
+        if (normalizedY < 0.1) return "DIVINE_PEAKS";
+        if (normalizedY < 0.2) return "CELESTIAL_GARDENS";
+        if (normalizedY < 0.35) return "ENCHANTED_FOREST";
+        if (normalizedY < 0.5) return "CRYSTAL_CAVERNS";
+        if (normalizedY < 0.65) return "MYSTIC_SWAMPS";
+        if (normalizedY < 0.8) return "VOLCANIC_LANDS";
+        if (normalizedY < 0.95) return "INFERNAL_DEPTHS";
+        return "ABYSS";
+    }
+
+    generateBaseTerrain(world, width, height) {
+        console.log("🏔️ Génération du terrain de base...");
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const biome = world.biomeMap[y][x];
+                const biomeData = this.biomes[biome];
+                
+                if (biomeData) {
+                    // Générer le terrain selon le biome
+                    const surfaceLevel = this.calculateSurfaceLevel(x, y, width, height);
+                    
+                    if (y >= surfaceLevel) {
+                        if (y === surfaceLevel) {
+                            world.tileMap[y][x] = this.getBlockId(biomeData.blocks.surface);
+                        } else if (y < surfaceLevel + 5) {
+                            world.tileMap[y][x] = this.getBlockId(biomeData.blocks.subsurface);
+                        } else {
+                            world.tileMap[y][x] = this.getBlockId("STONE");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    calculateSurfaceLevel(x, y, width, height) {
+        // Calculer le niveau de surface avec du bruit
+        const baseLevel = height * 0.6;
+        const noise = Math.sin(x * 0.01) * 20 + Math.cos(x * 0.005) * 10;
+        return Math.floor(baseLevel + noise);
+    }
+
+    getBlockId(blockName) {
+        // Mapper les noms de blocs vers des IDs (compatible avec le système existant)
+        const blockMap = {
+            "DIVINE_STONE": 10,
+            "BLESSED_EARTH": 11,
+            "CELESTIAL_CRYSTAL": 12,
+            "BLESSED_GRASS": 2,
+            "FERTILE_SOIL": 3,
+            "LIFE_CRYSTAL": 13,
+            "STONE": 1,
+            "DIRT": 3,
+            "GRASS": 2
+        };
+        
+        return blockMap[blockName] || 1; // STONE par défaut
+    }
 }
 
 export { AdvancedWorldGenerator };
