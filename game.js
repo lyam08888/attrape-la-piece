@@ -683,9 +683,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (playerStrength) playerStrength.textContent = game.player.stats ? game.player.stats.strength : '10';
             if (playerSpeed) playerSpeed.textContent = game.player.stats ? game.player.stats.speed : '10';
-            if (chestsOpened) chestsOpened.textContent = game.statistics ? game.statistics.chestsOpened : '0';
-            if (animalsObserved) animalsObserved.textContent = game.statistics ? game.statistics.animalsObserved : '0';
-            if (survivalItemsFound) survivalItemsFound.textContent = game.statistics ? game.statistics.survivalItemsFound : '0';
+            if (chestsOpened) chestsOpened.textContent = game.statistics?.chestsOpened ?? '0';
+            if (animalsObserved) animalsObserved.textContent = game.statistics?.animalsObserved ?? '0';
+            if (survivalItemsFound) survivalItemsFound.textContent = game.statistics?.survivalItemsFound ?? '0';
 
             // Mettre à jour les informations environnementales
             if (game.timeSystem) {
