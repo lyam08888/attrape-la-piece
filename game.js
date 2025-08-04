@@ -15,6 +15,10 @@ import { SoundManager } from './sound.js';
 import { integrateComplexWorld } from './gameIntegration.js';
 import { UIManager } from './uiManager.js';
 import { WindowManager } from './simpleWindowManager.js';
+import { AdvancedWorldGenerator } from './advancedWorldGenerator.js';
+import { AdvancedRenderer } from './advancedRenderer.js';
+import { AdvancedNPCSystem } from './advancedNPCSystem.js';
+import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
 
 async function loadConfig() {
     try {
@@ -491,6 +495,42 @@ document.addEventListener('DOMContentLoaded', async () => {
                 game.logger.log("⚠️ Système de fenêtres non disponible");
             }
             
+            // Intégrer les dépendances des systèmes avancés
+            game.logger.log("Intégration des dépendances avancées...");
+            try {
+                integrateAdvancedSystems(game);
+                game.logger.log("✅ Dépendances avancées intégrées !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'intégration des dépendances:", error);
+                game.logger.log("⚠️ Dépendances avancées non disponibles");
+            }
+            
+            // Initialiser les systèmes avancés
+            game.logger.log("Initialisation des systèmes avancés...");
+            try {
+                // Générateur de monde avancé
+                game.advancedWorldGenerator = new AdvancedWorldGenerator();
+                game.logger.log("✅ Générateur de monde avancé initialisé !");
+                
+                // Système de rendu avancé
+                game.advancedRenderer = new AdvancedRenderer(game.canvas, assets);
+                game.logger.log("✅ Système de rendu avancé initialisé !");
+                
+                // Système de PNJ avancé
+                game.advancedNPCSystem = new AdvancedNPCSystem(game);
+                game.logger.log("✅ Système de PNJ avancé initialisé !");
+                
+                // Rendre accessibles globalement
+                window.advancedWorldGenerator = game.advancedWorldGenerator;
+                window.advancedRenderer = game.advancedRenderer;
+                window.advancedNPCSystem = game.advancedNPCSystem;
+                
+                game.logger.log("✅ Tous les systèmes avancés sont opérationnels !");
+            } catch (error) {
+                console.error("❌ Erreur lors de l'initialisation des systèmes avancés:", error);
+                game.logger.log("⚠️ Systèmes avancés non disponibles - utilisation du mode de base");
+            }
+            
             game.updateToolbar();
             game.logger.log("Jeu prêt !");
         },
@@ -582,6 +622,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         draw(ctx, assets, delta) {
             if (!game.timeSystem || !game.tileMap.length) return;
 
+            // Utiliser le renderer avancé si disponible
+            if (game.advancedRenderer) {
+                try {
+                    game.advancedRenderer.renderWorld(game.tileMap, game.camera, config);
+                    game.advancedRenderer.renderEntities(game.player, game.enemies, game.pnjs, game.collectibles);
+                    game.advancedRenderer.renderEffects(game.particleSystem, game.miningEffect);
+                    game.advancedRenderer.renderUI(game.logger, canvas);
+                    return; // Sortir si le rendu avancé a réussi
+                } catch (error) {
+                    console.warn("⚠️ Erreur du renderer avancé, utilisation du renderer de base:", error);
+                }
+            }
+
+            // Renderer de base (fallback)
             const { tileSize, zoom } = config;
             
             const skyGrad = game.timeSystem.getSkyGradient();

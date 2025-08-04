@@ -1498,6 +1498,7 @@
         import { generateMonster } from './generateurMonstres.js';
         // Import de la classe de base Enemy sous un alias pour éviter les conflits globaux
         import { Enemy as BaseEnemy, Slime } from './enemy.js';
+        import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
         
         // Import des nouveaux systèmes
         import { AnimalManager, Animal } from './animalSystem.js';
@@ -2280,6 +2281,15 @@
             const gameLogic = {
                 async init(assets = {}) {
                     console.log("Initialisation du jeu...");
+                    
+                    // Intégrer les systèmes avancés en premier
+                    try {
+                        integrateAdvancedSystems(game);
+                        console.log("✅ Systèmes avancés intégrés !");
+                    } catch (error) {
+                        console.warn("⚠️ Erreur intégration systèmes avancés:", error);
+                    }
+                    
                     game.assets = assets;
                     
                     // Créer un gestionnaire de son basique
@@ -2290,11 +2300,30 @@
                     
                     game.logger.log("Génération du monde...");
                     try {
-                        generateLevel(game, config);
+                        // Utiliser le générateur avancé si disponible
+                        if (game.advancedWorldGenerator) {
+                            game.logger.log("🌍 Utilisation du générateur de monde avancé...");
+                            const advancedWorld = game.advancedWorldGenerator.generateParadiseToHellWorld(config);
+                            game.tileMap = advancedWorld.tileMap;
+                            game.biomes = advancedWorld.biomes;
+                            game.structures = advancedWorld.structures;
+                            game.worldMetadata = advancedWorld.metadata;
+                            console.log("✅ Monde avancé généré avec succès !");
+                        } else {
+                            // Fallback vers le générateur de base
+                            game.logger.log("🌍 Utilisation du générateur de monde de base...");
+                            generateLevel(game, config);
+                        }
                         console.log("Monde généré avec succès, taille:", game.tileMap?.length, "x", game.tileMap?.[0]?.length);
                     } catch (error) {
                         console.error("Erreur génération monde:", error);
-                        throw error;
+                        // En cas d'erreur avec le générateur avancé, utiliser le générateur de base
+                        if (game.advancedWorldGenerator) {
+                            console.log("⚠️ Fallback vers le générateur de base...");
+                            generateLevel(game, config);
+                        } else {
+                            throw error;
+                        }
                     }
 
                     // Initialiser le joueur avec des statistiques
@@ -2374,11 +2403,26 @@
                     if (!game.spawnPoints) game.spawnPoints = [];
                     console.log("Système de calendrier initialisé");
                     
-                    // Générer des PNJ (désactivé pour l'instant)
-                    // for (let i = 0; i < 5; i++) {
-                    //     const pnj = generatePNJ(game, config);
-                    //     if (pnj) game.pnjs.push(pnj);
-                    // }
+                    // Générer des PNJ avec le système avancé
+                    try {
+                        if (game.advancedNPCSystem) {
+                            game.logger.log("👥 Génération des PNJ avancés...");
+                            game.advancedNPCSystem.spawnInitialNPCs(game.tileMap, config);
+                            game.pnjs = Array.from(game.advancedNPCSystem.npcs.values());
+                            console.log(`✅ ${game.pnjs.length} PNJ avancés générés !`);
+                        } else {
+                            // Fallback vers la génération de base
+                            game.logger.log("👥 Génération des PNJ de base...");
+                            for (let i = 0; i < 5; i++) {
+                                const pnj = generatePNJ(game, config);
+                                if (pnj) game.pnjs.push(pnj);
+                            }
+                            console.log(`✅ ${game.pnjs.length} PNJ de base générés !`);
+                        }
+                    } catch (error) {
+                        console.warn("⚠️ Erreur génération PNJ:", error);
+                        game.pnjs = []; // S'assurer que la liste existe
+                    }
                     
                     // Initialiser la minimap
                     try {
