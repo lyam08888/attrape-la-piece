@@ -38,3 +38,59 @@ body.game-page {
     font-weight: bold;
     cursor: pointer;
 }
+
+/* Styles pour le menu des quêtes amélioré */
+.quest-item {
+    border: 1px solid var(--border-color);
+    margin: 6px 0;
+    padding: 6px;
+    background: var(--background-dark);
+}
+
+.quest-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.quest-details {
+    display: none;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 4px;
+    font-size: 14px;
+}
+
+.quest-item.open .quest-details {
+    display: block;
+}
+
+.quest-objective {
+    margin-bottom: 4px;
+}
+
+.quest-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #333;
+    margin-top: 2px;
+    position: relative;
+}
+
+.quest-progress-bar span {
+    display: block;
+    height: 100%;
+    background: #27ae60;
+}
+
+.quest-rewards {
+    margin: 4px 0;
+    color: var(--primary-color);
+}
+
+.quest-actions button {
+    margin-right: 4px;
+    cursor: pointer;
+}
