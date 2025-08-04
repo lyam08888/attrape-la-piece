@@ -48,6 +48,9 @@ export class GameEngine {
         };
         this.mouse = { x: 0, y: 0, left: false, right: false };
         this.gameLogic = {};
+        
+        // Interface RPG
+        this.rpgInterface = null;
     }
 
     async loadAssets() {

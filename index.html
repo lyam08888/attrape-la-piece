@@ -653,32 +653,8 @@
         <canvas id="gameCanvas" tabindex="0"></canvas>
         <!-- L'interface RPG sera injectée ici par le gestionnaire -->
     </div>
-        <div id="hud">
-            <!-- Panneau du personnage généré dynamiquement -->
 
-            <!-- Barre d'outils -->
-            <div id="toolbar"></div>
-            
-            <!-- Informations sur l'outil sélectionné -->
-            <div id="toolInfo">Sélectionnez un outil</div>
-
-            <!-- Les panneaux Environnement et Catastrophes sont désormais générés dynamiquement -->
-
-            <!-- Raccourcis de menus -->
-            <div id="menuShortcuts" class="draggable">
-                <h3>RACCOURCIS</h3>
-                <p data-action="open-inventory"><span class="key-hint">I</span> Inventaire</p>
-                <p data-action="open-character"><span class="key-hint">P</span> Personnage</p>
-                <p data-action="open-quests"><span class="key-hint">Q</span> Quêtes</p>
-            </div>
-            <!-- Minimap -->
-            <div id="minimap" class="draggable">
-                <div class="resize-handle"></div>
-            </div>
-        </div>
-
-        <!-- ÉCRAN TITRE / MENU PRINCIPAL -->
-        <div id="titleScreen" class="active">
+    <script>
             <div id="menu-pane">
                 <h1 id="gameTitle">Super Pixel Adventure 2</h1>
                 <div id="main-menu-view" class="menu-view active">
