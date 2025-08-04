@@ -141,6 +141,14 @@ export function updateMining(game, keys, mouse, delta) {
     const toolName = player.tools[player.selectedToolIndex] || 'hand';
     const breakTime = BLOCK_BREAK_TIME[currentType] || 1;
 
+    if (!isFinite(breakTime)) {
+        player.miningProgress = 0;
+        player.miningTarget = null;
+        game.miningEffect = null;
+        if (game.logger) game.logger.log('Ce bloc est indestructible.');
+        return;
+    }
+
     // Vérifier si l'outil actuel peut miner ce type de bloc
     const toolEfficiency = TOOL_EFFICIENCY[toolName]?.[currentType];
     
@@ -150,13 +158,11 @@ export function updateMining(game, keys, mouse, delta) {
         TILE.FLOWER_RED, TILE.FLOWER_YELLOW, TILE.GLOW_MUSHROOM, TILE.CLOUD
     ];
     
-    // Si l'outil n'est pas adapté et qu'on ne peut pas miner à la main, arrêter
     if (toolName !== 'hand' && toolEfficiency === undefined && !handMineable.includes(currentType)) {
-        if (toolName !== 'pickaxe') {
-            player.miningProgress = 0;
-            game.miningEffect = null;
-            return; // Outil inadapté : pas de progression de minage
-        }
+        player.miningProgress = 0;
+        game.miningEffect = null;
+        if (game.logger) game.logger.log(`Impossible de miner ce bloc avec ${toolName}.`);
+        if (toolName !== 'pickaxe') return;
         // La pioche peut miner les blocs inconnus avec une efficacité par défaut
     }
 
@@ -166,21 +172,14 @@ export function updateMining(game, keys, mouse, delta) {
     if (toolName !== 'hand') {
         const durability = player.durability?.[toolName] ?? Infinity;
         if (durability <= 0) {
-            // Outil cassé, vérifier si on peut miner à la main
             if (!handMineable.includes(currentType)) {
-                // Ne peut pas miner ce bloc avec un outil cassé
                 player.miningProgress = 0;
                 game.miningEffect = null;
-                if (game.logger && Math.random() < 0.02) { // Message occasionnel
-                    game.logger.log(`${toolName} est cassé ! Impossible de miner ce bloc.`);
-                }
+                if (game.logger) game.logger.log(`${toolName} est cassé ! Impossible de miner ce bloc.`);
                 return;
             }
-            // Outil cassé mais bloc minable à la main
-            efficiency = 0.3; // Encore plus lent qu'à la main normale
-            if (game.logger && Math.random() < 0.01) { // Message occasionnel
-                game.logger.log(`${toolName} est cassé ! Minage très lent.`);
-            }
+            efficiency = 0.3;
+            if (game.logger) game.logger.log(`${toolName} est cassé ! Minage très lent.`);
         }
     }
     
