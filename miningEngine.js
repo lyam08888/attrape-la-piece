@@ -201,7 +201,11 @@ export function updateMining(game, keys, mouse, delta) {
     const miningStat = player.stats?.miningSpeed ? player.stats.miningSpeed / 10 : 1;
     const seasonBonus = game.timeSystem?.getSeasonalBonus ? (game.timeSystem.getSeasonalBonus().mining || 1) : 1;
     const timeToBreak = breakTime / (efficiency * miningStat * seasonBonus);
-    player.miningProgress += delta / timeToBreak;
+    // `delta` is provided in milliseconds. Convert to seconds so that the
+    // mining progress reflects the intended `breakTime` values which are
+    // expressed in seconds.
+    const deltaSeconds = delta / 1000;
+    player.miningProgress += deltaSeconds / timeToBreak;
     game.miningEffect = { x: target.x, y: target.y, progress: player.miningProgress };
 
     // Créer des particules de minage selon le type de bloc
