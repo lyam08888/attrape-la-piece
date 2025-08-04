@@ -544,7 +544,7 @@ function generateColumns(game, config, startX, width) {
         if (SeededRandom.random() < 0.005) {
             for (let y = 0; y < worldHeightInTiles; y++) {
                 if (game.tileMap[y]?.[x] > TILE.AIR && game.tileMap[y - 1]?.[x] === TILE.AIR) {
-                    game.pnjs.push(new PNJ(x * tileSize, (y - 2) * tileSize, config, generatePNJ()));
+                    game.pnjs.push(new PNJ(x * tileSize, (y - 2) * tileSize, game.config, generatePNJ()));
                     break;
                 }
             }
