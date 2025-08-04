@@ -552,55 +552,72 @@ export function updateGravity(game) {
 
 // Fonction pour intégrer le système de minage avec l'interface RPG
 export function integrateMiningWithRPG(game) {
-    if (!game.rpgInterface) return;
+    if (!game.rpgInterface) {
+        console.warn("RPG Interface non disponible pour l'intégration du minage");
+        return;
+    }
     
-    // Surcharger la fonction de destruction de bloc pour les notifications RPG
+    console.log("🔧 Intégration du système de minage avec l'interface RPG...");
+    
+    // FIXED: Create a wrapper function that enhances the existing destroyBlock
     const originalDestroyBlock = destroyBlock;
     
-    window.destroyBlockRPG = function(game, x, y, type) {
-        const result = originalDestroyBlock(game, x, y, type);
-        
-        // Notifications RPG pour les blocs spéciaux
-        if (game.rpgInterface) {
-            const specialBlocks = {
-                [TILE.DIVINE_STONE]: { name: 'Pierre Divine', rarity: 'legendary' },
-                [TILE.CELESTIAL_CRYSTAL]: { name: 'Cristal Céleste', rarity: 'epic' },
-                [TILE.DEMON_CRYSTAL]: { name: 'Cristal Démoniaque', rarity: 'epic' },
-                [TILE.VOID_CRYSTAL]: { name: 'Cristal du Vide', rarity: 'legendary' },
-                [TILE.TIME_CRYSTAL]: { name: 'Cristal Temporel', rarity: 'mythic' },
-                [TILE.SPACE_CRYSTAL]: { name: 'Cristal Spatial', rarity: 'mythic' },
-                [TILE.CHAOS_CRYSTAL]: { name: 'Cristal du Chaos', rarity: 'mythic' },
-                [TILE.ETERNAL_DARKNESS]: { name: 'Ténèbres Éternelles', rarity: 'mythic' }
-            };
+    // Override the destroyBlock function to add RPG features
+    function enhancedDestroyBlock(game, x, y, type) {
+        try {
+            // Call the original function
+            const result = originalDestroyBlock(game, x, y, type);
             
-            if (specialBlocks[type]) {
-                const block = specialBlocks[type];
-                let notificationType = 'success';
+            // Add RPG notifications for special blocks
+            if (game.rpgInterface) {
+                const specialBlocks = {
+                    [TILE.DIVINE_STONE]: { name: 'Pierre Divine', rarity: 'legendary' },
+                    [TILE.CELESTIAL_CRYSTAL]: { name: 'Cristal Céleste', rarity: 'epic' },
+                    [TILE.DEMON_CRYSTAL]: { name: 'Cristal Démoniaque', rarity: 'epic' },
+                    [TILE.VOID_CRYSTAL]: { name: 'Cristal du Vide', rarity: 'legendary' },
+                    [TILE.TIME_CRYSTAL]: { name: 'Cristal Temporel', rarity: 'mythic' },
+                    [TILE.SPACE_CRYSTAL]: { name: 'Cristal Spatial', rarity: 'mythic' },
+                    [TILE.CHAOS_CRYSTAL]: { name: 'Cristal du Chaos', rarity: 'mythic' },
+                    [TILE.ETERNAL_DARKNESS]: { name: 'Ténèbres Éternelles', rarity: 'mythic' }
+                };
                 
-                switch (block.rarity) {
-                    case 'epic': notificationType = 'warning'; break;
-                    case 'legendary': notificationType = 'info'; break;
-                    case 'mythic': notificationType = 'error'; break;
+                if (specialBlocks[type]) {
+                    const block = specialBlocks[type];
+                    let notificationType = 'success';
+                    
+                    switch (block.rarity) {
+                        case 'epic': notificationType = 'warning'; break;
+                        case 'legendary': notificationType = 'info'; break;
+                        case 'mythic': notificationType = 'error'; break;
+                    }
+                    
+                    game.rpgInterface.showNotification(
+                        `✨ ${block.name} découvert !`,
+                        notificationType,
+                        3000
+                    );
                 }
-                
-                game.rpgInterface.showNotification(
-                    `✨ ${block.name} découvert !`,
-                    notificationType,
-                    3000
-                );
             }
-        }
-        
-        // Gain d'expérience pour le minage
-        if (game.player && game.player.gainExperience) {
-            const expGain = getMiningExperience(type);
-            if (expGain > 0) {
-                game.player.gainExperience(expGain);
+            
+            // Add mining experience
+            if (game.player && game.player.gainExperience) {
+                const expGain = getMiningExperience(type);
+                if (expGain > 0) {
+                    game.player.gainExperience(expGain);
+                }
             }
+            
+            return result;
+        } catch (error) {
+            console.error("Erreur dans l'intégration RPG du minage:", error);
+            return originalDestroyBlock(game, x, y, type);
         }
-        
-        return result;
-    };
+    }
+    
+    // Replace the global destroyBlock function
+    destroyBlock = enhancedDestroyBlock;
+    
+    console.log("✅ Système de minage intégré avec l'interface RPG !");
 }
 
 // Fonction pour calculer l'expérience gagnée en minant
