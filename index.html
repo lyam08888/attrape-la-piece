@@ -1149,12 +1149,15 @@
                 }
             });
 
+            const normalizeKey = k => (k.length === 1 ? k.toLowerCase() : k);
+
             document.addEventListener('keydown', (e) => {
                 if (!isGameRunning) return;
 
                 const binds = window.game?.config.keyBindings || {};
+                const key = normalizeKey(e.key);
 
-                if (e.code === binds.pause) {
+                if (key === binds.pause) {
                     const activeSubMenu = document.querySelector('.overlay.active');
                     if (activeSubMenu && activeSubMenu !== ui.menus.pause) {
                         if (activeSubMenu === ui.menus.options) {
@@ -1165,7 +1168,7 @@
                     } else {
                         togglePauseMenu();
                     }
-                } else if (e.code === binds.inventory) {
+                } else if (key === binds.inventory) {
                     e.preventDefault();
                     const isInventoryOpen = ui.menus.inventory.classList.contains('active');
                     if (isInventoryOpen) {
@@ -1173,7 +1176,7 @@
                     } else {
                         openMenu(ui.menus.inventory);
                     }
-                } else if (e.code === binds.character) {
+                } else if (key === binds.character) {
                     e.preventDefault();
                     const isCharacterOpen = ui.menus.character.classList.contains('active');
                     if (isCharacterOpen) {
@@ -1181,7 +1184,7 @@
                     } else {
                         openMenu(ui.menus.character);
                     }
-                } else if (e.code === binds.quests) {
+                } else if (key === binds.quests) {
                     e.preventDefault();
                     const isQuestOpen = ui.menus.quests.classList.contains('active');
                     if (isQuestOpen) {
@@ -1189,7 +1192,7 @@
                     } else {
                         openMenu(ui.menus.quests);
                     }
-                } else if (e.code === binds.options) {
+                } else if (key === binds.options) {
                     e.preventDefault();
                     if (ui.menus.options.classList.contains('active')) {
                         window.closeOptionsMenu?.();
@@ -1508,7 +1511,7 @@
                 return await resp.json();
             } catch (e) {
                 console.warn(e);
-                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":"Space","down":"ArrowDown","action":"KeyE","run":"ShiftLeft","fly":"KeyV","repair":"KeyR","inventory":"KeyI","character":"KeyP","quests":"KeyQ","pause":"Escape","options":"KeyO","tool1":"Digit1","tool2":"Digit2","tool3":"Digit3","tool4":"Digit4","tool5":"Digit5","tool6":"Digit6"}};
+                return {"zoom":3,"renderDistance":8,"showParticles":true,"weatherEffects":true,"dynamicLighting":true,"soundVolume":0.8,"mobileMode":false,"keyBindings":{"left":"ArrowLeft","right":"ArrowRight","jump":" ","down":"ArrowDown","action":"e","run":"Shift","fly":"v","repair":"r","inventory":"i","character":"p","quests":"q","pause":"Escape","options":"o","tool1":"1","tool2":"2","tool3":"3","tool4":"4","tool5":"5","tool6":"6"}};
             }
         }
 
@@ -1549,6 +1552,7 @@
             // Gestion des entrées
             const keys = {};
             const mouse = { x: 0, y: 0, left: false, right: false };
+            const normalizeKey = k => (k.length === 1 ? k.toLowerCase() : k);
 
             const getKeys = () => {
                 const binds = config.keyBindings || {};
@@ -1570,11 +1574,11 @@
             // Événements clavier
             document.addEventListener('keydown', (e) => {
                 if (document.activeElement === chatSystem.input) return;
-                keys[e.key] = true;
-                keys[e.code] = true;
+                const key = normalizeKey(e.key);
+                keys[key] = true;
 
                 if (window.game && window.game.disasterManager) {
-                    switch (e.key) {
+                    switch (key) {
                         case 'F1':
                             e.preventDefault();
                             window.game.disasterManager.startDisaster('thunderstorm');
@@ -1593,8 +1597,8 @@
 
             document.addEventListener('keyup', (e) => {
                 if (document.activeElement === chatSystem.input) return;
-                keys[e.key] = false;
-                keys[e.code] = false;
+                const key = normalizeKey(e.key);
+                keys[key] = false;
             });
 
             // Événements souris
@@ -1665,13 +1669,14 @@
                     const label = document.createElement('span');
                     label.textContent = action;
                     const btn = document.createElement('button');
-                    btn.textContent = key;
+                    btn.textContent = key === ' ' ? 'Space' : key;
                     btn.addEventListener('click', () => {
                         btn.textContent = '...';
                         const handler = (e) => {
                             e.preventDefault();
-                            bindings[action] = e.code;
-                            btn.textContent = e.code;
+                            const keyPressed = normalizeKey(e.key);
+                            bindings[action] = keyPressed;
+                            btn.textContent = keyPressed === ' ' ? 'Space' : keyPressed;
                             saveOptions({
                                 zoom: config.zoom,
                                 renderDistance: config.renderDistance,

@@ -13,24 +13,24 @@ export class GameEngine {
         const defaultBindings = {
             left: 'ArrowLeft',
             right: 'ArrowRight',
-            jump: 'Space',
+            jump: ' ',
             down: 'ArrowDown',
             up: 'ArrowUp',
-            action: 'KeyE',
-            run: 'ShiftLeft',
-            fly: 'KeyV',
-            repair: 'KeyR',
-            inventory: 'KeyI',
-            character: 'KeyP',
-            quests: 'KeyQ',
+            action: 'e',
+            run: 'Shift',
+            fly: 'v',
+            repair: 'r',
+            inventory: 'i',
+            character: 'p',
+            quests: 'q',
             pause: 'Escape',
-            options: 'KeyO',
-            tool1: 'Digit1',
-            tool2: 'Digit2',
-            tool3: 'Digit3',
-            tool4: 'Digit4',
-            tool5: 'Digit5',
-            tool6: 'Digit6',
+            options: 'o',
+            tool1: '1',
+            tool2: '2',
+            tool3: '3',
+            tool4: '4',
+            tool5: '5',
+            tool6: '6',
         };
 
         // Merge provided bindings with defaults in a new config object to
@@ -131,23 +131,25 @@ export class GameEngine {
     }
 
     setupInput() {
+        const normalizeKey = k => (k.length === 1 ? k.toLowerCase() : k);
         document.addEventListener('keydown', e => {
             const binds = this.config.keyBindings || {};
-            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && ![binds.pause, 'F3'].includes(e.code)) return;
-            if (e.code === binds.left) this.keys.left = true;
-            if (e.code === binds.right) this.keys.right = true;
-            if (e.code === binds.action) this.keys.action = true;
-            if (e.code === binds.up) this.keys.up = true;
-            if (e.code === binds.jump) {
+            const key = normalizeKey(e.key);
+            if (this.gameLogic.isPaused && this.gameLogic.isPaused() && ![binds.pause, 'F3'].includes(key)) return;
+            if (key === binds.left) this.keys.left = true;
+            if (key === binds.right) this.keys.right = true;
+            if (key === binds.action) this.keys.action = true;
+            if (key === binds.up) this.keys.up = true;
+            if (key === binds.jump) {
                 this.keys.jump = true;
                 this.keys.up = true;
             }
-            if (e.code === binds.down) this.keys.down = true;
-            if (e.code === binds.run) this.keys.run = true;
-            if (e.code === binds.repair) this.keys.repair = true;
-            if (e.code === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
+            if (key === binds.down) this.keys.down = true;
+            if (key === binds.run) this.keys.run = true;
+            if (key === binds.repair) this.keys.repair = true;
+            if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
             for (let i = 1; i <= 6; i++) {
-                if (e.code === binds[`tool${i}`] && this.gameLogic.selectTool) {
+                if (key === binds[`tool${i}`] && this.gameLogic.selectTool) {
                     this.gameLogic.selectTool(i - 1);
                 }
             }
@@ -155,17 +157,18 @@ export class GameEngine {
         });
         document.addEventListener('keyup', e => {
             const binds = this.config.keyBindings || {};
-            if (e.code === binds.left) this.keys.left = false;
-            if (e.code === binds.right) this.keys.right = false;
-            if (e.code === binds.action) this.keys.action = false;
-            if (e.code === binds.up) this.keys.up = false;
-            if (e.code === binds.jump) {
+            const key = normalizeKey(e.key);
+            if (key === binds.left) this.keys.left = false;
+            if (key === binds.right) this.keys.right = false;
+            if (key === binds.action) this.keys.action = false;
+            if (key === binds.up) this.keys.up = false;
+            if (key === binds.jump) {
                 this.keys.jump = false;
                 this.keys.up = false;
             }
-            if (e.code === binds.down) this.keys.down = false;
-            if (e.code === binds.run) this.keys.run = false;
-            if (e.code === binds.repair) this.keys.repair = false;
+            if (key === binds.down) this.keys.down = false;
+            if (key === binds.run) this.keys.run = false;
+            if (key === binds.repair) this.keys.repair = false;
         });
         this.canvas.addEventListener('mousemove', e => {
             const rect = this.canvas.getBoundingClientRect();
