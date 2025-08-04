@@ -2676,7 +2676,14 @@
                                 }
                             }
                         }
-                    
+                        // Dessiner un contour autour du bloc ciblé
+                        if (game.player && game.player.miningTarget) {
+                            const t = game.player.miningTarget;
+                            ctx.strokeStyle = '#ffff00';
+                            ctx.lineWidth = 2 / zoom;
+                            ctx.strokeRect(t.x * tileSize, t.y * tileSize, tileSize, tileSize);
+                        }
+
                         // Mettre à jour et dessiner les collectibles
                         if (game.collectibles) {
                             for (let i = game.collectibles.length - 1; i >= 0; i--) {
