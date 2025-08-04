@@ -592,22 +592,25 @@ function addComplexWorldUI(game, worldIntegration) {
     // Panneau d'informations du monde complexe
     const worldInfoPanel = document.createElement('div');
     worldInfoPanel.id = 'worldInfoPanel';
-    worldInfoPanel.style.cssText = `
-        position: absolute;
-        top: 200px;
-        right: 20px;
-        width: 200px;
-        background: rgba(0,0,0,0.8);
-        border: 2px solid #666;
-        border-radius: 8px;
-        padding: 10px;
-        color: white;
-        font-size: 12px;
-        font-family: 'VT323', monospace;
+    worldInfoPanel.classList.add('draggable');
+    worldInfoPanel.innerHTML = `
+        <div class="panel-header">
+            <div class="panel-title">MONDE COMPLEXE</div>
+            <div class="panel-controls">
+                <div class="panel-btn minimize-btn">−</div>
+            </div>
+        </div>
+        <div class="panel-content"></div>
+        <div class="resize-handle"></div>
     `;
-    
+
     hudElement.appendChild(worldInfoPanel);
-    
+
+    // Activer les fonctionnalités de module
+    window.makeDraggable?.(worldInfoPanel);
+    window.makeResizable?.(worldInfoPanel);
+    window.setupMinimize?.(worldInfoPanel);
+
     // Mettre à jour le panneau périodiquement
     setInterval(() => {
         updateWorldInfoPanel(game, worldIntegration, worldInfoPanel);
@@ -616,14 +619,15 @@ function addComplexWorldUI(game, worldIntegration) {
 
 function updateWorldInfoPanel(game, worldIntegration, panel) {
     if (!game.player || !game.biomeSystem) return;
-    
+
+    const content = panel.querySelector('.panel-content') || panel;
+
     const currentBiome = game.biomeSystem.getBiomeAt(game, game.player.x, game.player.y);
     const biomeData = game.biomeSystem.getBiomeData(currentBiome);
     const stats = worldIntegration.getWorldStats();
     const progress = game.explorationSystem?.getExplorationProgress();
-    
-    panel.innerHTML = `
-        <h3>🌍 Monde Complexe</h3>
+
+    content.innerHTML = `
         <div><strong>Biome:</strong> ${biomeData?.name || 'Inconnu'}</div>
         <div><strong>Température:</strong> ${biomeData?.temperature || 0}°C</div>
         <div><strong>Humidité:</strong> ${Math.round((biomeData?.humidity || 0) * 100)}%</div>
