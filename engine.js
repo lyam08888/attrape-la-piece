@@ -2,9 +2,10 @@
 import { TILE } from './world.js';
 
 export class GameEngine {
-    constructor(canvas, config = {}) {
+    constructor(canvas, config = {}, logger) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+        this.logger = logger;
         this.ctx.imageSmoothingEnabled = false;
 
         // Provide default key bindings when none are supplied. This prevents
@@ -55,7 +56,7 @@ export class GameEngine {
     }
 
     async loadAssets() {
-        console.log("Chargement des assets...");
+        this.logger.log("Démarrage du chargement des assets...", 'debug');
         const promises = [];
 
         // Assurer la présence d'une structure d'assets même si la config
@@ -99,6 +100,9 @@ export class GameEngine {
             }
         }
 
+        let loadedCount = 0;
+        const totalAssets = Array.from(allAssetKeys).length;
+
         for (const key of allAssetKeys) {
             let path = configAssets[key];
 
@@ -115,23 +119,18 @@ export class GameEngine {
                 img.src = path;
                 img.onload = () => {
                     this.assets[key] = img;
+                    loadedCount++;
+                    this.logger.log(`Asset chargé: ${key}`, 'asset');
                     resolve();
                 };
                 img.onerror = () => {
-                    console.warn(`Impossible de charger l'asset: ${path}. Une image placeholder sera utilisée.`);
-                    const placeholder = document.createElement('canvas');
-                    placeholder.width = this.config.tileSize || 16;
-                    placeholder.height = this.config.tileSize || 16;
-                    const pCtx = placeholder.getContext('2d');
-                    pCtx.fillStyle = 'magenta';
-                    pCtx.fillRect(0, 0, placeholder.width, placeholder.height);
-                    this.assets[key] = placeholder;
+                    this.logger.warn(`Échec du chargement de l'asset: ${path}`);
                     resolve();
                 };
             }));
         }
         await Promise.allSettled(promises);
-        console.log("Tous les assets ont été traités.", Object.keys(this.assets).length, "assets chargés.");
+        this.logger.success(`${loadedCount}/${totalAssets} assets chargés avec succès.`);
     }
 
     setupInput() {

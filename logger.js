@@ -1,69 +1,73 @@
-// logger.js - Système d'affichage de messages en jeu
-
-class LogMessage {
-    constructor(text, type = 'info') {
-        this.text = text;
-        this.type = type; // 'info', 'warning', 'error'
-        this.life = 300; // Durée de vie en frames (5 secondes à 60fps)
-        this.maxLife = this.life;
-    }
-
-    update() {
-        this.life--;
-    }
-
-    draw(ctx, x, y, index) {
-        const opacity = Math.min(1, this.life / 60); // Fondu en sortie
-        let color = '#FFFFFF'; // Blanc pour info
-        if (this.type === 'error') color = '#e74c3c'; // Rouge pour erreur
-        if (this.type === 'warning') color = '#f1c40f'; // Jaune pour avertissement
-
-        // Convertit la couleur hexadécimale en RGBA avec l'opacité calculée
-        const r = parseInt(color.slice(1, 3), 16);
-        const g = parseInt(color.slice(3, 5), 16);
-        const b = parseInt(color.slice(5, 7), 16);
-        
-        ctx.font = '12px "VT323"';
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        ctx.textAlign = 'right';
-        ctx.fillText(this.text, x, y - (index * 20));
-    }
-}
+// logger.js - Système de journalisation amélioré pour le débogage en jeu
 
 export class Logger {
-    constructor(chatSystem = null) {
+    constructor() {
         this.messages = [];
-        this.chatSystem = chatSystem;
+        this.maxMessages = 10; // Nombre maximum de messages à afficher
+        this.isVisible = false; // Le logger n'est visible que si activé
     }
 
-    log(text) {
-        console.log(text);
-        this.messages.unshift(new LogMessage(text, 'info'));
-        if (this.messages.length > 5) this.messages.pop();
-        this.chatSystem?.addLog(text, 'info');
+    log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const fullMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+        
+        console.log(fullMessage); // Garde la journalisation console
+
+        // Ajoute le message à l'affichage en jeu
+        this.messages.unshift({ text: fullMessage, type, life: 300 }); // Dure 5 secondes (300 frames)
+        
+        if (this.messages.length > this.maxMessages) {
+            this.messages.pop();
+        }
+    }
+    
+    error(message) {
+        this.log(message, 'error');
     }
 
-    error(text) {
-        console.error(text); // On continue de logger dans la console
-        this.messages.unshift(new LogMessage(text, 'error'));
-        if (this.messages.length > 5) this.messages.pop();
-        this.chatSystem?.addLog(text, 'error');
+    warn(message) {
+        this.log(message, 'warn');
+    }
+
+    success(message) {
+        this.log(message, 'success');
+    }
+
+    toggleVisibility() {
+        this.isVisible = !this.isVisible;
+        this.log(`Logger in-game ${this.isVisible ? 'activé' : 'désactivé'}.`, 'debug');
     }
 
     update() {
+        // Décrémente la durée de vie des messages
         for (let i = this.messages.length - 1; i >= 0; i--) {
-            this.messages[i].update();
+            this.messages[i].life--;
             if (this.messages[i].life <= 0) {
                 this.messages.splice(i, 1);
             }
         }
     }
 
-    draw(ctx, canvas) {
-        const x = canvas.width - 20;
-        const y = canvas.height - 20;
-        this.messages.forEach((msg, index) => {
-            msg.draw(ctx, x, y, index);
+    draw(ctx) {
+        if (!this.isVisible) return;
+
+        ctx.save();
+        ctx.font = '12px "VT323"';
+        ctx.textAlign = 'left';
+        
+        let y = 30;
+        this.messages.forEach(msg => {
+            const alpha = Math.min(1, msg.life / 60); // Fondu sortant
+            switch(msg.type) {
+                case 'error': ctx.fillStyle = `rgba(255, 100, 100, ${alpha})`; break;
+                case 'warn': ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`; break;
+                case 'success': ctx.fillStyle = `rgba(100, 255, 100, ${alpha})`; break;
+                default: ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            }
+            ctx.fillText(msg.text, 10, y);
+            y += 15;
         });
+
+        ctx.restore();
     }
 }

@@ -151,6 +151,7 @@ export class Player {
         if (!this.miningTarget || this.miningTarget.x !== tileX || this.miningTarget.y !== tileY) {
             this.miningTarget = { x: tileX, y: tileY, type: blockType };
             this.miningProgress = 0;
+            if(game.logger) game.logger.log(`Début du minage du bloc ${blockType} à (${tileX},${tileY})`, 'action');
         }
         
         if (game.miningEngine && typeof game.miningEngine.updateMining === 'function') {
@@ -173,6 +174,7 @@ export class Player {
             if (game.tileMap[tileY]?.[tileX] === TILE.AIR) {
                 game.tileMap[tileY][tileX] = blockToPlace;
                 this.inventory[blockToPlace]--;
+                if(game.logger) game.logger.log(`Bloc ${blockToPlace} placé à (${tileX},${tileY})`, 'action');
             }
         }
     }
@@ -223,7 +225,7 @@ export class Player {
     }
 
     die() {
-        console.log("Player has died.");
+        if(window.game.logger) window.game.logger.error("Le joueur est mort !");
         // In a real game, you would trigger a respawn sequence here.
         // For now, we'll just reset health.
         this.health = this.maxHealth;
