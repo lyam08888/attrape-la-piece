@@ -14,6 +14,7 @@ export class PlayerStats {
         this.speed = 10;
         this.mining = 10;
         this.luck = 5;
+        this.skillPoints = 0;
         
         // Effets temporaires
         this.effects = new Map();
@@ -53,6 +54,7 @@ export class PlayerStats {
             this.speed += 1;
             this.mining += 1;
             this.luck += 1;
+            this.skillPoints += 1;
         }
         
         if (levelsGained > 0) {
@@ -210,13 +212,37 @@ export class PlayerStats {
             distanceWalkedTotal: this.distanceWalkedTotal,
             itemsCraftedTotal: this.itemsCraftedTotal,
             deathCount: this.deathCount,
-            playTime: this.playTime
+            playTime: this.playTime,
+            skillPoints: this.skillPoints
         };
     }
 
     deserialize(data) {
         Object.assign(this, data);
         this.updateDerivedStats();
+    }
+
+    allocatePoint(stat) {
+        if (this.skillPoints <= 0) return false;
+        const increments = {
+            strength: 1,
+            defense: 1,
+            speed: 1,
+            mining: 1,
+            luck: 1,
+            maxHealth: 5
+        };
+        const inc = increments[stat];
+        if (!inc) return false;
+        if (stat === 'maxHealth') {
+            this.maxHealth += inc;
+            this.health = this.maxHealth;
+        } else {
+            this[stat] += inc;
+        }
+        this.skillPoints -= 1;
+        this.updateDerivedStats();
+        return true;
     }
 }
 
@@ -486,7 +512,8 @@ export function updatePlayerStatsUI(stats) {
         playerStrength: document.getElementById('playerStrength'),
         playerSpeed: document.getElementById('playerSpeed'),
         healthFill: document.getElementById('healthFill'),
-        healthText: document.getElementById('healthText')
+        healthText: document.getElementById('healthText'),
+        playerSkillPoints: document.getElementById('skillPoints')
     };
 
     if (elements.playerLevel) elements.playerLevel.textContent = stats.level;
@@ -498,6 +525,7 @@ export function updatePlayerStatsUI(stats) {
     if (elements.playerHealth) elements.playerHealth.textContent = `${stats.health}/${stats.maxHealth}`;
     if (elements.playerStrength) elements.playerStrength.textContent = stats.strength;
     if (elements.playerSpeed) elements.playerSpeed.textContent = stats.speed;
+    if (elements.playerSkillPoints) elements.playerSkillPoints.textContent = stats.skillPoints;
     
     if (elements.healthFill) {
         const healthPercent = (stats.health / stats.maxHealth) * 100;
