@@ -650,54 +650,7 @@
     <div id="gameWrapper">
         <canvas id="gameCanvas" tabindex="0"></canvas>
         <div id="hud">
-            <!-- Panneau du personnage -->
-            <div id="characterPanel" class="draggable">
-                <div class="panel-header">
-                    <div class="panel-title">PERSONNAGE</div>
-                    <div class="panel-controls">
-                        <div class="panel-btn minimize-btn">−</div>
-                    </div>
-                </div>
-                <div class="panel-content">
-                    <div class="character-stat">
-                        <span class="stat-label">Niveau:</span>
-                        <span class="stat-value" id="playerLevel">1</span>
-                    </div>
-                    <div class="character-stat">
-                        <span class="stat-label">XP:</span>
-                        <span class="stat-value" id="playerXP">0/100</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill xp-fill" id="playerXPFill" style="width: 0%"></div>
-                        <span class="bar-text" id="playerXPText">0/100</span>
-                    </div>
-                    <div class="character-stat">
-                        <span class="stat-label">Santé:</span>
-                        <span class="stat-value" id="playerHealth">100/100</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill health-fill" id="playerHealthFill" style="width: 100%"></div>
-                        <span class="bar-text" id="playerHealthText">100/100</span>
-                    </div>
-                    <div class="character-stat">
-                        <span class="stat-label">Faim:</span>
-                        <span class="stat-value" id="playerHunger">100/100</span>
-                    </div>
-                    <div class="bar-container">
-                        <div class="bar-fill hunger-fill" id="playerHungerFill" style="width: 100%"></div>
-                        <span class="bar-text" id="playerHungerText">100/100</span>
-                    </div>
-                    <div class="character-stat">
-                        <span class="stat-label">Force:</span>
-                        <span class="stat-value" id="playerStrength">10</span>
-                    </div>
-                    <div class="character-stat">
-                        <span class="stat-label">Vitesse:</span>
-                        <span class="stat-value" id="playerSpeed">10</span>
-                    </div>
-                </div>
-                <div class="resize-handle"></div>
-            </div>
+            <!-- Panneau du personnage généré dynamiquement -->
 
             <!-- Barre d'outils -->
             <div id="toolbar"></div>
@@ -1282,7 +1235,7 @@
         import { FoodSystem } from './foodSystem.js';
         import { ComplexWorldSystem } from './worldComplexSystem.js';
         import { integrateComplexWorld } from './gameIntegration.js';
-        import { createEnvironmentPanel, createDisasterMenu } from './uiPanels.js';
+        import { createEnvironmentPanel, createDisasterMenu, createCharacterPanel } from './uiPanels.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -1579,6 +1532,7 @@
 
             createEnvironmentPanel(hud);
             createDisasterMenu(hud);
+            createCharacterPanel(hud);
 
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
