@@ -736,7 +736,6 @@
                 <p data-action="open-character"><span class="key-hint">P</span> Personnage</p>
                 <p data-action="open-quests"><span class="key-hint">Q</span> Quêtes</p>
             </div>
-
             <!-- Minimap -->
             <div id="minimap" class="draggable">
                 <div class="resize-handle"></div>
@@ -1275,6 +1274,7 @@
         import { FoodSystem } from './foodSystem.js';
         import { ComplexWorldSystem } from './worldComplexSystem.js';
         import { integrateComplexWorld } from './gameIntegration.js';
+        import { createEnvironmentPanel, createDisasterMenu } from './uiPanels.js';
         
         // Fonction pour générer le loot des coffres
         function generateChestLoot(chestType) {
@@ -1566,6 +1566,9 @@
             const canvas = document.getElementById('gameCanvas');
             const loadingScreen = document.getElementById('loading-overlay');
             const hud = document.getElementById('hud');
+
+            createEnvironmentPanel(hud);
+            createDisasterMenu(hud);
 
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
