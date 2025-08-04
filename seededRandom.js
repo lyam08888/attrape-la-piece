@@ -9,8 +9,19 @@ export const SeededRandom = {
 
     // Réinitialise la graine. Appelé au début de la génération du monde.
     setSeed(newSeed) {
-        this.seed = newSeed;
-        this.originalSeed = newSeed;
+        let seedValue = newSeed;
+        if (typeof seedValue === 'string') {
+            if (/^[0-9]+$/.test(seedValue)) {
+                seedValue = Number(seedValue);
+            } else {
+                seedValue = parseInt(seedValue, 16);
+            }
+        }
+        if (!Number.isFinite(seedValue)) {
+            seedValue = Date.now();
+        }
+        this.seed = seedValue;
+        this.originalSeed = seedValue;
     },
 
     // Génère le prochain nombre pseudo-aléatoire dans la séquence.

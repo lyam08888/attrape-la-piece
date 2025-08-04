@@ -315,6 +315,61 @@
             font-weight: bold;
         }
 
+        /* Menu personnage interactif */
+        #characterMenu .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        #characterMenu .tab-button {
+            flex: 1;
+            padding: 8px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        #characterMenu .tab-button:hover {
+            background: #444;
+            transform: translateY(-2px);
+        }
+
+        #characterMenu .tab-button.active {
+            background: #FF9800;
+            color: #000;
+        }
+
+        #characterMenu .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        #characterMenu .tab-content.active {
+            display: block;
+        }
+
+        .stat-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .stat-icon {
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Barre d'outils */
         #toolbar {
             position: absolute;
@@ -706,9 +761,9 @@
         </div>
 
         <div id="inventoryMenu" class="overlay">
-            <div class="menu-box" style="max-width: 300px;">
+            <div class="menu-box" style="max-width: 450px;">
                 <h2>INVENTAIRE</h2>
-                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 20px 0;">
+                <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin: 20px 0;">
                     <!-- Slots d'inventaire générés dynamiquement -->
                 </div>
                 <div id="chestArea" style="display: none; margin-top: 20px;">
@@ -722,16 +777,34 @@
         <div id="characterMenu" class="overlay">
             <div class="menu-box">
                 <h2>PERSONNAGE</h2>
-                <div id="characterStats">
-                    <div class="stat-line">
-                        <img src="assets/bonus.png" alt="Niveau" class="stat-icon">
-                        <span>Niveau: <span id="playerLevel">1</span></span>
-                    </div>
-                    <div class="stat-line">
-                        <img src="assets/coin.png" alt="Expérience" class="stat-icon">
-                        <div class="bar-container">
-                            <div class="bar-fill xp-fill" id="playerXPFill"></div>
-                            <span class="bar-text" id="playerXPText">0/100</span>
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="stats">Stats</button>
+                    <button class="tab-button" data-tab="skills">Compétences</button>
+                </div>
+                <div class="tab-content active" data-content="stats">
+                    <div id="characterStats">
+                        <div class="stat-line">
+                            <img src="assets/bonus.png" alt="Niveau" class="stat-icon">
+                            <span>Niveau: <span id="playerLevel">1</span></span>
+                        </div>
+                        <div class="stat-line">
+                            <img src="assets/coin.png" alt="Expérience" class="stat-icon">
+                            <div class="bar-container">
+                                <div class="bar-fill xp-fill" id="playerXPFill"></div>
+                                <span class="bar-text" id="playerXPText">0/100</span>
+                            </div>
+                        </div>
+                        <div class="stat-line">
+                            <img src="assets/heart.png" alt="Santé" class="stat-icon">
+                            <span>Santé: <span id="playerHealth">100/100</span></span>
+                        </div>
+                        <div class="stat-line">
+                            <img src="assets/tool_sword.png" alt="Force" class="stat-icon">
+                            <span>Force: <span id="playerStrength">10</span></span>
+                        </div>
+                        <div class="stat-line">
+                            <img src="assets/player_run1.png" alt="Vitesse" class="stat-icon">
+                            <span>Vitesse: <span id="playerSpeed">10</span></span>
                         </div>
                     </div>
                     <div class="stat-line">
@@ -996,6 +1069,19 @@
                 });
             };
             Object.values(ui.menus).forEach(initOverlay);
+
+            // Gestion des onglets du menu personnage
+            const characterMenuEl = ui.menus.character;
+            const tabButtons = characterMenuEl.querySelectorAll('.tab-button');
+            const tabContents = characterMenuEl.querySelectorAll('.tab-content');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    characterMenuEl.querySelector(`.tab-content[data-content="${btn.dataset.tab}"]`).classList.add('active');
+                });
+            });
 
             // Écouteurs d'événements
             document.body.addEventListener('click', (e) => {
@@ -1654,7 +1740,7 @@
                 particleSystem: new ParticleSystem(),
                 logger: new Logger(),
                 questSystem: new QuestSystem(),
-                inventory: new Inventory(16),
+                inventory: new Inventory(32),
                 combatSystem: new CombatSystem(),
                 biomeSystem: new BiomeSystem(),
                 weatherSystem: new WeatherSystem(config),

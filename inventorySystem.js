@@ -44,9 +44,10 @@ export class InventoryItem {
 }
 
 export class Inventory {
-    constructor(size = 16) {
-        this.size = size;
-        this.slots = new Array(size).fill(null);
+    constructor(size = 32) {
+        // Ensure a minimum inventory size of 32 slots
+        this.size = Math.max(size, 32);
+        this.slots = new Array(this.size).fill(null);
     }
 
     addItem(itemName, quantity = 1, metadata = {}) {
