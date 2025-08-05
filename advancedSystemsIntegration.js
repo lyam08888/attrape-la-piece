@@ -8,7 +8,7 @@ import ExplorationSystem from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
 import { WorldAnimator } from './worldAnimator.js';
-import { generateMonsters } from './generateurMonstres.js';
+import { generateMonster } from './generateurMonstres.js';
 import { generateAnimal } from './generateurAnimaux.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { PNJ } from './PNJ.js';
@@ -368,8 +368,11 @@ export function integrateAdvancedSystems(game) {
     console.log('    -> 🐾 Système de faune initialisé.');
 
     // 7. Génération de monstres
-    if (typeof generateMonsters === 'function') {
-        const monsters = generateMonsters(10, game.config, game.tileMap); // Génère 10 monstres
+    if (typeof generateMonster === 'function') {
+        const monsters = [];
+        for (let i = 0; i < 10; i++) {
+            monsters.push(generateMonster({ biome: 'surface' }));
+        }
         game.enemies = [...game.enemies, ...monsters];
     }
     console.log('    -> 👾 Générateur de monstres actif.');
