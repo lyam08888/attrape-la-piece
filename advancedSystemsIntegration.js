@@ -382,6 +382,7 @@ if (!Array.isArray(game.enemies)) game.enemies = [];
     // Assurez-vous que les PNJ ont une configuration valide.
     // Système PNJ avancé
     if (!game.advancedNPCSystem) game.advancedNPCSystem = new AdvancedNPCSystem(game);
+    if (!Array.isArray(game.pnjs)) game.pnjs = [];
     if (typeof generatePNJ === 'function') {
         for (let i = 0; i < 5; i++) {
             const pnjData = generatePNJ();
