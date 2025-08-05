@@ -120,7 +120,10 @@ const gameLogic = {
         updateCamera();
     },
     draw: (ctx, assets) => {
-        if (!game || !game.player) return;
+        if (!game || !game.player) {
+            logger.log("Draw: game ou player manquant", 'error');
+            return;
+        }
         
         // Couleur du ciel basée sur l'ambiance ou le système de temps
         const skyColor = game.ambianceSystem?.lightingSystem?.getSkyColor() || 
@@ -131,6 +134,12 @@ const gameLogic = {
         ctx.save();
         ctx.scale(config.zoom, config.zoom);
         ctx.translate(-game.camera.x, -game.camera.y);
+        
+        // Log de débogage pour le rendu
+        if (Math.random() < 0.01) { // Log seulement 1% du temps pour éviter le spam
+            logger.log(`Rendu: caméra(${game.camera.x.toFixed(1)}, ${game.camera.y.toFixed(1)}), joueur(${game.player.x.toFixed(1)}, ${game.player.y.toFixed(1)})`, 'debug');
+        }
+        
         drawWorld(ctx, assets);
         game.enemies?.forEach(e => e.draw(ctx, assets));
         game.pnjs?.forEach(p => { if (typeof p.draw === 'function') p.draw(ctx, assets); });
@@ -166,9 +175,10 @@ function drawWorld(ctx, assets) {
     const startY = Math.floor(game.camera.y / tileSize);
     const endY = startY + Math.ceil(ctx.canvas.height / tileSize / zoom) + 1;
 
-    // Log la position de la caméra et la première ligne de tuiles visibles
-    if (startY < game.tileMap.length) {
-        logger.log(`Caméra: x=${game.camera.x}, y=${game.camera.y}, startX=${startX}, startY=${startY}, première ligne visible: [${game.tileMap[startY].slice(startX, endX).join(', ')}]`, 'debug');
+    // Log la position de la caméra et la première ligne de tuiles visibles (occasionnellement)
+    if (startY < game.tileMap.length && Math.random() < 0.01) {
+        logger.log(`DrawWorld: caméra(${game.camera.x}, ${game.camera.y}), zone(${startX}-${endX}, ${startY}-${endY})`, 'debug');
+        logger.log(`Première ligne visible: [${game.tileMap[startY].slice(startX, Math.min(endX, startX + 10)).join(', ')}]`, 'debug');
     }
 
     // Mapping ID -> nom d'asset
@@ -184,16 +194,22 @@ function drawWorld(ctx, assets) {
         121: 'tile_sand',
         130: 'tile_hellstone',
     };
+    
+    let tilesDrawn = 0;
     for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
         for (let x = Math.max(0, startX); x < Math.min(game.tileMap[y].length, endX); x++) {
             const tileType = game.tileMap[y][x];
             if (tileType > TILE.AIR) {
+                tilesDrawn++;
                 const assetName = tileIdToAsset[tileType];
                 const asset = assetName ? assets[assetName] : null;
                 if (asset) {
                     ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
                 } else {
-                    logger.error(`Texture manquante pour tileType=${tileType} (assetName=${assetName})`);
+                    // Log seulement la première fois qu'une texture manque
+                    if (Math.random() < 0.001) {
+                        logger.error(`Texture manquante pour tileType=${tileType} (assetName=${assetName})`);
+                    }
                     const colors = { 
                         1: '#696969',   // STONE - gris
                         2: '#32CD32',   // GRASS - vert
@@ -210,6 +226,11 @@ function drawWorld(ctx, assets) {
                 }
             }
         }
+    }
+    
+    // Log occasionnel du nombre de tuiles dessinées
+    if (Math.random() < 0.01) {
+        logger.log(`DrawWorld: ${tilesDrawn} tuiles dessinées`, 'debug');
     }
 }
 
@@ -305,6 +326,9 @@ async function startGameSequence() {
         game.questManager = new QuestManager();
         
         updateStatus("Sélection de classe...");
+        
+        // Déclencher l'affichage de la sélection de classe
+        game.classManager.showClassSelection();
         
         // Attendre la sélection de classe avant de continuer
         await new Promise((resolve) => {
