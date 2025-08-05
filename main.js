@@ -15,8 +15,8 @@ const TILE = {
 // Fonction de génération de niveau compatible (utilise le monde complexe)
 function generateLevel(width, height) {
   const worldSystem = new WorldComplexSystem({
-    worldWidth: width * TILE.DIRT, // tileSize = 1 pour compatibilité
-    worldHeight: height * TILE.DIRT,
+    worldWidth: width, // Utilise directement les dimensions
+    worldHeight: height,
     tileSize: 1
   });
   return worldSystem.tileMap;
@@ -81,7 +81,7 @@ function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
     const yStart = Math.floor(height * 0.18);
     const yEnd = Math.floor(height * 0.5);
     for (let y = yEnd - 1; y > yStart + 2; y--) {
-        for (let x = Math.floor(width * 0.3); x < Math.floor(width * 0.7); x++) {
+        for (let x = Math.floor(width * 0.2); x < Math.floor(width * 0.8); x++) {
             const isGround = tileMap[y][x] > TILE.AIR && tileMap[y][x] !== 0;
             const isAirAbove = tileMap[y - 1]?.[x] === TILE.AIR && tileMap[y - 2]?.[x] === TILE.AIR;
             if (isGround && isAirAbove) {
@@ -194,7 +194,17 @@ function drawWorld(ctx, assets) {
                     ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
                 } else {
                     logger.error(`Texture manquante pour tileType=${tileType} (assetName=${assetName})`);
-                    const colors = { 1: '#32CD32', 2: '#8B4513', 3: '#696969', 100: '#F0F8FF', 103: '#BFFF00', 106: '#E0FFFF', 112: '#9370DB', 121: '#F4E285', 130: '#8B0000' };
+                    const colors = { 
+                        1: '#696969',   // STONE - gris
+                        2: '#32CD32',   // GRASS - vert
+                        3: '#8B4513',   // DIRT - marron
+                        100: '#F0F8FF', // DIVINE_STONE - blanc bleuté
+                        103: '#BFFF00', // autre grass - vert clair
+                        106: '#E0FFFF', // CLOUD - blanc nuageux
+                        112: '#9370DB', // CRYSTAL - violet
+                        121: '#F4E285', // SAND - sable
+                        130: '#8B0000'  // HELLSTONE - rouge foncé
+                    };
                     ctx.fillStyle = colors[tileType] || '#CCCCCC';
                     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
@@ -233,6 +243,18 @@ async function startGameSequence() {
     };
 
     try {
+        updateStatus("Chargement de la configuration...");
+        // Charger la configuration depuis le fichier JSON
+        try {
+            const configResponse = await fetch('./config.json');
+            const jsonConfig = await configResponse.json();
+            // Fusionner avec la configuration par défaut
+            Object.assign(config, jsonConfig);
+            logger.log("Configuration chargée depuis config.json", 'success');
+        } catch (e) {
+            logger.warn("Impossible de charger config.json, utilisation de la configuration par défaut");
+        }
+
         updateStatus("Initialisation du moteur...");
         const canvas = document.getElementById('gameCanvas');
         if (!canvas) throw new Error("Canvas non trouvé!");
@@ -244,10 +266,26 @@ async function startGameSequence() {
         game.camera = { x: 0, y: 0 };
 
         updateStatus("Génération du monde...");
-        game.tileMap = generateLevel(Math.floor(config.worldWidth / config.tileSize), Math.floor(config.worldHeight / config.tileSize));
+        const worldWidth = Math.floor(config.worldWidth / config.tileSize);
+        const worldHeight = Math.floor(config.worldHeight / config.tileSize);
+        logger.log(`Génération du monde: ${worldWidth}x${worldHeight} tuiles`, 'debug');
+        
+        game.tileMap = generateLevel(worldWidth, worldHeight);
+        
         // Log pour vérifier la génération de la map
         const nonAirTiles = game.tileMap.flat().filter(t => t !== 0).length;
-        logger.log(`Tiles non AIR générées: ${nonAirTiles} / ${game.tileMap.length * game.tileMap[0].length}`, nonAirTiles > 0 ? 'success' : 'error');
+        const totalTiles = game.tileMap.length * game.tileMap[0].length;
+        logger.log(`Tiles générées: ${nonAirTiles} non-AIR / ${totalTiles} total (${(nonAirTiles/totalTiles*100).toFixed(1)}%)`, nonAirTiles > 0 ? 'success' : 'error');
+        
+        // Log des types de tuiles
+        const tileCounts = {};
+        game.tileMap.flat().forEach(t => tileCounts[t] = (tileCounts[t] || 0) + 1);
+        logger.log(`Types de tuiles: ${JSON.stringify(tileCounts)}`, 'debug');
+        
+        // Vérifier la couche surface
+        const surfaceStart = Math.floor(game.tileMap.length * 0.18);
+        const surfaceEnd = Math.floor(game.tileMap.length * 0.5);
+        logger.log(`Couche surface: lignes ${surfaceStart} à ${surfaceEnd}`, 'debug');
         
         updateStatus("Initialisation des systèmes RPG...");
         

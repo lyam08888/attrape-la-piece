@@ -35,14 +35,30 @@ export class WorldComplexSystem {
                     case 'sky': tileMap[y][x] = 106; break; // CLOUD_STONE
                     case 'paradise': tileMap[y][x] = 100; break; // DIVINE_STONE
                     case 'surface':
-                        // Bande centrale de terre ferme sur plusieurs lignes
+                        // Génération de terrain plus solide
                         const ySurface = y;
                         const yStart = Math.floor(height * 0.18);
-                        if (ySurface >= yStart && ySurface < yStart + 10 && x > width * 0.3 && x < width * 0.7) tileMap[y][x] = 2;
-                        else if (yNorm < 0.22 && Math.random() < 0.2) tileMap[y][x] = 121; // Sable (plage)
-                        else if (x < width * 0.15 || x > width * 0.85) tileMap[y][x] = 0; // Océan (AIR = eau visuelle)
-                        else if (Math.random() < 0.04) tileMap[y][x] = 0; // Lacs/rivières
-                        else tileMap[y][x] = 2; // GRASS
+                        
+                        // Créer une couche de surface solide plus large
+                        if (ySurface >= yStart && ySurface < yStart + 20) {
+                            // Terrain principal plus large (20% à 80% de la largeur)
+                            if (x > width * 0.2 && x < width * 0.8) {
+                                tileMap[y][x] = 2; // GRASS
+                            } else if (Math.random() < 0.3) {
+                                tileMap[y][x] = 121; // Sable (plage)
+                            } else {
+                                tileMap[y][x] = 0; // Océan
+                            }
+                        } else {
+                            // Reste de la couche surface
+                            if (x < width * 0.1 || x > width * 0.9) {
+                                tileMap[y][x] = 0; // Océan (AIR = eau visuelle)
+                            } else if (Math.random() < 0.02) {
+                                tileMap[y][x] = 0; // Lacs/rivières (réduit la probabilité)
+                            } else {
+                                tileMap[y][x] = 2; // GRASS
+                            }
+                        }
                         break;
                     case 'underground':
                         if (Math.random() < 0.08) tileMap[y][x] = 0; // Caverne
