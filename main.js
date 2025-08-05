@@ -193,6 +193,7 @@ function drawWorld(ctx, assets) {
                 if (asset) {
                     ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
                 } else {
+                    logger.error(`Texture manquante pour tileType=${tileType} (assetName=${assetName})`);
                     const colors = { 1: '#32CD32', 2: '#8B4513', 3: '#696969', 100: '#F0F8FF', 103: '#BFFF00', 106: '#E0FFFF', 112: '#9370DB', 121: '#F4E285', 130: '#8B0000' };
                     ctx.fillStyle = colors[tileType] || '#CCCCCC';
                     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
