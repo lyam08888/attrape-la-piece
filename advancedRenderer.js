@@ -1525,4 +1525,4 @@ AdvancedRenderer.prototype.renderUI = function(logger, canvas) {
     }
 };
 
-export { AdvancedRenderer };
+// export { AdvancedRenderer }; // doublon supprimé
