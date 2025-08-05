@@ -281,6 +281,12 @@ export class GameEngine {
                         // CORRECTION : Passe maintenant delta, keys, et mouse à la logique de jeu.
                         this.gameLogic.update(delta, this.keys, this.mouse);
                     }
+                    
+                    // Log occasionnel pour vérifier que la boucle fonctionne
+                    if (Math.random() < 0.001) {
+                        console.log('Engine loop: delta=', delta.toFixed(3), 'gameLogic=', !!this.gameLogic, 'ctx=', !!this.ctx, 'assets=', Object.keys(this.assets).length);
+                    }
+                    
                     // Passe également delta au rendu afin que la logique de dessin
                     this.gameLogic.draw(this.ctx, this.assets, delta);
                     requestAnimationFrame(loop);

@@ -150,9 +150,25 @@ const gameLogic = {
         
         updateCamera();
     },
-    draw: (ctx, assets) => {
+    draw: (ctx, assets, delta) => {
+        // Log occasionnel pour vérifier que draw est appelé
+        if (Math.random() < 0.01) {
+            console.log('Draw appelé: game=', !!game, 'player=', !!game?.player, 'ctx=', !!ctx, 'assets=', Object.keys(assets || {}).length);
+            console.log('Canvas dimensions:', ctx.canvas.width, 'x', ctx.canvas.height);
+            console.log('Canvas style:', ctx.canvas.style.display, ctx.canvas.style.visibility, ctx.canvas.style.opacity);
+        }
+        
         if (!game || !game.player) {
-            logger.log("Draw: game ou player manquant", 'error');
+            // Dessiner un écran de test pour vérifier que le rendu fonctionne
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '20px Arial';
+            ctx.fillText('LOADING...', 10, 50);
+            
+            if (Math.random() < 0.01) {
+                logger.log("Draw: game ou player manquant", 'error');
+            }
             return;
         }
         
@@ -467,6 +483,14 @@ async function startGameSequence() {
         }
 
         updateStatus("Chargement des assets...");
+        
+        // Vérifier l'état du jeu avant de démarrer le moteur
+        console.log('État avant démarrage moteur:');
+        console.log('- game:', !!game);
+        console.log('- game.player:', !!game?.player);
+        console.log('- game.tileMap:', !!game?.tileMap);
+        console.log('- game.camera:', game?.camera);
+        
         await engine.start(gameLogic);
 
         showGame();
