@@ -1,5 +1,12 @@
 import { SeededRandom } from './seededRandom.js';
-import { TILE } from './world.js';
+// Utilisation du système avancé : définition TILE compatible
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+  // Ajoute d'autres blocs si besoin
+};
 
 // === SYSTÈME DE NOURRITURE VIVANT ===
 

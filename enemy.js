@@ -1,5 +1,10 @@
 // enemy.js - Définit les classes et le comportement des ennemis
-import { TILE } from './world.js';
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+};
 import { SeededRandom } from './seededRandom.js';
 
 export class Enemy {

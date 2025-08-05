@@ -1,5 +1,10 @@
 // advancedBiomeSystem.js - Système de biomes avancé avec écosystèmes intelligents
-import { TILE } from './world.js';
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+};
 import { SeededRandom } from './seededRandom.js';
 import { Perlin } from './perlin.js';
 

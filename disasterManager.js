@@ -1,5 +1,10 @@
 // disasterManager.js - Gère les catastrophes climatiques et événements mondiaux.
-import { TILE } from './world.js';
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+};
 
 class Meteor {
     constructor(x, y, game) {

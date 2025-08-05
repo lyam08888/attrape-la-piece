@@ -1,5 +1,12 @@
 // worldComplexSystem.js - Système de monde complexe et destructible avancé
-import { TILE } from './world.js';
+// Utilisation du système avancé : définition TILE compatible
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+  // Ajoute d'autres blocs si besoin
+};
 import { SeededRandom } from './seededRandom.js';
 import { Perlin } from './perlin.js';
 

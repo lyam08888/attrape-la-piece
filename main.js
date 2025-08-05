@@ -1,7 +1,23 @@
 // Importation des modules critiques
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
-import { TILE, generateLevel } from './world.js';
+import { AdvancedWorldGenerator } from './advancedWorldGenerator.js';
+
+// Définition TILE compatible avec l'ancien système
+const TILE = {
+  AIR: 0,
+  STONE: 1,
+  GRASS: 2,
+  DIRT: 3,
+  // Ajoute d'autres blocs si besoin
+};
+
+// Fonction de génération de niveau compatible
+function generateLevel(width, height) {
+  const generator = new AdvancedWorldGenerator();
+  const world = generator.generateAdvancedWorld(width, height, {});
+  return world.tiles;
+}
 import { RPGInterfaceManager } from './rpgInterfaceManager.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
 import { CombatSystem } from './combatSystem.js';
