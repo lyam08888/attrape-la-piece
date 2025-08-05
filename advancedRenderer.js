@@ -4,10 +4,10 @@ export class AdvancedRenderer {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.assets = assets;
-        this.particleSystem = new ParticleSystem();
-        this.lightingSystem = new LightingSystem();
-        this.weatherRenderer = new WeatherRenderer();
-        this.animationSystem = new AnimationSystem();
+        this.particleSystem = new ParticleSystemAdvanced();
+        this.lightingSystem = new LightingSystemAdvanced();
+        this.weatherRenderer = new WeatherRendererAdvanced();
+        this.animationSystem = new AnimationSystemAdvanced();
         
         // Cache pour optimiser le rendu
         this.tileCache = new Map();

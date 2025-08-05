@@ -8,7 +8,7 @@ import { TILE, generateLevel, ensureWorldColumns } from './world.js';
 import { PNJ } from './PNJ.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { updateGravity } from './miningEngine.js';
-import { ParticleSystem } from './fx.js';
+import { ParticleSystem as ParticleSystemFX } from './fx.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { TimeSystem } from './timeSystem.js';
 import { Logger } from './logger.js';
