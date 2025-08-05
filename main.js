@@ -346,12 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('startGameBtn').onclick = () => {
         startGameSequence();
     };
- les bo    document.getElementById('minimapBtn').onclick = () => {
-        if (game && game.modularInterface) game.modularInterface.toggleWindow('minimap');
-    };
-    document.getElementById('optionsBtn').onclick = () => {
-        if (game && game.modularInterface) game.modularInterface.toggleWindow('options');
-    };
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'F2') {
