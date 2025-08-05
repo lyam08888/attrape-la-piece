@@ -1,7 +1,7 @@
 // Importation des modules critiques
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
-import { AdvancedWorldGenerator } from './advancedWorldGenerator.js';
+import { WorldComplexSystem } from './worldComplexSystem.js';
 
 // Définition TILE compatible avec l'ancien système
 const TILE = {
@@ -12,11 +12,14 @@ const TILE = {
   // Ajoute d'autres blocs si besoin
 };
 
-// Fonction de génération de niveau compatible
+// Fonction de génération de niveau compatible (utilise le monde complexe)
 function generateLevel(width, height) {
-  const generator = new AdvancedWorldGenerator();
-  const world = generator.generateAdvancedWorld(width, height, {});
-  return world.tiles;
+  const worldSystem = new WorldComplexSystem({
+    worldWidth: width * TILE.DIRT, // tileSize = 1 pour compatibilité
+    worldHeight: height * TILE.DIRT,
+    tileSize: 1
+  });
+  return worldSystem.tileMap;
 }
 import { RPGInterfaceManager } from './rpgInterfaceManager.js';
 import { integrateAdvancedSystems } from './advancedSystemsIntegration.js';
