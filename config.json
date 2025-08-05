@@ -25,6 +25,7 @@
     "inventory": "i",
     "character": "p",
     "quests": "q",
+    "minimap": "m",
     "pause": "Escape",
     "options": "o",
     "tool1": "1",

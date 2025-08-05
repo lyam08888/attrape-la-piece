@@ -232,6 +232,27 @@ export class GameEngine {
             if (key === binds.repair) this.keys.repair = true;
             if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
             if (key === binds.attack) this.keys.attack = true;
+            
+            // Gestion des touches spéciales
+            if (key === binds.minimap && !e.repeat) {
+                if (window.game?.minimap) {
+                    window.game.minimap.toggle();
+                }
+            }
+            
+            if (key === 'Enter' && !e.repeat) {
+                if (window.game?.welcomeMessage?.isVisible()) {
+                    window.game.welcomeMessage.hide();
+                }
+            }
+            
+            if (key === 'F12' && !e.repeat) {
+                e.preventDefault();
+                if (window.game?.debugOverlay) {
+                    window.game.debugOverlay.toggle();
+                }
+            }
+            
             for (let i = 1; i <= 6; i++) {
                 if (key === binds[`tool${i}`] && this.gameLogic.selectTool) {
                     this.gameLogic.selectTool(i - 1);

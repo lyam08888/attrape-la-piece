@@ -40,6 +40,7 @@ import { ControlsHUD } from './controlsHUD.js';
 import { Minimap } from './minimap.js';
 import { PerformanceOptimizer } from './performanceOptimizer.js';
 import { WelcomeMessage } from './welcomeMessage.js';
+import { DebugOverlay } from './debugOverlay.js';
 
 // --- Configuration Globale ---
 let game = {};
@@ -162,6 +163,8 @@ const gameLogic = {
         game.controlsHUD?.update(delta);
         game.minimap?.update(game);
         game.performanceOptimizer?.update(delta);
+        game.welcomeMessage?.update(delta);
+        game.debugOverlay?.update(game, delta);
         logger.update(); // Mettre à jour le logger
         
         updateCamera();
@@ -215,6 +218,12 @@ const gameLogic = {
         game.rpgInterface?.draw(ctx);
         game.controlsHUD?.draw(ctx);
         game.minimap?.draw(ctx, game);
+        
+        // Dessiner le message de bienvenue par-dessus tout
+        game.welcomeMessage?.draw(ctx);
+        
+        // Dessiner l'overlay de debug
+        game.debugOverlay?.draw(ctx);
         
         // Dessiner le logger par-dessus tout
         logger.draw(ctx);
@@ -367,6 +376,11 @@ async function startGameSequence() {
         
         game.tileMap = generateLevel(worldWidth, worldHeight);
         
+        // Stocker une référence au système de monde pour le debug
+        if (window.worldSystem) {
+            game.worldSystem = window.worldSystem;
+        }
+        
         // Log pour vérifier la génération de la map
         const nonAirTiles = game.tileMap.flat().filter(t => t !== 0).length;
         const totalTiles = game.tileMap.length * game.tileMap[0].length;
@@ -410,6 +424,12 @@ async function startGameSequence() {
         
         // Initialiser l'optimiseur de performance
         game.performanceOptimizer = new PerformanceOptimizer();
+        
+        // Initialiser le message de bienvenue
+        game.welcomeMessage = new WelcomeMessage();
+        
+        // Initialiser l'overlay de debug
+        game.debugOverlay = new DebugOverlay();
         
         updateStatus("Sélection de classe...");
         
@@ -488,6 +508,11 @@ async function startGameSequence() {
                     game.equipmentManager.addToInventory('holy_mace', 1);
                     game.equipmentManager.addToInventory('chain_mail', 1);
                 }
+                
+                // Afficher le message de bienvenue
+                setTimeout(() => {
+                    game.welcomeMessage?.show();
+                }, 1000);
                 
                 window.removeEventListener('classSelected', handleClassSelection);
                 resolve();
