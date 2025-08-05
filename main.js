@@ -116,12 +116,13 @@ function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
             const isAirAbove = tileMap[y - 1]?.[x] === TILE.AIR && tileMap[y - 2]?.[x] === TILE.AIR;
             if (isGround && isAirAbove) {
                 logger.log(`SPAWN trouvé : x=${x}, y=${y}, tuile=${tileMap[y][x]}`, 'success');
-                return { x: x * tileSize, y: (y - 2) * tileSize };
+                // Spawn le joueur juste au-dessus de la tuile solide
+                return { x: x * tileSize, y: (y - 1) * tileSize - playerHeight };
             }
         }
     }
     logger.error('AUCUN SPAWN SOLIDE TROUVÉ, fallback centre');
-    return { x: worldCenter * tileSize, y: (yStart - 2) * tileSize };
+    return { x: worldCenter * tileSize, y: (yStart - 1) * tileSize - playerHeight };
 }
 
 // --- Logique de Jeu (Update & Draw) ---
@@ -194,8 +195,15 @@ function updateCamera() {
     const canvasHeight = game.canvas.height;
     let targetX = game.player.x + game.player.w / 2 - canvasWidth / (2 * zoom);
     let targetY = game.player.y + game.player.h / 2 - canvasHeight / (2 * zoom);
+    
+    // Permettre à la caméra de suivre le joueur même s'il tombe en dessous de y=0
     game.camera.x = Math.max(0, Math.min(targetX, worldWidth - canvasWidth / zoom));
-    game.camera.y = Math.max(0, Math.min(targetY, worldHeight - canvasHeight / zoom));
+    game.camera.y = Math.min(targetY, worldHeight - canvasHeight / zoom); // Supprimé Math.max(0, ...)
+    
+    // Log occasionnel de la caméra
+    if (Math.random() < 0.001) {
+        logger.log(`Camera: target(${targetX.toFixed(1)}, ${targetY.toFixed(1)}) -> actual(${game.camera.x.toFixed(1)}, ${game.camera.y.toFixed(1)})`, 'debug');
+    }
 }
 
 function drawWorld(ctx, assets) {

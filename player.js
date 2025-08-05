@@ -332,43 +332,89 @@ export class Player {
     }
     
     handleCollisions(game) {
+        const tileSize = this.config.tileSize;
+        
         // --- X-Axis Collision ---
         this.x += this.vx;
-        const hitboxX = { x: this.x, y: this.y, w: this.w, h: this.h };
         this.isOnWall = 0;
         
         // Prevent falling out of the world from the left
         if (this.x < 0) {
-            this.takeDamage(this.maxHealth); // Kill player if they fall out
-            return;
+            this.x = 0;
+            this.vx = 0;
+        }
+        
+        // Prevent falling out of the world from the right
+        if (this.x + this.w > this.config.worldWidth) {
+            this.x = this.config.worldWidth - this.w;
+            this.vx = 0;
         }
 
-        // Check left collision
-        if (game.tileMap[this.y]?.[this.x - 1] === TILE.WALL) {
-            this.x = this.x - this.w;
-            this.isOnWall = -1;
-        }
-        // Check right collision
-        if (game.tileMap[this.y]?.[this.x + 1] === TILE.WALL) {
-            this.x = this.x + this.w;
-            this.isOnWall = 1;
+        // Convert pixel coordinates to tile coordinates for collision detection
+        const leftTile = Math.floor(this.x / tileSize);
+        const rightTile = Math.floor((this.x + this.w) / tileSize);
+        const topTile = Math.floor(this.y / tileSize);
+        const bottomTile = Math.floor((this.y + this.h) / tileSize);
+
+        // Check horizontal collisions
+        for (let ty = topTile; ty <= bottomTile; ty++) {
+            // Left collision
+            if (this.vx < 0 && game.tileMap[ty]?.[leftTile] > TILE.AIR) {
+                this.x = (leftTile + 1) * tileSize;
+                this.vx = 0;
+                this.isOnWall = -1;
+                break;
+            }
+            // Right collision
+            if (this.vx > 0 && game.tileMap[ty]?.[rightTile] > TILE.AIR) {
+                this.x = rightTile * tileSize - this.w;
+                this.vx = 0;
+                this.isOnWall = 1;
+                break;
+            }
         }
 
         // --- Y-Axis Collision ---
         this.y += this.vy;
-        const hitboxY = { x: this.x, y: this.y, w: this.w, h: this.h };
         this.isGrounded = false;
         
         // Prevent falling out of the world from the bottom
-        if (this.y > game.config.worldHeight) {
-            this.takeDamage(this.maxHealth); // Kill player if they fall out
-            return;
+        if (this.y > this.config.worldHeight) {
+            this.y = this.config.worldHeight - this.h;
+            this.vy = 0;
+            this.isGrounded = true;
         }
 
-        // Check down collision
-        if (game.tileMap[this.y + 1]?.[this.x] === TILE.WALL) {
-            this.y = this.y - this.h;
-            this.isGrounded = true;
+        // Recalculate tile positions after Y movement
+        const newTopTile = Math.floor(this.y / tileSize);
+        const newBottomTile = Math.floor((this.y + this.h) / tileSize);
+        const newLeftTile = Math.floor(this.x / tileSize);
+        const newRightTile = Math.floor((this.x + this.w) / tileSize);
+
+        // Check vertical collisions
+        for (let tx = newLeftTile; tx <= newRightTile; tx++) {
+            // Top collision
+            if (this.vy < 0 && game.tileMap[newTopTile]?.[tx] > TILE.AIR) {
+                this.y = (newTopTile + 1) * tileSize;
+                this.vy = 0;
+                break;
+            }
+            // Bottom collision (ground)
+            if (this.vy >= 0 && game.tileMap[newBottomTile]?.[tx] > TILE.AIR) {
+                this.y = newBottomTile * tileSize - this.h;
+                this.vy = 0;
+                this.isGrounded = true;
+                this.canDoubleJump = true;
+                break;
+            }
+        }
+        
+        // Log occasionnel des collisions
+        if (Math.random() < 0.01) {
+            const px = Math.floor(this.x / tileSize);
+            const py = Math.floor(this.y / tileSize);
+            const groundTile = game.tileMap[py + Math.ceil(this.h / tileSize)]?.[px];
+            console.log(`Player collision: pos(${px}, ${py}), grounded=${this.isGrounded}, groundTile=${groundTile}, vy=${this.vy.toFixed(2)}`);
         }
     }
 
