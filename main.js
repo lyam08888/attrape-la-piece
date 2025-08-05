@@ -257,6 +257,9 @@ async function startGameSequence() {
                 const spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.height, config.tileSize);
                 game.spawnPoint = spawnPoint;
                 game.player = new Player(spawnPoint.x, spawnPoint.y, config, null);
+                // Centrer la caméra sur le joueur
+                game.camera.x = game.player.x - game.canvas.width / (2 * config.zoom);
+                game.camera.y = game.player.y - game.canvas.height / (2 * config.zoom);
                 
                 // Appliquer la classe sélectionnée
                 game.player.characterClass = classData;
