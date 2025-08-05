@@ -451,9 +451,11 @@ export class Player {
 
         // Convert pixel coordinates to tile coordinates for collision detection
         const leftTile = Math.floor(this.x / tileSize);
-        const rightTile = Math.floor((this.x + this.w) / tileSize);
+        // Subtract 1 from right/bottom edges to avoid sampling adjacent tiles
+        // when the player is exactly aligned with a tile boundary.
+        const rightTile = Math.floor((this.x + this.w - 1) / tileSize);
         const topTile = Math.floor(this.y / tileSize);
-        const bottomTile = Math.floor((this.y + this.h) / tileSize);
+        const bottomTile = Math.floor((this.y + this.h - 1) / tileSize);
 
         // Check horizontal collisions
         for (let ty = topTile; ty <= bottomTile; ty++) {
@@ -486,9 +488,9 @@ export class Player {
 
         // Recalculate tile positions after Y movement
         const newTopTile = Math.floor(this.y / tileSize);
-        const newBottomTile = Math.floor((this.y + this.h) / tileSize);
+        const newBottomTile = Math.floor((this.y + this.h - 1) / tileSize);
         const newLeftTile = Math.floor(this.x / tileSize);
-        const newRightTile = Math.floor((this.x + this.w) / tileSize);
+        const newRightTile = Math.floor((this.x + this.w - 1) / tileSize);
 
         // Check vertical collisions
         for (let tx = newLeftTile; tx <= newRightTile; tx++) {
