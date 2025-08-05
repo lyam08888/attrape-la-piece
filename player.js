@@ -161,6 +161,7 @@ export class Player {
             // Réinitialiser le minage si le bouton est relâché
             this.miningTarget = null;
             this.miningProgress = 0;
+            this.miningStartTime = null;
             if (game.miningEffect) game.miningEffect = null;
         }
 
@@ -205,9 +206,35 @@ export class Player {
             if(game.logger) game.logger.log(`Début du minage du bloc ${blockType} à (${tileX},${tileY})`, 'action');
         }
         
-        if (game.miningEngine && typeof game.miningEngine.updateMining === 'function') {
-            // Le moteur de minage a besoin de `delta` en secondes
-            game.miningEngine.updateMining(game, keys, game.mouse, delta * 1000);
+        // Système de minage simplifié intégré
+        const currentTime = Date.now();
+        const miningSpeed = this.getMiningSpeed();
+        const requiredTime = this.getBlockBreakTime(blockType) * 1000 / miningSpeed;
+        
+        if (!this.miningStartTime) {
+            this.miningStartTime = currentTime;
+        }
+        
+        this.miningProgress = Math.min(1, (currentTime - this.miningStartTime) / requiredTime);
+        
+        // Créer un effet visuel de minage
+        if (game.ambianceSystem?.particleSystem) {
+            const centerX = tileX * tileSize + tileSize / 2;
+            const centerY = tileY * tileSize + tileSize / 2;
+            game.ambianceSystem.particleSystem.addParticle(centerX, centerY, 'square', {
+                speed: 0.5,
+                life: 0.1,
+                size: 2,
+                color: '#FFFF00'
+            });
+        }
+        
+        // Bloc cassé
+        if (this.miningProgress >= 1) {
+            this.breakBlock(game, tileX, tileY, blockType);
+            this.miningTarget = null;
+            this.miningProgress = 0;
+            this.miningStartTime = null;
         }
     }
     
@@ -757,5 +784,83 @@ export class Player {
         }
         
         ctx.restore();
+    }
+
+    getMiningSpeed() {
+        // Vitesse de base + bonus d'équipement + bonus de stats
+        let speed = 1.0;
+        
+        // Bonus d'outil
+        const currentTool = this.tools[this.selectedToolIndex];
+        if (currentTool === 'tool_pickaxe') speed *= 1.5;
+        else if (currentTool === 'tool_axe') speed *= 1.3;
+        else if (currentTool === 'tool_shovel') speed *= 1.2;
+        
+        // Bonus de stats
+        speed *= (1 + this.stats.strength * 0.02);
+        
+        return speed;
+    }
+
+    getBlockBreakTime(blockType) {
+        const breakTimes = {
+            0: 0,     // AIR
+            1: 2.0,   // STONE
+            2: 0.5,   // GRASS
+            3: 0.5,   // DIRT
+            100: 4.5, // DIVINE_STONE
+            103: 0.5, // autre grass
+            106: 0.1, // CLOUD
+            112: 1.8, // CRYSTAL
+            121: 0.4, // SAND
+            130: 4.0  // HELLSTONE
+        };
+        
+        return breakTimes[blockType] || 1.0;
+    }
+
+    breakBlock(game, tileX, tileY, blockType) {
+        // Casser le bloc
+        game.tileMap[tileY][tileX] = TILE.AIR;
+        
+        // Ajouter l'objet à l'inventaire
+        const itemType = this.getItemFromBlock(blockType);
+        this.inventory[itemType] = (this.inventory[itemType] || 0) + 1;
+        
+        // Effets visuels et sonores
+        if (game.ambianceSystem) {
+            game.ambianceSystem.playSound('break');
+            if (game.ambianceSystem.particleSystem) {
+                const centerX = tileX * this.config.tileSize + this.config.tileSize / 2;
+                const centerY = tileY * this.config.tileSize + this.config.tileSize / 2;
+                game.ambianceSystem.particleSystem.createExplosion(centerX, centerY, '#8B4513');
+            }
+        }
+        
+        // Notification
+        if (game.modularInterface) {
+            game.modularInterface.showNotification(`+1 ${itemType}`, 'success', 1500);
+        }
+        
+        // Gagner de l'XP
+        this.gainXP(Math.floor(this.getBlockBreakTime(blockType)), game);
+        
+        if(game.logger) game.logger.log(`Bloc ${blockType} cassé à (${tileX},${tileY})`, 'success');
+    }
+
+    getItemFromBlock(blockType) {
+        const itemMap = {
+            1: 'stone',
+            2: 'grass',
+            3: 'dirt',
+            100: 'divine_stone',
+            103: 'grass',
+            106: 'cloud',
+            112: 'crystal',
+            121: 'sand',
+            130: 'hellstone'
+        };
+        
+        return itemMap[blockType] || 'unknown';
     }
 }

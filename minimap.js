@@ -34,6 +34,13 @@ export class Minimap {
     draw(ctx, game) {
         if (!this.visible || !game.player || !game.tileMap) return;
 
+        // Vérifier si on doit dessiner dans un conteneur HTML ou sur le canvas
+        const minimapContainer = document.getElementById('minimapContainer');
+        if (minimapContainer) {
+            this.drawInContainer(minimapContainer, game);
+            return;
+        }
+
         ctx.save();
 
         // Fond de la minimap
@@ -162,5 +169,81 @@ export class Minimap {
     setPosition(x, y) {
         this.position.x = x;
         this.position.y = y;
+    }
+
+    drawInContainer(container, game) {
+        // Créer un canvas dans le conteneur s'il n'existe pas
+        let canvas = container.querySelector('canvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Calculer la zone à afficher
+        const playerTileX = Math.floor(game.player.x / this.config.tileSize);
+        const playerTileY = Math.floor(game.player.y / this.config.tileSize);
+        const tilesPerSide = Math.floor(canvas.width / 4);
+        
+        const startX = Math.max(0, playerTileX - tilesPerSide);
+        const endX = Math.min(game.tileMap[0]?.length || 0, playerTileX + tilesPerSide);
+        const startY = Math.max(0, playerTileY - tilesPerSide);
+        const endY = Math.min(game.tileMap.length, playerTileY + tilesPerSide);
+
+        // Dessiner les tuiles
+        const pixelSize = canvas.width / (tilesPerSide * 2);
+        
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const tileKey = `${x},${y}`;
+                
+                // Ne dessiner que les tuiles explorées
+                if (!this.exploredTiles.has(tileKey)) continue;
+
+                const tileType = game.tileMap[y]?.[x];
+                if (tileType === undefined) continue;
+
+                const screenX = (x - startX) * pixelSize;
+                const screenY = (y - startY) * pixelSize;
+
+                // Couleurs des tuiles
+                let color = this.getTileColor(tileType);
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(screenX, screenY, pixelSize, pixelSize);
+            }
+        }
+
+        // Dessiner le joueur
+        const playerScreenX = (playerTileX - startX) * pixelSize;
+        const playerScreenY = (playerTileY - startY) * pixelSize;
+        
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(playerScreenX - 1, playerScreenY - 1, 3, 3);
+
+        // Dessiner les animaux proches
+        if (game.faunaSystem) {
+            game.faunaSystem.animals.forEach(animal => {
+                const animalTileX = Math.floor(animal.x / this.config.tileSize);
+                const animalTileY = Math.floor(animal.y / this.config.tileSize);
+                
+                if (animalTileX >= startX && animalTileX < endX && 
+                    animalTileY >= startY && animalTileY < endY) {
+                    
+                    const animalScreenX = (animalTileX - startX) * pixelSize;
+                    const animalScreenY = (animalTileY - startY) * pixelSize;
+                    
+                    ctx.fillStyle = this.getAnimalColor(animal.type.name);
+                    ctx.fillRect(animalScreenX, animalScreenY, 1, 1);
+                }
+            });
+        }
     }
 }

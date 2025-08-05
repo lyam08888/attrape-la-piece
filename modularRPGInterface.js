@@ -150,6 +150,24 @@ export class ModularRPGInterface {
             resizable: true
         });
 
+        // Fenêtre de carte/minimap
+        this.createWindow('map', {
+            title: '🗺️ Carte',
+            position: { x: 100, y: 300 },
+            size: { width: 250, height: 250 },
+            content: this.createMapContent(),
+            resizable: true
+        });
+
+        // Fenêtre d'options
+        this.createWindow('settings', {
+            title: '⚙️ Options',
+            position: { x: 300, y: 250 },
+            size: { width: 450, height: 500 },
+            content: this.createSettingsContent(),
+            resizable: true
+        });
+
         // HUD permanent (non déplaçable)
         this.createHUD();
     }
@@ -733,5 +751,193 @@ export class ModularRPGInterface {
                 }
             }, 300);
         }, duration);
+    }
+
+    createMapContent() {
+        return `
+            <div style="text-align: center;">
+                <h3 style="color: #4CAF50; margin-top: 0;">Minimap</h3>
+                <div id="minimapContainer" style="width: 200px; height: 200px; margin: 0 auto; border: 2px solid #4CAF50; background: #000;">
+                    <p style="color: #aaa; text-align: center; line-height: 200px; margin: 0;">
+                        La minimap s'affichera ici
+                    </p>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button onclick="window.game?.minimap?.toggle()" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        Activer/Désactiver
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    createSettingsContent() {
+        return `
+            <div style="padding: 10px;">
+                <h3 style="color: #4CAF50; margin-top: 0;">⚙️ Options du Jeu</h3>
+                
+                <!-- Contrôles -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #FFC107; border-bottom: 1px solid #444; padding-bottom: 5px;">🎮 Contrôles</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
+                        <div><strong>Se déplacer:</strong> Flèches directionnelles</div>
+                        <div><strong>Sauter:</strong> Flèche Haut / Espace</div>
+                        <div><strong>Action/Miner:</strong> E / Clic gauche</div>
+                        <div><strong>Attaquer:</strong> F</div>
+                        <div><strong>Construire:</strong> Clic droit</div>
+                        <div><strong>Inventaire:</strong> I</div>
+                        <div><strong>Personnage:</strong> P</div>
+                        <div><strong>Quêtes:</strong> Q</div>
+                        <div><strong>Minimap:</strong> M</div>
+                        <div><strong>Debug:</strong> F12</div>
+                    </div>
+                </div>
+
+                <!-- Audio -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #FFC107; border-bottom: 1px solid #444; padding-bottom: 5px;">🔊 Audio</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">Volume Principal:</label>
+                        <input type="range" id="masterVolume" min="0" max="100" value="80" style="width: 100%;" onchange="this.nextElementSibling.textContent = this.value + '%'">
+                        <span>80%</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">Volume Musique:</label>
+                        <input type="range" id="musicVolume" min="0" max="100" value="60" style="width: 100%;" onchange="this.nextElementSibling.textContent = this.value + '%'">
+                        <span>60%</span>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">Volume Effets:</label>
+                        <input type="range" id="sfxVolume" min="0" max="100" value="80" style="width: 100%;" onchange="this.nextElementSibling.textContent = this.value + '%'">
+                        <span>80%</span>
+                    </div>
+                </div>
+
+                <!-- Graphiques -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #FFC107; border-bottom: 1px solid #444; padding-bottom: 5px;">🎨 Graphiques</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" id="particlesEnabled" checked> Effets de particules
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" id="weatherEnabled" checked> Effets météo
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" id="lightingEnabled" checked> Éclairage dynamique
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">Zoom:</label>
+                        <select id="zoomLevel" style="width: 100%; padding: 5px;">
+                            <option value="1">1x (Petit)</option>
+                            <option value="2">2x (Normal)</option>
+                            <option value="3" selected>3x (Grand)</option>
+                            <option value="4">4x (Très grand)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Gameplay -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #FFC107; border-bottom: 1px solid #444; padding-bottom: 5px;">🎯 Gameplay</h4>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">Difficulté:</label>
+                        <select id="difficulty" style="width: 100%; padding: 5px;">
+                            <option value="easy">Facile</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="hard">Difficile</option>
+                            <option value="expert">Expert</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" id="autoSave" checked> Sauvegarde automatique
+                        </label>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" id="showDamageNumbers" checked> Afficher les dégâts
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <button onclick="window.game?.modularInterface?.saveSettings()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                        💾 Sauvegarder
+                    </button>
+                    <button onclick="window.game?.modularInterface?.resetSettings()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        🔄 Réinitialiser
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    saveSettings() {
+        // Sauvegarder les paramètres dans localStorage
+        const settings = {
+            masterVolume: document.getElementById('masterVolume')?.value || 80,
+            musicVolume: document.getElementById('musicVolume')?.value || 60,
+            sfxVolume: document.getElementById('sfxVolume')?.value || 80,
+            particlesEnabled: document.getElementById('particlesEnabled')?.checked || true,
+            weatherEnabled: document.getElementById('weatherEnabled')?.checked || true,
+            lightingEnabled: document.getElementById('lightingEnabled')?.checked || true,
+            zoomLevel: document.getElementById('zoomLevel')?.value || 3,
+            difficulty: document.getElementById('difficulty')?.value || 'normal',
+            autoSave: document.getElementById('autoSave')?.checked || true,
+            showDamageNumbers: document.getElementById('showDamageNumbers')?.checked || true
+        };
+
+        localStorage.setItem('gameSettings', JSON.stringify(settings));
+        this.showNotification('Paramètres sauvegardés !', 'success', 2000);
+        
+        // Appliquer les paramètres
+        this.applySettings(settings);
+    }
+
+    resetSettings() {
+        localStorage.removeItem('gameSettings');
+        this.showNotification('Paramètres réinitialisés !', 'info', 2000);
+        
+        // Recharger le contenu de la fenêtre
+        const settingsWindow = this.windows.get('settings');
+        if (settingsWindow) {
+            settingsWindow.content.innerHTML = this.createSettingsContent();
+        }
+    }
+
+    applySettings(settings) {
+        // Appliquer les paramètres au jeu
+        if (window.game) {
+            if (window.game.config) {
+                window.game.config.zoom = parseInt(settings.zoomLevel);
+                window.game.config.showParticles = settings.particlesEnabled;
+                window.game.config.weatherEffects = settings.weatherEnabled;
+                window.game.config.dynamicLighting = settings.lightingEnabled;
+                window.game.config.soundVolume = settings.masterVolume / 100;
+            }
+            
+            if (window.game.ambianceSystem) {
+                window.game.ambianceSystem.setVolume(settings.masterVolume / 100);
+            }
+        }
+    }
+
+    loadSettings() {
+        const savedSettings = localStorage.getItem('gameSettings');
+        if (savedSettings) {
+            try {
+                const settings = JSON.parse(savedSettings);
+                this.applySettings(settings);
+            } catch (e) {
+                console.warn('Erreur lors du chargement des paramètres:', e);
+            }
+        }
     }
 }

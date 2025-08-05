@@ -404,6 +404,9 @@ async function startGameSequence() {
         // Initialiser l'interface RPG modulaire
         game.modularInterface = new ModularRPGInterface();
         
+        // Charger les paramètres sauvegardés
+        game.modularInterface.loadSettings();
+        
         // Initialiser le système d'ambiance
         game.ambianceSystem = new AmbianceSystem();
         

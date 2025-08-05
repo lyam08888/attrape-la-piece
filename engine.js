@@ -234,10 +234,34 @@ export class GameEngine {
             if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
             if (key === binds.attack) this.keys.attack = true;
             
-            // Gestion des touches spéciales
+            // Gestion des touches spéciales et des menus
             if (key === binds.minimap && !e.repeat) {
-                if (window.game?.minimap) {
-                    window.game.minimap.toggle();
+                if (window.game?.modularInterface) {
+                    window.game.modularInterface.toggleWindow('map');
+                }
+            }
+            
+            if (key === binds.inventory && !e.repeat) {
+                if (window.game?.modularInterface) {
+                    window.game.modularInterface.toggleWindow('inventory');
+                }
+            }
+            
+            if (key === binds.character && !e.repeat) {
+                if (window.game?.modularInterface) {
+                    window.game.modularInterface.toggleWindow('character');
+                }
+            }
+            
+            if (key === binds.quests && !e.repeat) {
+                if (window.game?.modularInterface) {
+                    window.game.modularInterface.toggleWindow('quests');
+                }
+            }
+            
+            if (key === binds.options && !e.repeat) {
+                if (window.game?.modularInterface) {
+                    window.game.modularInterface.toggleWindow('settings');
                 }
             }
             
