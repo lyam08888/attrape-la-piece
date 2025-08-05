@@ -609,14 +609,28 @@ export class Player {
             ctx.restore();
         }
         
-        // Couleur basée sur la classe
-        let playerColor = '#FF6B6B';
-        if (this.characterClass) {
-            playerColor = this.characterClass.data.color;
-        }
+        // Déterminer l'animation actuelle
+        this.updateAnimation();
+        const currentFrame = this.getCurrentFrame();
         
-        ctx.fillStyle = playerColor;
-        ctx.fillRect(this.x, this.y, this.w, this.h);
+        // Essayer d'utiliser le sprite, sinon fallback vers un rectangle coloré
+        const sprite = assets[currentFrame];
+        if (sprite && sprite.complete) {
+            ctx.save();
+            
+            // Retourner le sprite si le joueur regarde à gauche
+            if (this.facing === -1) {
+                ctx.scale(-1, 1);
+                ctx.drawImage(sprite, -this.x - this.w, this.y, this.w, this.h);
+            } else {
+                ctx.drawImage(sprite, this.x, this.y, this.w, this.h);
+            }
+            
+            ctx.restore();
+        } else {
+            // Fallback amélioré avec un design plus propre
+            this.drawFallbackPlayer(ctx);
+        }
 
         // Icône de classe au-dessus du joueur
         if (this.characterClass) {
@@ -650,5 +664,98 @@ export class Player {
             ctx.fillStyle = '#3498db';
             ctx.fillRect(barX, barY + 5, barWidth * manaPercent, barHeight);
         }
+    }
+
+    updateAnimation() {
+        // Mettre à jour le timer d'animation
+        this.frameTimer += 0.016; // Approximation de 60 FPS
+        
+        // Déterminer l'animation basée sur l'état du joueur
+        if (!this.isGrounded) {
+            if (this.canDoubleJump === false) {
+                this.currentAnimation = 'doubleJump';
+            } else {
+                this.currentAnimation = 'jumping';
+            }
+        } else if (Math.abs(this.vx) > 0.1) {
+            if (this.keys?.run) {
+                this.currentAnimation = 'running';
+            } else {
+                this.currentAnimation = 'walking';
+            }
+        } else {
+            this.currentAnimation = 'idle';
+        }
+        
+        // Changer de frame toutes les 0.2 secondes
+        if (this.frameTimer >= 0.2) {
+            this.frameTimer = 0;
+            this.frame++;
+        }
+    }
+
+    getCurrentFrame() {
+        const animations = {
+            idle: ['player_idle1', 'player_idle2'],
+            walking: ['player_walk1', 'player_walk2'],
+            running: ['player_run1', 'player_run2'],
+            jumping: ['player_jump'],
+            doubleJump: ['player_double_jump1', 'player_double_jump2'],
+            flying: ['player_fly1', 'player_fly2']
+        };
+        
+        const currentFrames = animations[this.currentAnimation] || animations.idle;
+        const frameIndex = this.frame % currentFrames.length;
+        return currentFrames[frameIndex];
+    }
+
+    drawFallbackPlayer(ctx) {
+        // Fallback amélioré avec un design de personnage pixelisé
+        ctx.save();
+        
+        // Corps principal
+        let playerColor = '#4A90E2'; // Bleu par défaut
+        if (this.characterClass) {
+            playerColor = this.characterClass.data.color;
+        }
+        
+        // Corps
+        ctx.fillStyle = playerColor;
+        ctx.fillRect(this.x + 2, this.y + 8, this.w - 4, this.h - 12);
+        
+        // Tête
+        ctx.fillStyle = '#FFDBAC'; // Couleur peau
+        ctx.fillRect(this.x + 4, this.y + 2, this.w - 8, 8);
+        
+        // Yeux
+        ctx.fillStyle = '#000';
+        const eyeY = this.y + 4;
+        if (this.facing === 1) {
+            ctx.fillRect(this.x + 6, eyeY, 1, 1);
+            ctx.fillRect(this.x + 9, eyeY, 1, 1);
+        } else {
+            ctx.fillRect(this.x + 6, eyeY, 1, 1);
+            ctx.fillRect(this.x + 9, eyeY, 1, 1);
+        }
+        
+        // Pieds
+        ctx.fillStyle = '#8B4513'; // Marron pour les chaussures
+        ctx.fillRect(this.x + 2, this.y + this.h - 4, 4, 4);
+        ctx.fillRect(this.x + this.w - 6, this.y + this.h - 4, 4, 4);
+        
+        // Bras (animation simple)
+        ctx.fillStyle = '#FFDBAC';
+        if (Math.abs(this.vx) > 0.1) {
+            // Bras en mouvement
+            const armOffset = Math.sin(Date.now() * 0.01) * 2;
+            ctx.fillRect(this.x, this.y + 10 + armOffset, 2, 6);
+            ctx.fillRect(this.x + this.w - 2, this.y + 10 - armOffset, 2, 6);
+        } else {
+            // Bras au repos
+            ctx.fillRect(this.x, this.y + 10, 2, 6);
+            ctx.fillRect(this.x + this.w - 2, this.y + 10, 2, 6);
+        }
+        
+        ctx.restore();
     }
 }

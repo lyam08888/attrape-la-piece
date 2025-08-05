@@ -41,6 +41,7 @@ export class GameEngine {
             quests: 'q',
             pause: 'Escape',
             options: 'o',
+            minimap: 'm',
             tool1: '1',
             tool2: '2',
             tool3: '3',
@@ -215,19 +216,19 @@ export class GameEngine {
             
             if (this.gameLogic.isPaused && this.gameLogic.isPaused() && ![binds.pause, 'F3'].includes(key)) return;
             
-            if (key === binds.left || key === 'a' || key === 'A') {
+            if (key === binds.left || key === 'ArrowLeft') {
                 this.keys.left = true;
             }
-            if (key === binds.right || key === 'd' || key === 'D') {
+            if (key === binds.right || key === 'ArrowRight') {
                 this.keys.right = true;
             }
             if (key === binds.action) this.keys.action = true;
-            if (key === binds.up || key === 'w' || key === 'W') this.keys.up = true;
-            if (key === binds.jump || key === 'w' || key === 'W') {
+            if (key === binds.up || key === 'ArrowUp') this.keys.up = true;
+            if (key === binds.jump || key === 'ArrowUp' || key === ' ') {
                 this.keys.jump = true;
                 this.keys.up = true;
             }
-            if (key === binds.down || key === 's' || key === 'S') this.keys.down = true;
+            if (key === binds.down || key === 'ArrowDown') this.keys.down = true;
             if (key === binds.run) this.keys.run = true;
             if (key === binds.repair) this.keys.repair = true;
             if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
@@ -264,19 +265,19 @@ export class GameEngine {
             const binds = this.config.keyBindings || {};
             const key = normalizeKey(e.key);
             
-            if (key === binds.left || key === 'a' || key === 'A') {
+            if (key === binds.left || key === 'ArrowLeft') {
                 this.keys.left = false;
             }
-            if (key === binds.right || key === 'd' || key === 'D') {
+            if (key === binds.right || key === 'ArrowRight') {
                 this.keys.right = false;
             }
             if (key === binds.action) this.keys.action = false;
-            if (key === binds.up || key === 'w' || key === 'W') this.keys.up = false;
-            if (key === binds.jump || key === 'w' || key === 'W') {
+            if (key === binds.up || key === 'ArrowUp') this.keys.up = false;
+            if (key === binds.jump || key === 'ArrowUp' || key === ' ') {
                 this.keys.jump = false;
                 this.keys.up = false;
             }
-            if (key === binds.down || key === 's' || key === 'S') this.keys.down = false;
+            if (key === binds.down || key === 'ArrowDown') this.keys.down = false;
             if (key === binds.run) this.keys.run = false;
             if (key === binds.repair) this.keys.repair = false;
             if (key === binds.attack) this.keys.attack = false;
