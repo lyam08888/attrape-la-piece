@@ -217,6 +217,9 @@ async function startGameSequence() {
 
         updateStatus("Génération du monde...");
         game.tileMap = generateLevel(Math.floor(config.worldWidth / config.tileSize), Math.floor(config.worldHeight / config.tileSize));
+        // Log pour vérifier la génération de la map
+        const nonAirTiles = game.tileMap.flat().filter(t => t !== 0).length;
+        logger.log(`Tiles non AIR générées: ${nonAirTiles} / ${game.tileMap.length * game.tileMap[0].length}`, nonAirTiles > 0 ? 'success' : 'error');
         
         updateStatus("Initialisation des systèmes RPG...");
         
