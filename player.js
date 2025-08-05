@@ -88,6 +88,9 @@ export class Player {
     update(keys, game, delta) {
         if (!game || !game.tileMap) return;
 
+        // Conserver l'état des touches pour l'animation
+        this.keys = keys;
+
         const physics = this.config.physics;
 
         // --- Mouvements ---
@@ -113,10 +116,8 @@ export class Player {
     }
 
     handleMovement(keys, physics) {
-        // Gestion du vol
-        if (keys.fly) {
-            this.isFlying = !this.isFlying;
-        }
+        // Gestion du vol : le vol est activé si la touche correspondante est active
+        this.isFlying = !!keys.fly;
         
         // Gestion de l'accroupissement et position allongée
         if (keys.down && this.isGrounded) {
