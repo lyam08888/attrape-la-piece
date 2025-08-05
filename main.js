@@ -157,6 +157,11 @@ function drawWorld(ctx, assets) {
     const startY = Math.floor(game.camera.y / tileSize);
     const endY = startY + Math.ceil(ctx.canvas.height / tileSize / zoom) + 1;
 
+    // Log la position de la caméra et la première ligne de tuiles visibles
+    if (startY < game.tileMap.length) {
+        logger.log(`Caméra: x=${game.camera.x}, y=${game.camera.y}, startX=${startX}, startY=${startY}, première ligne visible: [${game.tileMap[startY].slice(startX, endX).join(', ')}]`, 'debug');
+    }
+
     for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
         for (let x = Math.max(0, startX); x < Math.min(game.tileMap[y].length, endX); x++) {
             const tileType = game.tileMap[y][x];
