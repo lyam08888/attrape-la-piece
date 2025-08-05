@@ -14,6 +14,13 @@ export class GameEngine {
         this.ctx = canvas.getContext('2d');
         this.logger = logger;
         this.ctx.imageSmoothingEnabled = false;
+        
+        // S'assurer que le canvas a des dimensions valides
+        if (this.canvas.width === 0 || this.canvas.height === 0) {
+            this.canvas.width = Math.max(this.canvas.clientWidth, 800);
+            this.canvas.height = Math.max(this.canvas.clientHeight, 600);
+            console.log(`Canvas initialisé avec dimensions: ${this.canvas.width}x${this.canvas.height}`);
+        }
 
         // Provide default key bindings when none are supplied. This prevents
         // the player from being unable to move if the configuration misses
@@ -282,10 +289,7 @@ export class GameEngine {
                         this.gameLogic.update(delta, this.keys, this.mouse);
                     }
                     
-                    // Log occasionnel pour vérifier que la boucle fonctionne
-                    if (Math.random() < 0.001) {
-                        console.log('Engine loop: delta=', delta.toFixed(3), 'gameLogic=', !!this.gameLogic, 'ctx=', !!this.ctx, 'assets=', Object.keys(this.assets).length);
-                    }
+
                     
                     // Passe également delta au rendu afin que la logique de dessin
                     this.gameLogic.draw(this.ctx, this.assets, delta);

@@ -99,9 +99,16 @@ function updateLoadingStatus(message) {
 function resizeCanvas() {
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) return;
+    
     const container = canvas.parentElement;
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    const containerWidth = container.clientWidth || window.innerWidth;
+    const containerHeight = container.clientHeight || window.innerHeight;
+    
+    // S'assurer que les dimensions ne sont jamais 0
+    canvas.width = Math.max(containerWidth, 800);
+    canvas.height = Math.max(containerHeight, 600);
+    
+    console.log(`Canvas redimensionné: ${canvas.width}x${canvas.height}`);
 }
 
 function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
@@ -152,10 +159,8 @@ const gameLogic = {
     },
     draw: (ctx, assets, delta) => {
         // Log occasionnel pour vérifier que draw est appelé
-        if (Math.random() < 0.01) {
-            console.log('Draw appelé: game=', !!game, 'player=', !!game?.player, 'ctx=', !!ctx, 'assets=', Object.keys(assets || {}).length);
-            console.log('Canvas dimensions:', ctx.canvas.width, 'x', ctx.canvas.height);
-            console.log('Canvas style:', ctx.canvas.style.display, ctx.canvas.style.visibility, ctx.canvas.style.opacity);
+        if (Math.random() < 0.001) {
+            console.log('Draw: canvas=', ctx.canvas.width + 'x' + ctx.canvas.height, 'game=', !!game, 'player=', !!game?.player);
         }
         
         if (!game || !game.player) {
@@ -305,6 +310,9 @@ function showGame() {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('gameContainer').style.display = 'block';
     resizeCanvas();
+    
+    // Ajouter un gestionnaire pour redimensionner le canvas
+    window.addEventListener('resize', resizeCanvas);
 }
 
 // --- Point d'Entrée Principal ---
