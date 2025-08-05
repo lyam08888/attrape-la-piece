@@ -368,6 +368,7 @@ export function integrateAdvancedSystems(game) {
     console.log('    -> 🐾 Système de faune initialisé.');
 
     // 7. Génération de monstres
+re     if (!Array.isArray(game.enemies)) game.enemies = [];
     if (typeof generateMonster === 'function') {
         const monsters = [];
         for (let i = 0; i < 10; i++) {
