@@ -11,7 +11,8 @@ import { WorldAnimator } from './worldAnimator.js';
 import { generateMonster } from './generateurMonstres.js';
 import { generateAnimal } from './generateurAnimaux.js';
 import { generatePNJ } from './generateurPNJ.js';
-import { PNJ } from './PNJ.js';
+import { AdvancedNPCSystem } from './advancedNPCSystem.js';
+const PNJ = AdvancedNPCSystem?.PNJ || function() { throw new Error('PNJ non disponible'); };
 import { FoodSystem } from './foodSystem.js';
 
 // Classes de base manquantes pour les systèmes avancés

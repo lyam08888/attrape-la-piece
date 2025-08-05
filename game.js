@@ -5,7 +5,8 @@
 import { GameEngine } from './engine.js';
 import { Player } from './player.js';
 import { TILE, generateLevel, ensureWorldColumns } from './world.js';
-import { PNJ } from './PNJ.js';
+import { AdvancedNPCSystem } from './advancedNPCSystem.js';
+const PNJ = AdvancedNPCSystem?.PNJ || function() { throw new Error('PNJ non disponible'); };
 import { generatePNJ } from './generateurPNJ.js';
 import { updateGravity } from './miningEngine.js';
 import { ParticleSystem as ParticleSystemFX } from './fx.js';
