@@ -213,6 +213,7 @@ async function startGameSequence() {
         
         game = { config, canvas, ctx: canvas.getContext('2d'), paused: false, logger };
         window.game = game;
+        game.camera = { x: 0, y: 0 };
 
         updateStatus("Génération du monde...");
         game.tileMap = generateLevel(Math.floor(config.worldWidth / config.tileSize), Math.floor(config.worldHeight / config.tileSize));
