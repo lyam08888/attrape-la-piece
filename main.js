@@ -177,10 +177,10 @@ function drawWorld(ctx, assets) {
         1: 'tile_stone',
         2: 'tile_grass',
         3: 'tile_dirt',
-        100: 'tile_divine_stone',
-        103: 'tile_blessed_grass',
+        100: 'tile_stone', // DIVINE_STONE → stone
+        103: 'tile_grass', // BLESSED_GRASS → grass
         106: 'tile_cloud',
-        112: 'tile_crystal_stone',
+        112: 'tile_crystal', // CRYSTAL_STONE → crystal
         121: 'tile_sand',
         130: 'tile_hellstone',
     };
