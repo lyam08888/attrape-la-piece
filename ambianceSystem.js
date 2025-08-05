@@ -1,3 +1,5 @@
+import { WeatherSystem } from './weatherSystem.js';
+
 // ambianceSystem.js - Système d'ambiance complète pour le jeu RPG
 
 export class AmbianceSystem {
