@@ -197,7 +197,10 @@ export function updateMining(game, keys, mouse, delta) {
     }
     
     if (!isMining || !player.miningTarget) {
-        if (player) player.miningProgress = 0;
+        if (player) {
+            player.miningProgress = 0;
+            player.miningTarget = null;
+        }
         game.miningEffect = null;
         return;
     }

@@ -318,12 +318,13 @@ export class Player {
         const tileX = Math.floor(mouseX / tileSize);
         const tileY = Math.floor(mouseY / tileSize);
 
-        // Vérifier si le joueur a le bloc dans son inventaire
+        // Vérifier si le joueur possède le bloc dans son inventaire
         const blockToPlace = TILE.DIRT; // Exemple: toujours placer de la terre
-        if (this.inventory[blockToPlace] > 0) {
+        const itemKey = this.getItemFromBlock(blockToPlace);
+        if ((this.inventory[itemKey] || 0) > 0) {
             if (game.tileMap[tileY]?.[tileX] === TILE.AIR) {
                 game.tileMap[tileY][tileX] = blockToPlace;
-                this.inventory[blockToPlace]--;
+                this.inventory[itemKey]--;
                 if(game.logger) game.logger.log(`Bloc ${blockToPlace} placé à (${tileX},${tileY})`, 'action');
             }
         }
