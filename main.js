@@ -127,7 +127,7 @@ const gameLogic = {
         ctx.translate(-game.camera.x, -game.camera.y);
         drawWorld(ctx, assets);
         game.enemies?.forEach(e => e.draw(ctx, assets));
-        game.pnjs?.forEach(p => p.draw(ctx, assets));
+        game.pnjs?.forEach(p => { if (typeof p.draw === 'function') p.draw(ctx, assets); });
         game.player.draw(ctx, assets);
         ctx.restore();
         
