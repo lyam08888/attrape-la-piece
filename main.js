@@ -76,9 +76,12 @@ function resizeCanvas() {
 
 function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
     const worldCenter = Math.floor(tileMap[0].length / 2);
-    // Cherche un sol solide (herbe, pierre, sable) au centre, évite les bords
-    for (let x = Math.floor(tileMap[0].length * 0.2); x < Math.floor(tileMap[0].length * 0.8); x++) {
-        for (let y = 2; y < tileMap.length - 1; y++) {
+    const height = tileMap.length;
+    // Cherche un sol solide (herbe, pierre, sable) uniquement dans la couche surface
+    const yStart = Math.floor(height * 0.18);
+    const yEnd = Math.floor(height * 0.5);
+    for (let x = Math.floor(tileMap[0].length * 0.3); x < Math.floor(tileMap[0].length * 0.7); x++) {
+        for (let y = yStart + 2; y < yEnd; y++) {
             const isGround = tileMap[y][x] > TILE.AIR && tileMap[y][x] !== 0;
             const isAirAbove = tileMap[y - 1]?.[x] === TILE.AIR && tileMap[y - 2]?.[x] === TILE.AIR;
             if (isGround && isAirAbove) {
@@ -87,7 +90,7 @@ function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
         }
     }
     // Fallback : centre
-    return { x: worldCenter * tileSize, y: 100 };
+    return { x: worldCenter * tileSize, y: (yStart - 2) * tileSize };
 }
 
 // --- Logique de Jeu (Update & Draw) ---
