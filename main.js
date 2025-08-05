@@ -145,7 +145,9 @@ const gameLogic = {
         logger.success("🖼️ Assets chargés avec succès.");
         return true;
     },
-    update: (delta, keys) => {
+    update: (delta, keys, mouse) => {
+        // keep mouse state in sync with the engine so gameplay can react to clicks
+        if (game) game.mouse = mouse;
         if (!game || !game.player || game.paused) return;
         
         // Mettre à jour tous les systèmes
@@ -368,6 +370,9 @@ async function startGameSequence() {
         game = { config, canvas, ctx: canvas.getContext('2d'), paused: false, logger };
         window.game = game;
         game.camera = { x: 0, y: 0 };
+        // Share the engine's mouse state with the game object so that
+        // player actions like mining can react to mouse input
+        game.mouse = engine.mouse;
 
         updateStatus("Génération du monde...");
         const worldWidth = Math.floor(config.worldWidth / config.tileSize);
