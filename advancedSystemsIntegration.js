@@ -3,7 +3,7 @@
 // Imports pour les systèmes avancés
 import { WeatherSystem as AdvancedWeatherSystem } from './weatherSystem.js';
 import { DisasterManager as DisasterManagerAdvanced } from './disasterManager.js';
-// import { AnimalManager as AnimalSystemAdvanced } from './animalSystem.js'; // supprimé car doublon/obsolète
+import { AdvancedBiomeSystem } from './advancedBiomeSystem.js';
 import ExplorationSystem from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
@@ -357,15 +357,14 @@ export function integrateAdvancedSystems(game) {
     console.log('    -> ✨ Animateur du monde initialisé.');
 
     // 6. Système de faune (animaux)
-    game.animalManager = new AnimalSystemAdvanced();
-    game.animals = game.animalManager.animals;
-    if (typeof generateAnimal === 'function') {
-        const animals = [];
-        for (let i = 0; i < 5; i++) {
-            animals.push(generateAnimal({ biome: 'surface' }));
-        }
-        game.animalManager.animals.push(...animals);
-    }
+    game.animalManager = new AdvancedBiomeSystem(game.config);
+    game.animals = [];
+    // Générer des animaux pour chaque biome principal autour du joueur
+    const biomes = Object.keys(game.animalManager.animalDistribution);
+    biomes.forEach(biome => {
+        const animals = game.animalManager.spawnAnimalsInBiome(game, biome, 100, 100, 3);
+        game.animals.push(...animals);
+    });
     console.log('    -> 🐾 Système de faune initialisé.');
 
     // 7. Génération de monstres
