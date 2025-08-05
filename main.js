@@ -322,6 +322,9 @@ async function startGameSequence() {
         await engine.start(gameLogic);
 
         showGame();
+        // Vérification visibilité du canvas
+        const canvasStyle = window.getComputedStyle(document.getElementById('gameCanvas'));
+        logger.log(`Canvas display: ${canvasStyle.display}, visibility: ${canvasStyle.visibility}, opacity: ${canvasStyle.opacity}`, 'debug');
         
         // Notifications de bienvenue
         game.modularInterface.showNotification(`Bienvenue, ${game.player.characterClass.data.name} !`, "success");
