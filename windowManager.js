@@ -6,7 +6,15 @@ export class WindowManager {
         this.zIndexCounter = 1000;
         this.minimizedWindows = new Set();
         this.maximizedWindows = new Set();
-        
+        // Stockage des positions et tailles des fenêtres
+        this.windowPositions = new Map();
+        // Conteneur principal pour les fenêtres (fallback sur body)
+        this.container = document.getElementById('gameContainer') || document.body;
+
+        // Créer l'interface de base
+        this.createTaskbar();
+        this.loadWindowPositions();
+
         this.initializeWindowSystem();
         this.setupEventListeners();
     }
@@ -44,6 +52,35 @@ export class WindowManager {
     registerWindow(windowId, windowData) {
         this.windows.set(windowId, windowData);
         console.log(`📝 Fenêtre enregistrée: ${windowId}`);
+    }
+
+    setupEventListeners() {
+        // Raccourci pour minimiser la fenêtre active avec Échap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.activeWindow) {
+                this.minimizeWindow(this.activeWindow);
+            }
+        });
+    }
+
+    makeWindowsDraggable() {
+        const windows = document.querySelectorAll('.game-window');
+        windows.forEach(winEl => {
+            const header = winEl.querySelector('.window-header');
+            if (header) {
+                this.makeDraggable(winEl, header);
+            }
+        });
+    }
+
+    makeWindowsResizable() {
+        const windows = document.querySelectorAll('.game-window');
+        windows.forEach(winEl => {
+            const handle = winEl.querySelector('.resize-handle');
+            if (handle) {
+                this.makeResizable(winEl, handle);
+            }
+        });
     }
 
     createTaskbar() {
