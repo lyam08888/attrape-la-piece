@@ -77,19 +77,20 @@ function resizeCanvas() {
 function findSafeSpawnPoint(tileMap, playerHeight, tileSize) {
     const worldCenter = Math.floor(tileMap[0].length / 2);
     const height = tileMap.length;
-    // Cherche un sol solide (herbe, pierre, sable) uniquement dans la couche surface
+    const width = tileMap[0].length;
     const yStart = Math.floor(height * 0.18);
     const yEnd = Math.floor(height * 0.5);
-    for (let x = Math.floor(tileMap[0].length * 0.3); x < Math.floor(tileMap[0].length * 0.7); x++) {
-        for (let y = yStart + 2; y < yEnd; y++) {
+    for (let y = yEnd - 1; y > yStart + 2; y--) {
+        for (let x = Math.floor(width * 0.3); x < Math.floor(width * 0.7); x++) {
             const isGround = tileMap[y][x] > TILE.AIR && tileMap[y][x] !== 0;
             const isAirAbove = tileMap[y - 1]?.[x] === TILE.AIR && tileMap[y - 2]?.[x] === TILE.AIR;
             if (isGround && isAirAbove) {
+                logger.log(`SPAWN trouvé : x=${x}, y=${y}, tuile=${tileMap[y][x]}`, 'success');
                 return { x: x * tileSize, y: (y - 2) * tileSize };
             }
         }
     }
-    // Fallback : centre
+    logger.error('AUCUN SPAWN SOLIDE TROUVÉ, fallback centre');
     return { x: worldCenter * tileSize, y: (yStart - 2) * tileSize };
 }
 
