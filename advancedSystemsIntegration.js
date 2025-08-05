@@ -1,5 +1,18 @@
 // advancedSystemsIntegration.js - Intégration et corrections des systèmes avancés
 
+// Imports pour les systèmes avancés
+import { WeatherSystem } from './weatherSystem.js';
+import { DisasterManager } from './disasterManager.js';
+import { AnimalSystem } from './animalSystem.js';
+import { ExplorationSystem } from './explorationSystem.js';
+import { TimeSystem } from './timeSystem.js';
+import { LightingSystem as AdvancedLightingSystem } from './lighting.js';
+import { WorldAnimator } from './worldAnimator.js';
+import { generateMonsters } from './generateurMonstres.js';
+import { generateAnimals } from './generateurAnimaux.js';
+import { generatePNJ } from './generateurPNJ.js';
+import { PNJ } from './PNJ.js';
+
 // Classes de base manquantes pour les systèmes avancés
 export class ParticleSystem {
     constructor() {
@@ -279,50 +292,6 @@ export class NPCAISystem {
         });
     }
 }
-
-// Fonction d'intégration principale
-export function integrateAdvancedSystems(game) {
-    console.log("🔧 Intégration des systèmes avancés...");
-    
-    // Corriger les dépendances manquantes
-    if (!window.ParticleSystem) window.ParticleSystem = ParticleSystem;
-    if (!window.LightingSystem) window.LightingSystem = LightingSystem;
-    if (!window.WeatherRenderer) window.WeatherRenderer = WeatherRenderer;
-    if (!window.AnimationSystem) window.AnimationSystem = AnimationSystem;
-    if (!window.DialogueSystem) window.DialogueSystem = DialogueSystem;
-    if (!window.QuestSystem) window.QuestSystem = QuestSystem;
-    if (!window.RelationshipSystem) window.RelationshipSystem = RelationshipSystem;
-    if (!window.NPCAISystem) window.NPCAISystem = NPCAISystem;
-    
-    console.log("✅ Systèmes avancés intégrés avec succès !");
-    return true;
-}
-
-// Export par défaut
-export default {
-    ParticleSystem,
-    LightingSystem,
-    WeatherRenderer,
-    AnimationSystem,
-    DialogueSystem,
-    QuestSystem,
-    RelationshipSystem,
-    NPCAISystem,
-    integrateAdvancedSystems
-};
-
-import { WeatherSystem } from './weatherSystem.js';
-import { DisasterManager } from './disasterManager.js';
-import { FoodSystem } from './foodSystem.js';
-import { AnimalSystem } from './animalSystem.js';
-import { ExplorationSystem } from './explorationSystem.js';
-import { TimeSystem } from './timeSystem.js';
-import { LightingSystem } from './lighting.js';
-import { WorldAnimator } from './worldAnimator.js';
-import { generateMonsters } from './generateurMonstres.js';
-import { generateAnimals } from './generateurAnimaux.js';
-import { generatePNJ } from './generateurPNJ.js';
-import { PNJ } from './PNJ.js';
 
 /**
  * Intègre tous les systèmes de jeu avancés dans l'objet de jeu principal.
