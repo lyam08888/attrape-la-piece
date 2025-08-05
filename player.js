@@ -58,6 +58,9 @@ export class Player {
         
         // Classe de personnage (sera définie plus tard)
         this.characterClass = null;
+        
+        // Effets visuels
+        this.damageFlash = 0;
 
         // --- Tools & Inventory ---
         this.tools = ['tool_pickaxe', 'tool_axe', 'tool_shovel'];
@@ -93,6 +96,11 @@ export class Player {
 
         // --- Régénération des stats RPG ---
         this.regenerateStats(delta);
+        
+        // Mettre à jour les effets visuels
+        if (this.damageFlash > 0) {
+            this.damageFlash -= delta;
+        }
     }
 
     handleMovement(keys, physics) {
@@ -472,6 +480,34 @@ export class Player {
         }
     }
 
+    // Prendre des dégâts
+    takeDamage(amount) {
+        const actualDamage = Math.max(1, amount - (this.totalDefense || this.stats.defense));
+        this.health = Math.max(0, this.health - actualDamage);
+        
+        // Effet visuel de dégâts
+        this.damageFlash = 0.3;
+        
+        // Vérifier la mort
+        if (this.health <= 0) {
+            this.die();
+        }
+        
+        return actualDamage;
+    }
+    
+    // Mourir
+    die() {
+        console.log('💀 Le joueur est mort !');
+        // Pour l'instant, restaurer la santé et téléporter au spawn
+        this.health = this.maxHealth;
+        this.x = window.game?.spawnPoint?.x || 100;
+        this.y = window.game?.spawnPoint?.y || 100;
+        
+        window.game?.modularInterface?.showNotification('Vous êtes mort ! Respawn au point de départ.', 'error', 4000);
+        window.game?.ambianceSystem?.playSound('damage');
+    }
+
     // Gagner de l'expérience
     gainXP(amount, game) {
         this.stats.xp += amount;
@@ -511,6 +547,15 @@ export class Player {
     }
 
     draw(ctx, assets) {
+        // Effet de flash de dégâts
+        if (this.damageFlash > 0) {
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(this.x - 2, this.y - 2, this.w + 4, this.h + 4);
+            ctx.restore();
+        }
+        
         // Couleur basée sur la classe
         let playerColor = '#FF6B6B';
         if (this.characterClass) {

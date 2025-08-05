@@ -305,11 +305,15 @@ async function startGameSequence() {
         
         // Notifications de bienvenue
         game.modularInterface.showNotification(`Bienvenue, ${game.player.characterClass.data.name} !`, "success");
-        game.modularInterface.showNotification("Utilisez Tab pour basculer l'interface, I pour l'inventaire", "info", 5000);
+        game.modularInterface.showNotification("Contrôles: WASD/Flèches=Bouger, Espace=Attaque, 1-4=Potions, Q/W=Compétences", "info", 8000);
+        game.modularInterface.showNotification("Interface: Tab=Basculer, I=Inventaire, C=Personnage, J=Quêtes", "info", 6000);
         
         // Jouer l'ambiance de départ
         game.ambianceSystem.setAmbientMusic('ambient_forest');
         game.ambianceSystem.playSound('levelup'); // Son de début d'aventure
+        
+        // Configurer les contrôles
+        setupGameControls(game);
         
         logger.log("Jeu démarré. Appuyez sur 'F2' pour le logger.", 'debug');
 
@@ -334,3 +338,148 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('resize', resizeCanvas);
 });
+
+// --- Fonctions de contrôles et sauvegarde ---
+function setupGameControls(game) {
+    // Gestionnaire d'événements clavier pour les interfaces
+    document.addEventListener('keydown', (e) => {
+        if (!game.player) return;
+        
+        switch(e.key.toLowerCase()) {
+            case 'tab':
+                e.preventDefault();
+                game.modularInterface?.toggleInterface();
+                break;
+                
+            case 'i':
+                e.preventDefault();
+                game.modularInterface?.toggleWindow('inventory');
+                break;
+                
+            case 'c':
+                e.preventDefault();
+                game.modularInterface?.toggleWindow('character');
+                break;
+                
+            case 'j':
+                e.preventDefault();
+                game.modularInterface?.toggleWindow('quests');
+                break;
+                
+            case 'k':
+                e.preventDefault();
+                game.modularInterface?.toggleWindow('skills');
+                break;
+                
+            case 'escape':
+                e.preventDefault();
+                game.modularInterface?.closeAllWindows();
+                break;
+                
+            case 'f5':
+                e.preventDefault();
+                saveGame(game);
+                break;
+                
+            case 'f9':
+                e.preventDefault();
+                loadGame(game);
+                break;
+                
+            case 'm':
+                e.preventDefault();
+                const enabled = game.ambianceSystem?.toggle();
+                game.modularInterface?.showNotification(
+                    `Audio ${enabled ? 'activé' : 'désactivé'}`, 
+                    'info'
+                );
+                break;
+        }
+    });
+}
+
+function saveGame(game) {
+    try {
+        const saveData = {
+            player: {
+                x: game.player.x,
+                y: game.player.y,
+                health: game.player.health,
+                mana: game.player.mana,
+                stamina: game.player.stamina,
+                stats: game.player.stats,
+                characterClass: game.player.characterClass?.data?.name,
+                equipmentBonuses: game.player.equipmentBonuses
+            },
+            inventory: Array.from(game.equipmentManager?.inventory.entries() || []),
+            equipment: game.equipmentManager?.equipment || {},
+            quests: {
+                active: Array.from(game.questManager?.activeQuests.keys() || []),
+                completed: Array.from(game.questManager?.completedQuests || [])
+            },
+            timestamp: Date.now()
+        };
+        
+        localStorage.setItem('rpg_game_save', JSON.stringify(saveData));
+        game.modularInterface?.showNotification('Jeu sauvegardé !', 'success');
+        console.log('🎮 Jeu sauvegardé');
+    } catch (error) {
+        console.error('❌ Erreur de sauvegarde:', error);
+        game.modularInterface?.showNotification('Erreur de sauvegarde', 'error');
+    }
+}
+
+function loadGame(game) {
+    try {
+        const saveData = localStorage.getItem('rpg_game_save');
+        if (!saveData) {
+            game.modularInterface?.showNotification('Aucune sauvegarde trouvée', 'error');
+            return;
+        }
+        
+        const data = JSON.parse(saveData);
+        
+        // Restaurer le joueur
+        if (data.player) {
+            game.player.x = data.player.x;
+            game.player.y = data.player.y;
+            game.player.health = data.player.health;
+            game.player.mana = data.player.mana;
+            game.player.stamina = data.player.stamina;
+            game.player.stats = { ...game.player.stats, ...data.player.stats };
+            game.player.equipmentBonuses = data.player.equipmentBonuses || {};
+        }
+        
+        // Restaurer l'inventaire
+        if (data.inventory && game.equipmentManager) {
+            game.equipmentManager.inventory.clear();
+            data.inventory.forEach(([key, value]) => {
+                game.equipmentManager.inventory.set(key, value);
+            });
+        }
+        
+        // Restaurer l'équipement
+        if (data.equipment && game.equipmentManager) {
+            game.equipmentManager.equipment = data.equipment;
+        }
+        
+        // Restaurer les quêtes
+        if (data.quests && game.questManager) {
+            // Réactiver les quêtes actives
+            data.quests.active.forEach(questId => {
+                game.questManager.acceptQuest(questId, game.player);
+            });
+            
+            // Marquer les quêtes comme terminées
+            data.quests.completed.forEach(questId => {
+                game.questManager.completedQuests.add(questId);
+            });
+        }
+        
+        game.modularInterface?.showNotification('Jeu chargé !', 'success');
+        console.log('🎮 Jeu chargé');
+    } catch (error) {
+        console.error('❌ Erreur de chargement:', error);
+        game.modularInterface?.showNotification('Erreur de chargement', 'error');
+    }
+}
