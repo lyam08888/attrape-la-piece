@@ -11,6 +11,29 @@
   "dynamicLighting": true,
   "soundVolume": 0.8,
   "mobileMode": false,
+  "keyBindings": {
+    "left": "ArrowLeft",
+    "right": "ArrowRight",
+    "jump": " ",
+    "down": "ArrowDown",
+    "up": "ArrowUp",
+    "action": "e",
+    "attack": "f",
+    "run": "Shift",
+    "fly": "v",
+    "repair": "r",
+    "inventory": "i",
+    "character": "p",
+    "quests": "q",
+    "pause": "Escape",
+    "options": "o",
+    "tool1": "1",
+    "tool2": "2",
+    "tool3": "3",
+    "tool4": "4",
+    "tool5": "5",
+    "tool6": "6"
+  },
   "generation": {
     "enemyCount": 50,
     "treeCount": 40,
@@ -43,14 +66,14 @@
   },
   "player": {
     "maxLives": 5,
-    "width": 64,
-    "height": 64,
+    "width": 16,
+    "height": 24,
     "collisionMargin": 0,
     "hitbox": {
-      "offsetX": 16,
-      "offsetY": 8,
-      "width": 32,
-      "height": 48
+      "offsetX": 2,
+      "offsetY": 2,
+      "width": 12,
+      "height": 20
     },
     "reach": 4,
     "attackRange": 20

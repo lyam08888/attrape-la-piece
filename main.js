@@ -35,6 +35,8 @@ import { ModularRPGInterface } from './modularRPGInterface.js';
 import { AmbianceSystem } from './ambianceSystem.js';
 import { EnemySpawner } from './enemySystem.js';
 import { QuestManager } from './questSystem.js';
+import { FaunaSystem } from './faunaSystem.js';
+import { ControlsHUD } from './controlsHUD.js';
 
 // --- Configuration Globale ---
 let game = {};
@@ -153,6 +155,8 @@ const gameLogic = {
         game.ambianceSystem?.update(game, delta);
         game.equipmentManager?.updatePlayerStats();
         game.questManager?.update(game.player, game, delta);
+        game.faunaSystem?.update(game, delta);
+        game.controlsHUD?.update(delta);
         logger.update(); // Mettre à jour le logger
         
         updateCamera();
@@ -193,6 +197,7 @@ const gameLogic = {
         }
         
         drawWorld(ctx, assets);
+        game.faunaSystem?.draw(ctx, assets, game.camera);
         game.enemies?.forEach(e => e.draw(ctx, assets));
         game.pnjs?.forEach(p => { if (typeof p.draw === 'function') p.draw(ctx, assets); });
         game.player.draw(ctx, assets);
@@ -203,6 +208,7 @@ const gameLogic = {
         
         // Dessiner les interfaces
         game.rpgInterface?.draw(ctx);
+        game.controlsHUD?.draw(ctx);
         
         // Dessiner le logger par-dessus tout
         logger.draw(ctx);
@@ -386,6 +392,12 @@ async function startGameSequence() {
         
         // Initialiser le système de quêtes
         game.questManager = new QuestManager();
+        
+        // Initialiser le système de faune
+        game.faunaSystem = new FaunaSystem(config);
+        
+        // Initialiser le HUD des contrôles
+        game.controlsHUD = new ControlsHUD();
         
         updateStatus("Sélection de classe...");
         

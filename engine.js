@@ -207,16 +207,29 @@ export class GameEngine {
         document.addEventListener('keydown', e => {
             const binds = this.config.keyBindings || {};
             const key = normalizeKey(e.key);
+            
+            // Debug des touches
+            console.log(`Touche pressée: "${e.key}" -> normalisée: "${key}"`);
+            console.log('Bindings:', binds);
+            
             if (this.gameLogic.isPaused && this.gameLogic.isPaused() && ![binds.pause, 'F3'].includes(key)) return;
-            if (key === binds.left) this.keys.left = true;
-            if (key === binds.right) this.keys.right = true;
+            
+            if (key === binds.left || key === 'a' || key === 'A') {
+                this.keys.left = true;
+                console.log('Gauche activé');
+            }
+            if (key === binds.right || key === 'd' || key === 'D') {
+                this.keys.right = true;
+                console.log('Droite activé');
+            }
             if (key === binds.action) this.keys.action = true;
-            if (key === binds.up) this.keys.up = true;
-            if (key === binds.jump) {
+            if (key === binds.up || key === 'w' || key === 'W') this.keys.up = true;
+            if (key === binds.jump || key === 'w' || key === 'W') {
                 this.keys.jump = true;
                 this.keys.up = true;
+                console.log('Saut activé');
             }
-            if (key === binds.down) this.keys.down = true;
+            if (key === binds.down || key === 's' || key === 'S') this.keys.down = true;
             if (key === binds.run) this.keys.run = true;
             if (key === binds.repair) this.keys.repair = true;
             if (key === binds.fly && !e.repeat) this.keys.fly = !this.keys.fly;
@@ -231,15 +244,23 @@ export class GameEngine {
         document.addEventListener('keyup', e => {
             const binds = this.config.keyBindings || {};
             const key = normalizeKey(e.key);
-            if (key === binds.left) this.keys.left = false;
-            if (key === binds.right) this.keys.right = false;
+            
+            if (key === binds.left || key === 'a' || key === 'A') {
+                this.keys.left = false;
+                console.log('Gauche désactivé');
+            }
+            if (key === binds.right || key === 'd' || key === 'D') {
+                this.keys.right = false;
+                console.log('Droite désactivé');
+            }
             if (key === binds.action) this.keys.action = false;
-            if (key === binds.up) this.keys.up = false;
-            if (key === binds.jump) {
+            if (key === binds.up || key === 'w' || key === 'W') this.keys.up = false;
+            if (key === binds.jump || key === 'w' || key === 'W') {
                 this.keys.jump = false;
                 this.keys.up = false;
+                console.log('Saut désactivé');
             }
-            if (key === binds.down) this.keys.down = false;
+            if (key === binds.down || key === 's' || key === 'S') this.keys.down = false;
             if (key === binds.run) this.keys.run = false;
             if (key === binds.repair) this.keys.repair = false;
             if (key === binds.attack) this.keys.attack = false;

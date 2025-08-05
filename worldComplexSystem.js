@@ -25,56 +25,227 @@ export class WorldComplexSystem {
         const height = Math.floor(this.config.worldHeight / this.config.tileSize);
         const tileMap = Array.from({ length: height }, () => Array(width).fill(0));
         
-        for (let y = 0; y < height; y++) {
-            const yNorm = y / height;
-            const layer = this.getLayerForY(yNorm);
-            for (let x = 0; x < width; x++) {
-                // Couches principales
-                switch (layer.name) {
-                    case 'space': tileMap[y][x] = 0; break; // AIR
-                    case 'sky': tileMap[y][x] = 106; break; // CLOUD_STONE
-                    case 'paradise': tileMap[y][x] = 100; break; // DIVINE_STONE
-                    case 'surface':
-                        // Génération de terrain plus solide
-                        const ySurface = y;
-                        const yStart = Math.floor(height * 0.18);
-                        
-                        // Créer une couche de surface solide plus large
-                        if (ySurface >= yStart && ySurface < yStart + 20) {
-                            // Terrain principal plus large (20% à 80% de la largeur)
-                            if (x > width * 0.2 && x < width * 0.8) {
-                                tileMap[y][x] = 2; // GRASS
-                            } else if (Math.random() < 0.3) {
-                                tileMap[y][x] = 121; // Sable (plage)
-                            } else {
-                                tileMap[y][x] = 0; // Océan
-                            }
+        // Génération de terrain avec bruit de Perlin pour un aspect plus naturel
+        const surfaceHeight = this.generateSurfaceHeights(width, height);
+        
+        for (let x = 0; x < width; x++) {
+            const surfaceY = surfaceHeight[x];
+            
+            for (let y = 0; y < height; y++) {
+                const yNorm = y / height;
+                const layer = this.getLayerForY(yNorm);
+                
+                // Génération basée sur la hauteur de surface
+                if (y < surfaceY - 50) {
+                    // Ciel
+                    if (yNorm < 0.04) {
+                        tileMap[y][x] = 0; // Espace
+                    } else if (yNorm < 0.10) {
+                        // Nuages occasionnels
+                        if (Math.random() < 0.1 && this.noise(x * 0.1, y * 0.1) > 0.3) {
+                            tileMap[y][x] = 106; // CLOUD
                         } else {
-                            // Reste de la couche surface
-                            if (x < width * 0.1 || x > width * 0.9) {
-                                tileMap[y][x] = 0; // Océan (AIR = eau visuelle)
-                            } else if (Math.random() < 0.02) {
-                                tileMap[y][x] = 0; // Lacs/rivières (réduit la probabilité)
-                            } else {
-                                tileMap[y][x] = 2; // GRASS
-                            }
+                            tileMap[y][x] = 0; // AIR
                         }
-                        break;
-                    case 'underground':
-                        if (Math.random() < 0.08) tileMap[y][x] = 0; // Caverne
-                        else if (Math.random() < 0.03) tileMap[y][x] = 121; // Sable
-                        else if (Math.random() < 0.03) tileMap[y][x] = 0; // Lacs souterrains (AIR = eau visuelle)
-                        else tileMap[y][x] = 1; // STONE
-                        break;
-                    case 'core':
-                        // Noyau liquide (eau/lave)
-                        tileMap[y][x] = (Math.random() < 0.5) ? 112 : 0; // CRYSTAL_STONE ou AIR (eau/lave)
-                        break;
-                    case 'hell': tileMap[y][x] = 130; break; // HELLSTONE
+                    } else if (yNorm < 0.18) {
+                        // Îles flottantes occasionnelles
+                        if (this.noise(x * 0.05, y * 0.05) > 0.6) {
+                            tileMap[y][x] = 100; // DIVINE_STONE
+                        } else {
+                            tileMap[y][x] = 0; // AIR
+                        }
+                    } else {
+                        tileMap[y][x] = 0; // AIR
+                    }
+                } else if (y < surfaceY) {
+                    // Surface - herbe et arbres
+                    if (y === surfaceY - 1) {
+                        tileMap[y][x] = 2; // GRASS
+                        // Arbres occasionnels
+                        if (Math.random() < 0.05) {
+                            this.generateTree(tileMap, x, y, width, height);
+                        }
+                    } else {
+                        tileMap[y][x] = 3; // DIRT
+                    }
+                } else {
+                    // Souterrain
+                    const depthRatio = (y - surfaceY) / (height - surfaceY);
+                    
+                    if (depthRatio < 0.3) {
+                        // Couche de terre/pierre
+                        if (Math.random() < 0.05) {
+                            tileMap[y][x] = 0; // Cavernes
+                        } else if (depthRatio < 0.1) {
+                            tileMap[y][x] = 3; // DIRT
+                        } else {
+                            tileMap[y][x] = 1; // STONE
+                        }
+                    } else if (depthRatio < 0.6) {
+                        // Couche de pierre avec minerais
+                        if (Math.random() < 0.08) {
+                            tileMap[y][x] = 0; // Cavernes plus grandes
+                        } else if (Math.random() < 0.02) {
+                            tileMap[y][x] = 112; // CRYSTAL (minerai)
+                        } else {
+                            tileMap[y][x] = 1; // STONE
+                        }
+                    } else if (depthRatio < 0.9) {
+                        // Couche profonde
+                        if (Math.random() < 0.1) {
+                            tileMap[y][x] = 0; // Cavernes profondes
+                        } else if (Math.random() < 0.05) {
+                            tileMap[y][x] = 112; // CRYSTAL
+                        } else {
+                            tileMap[y][x] = 1; // STONE
+                        }
+                    } else {
+                        // Enfer
+                        if (Math.random() < 0.05) {
+                            tileMap[y][x] = 0; // Lacs de lave
+                        } else {
+                            tileMap[y][x] = 130; // HELLSTONE
+                        }
+                    }
                 }
             }
         }
+        
+        // Générer des structures spéciales
+        this.generateCaves(tileMap, width, height);
+        this.generateOres(tileMap, width, height);
+        
         return tileMap;
+    }
+    
+    generateSurfaceHeights(width, height) {
+        const heights = [];
+        const baseHeight = Math.floor(height * 0.3); // Surface à 30% de la hauteur
+        
+        for (let x = 0; x < width; x++) {
+            // Utiliser du bruit pour créer des collines et vallées
+            const noise1 = this.noise(x * 0.01, 0) * 30;
+            const noise2 = this.noise(x * 0.005, 100) * 50;
+            const noise3 = this.noise(x * 0.002, 200) * 20;
+            
+            const height = baseHeight + noise1 + noise2 + noise3;
+            heights.push(Math.floor(Math.max(height, height * 0.2)));
+        }
+        
+        return heights;
+    }
+    
+    generateTree(tileMap, x, y, width, height) {
+        const treeHeight = 3 + Math.floor(Math.random() * 4);
+        
+        // Tronc
+        for (let i = 1; i <= treeHeight; i++) {
+            if (y - i >= 0) {
+                tileMap[y - i][x] = 1; // Utiliser STONE comme tronc temporairement
+            }
+        }
+        
+        // Feuillage
+        const leafY = y - treeHeight;
+        for (let dy = -2; dy <= 1; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+                if (leafY + dy >= 0 && leafY + dy < height && 
+                    x + dx >= 0 && x + dx < width) {
+                    if (Math.abs(dx) + Math.abs(dy) <= 2 && Math.random() < 0.8) {
+                        if (tileMap[leafY + dy][x + dx] === 0) {
+                            tileMap[leafY + dy][x + dx] = 2; // GRASS comme feuilles
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    generateCaves(tileMap, width, height) {
+        const numCaves = 20;
+        
+        for (let i = 0; i < numCaves; i++) {
+            const startX = Math.floor(Math.random() * width);
+            const startY = Math.floor(height * 0.4 + Math.random() * height * 0.4);
+            
+            this.carveCave(tileMap, startX, startY, width, height, 50 + Math.random() * 100);
+        }
+    }
+    
+    carveCave(tileMap, startX, startY, width, height, length) {
+        let x = startX;
+        let y = startY;
+        let direction = Math.random() * Math.PI * 2;
+        
+        for (let i = 0; i < length; i++) {
+            const radius = 1 + Math.random() * 3;
+            
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = Math.floor(x + dx);
+                    const ny = Math.floor(y + dy);
+                    
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if (dx * dx + dy * dy <= radius * radius) {
+                            tileMap[ny][nx] = 0; // AIR
+                        }
+                    }
+                }
+            }
+            
+            // Changer légèrement la direction
+            direction += (Math.random() - 0.5) * 0.5;
+            x += Math.cos(direction) * 2;
+            y += Math.sin(direction) * 2;
+            
+            // Garder dans les limites
+            x = Math.max(5, Math.min(width - 5, x));
+            y = Math.max(height * 0.3, Math.min(height - 5, y));
+        }
+    }
+    
+    generateOres(tileMap, width, height) {
+        // Générer différents types de minerais à différentes profondeurs
+        const ores = [
+            { type: 112, rarity: 0.01, minDepth: 0.4, maxDepth: 1.0 }, // CRYSTAL
+            { type: 121, rarity: 0.005, minDepth: 0.6, maxDepth: 1.0 }, // SAND (or rare)
+        ];
+        
+        for (let y = Math.floor(height * 0.3); y < height; y++) {
+            const depthRatio = (y - height * 0.3) / (height * 0.7);
+            
+            for (let x = 0; x < width; x++) {
+                if (tileMap[y][x] === 1) { // Seulement dans la pierre
+                    for (const ore of ores) {
+                        if (depthRatio >= ore.minDepth && depthRatio <= ore.maxDepth) {
+                            if (Math.random() < ore.rarity) {
+                                // Créer une veine de minerai
+                                this.generateOreVein(tileMap, x, y, ore.type, width, height);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    generateOreVein(tileMap, startX, startY, oreType, width, height) {
+        const veinSize = 2 + Math.floor(Math.random() * 4);
+        
+        for (let i = 0; i < veinSize; i++) {
+            const x = startX + Math.floor((Math.random() - 0.5) * 4);
+            const y = startY + Math.floor((Math.random() - 0.5) * 4);
+            
+            if (x >= 0 && x < width && y >= 0 && y < height && tileMap[y][x] === 1) {
+                tileMap[y][x] = oreType;
+            }
+        }
+    }
+    
+    // Fonction de bruit simple (remplace Perlin pour simplicité)
+    noise(x, y) {
+        const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        return (n - Math.floor(n));
     }
 
     getLayerForY(yNorm) {
