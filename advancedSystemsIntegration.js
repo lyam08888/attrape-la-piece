@@ -4,7 +4,7 @@
 import { WeatherSystem as AdvancedWeatherSystem } from './weatherSystem.js';
 import { DisasterManager as DisasterManagerAdvanced } from './disasterManager.js';
 import { AnimalManager as AnimalSystemAdvanced } from './animalSystem.js';
-import { ExplorationSystem } from './explorationSystem.js';
+import ExplorationSystem from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
 import { WorldAnimator } from './worldAnimator.js';
