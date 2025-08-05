@@ -9,7 +9,7 @@ import { TimeSystem } from './timeSystem.js';
 import { LightingSystem as DynamicLightingSystem } from './lighting.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { generateMonsters } from './generateurMonstres.js';
-import { generateAnimals } from './generateurAnimaux.js';
+import { generateAnimal } from './generateurAnimaux.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { PNJ } from './PNJ.js';
 import { FoodSystem } from './foodSystem.js';
@@ -358,8 +358,11 @@ export function integrateAdvancedSystems(game) {
     // 6. Système de faune (animaux)
     game.animalManager = new AnimalSystemAdvanced();
     game.animals = game.animalManager.animals;
-    if (typeof generateAnimals === 'function') {
-        const animals = generateAnimals(5, game.config, game.tileMap); // Génère 5 animaux
+    if (typeof generateAnimal === 'function') {
+        const animals = [];
+        for (let i = 0; i < 5; i++) {
+            animals.push(generateAnimal({ biome: 'surface' }));
+        }
         game.animalManager.animals.push(...animals);
     }
     console.log('    -> 🐾 Système de faune initialisé.');
