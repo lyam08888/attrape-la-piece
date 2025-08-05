@@ -35,8 +35,10 @@ export class WorldComplexSystem {
                     case 'sky': tileMap[y][x] = 106; break; // CLOUD_STONE
                     case 'paradise': tileMap[y][x] = 100; break; // DIVINE_STONE
                     case 'surface':
-                        // Bande centrale toujours herbe (terre ferme)
-                        if (x > width * 0.3 && x < width * 0.7) tileMap[y][x] = 2;
+                        // Bande centrale de terre ferme sur plusieurs lignes
+                        const ySurface = y;
+                        const yStart = Math.floor(height * 0.18);
+                        if (ySurface >= yStart && ySurface < yStart + 10 && x > width * 0.3 && x < width * 0.7) tileMap[y][x] = 2;
                         else if (yNorm < 0.22 && Math.random() < 0.2) tileMap[y][x] = 121; // Sable (plage)
                         else if (x < width * 0.15 || x > width * 0.85) tileMap[y][x] = 0; // Océan (AIR = eau visuelle)
                         else if (Math.random() < 0.04) tileMap[y][x] = 0; // Lacs/rivières
