@@ -456,11 +456,25 @@ export class AdvancedNPCSystem {
             return null;
         }
 
+        // Choix d'un skin réel dans assets/PNJ/
+        const skinFolders = [
+            'pnj_alien_mage_f','pnj_alien_mage_m','pnj_alien_paladin_f','pnj_alien_paladin_m','pnj_alien_rogue_f','pnj_alien_rogue_m','pnj_alien_warrior_f','pnj_alien_warrior_m',
+            'pnj_angel_mage_f','pnj_angel_mage_m','pnj_angel_paladin_f','pnj_angel_paladin_m','pnj_angel_rogue_f','pnj_angel_rogue_m','pnj_angel_warrior_f','pnj_angel_warrior_m',
+            'pnj_human_mage_f','pnj_human_mage_m','pnj_human_paladin_f','pnj_human_paladin_m','pnj_human_rogue_f','pnj_human_rogue_m','pnj_human_warrior_f','pnj_human_warrior_m',
+            'pnj_goblin_mage_f','pnj_goblin_mage_m','pnj_goblin_paladin_f','pnj_goblin_paladin_m','pnj_goblin_rogue_f','pnj_goblin_rogue_m','pnj_goblin_warrior_f','pnj_goblin_warrior_m',
+            'pnj_zombie_mage_f','pnj_zombie_mage_m','pnj_zombie_paladin_f','pnj_zombie_paladin_m','pnj_zombie_rogue_f','pnj_zombie_rogue_m','pnj_zombie_warrior_f','pnj_zombie_warrior_m',
+            'pnj_elf_mage_f','pnj_elf_mage_m','pnj_elf_paladin_f','pnj_elf_paladin_m','pnj_elf_rogue_f','pnj_elf_rogue_m','pnj_elf_warrior_f','pnj_elf_warrior_m',
+            'pnj_demon_mage_f','pnj_demon_mage_m','pnj_demon_paladin_f','pnj_demon_paladin_m','pnj_demon_rogue_f','pnj_demon_rogue_m','pnj_demon_warrior_f','pnj_demon_warrior_m',
+        ];
+        const skinFolder = skinFolders[Math.floor(Math.random() * skinFolders.length)];
+        const sprite = `assets/PNJ/${skinFolder}/${skinFolder}_idle_spritesheet.png`;
+
         const npc = {
             id: `${templateId}_${Date.now()}`,
             templateId: templateId,
             x: x,
             y: y,
+            sprite: sprite,
             ...template,
             ...customizations,
             
@@ -1400,27 +1414,22 @@ class NPCAISystem {
     }
 
     drawNPC(npc, ctx) {
-        // Rendu de base du PNJ
         ctx.save();
-        
-        // Couleur selon le type de PNJ
-        const colors = {
-            "ARCHANGEL_GABRIEL": "#FFD700",
-            "FOREST_DRUID": "#32CD32",
-            "CRYSTAL_SAGE": "#9370DB",
-            "DEMON_MERCHANT": "#FF4500",
-            "SHADOW_ASSASSIN": "#2F2F2F"
-        };
-        
-        ctx.fillStyle = colors[npc.name] || "#FFFFFF";
-        ctx.fillRect(npc.x, npc.y, 32, 32);
-        
+        // Affiche le sprite réel si disponible
+        if (npc.sprite) {
+            const img = new window.Image();
+            img.src = npc.sprite;
+            ctx.drawImage(img, npc.x, npc.y, 32, 32);
+        } else {
+            // Fallback couleur
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(npc.x, npc.y, 32, 32);
+        }
         // Nom du PNJ
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.fillText(npc.name || "PNJ", npc.x + 16, npc.y - 5);
-        
         ctx.restore();
     }
 }
