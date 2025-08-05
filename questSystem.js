@@ -1,288 +1,272 @@
-// questSystem.js - Système de quêtes complet
-
-import { getStoryQuests } from './storyQuests.js';
+// questSystem.js - Système de quêtes pour le jeu RPG
 
 export class Quest {
-    constructor(id, title, description, objectives, rewards, prerequisites = [], category = 'side') {
+    constructor(id, data) {
         this.id = id;
-        this.title = title;
-        this.description = description;
-        this.objectives = objectives; // Array d'objectifs
-        this.rewards = rewards;
-        this.prerequisites = prerequisites;
-        this.category = category;
-        this.status = 'available'; // available, active, completed, failed
+        this.title = data.title;
+        this.description = data.description;
+        this.type = data.type; // 'kill', 'collect', 'explore', 'talk'
+        this.objectives = data.objectives || [];
+        this.rewards = data.rewards || {};
+        this.status = 'available'; // 'available', 'active', 'completed', 'failed'
         this.progress = {};
-        this.startTime = null;
-        this.completionTime = null;
-    }
-
-    start() {
-        this.status = 'active';
-        this.startTime = Date.now();
+        this.level = data.level || 1;
+        this.prerequisites = data.prerequisites || [];
+        
+        // Initialiser le progrès
         this.objectives.forEach(obj => {
-            this.progress[obj.id] = { current: 0, target: obj.target, completed: false };
+            this.progress[obj.id] = 0;
         });
     }
 
-    updateProgress(objectiveId, amount = 1) {
-        if (this.status !== 'active') return false;
+    // Vérifier si la quête peut être acceptée
+    canAccept(player) {
+        if (this.status !== 'available') return false;
+        if (player.stats.level < this.level) return false;
         
-        const progress = this.progress[objectiveId];
-        if (!progress || progress.completed) return false;
+        // Vérifier les prérequis
+        return this.prerequisites.every(prereq => {
+            if (prereq.type === 'quest') {
+                return window.game?.questManager?.isQuestCompleted(prereq.id);
+            }
+            if (prereq.type === 'level') {
+                return player.stats.level >= prereq.value;
+            }
+            if (prereq.type === 'item') {
+                return window.game?.equipmentManager?.inventory.has(prereq.id);
+            }
+            return true;
+        });
+    }
 
-        progress.current = Math.min(progress.current + amount, progress.target);
-        progress.completed = progress.current >= progress.target;
+    // Accepter la quête
+    accept() {
+        if (this.status === 'available') {
+            this.status = 'active';
+            return true;
+        }
+        return false;
+    }
 
-        // Vérifier si toutes les objectives sont complétées
-        const allCompleted = this.objectives.every(obj => this.progress[obj.id].completed);
-        if (allCompleted) {
-            this.complete();
+    // Mettre à jour le progrès
+    updateProgress(type, target, amount = 1) {
+        if (this.status !== 'active') return false;
+
+        let updated = false;
+        this.objectives.forEach(obj => {
+            if (obj.type === type && obj.target === target) {
+                this.progress[obj.id] = Math.min(
+                    this.progress[obj.id] + amount,
+                    obj.count
+                );
+                updated = true;
+            }
+        });
+
+        // Vérifier si la quête est terminée
+        if (this.isCompleted()) {
+            this.status = 'completed';
+        }
+
+        return updated;
+    }
+
+    // Vérifier si la quête est terminée
+    isCompleted() {
+        return this.objectives.every(obj => 
+            this.progress[obj.id] >= obj.count
+        );
+    }
+
+    // Obtenir le progrès en pourcentage
+    getProgressPercentage() {
+        if (this.objectives.length === 0) return 100;
+        
+        const totalProgress = this.objectives.reduce((sum, obj) => 
+            sum + (this.progress[obj.id] / obj.count), 0
+        );
+        
+        return Math.floor((totalProgress / this.objectives.length) * 100);
+    }
+
+    // Obtenir la description du progrès
+    getProgressDescription() {
+        return this.objectives.map(obj => {
+            const current = this.progress[obj.id];
+            const total = obj.count;
+            return `${obj.description}: ${current}/${total}`;
+        }).join('\n');
+    }
+
+    // Réclamer les récompenses
+    claimRewards(player, game) {
+        if (this.status !== 'completed') return false;
+
+        // XP
+        if (this.rewards.xp) {
+            player.gainXP(this.rewards.xp, game);
+        }
+
+        // Objets
+        if (this.rewards.items) {
+            this.rewards.items.forEach(item => {
+                game.equipmentManager?.addToInventory(item.id, item.quantity || 1);
+            });
+        }
+
+        // Or (si implémenté)
+        if (this.rewards.gold) {
+            player.gold = (player.gold || 0) + this.rewards.gold;
         }
 
         return true;
     }
-
-    complete() {
-        this.status = 'completed';
-        this.completionTime = Date.now();
-    }
-
-    fail() {
-        this.status = 'failed';
-    }
-
-    getProgressText() {
-        return this.objectives.map(obj => {
-            const progress = this.progress[obj.id];
-            const current = progress ? progress.current : 0;
-            return `${obj.description}: ${current}/${obj.target}`;
-        }).join('\n');
-    }
 }
 
-export class QuestSystem {
+export class QuestManager {
     constructor() {
         this.quests = new Map();
         this.activeQuests = new Map();
         this.completedQuests = new Set();
-        this.questProgress = new Map();
-        this.questLog = [];
+        
         this.initializeQuests();
     }
 
     initializeQuests() {
-        // Quêtes de démarrage
-        this.addQuest(new Quest(
-            'first_steps',
-            'Premiers Pas',
-            'Apprenez les bases de la survie dans ce monde.',
-            [
-                { id: 'mine_blocks', description: 'Miner des blocs', target: 10 },
-                { id: 'collect_wood', description: 'Collecter du bois', target: 5 }
-            ],
-            { xp: 50, items: [{ name: 'tool_pickaxe', quantity: 1 }] }
-        ));
-
-        this.addQuest(new Quest(
-            'explorer',
-            'Explorateur',
-            'Explorez le monde et découvrez de nouveaux biomes.',
-            [
-                { id: 'visit_biomes', description: 'Visiter différents biomes', target: 3 },
-                { id: 'walk_distance', description: 'Marcher 1000 blocs', target: 1000 }
-            ],
-            { xp: 100, items: [{ name: 'compass', quantity: 1 }] },
-            ['first_steps']
-        ));
-
-        this.addQuest(new Quest(
-            'monster_hunter',
-            'Chasseur de Monstres',
-            'Éliminez les créatures hostiles qui menacent la paix.',
-            [
-                { id: 'kill_enemies', description: 'Éliminer des ennemis', target: 20 }
-            ],
-            { xp: 150, items: [{ name: 'tool_sword', quantity: 1 }] }
-        ));
-
-        this.addQuest(new Quest(
-            'master_crafter',
-            'Maître Artisan',
-            'Maîtrisez l\'art de la fabrication d\'objets.',
-            [
-                { id: 'craft_items', description: 'Fabriquer des objets', target: 50 },
-                { id: 'craft_tools', description: 'Fabriquer des outils', target: 10 }
-            ],
-            { xp: 200, items: [{ name: 'crafting_table', quantity: 1 }] },
-            ['first_steps']
-        ));
-
-        this.addQuest(new Quest(
-            'deep_miner',
-            'Mineur des Profondeurs',
-            'Descendez dans les profondeurs et trouvez des minerais rares.',
-            [
-                { id: 'mine_deep', description: 'Atteindre la profondeur 500', target: 1 },
-                { id: 'find_rare_ores', description: 'Trouver des minerais rares', target: 5 }
-            ],
-            { xp: 300, items: [{ name: 'diamond_pickaxe', quantity: 1 }] },
-            ['explorer']
-        ));
-
-        // Nouvelles quêtes innovantes
-        this.addQuest(new Quest(
-            'treasure_hunter',
-            'Chasseur de Trésors',
-            'Trouvez et ouvrez des coffres cachés dans le monde.',
-            [
-                { id: 'open_chests', description: 'Ouvrir 3 coffres', target: 3 }
-            ],
-            { xp: 150, items: [{ name: 'gold', quantity: 5 }] },
-            ['first_steps']
-        ));
-        
-        this.addQuest(new Quest(
-            'animal_observer',
-            'Observateur de la Faune',
-            'Observez différents types d\'animaux dans leurs habitats naturels.',
-            [
-                { id: 'observe_animals', description: 'Observer 5 animaux différents', target: 5 }
-            ],
-            { xp: 100, items: [{ name: 'wood', quantity: 10 }] },
-            ['treasure_hunter']
-        ));
-        
-        this.addQuest(new Quest(
-            'disaster_survivor',
-            'Survivant des Catastrophes',
-            'Survivez à une catastrophe naturelle.',
-            [
-                { id: 'survive_disaster', description: 'Survivre à 1 catastrophe', target: 1 }
-            ],
-            { xp: 200, items: [{ name: 'diamond', quantity: 2 }] },
-            ['animal_observer']
-        ));
-        
-        this.addQuest(new Quest(
-            'time_keeper',
-            'Gardien du Temps',
-            'Passez une journée complète dans le monde.',
-            [
-                { id: 'survive_day', description: 'Survivre 24h de jeu', target: 1 }
-            ],
-            { xp: 300, items: [{ name: 'crystal', quantity: 3 }] },
-            ['disaster_survivor']
-        ));
-        
-        this.addQuest(new Quest(
-            'survival_expert',
-            'Expert en Survie',
-            'Collectez des objets de survie rares.',
-            [
-                { id: 'collect_survival_items', description: 'Collecter 3 objets de survie', target: 3 }
-            ],
-            { xp: 250, items: [{ name: 'gold', quantity: 10 }] },
-            ['time_keeper']
-        ));
-
-        // Ajout des 150 quêtes principales générées
-        getStoryQuests().forEach(data => {
-            this.addQuest(new Quest(
-                data.id,
-                data.title,
-                data.description,
-                data.objectives,
-                data.rewards,
-                data.prerequisites,
-                data.category
-            ));
-        });
-    }
-
-    addQuest(quest) {
-        this.quests.set(quest.id, quest);
-    }
-
-    getAvailableQuests() {
-        return Array.from(this.quests.values()).filter(quest => {
-            if (quest.status !== 'available') return false;
-            
-            // Vérifier les prérequis
-            return quest.prerequisites.every(prereqId => 
-                this.completedQuests.has(prereqId)
-            );
-        });
-    }
-
-    startQuest(questId) {
-        const quest = this.quests.get(questId);
-        if (!quest || quest.status !== 'available') return false;
-
-        // Vérifier les prérequis
-        const canStart = quest.prerequisites.every(prereqId => 
-            this.completedQuests.has(prereqId)
-        );
-
-        if (!canStart) return false;
-
-        quest.start();
-        this.activeQuests.set(questId, quest);
-        this.questLog.push(`Quête commencée: ${quest.title}`);
-        return true;
-    }
-
-    abandonQuest(questId) {
-        const quest = this.activeQuests.get(questId);
-        if (!quest) return false;
-
-        this.activeQuests.delete(questId);
-        quest.status = 'available';
-        quest.progress = {};
-        quest.startTime = null;
-        quest.completionTime = null;
-        this.questLog.push(`Quête abandonnée: ${quest.title}`);
-        return true;
-    }
-
-    updateQuestProgress(objectiveType, data = {}) {
-        this.activeQuests.forEach(quest => {
-            quest.objectives.forEach(objective => {
-                if (objective.id === objectiveType) {
-                    const updated = quest.updateProgress(objective.id, data.amount || 1);
-                    if (updated && quest.status === 'completed') {
-                        this.completeQuest(quest.id);
-                    }
+        // Quête de démarrage
+        this.addQuest('starter_quest', {
+            title: 'Première Aventure',
+            description: 'Explorez le monde et découvrez vos premières ressources.',
+            type: 'tutorial',
+            level: 1,
+            objectives: [
+                {
+                    id: 'move',
+                    type: 'move',
+                    target: 'any',
+                    count: 100,
+                    description: 'Déplacez-vous de 100 pixels'
                 }
-            });
+            ],
+            rewards: {
+                xp: 50,
+                items: [
+                    { id: 'health_potion', quantity: 2 }
+                ]
+            }
+        });
+
+        // Quête de combat
+        this.addQuest('first_blood', {
+            title: 'Premier Sang',
+            description: 'Éliminez vos premiers ennemis pour prouver votre valeur.',
+            type: 'kill',
+            level: 1,
+            objectives: [
+                {
+                    id: 'kill_goblins',
+                    type: 'kill',
+                    target: 'goblin',
+                    count: 3,
+                    description: 'Éliminer 3 gobelins'
+                }
+            ],
+            rewards: {
+                xp: 100,
+                items: [
+                    { id: 'steel_sword', quantity: 1 },
+                    { id: 'health_potion', quantity: 3 }
+                ]
+            },
+            prerequisites: [
+                { type: 'quest', id: 'starter_quest' }
+            ]
+        });
+
+        // Quête de collection
+        this.addQuest('collector', {
+            title: 'Collectionneur',
+            description: 'Rassemblez des ressources pour votre équipement.',
+            type: 'collect',
+            level: 2,
+            objectives: [
+                {
+                    id: 'collect_potions',
+                    type: 'collect',
+                    target: 'health_potion',
+                    count: 5,
+                    description: 'Collecter 5 potions de vie'
+                }
+            ],
+            rewards: {
+                xp: 75,
+                items: [
+                    { id: 'mana_potion', quantity: 5 }
+                ]
+            }
+        });
+
+        // Quête de niveau
+        this.addQuest('level_up', {
+            title: 'Montée en Puissance',
+            description: 'Atteignez le niveau 3 pour débloquer de nouvelles capacités.',
+            type: 'level',
+            level: 1,
+            objectives: [
+                {
+                    id: 'reach_level_3',
+                    type: 'level',
+                    target: 3,
+                    count: 1,
+                    description: 'Atteindre le niveau 3'
+                }
+            ],
+            rewards: {
+                xp: 150,
+                items: [
+                    { id: 'chain_mail', quantity: 1 }
+                ]
+            }
+        });
+
+        // Quête de boss
+        this.addQuest('dragon_slayer', {
+            title: 'Tueur de Dragon',
+            description: 'Affrontez le redoutable dragon qui terrorise la région.',
+            type: 'boss',
+            level: 5,
+            objectives: [
+                {
+                    id: 'kill_dragon',
+                    type: 'kill',
+                    target: 'dragon',
+                    count: 1,
+                    description: 'Éliminer le dragon'
+                }
+            ],
+            rewards: {
+                xp: 500,
+                items: [
+                    { id: 'holy_mace', quantity: 1 },
+                    { id: 'plate_armor', quantity: 1 }
+                ]
+            },
+            prerequisites: [
+                { type: 'level', value: 5 },
+                { type: 'quest', id: 'first_blood' }
+            ]
         });
     }
 
-    completeQuest(questId) {
-        const quest = this.activeQuests.get(questId);
-        if (!quest) return false;
+    addQuest(id, data) {
+        const quest = new Quest(id, data);
+        this.quests.set(id, quest);
+    }
 
-        this.activeQuests.delete(questId);
-        this.completedQuests.add(questId);
-        this.questLog.push(`Quête terminée: ${quest.title}`);
-
-        // Donner les récompenses
-        if (quest.rewards.xp) {
-            // Le système XP sera géré par le player
-            document.dispatchEvent(new CustomEvent('quest-reward', {
-                detail: { type: 'xp', amount: quest.rewards.xp }
-            }));
-        }
-
-        if (quest.rewards.items) {
-            quest.rewards.items.forEach(item => {
-                document.dispatchEvent(new CustomEvent('quest-reward', {
-                    detail: { type: 'item', name: item.name, quantity: item.quantity }
-                }));
-            });
-        }
-
-        return true;
+    getAvailableQuests(player) {
+        return Array.from(this.quests.values()).filter(quest => 
+            quest.canAccept(player)
+        );
     }
 
     getActiveQuests() {
@@ -290,248 +274,106 @@ export class QuestSystem {
     }
 
     getCompletedQuests() {
-        return Array.from(this.quests.values()).filter(quest => 
-            this.completedQuests.has(quest.id)
+        return Array.from(this.completedQuests).map(id => this.quests.get(id));
+    }
+
+    acceptQuest(questId, player) {
+        const quest = this.quests.get(questId);
+        if (!quest || !quest.canAccept(player)) return false;
+
+        if (quest.accept()) {
+            this.activeQuests.set(questId, quest);
+            return true;
+        }
+        return false;
+    }
+
+    updateQuestProgress(type, target, amount = 1) {
+        let updated = false;
+        
+        this.activeQuests.forEach(quest => {
+            if (quest.updateProgress(type, target, amount)) {
+                updated = true;
+                
+                if (quest.status === 'completed') {
+                    window.game?.modularInterface?.showNotification(
+                        `Quête terminée: ${quest.title}`, 
+                        'success', 
+                        4000
+                    );
+                }
+            }
+        });
+
+        return updated;
+    }
+
+    completeQuest(questId, player, game) {
+        const quest = this.activeQuests.get(questId);
+        if (!quest || !quest.isCompleted()) return false;
+
+        // Réclamer les récompenses
+        quest.claimRewards(player, game);
+        
+        // Déplacer vers les quêtes terminées
+        this.activeQuests.delete(questId);
+        this.completedQuests.add(questId);
+
+        // Notification
+        game.modularInterface?.showNotification(
+            `Quête terminée: ${quest.title}`, 
+            'success', 
+            4000
         );
+
+        return true;
     }
 
-    getQuestLog() {
-        return this.questLog.slice(-10); // Derniers 10 messages
+    isQuestCompleted(questId) {
+        return this.completedQuests.has(questId);
     }
 
-    // Méthodes pour sauvegarder/charger l'état des quêtes
-    saveState() {
+    isQuestActive(questId) {
+        return this.activeQuests.has(questId);
+    }
+
+    getQuest(questId) {
+        return this.quests.get(questId);
+    }
+
+    // Mettre à jour automatiquement certaines quêtes
+    update(player, game, delta) {
+        // Quête de mouvement
+        if (Math.abs(player.vx) > 0.1) {
+            this.updateQuestProgress('move', 'any', Math.abs(player.vx) * delta * 60);
+        }
+
+        // Quête de niveau
+        this.updateQuestProgress('level', player.stats.level, 0);
+        if (this.activeQuests.has('reach_level_3') && player.stats.level >= 3) {
+            this.updateQuestProgress('level', 3, 1);
+        }
+
+        // Vérifier les quêtes terminées automatiquement
+        this.activeQuests.forEach((quest, questId) => {
+            if (quest.isCompleted() && quest.status === 'completed') {
+                // Auto-compléter certaines quêtes
+                if (quest.type === 'tutorial' || quest.type === 'level') {
+                    setTimeout(() => {
+                        this.completeQuest(questId, player, game);
+                    }, 1000);
+                }
+            }
+        });
+    }
+
+    // Obtenir les statistiques des quêtes
+    getQuestStats() {
         return {
-            activeQuests: Array.from(this.activeQuests.keys()),
-            completedQuests: Array.from(this.completedQuests),
-            questProgress: Object.fromEntries(
-                Array.from(this.activeQuests.entries()).map(([id, quest]) => [
-                    id, quest.progress
-                ])
-            ),
-            questLog: this.questLog
+            total: this.quests.size,
+            available: this.getAvailableQuests(window.game?.player || {}).length,
+            active: this.activeQuests.size,
+            completed: this.completedQuests.size
         };
     }
-
-    loadState(state) {
-        if (!state) return;
-
-        this.completedQuests = new Set(state.completedQuests || []);
-        this.questLog = state.questLog || [];
-
-        // Restaurer les quêtes actives
-        if (state.activeQuests) {
-            state.activeQuests.forEach(questId => {
-                const quest = this.quests.get(questId);
-                if (quest) {
-                    quest.start();
-                    if (state.questProgress[questId]) {
-                        quest.progress = state.questProgress[questId];
-                    }
-                    this.activeQuests.set(questId, quest);
-                }
-            });
-        }
-    }
-
-    update(game, delta = 0) {
-        // Méthode de mise à jour simple pour éviter les erreurs lorsque
-        // le moteur tente d'appeler questSystem.update().
-        // Les quêtes actuelles n'ont pas de comportement dépendant du temps,
-        // mais cette méthode permettra d'en ajouter facilement plus tard.
-    }
-
-    draw(ctx, game) {
-        // Affiche une superposition basique des quêtes actives et de leur progression.
-        const activeQuests = this.getActiveQuests();
-        if (activeQuests.length === 0) return;
-
-        ctx.save();
-        ctx.font = '12px Arial';
-        const padding = 8;
-        const lineHeight = 14;
-        let width = 0;
-        const lines = activeQuests.map(q => {
-            const line = `${q.title}: ${q.getProgressText()}`;
-            width = Math.max(width, ctx.measureText(line).width);
-            return line;
-        });
-
-        const boxWidth = width + padding * 2;
-        const boxHeight = lineHeight * lines.length + padding * 2;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(10, 10, boxWidth, boxHeight);
-        ctx.fillStyle = '#fff';
-        let y = 10 + padding + lineHeight - 2;
-        lines.forEach(line => {
-            ctx.fillText(line, 10 + padding, y);
-            y += lineHeight;
-        });
-        ctx.restore();
-    }
 }
-
-// Fonction utilitaire pour mettre à jour l'interface des quêtes
-export function updateQuestUI(questSystem) {
-    const questList = document.getElementById('questList');
-    if (!questList) return;
-
-    questList.innerHTML = '';
-
-    const formatRewards = (rewards = {}) => {
-        const parts = [];
-        if (rewards.xp) parts.push(`${rewards.xp} XP`);
-        if (rewards.items) {
-            rewards.items.forEach(item => parts.push(`${item.quantity}x ${item.name}`));
-        }
-        return parts.join(', ');
-    };
-
-    const createQuestItem = (quest, type) => {
-        const item = document.createElement('div');
-        item.className = 'quest-item';
-
-        const header = document.createElement('div');
-        header.className = 'quest-header';
-        header.textContent = quest.title;
-        item.appendChild(header);
-
-        const details = document.createElement('div');
-        details.className = 'quest-details';
-        details.innerHTML = `<div class="quest-description">${quest.description}</div>`;
-        item.appendChild(details);
-
-        header.addEventListener('click', () => {
-            item.classList.toggle('open');
-        });
-
-        if (type === 'active') {
-            quest.objectives.forEach(obj => {
-                const progress = quest.progress[obj.id];
-                const percent = progress.target ? (progress.current / progress.target) * 100 : 0;
-                const objDiv = document.createElement('div');
-                objDiv.className = 'quest-objective';
-                objDiv.innerHTML = `
-                    <span>${obj.description} (${progress.current}/${progress.target})</span>
-                    <div class="quest-progress-bar"><span style="width:${percent}%"></span></div>
-                `;
-                details.appendChild(objDiv);
-            });
-            const rewards = document.createElement('div');
-            rewards.className = 'quest-rewards';
-            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
-            details.appendChild(rewards);
-
-            const actions = document.createElement('div');
-            actions.className = 'quest-actions';
-            const abandonBtn = document.createElement('button');
-            abandonBtn.textContent = 'Abandonner';
-            abandonBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                questSystem.abandonQuest(quest.id);
-                updateQuestUI(questSystem);
-            });
-            actions.appendChild(abandonBtn);
-            details.appendChild(actions);
-        } else if (type === 'available') {
-            const rewards = document.createElement('div');
-            rewards.className = 'quest-rewards';
-            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
-            details.appendChild(rewards);
-
-            const actions = document.createElement('div');
-            actions.className = 'quest-actions';
-            const startBtn = document.createElement('button');
-            startBtn.textContent = 'Commencer';
-            startBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                if (questSystem.startQuest(quest.id)) {
-                    updateQuestUI(questSystem);
-                }
-            });
-            actions.appendChild(startBtn);
-            details.appendChild(actions);
-        } else if (type === 'completed') {
-            const rewards = document.createElement('div');
-            rewards.className = 'quest-rewards';
-            rewards.textContent = `Récompenses: ${formatRewards(quest.rewards)}`;
-            details.appendChild(rewards);
-
-            const done = document.createElement('div');
-            done.className = 'quest-progress';
-            done.textContent = '✓ Terminée';
-            details.appendChild(done);
-        }
-
-        return item;
-    };
-
-    const groupAndAppend = (quests, type) => {
-        const main = quests.filter(q => q.category === 'main');
-        const side = quests.filter(q => q.category !== 'main');
-
-        if (main.length > 0) {
-            const h = document.createElement('h4');
-            h.textContent = 'HISTOIRE PRINCIPALE';
-            questList.appendChild(h);
-            main.forEach(q => questList.appendChild(createQuestItem(q, type)));
-        }
-        if (side.length > 0) {
-            const h = document.createElement('h4');
-            h.textContent = 'QUÊTES SECONDAIRES';
-            questList.appendChild(h);
-            side.forEach(q => questList.appendChild(createQuestItem(q, type)));
-        }
-    };
-
-    const activeQuests = questSystem.getActiveQuests();
-    if (activeQuests.length > 0) {
-        const activeHeader = document.createElement('h3');
-        activeHeader.textContent = `QUÊTES ACTIVES (${activeQuests.length})`;
-        activeHeader.style.color = '#f9a825';
-        questList.appendChild(activeHeader);
-        groupAndAppend(activeQuests, 'active');
-    }
-
-    const availableQuests = questSystem.getAvailableQuests();
-    if (availableQuests.length > 0) {
-        const availableHeader = document.createElement('h3');
-        availableHeader.textContent = `QUÊTES DISPONIBLES (${availableQuests.length})`;
-        availableHeader.style.color = '#27ae60';
-        questList.appendChild(availableHeader);
-        groupAndAppend(availableQuests, 'available');
-    }
-
-    const completedQuests = questSystem.getCompletedQuests();
-    if (completedQuests.length > 0) {
-        const completedHeader = document.createElement('h3');
-        completedHeader.textContent = `QUÊTES TERMINÉES (${completedQuests.length})`;
-        completedHeader.style.color = '#95a5a6';
-        questList.appendChild(completedHeader);
-        groupAndAppend(completedQuests.slice(-5), 'completed');
-    }
-
-    if (activeQuests.length === 0 && availableQuests.length === 0 && completedQuests.length === 0) {
-        questList.innerHTML = '<div style="text-align: center; color: #666;">Aucune quête disponible</div>';
-    }
-}
-
-// Ajouter les méthodes de sérialisation à QuestSystem
-QuestSystem.prototype.serialize = function() {
-    // S'assurer que questProgress existe
-    if (!this.questProgress) {
-        this.questProgress = new Map();
-    }
-    
-    return {
-        activeQuests: Array.from(this.activeQuests?.entries() || []),
-        completedQuests: Array.from(this.completedQuests || []),
-        questProgress: this.questProgress.size > 0 ? Object.fromEntries(this.questProgress) : {}
-    };
-};
-
-QuestSystem.prototype.deserialize = function(data) {
-    this.activeQuests = new Map(data.activeQuests || []);
-    this.completedQuests = new Set(data.completedQuests || []);
-    this.questProgress = new Map(Object.entries(data.questProgress || {}));
-};

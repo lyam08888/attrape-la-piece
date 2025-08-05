@@ -9,6 +9,14 @@ import { FoodSystem } from './foodSystem.js';
 import { integrateMiningWithRPG } from './miningEngine.js';
 import { Logger } from './logger.js';
 
+// Nouveaux systèmes RPG
+import { CharacterClassManager, CHARACTER_CLASSES } from './characterClasses.js';
+import { EquipmentManager } from './equipmentSystem.js';
+import { ModularRPGInterface } from './modularRPGInterface.js';
+import { AmbianceSystem } from './ambianceSystem.js';
+import { EnemySpawner } from './enemySystem.js';
+import { QuestManager } from './questSystem.js';
+
 // --- Configuration Globale ---
 let game = {};
 let engine = null;
@@ -73,10 +81,15 @@ const gameLogic = {
         
         // Mettre à jour tous les systèmes
         game.player.update(keys, game, delta);
-        game.enemies.forEach(e => e.update(game, delta));
-        game.pnjs.forEach(p => p.update(game, delta));
+        game.enemySpawner?.update(game, delta);
+        game.enemies = game.enemySpawner?.getEnemies() || [];
+        game.pnjs?.forEach(p => p.update(game, delta));
         game.timeSystem?.update(delta);
-        game.rpgInterface.updateHUD();
+        game.rpgInterface?.updateHUD();
+        game.modularInterface?.updateHUD(game.player);
+        game.ambianceSystem?.update(game, delta);
+        game.equipmentManager?.updatePlayerStats();
+        game.questManager?.update(game.player, game, delta);
         logger.update(); // Mettre à jour le logger
         
         updateCamera();
@@ -84,17 +97,26 @@ const gameLogic = {
     draw: (ctx, assets) => {
         if (!game || !game.player) return;
         
-        ctx.fillStyle = game.timeSystem ? game.timeSystem.getSkyColor() : '#87CEEB';
+        // Couleur du ciel basée sur l'ambiance ou le système de temps
+        const skyColor = game.ambianceSystem?.lightingSystem?.getSkyColor() || 
+                        (game.timeSystem ? game.timeSystem.getSkyColor() : '#87CEEB');
+        ctx.fillStyle = skyColor;
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        
         ctx.save();
         ctx.scale(config.zoom, config.zoom);
         ctx.translate(-game.camera.x, -game.camera.y);
         drawWorld(ctx, assets);
-        game.enemies.forEach(e => e.draw(ctx, assets));
-        game.pnjs.forEach(p => p.draw(ctx, assets));
+        game.enemies?.forEach(e => e.draw(ctx, assets));
+        game.pnjs?.forEach(p => p.draw(ctx, assets));
         game.player.draw(ctx, assets);
         ctx.restore();
-        game.rpgInterface.draw(ctx);
+        
+        // Dessiner les effets d'ambiance
+        game.ambianceSystem?.draw(ctx);
+        
+        // Dessiner les interfaces
+        game.rpgInterface?.draw(ctx);
         
         // Dessiner le logger par-dessus tout
         logger.draw(ctx);
@@ -179,10 +201,85 @@ async function startGameSequence() {
         updateStatus("Génération du monde...");
         game.tileMap = generateLevel(Math.floor(config.worldWidth / config.tileSize), Math.floor(config.worldHeight / config.tileSize));
         
-        updateStatus("Création de l'aventurier...");
-        const spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.height, config.tileSize);
-        game.spawnPoint = spawnPoint;
-        game.player = new Player(spawnPoint.x, spawnPoint.y, config, null);
+        updateStatus("Initialisation des systèmes RPG...");
+        
+        // Initialiser le gestionnaire de classes
+        game.classManager = new CharacterClassManager();
+        
+        // Initialiser l'interface RPG modulaire
+        game.modularInterface = new ModularRPGInterface();
+        
+        // Initialiser le système d'ambiance
+        game.ambianceSystem = new AmbianceSystem();
+        
+        // Initialiser le système d'ennemis
+        game.enemySpawner = new EnemySpawner();
+        
+        // Initialiser le système de quêtes
+        game.questManager = new QuestManager();
+        
+        updateStatus("Sélection de classe...");
+        
+        // Attendre la sélection de classe avant de continuer
+        await new Promise((resolve) => {
+            const handleClassSelection = (event) => {
+                const { classType, classData } = event.detail;
+                
+                updateStatus("Création de l'aventurier...");
+                const spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.height, config.tileSize);
+                game.spawnPoint = spawnPoint;
+                game.player = new Player(spawnPoint.x, spawnPoint.y, config, null);
+                
+                // Appliquer la classe sélectionnée
+                game.player.characterClass = classData;
+                const classStats = classData.calculateStats(1);
+                
+                // Mettre à jour les stats de base du joueur
+                game.player.baseMaxHealth = classStats.health;
+                game.player.baseMaxMana = classStats.mana;
+                game.player.baseMaxStamina = classStats.stamina;
+                game.player.maxHealth = classStats.health;
+                game.player.maxMana = classStats.mana;
+                game.player.maxStamina = classStats.stamina;
+                game.player.health = classStats.health;
+                game.player.mana = classStats.mana;
+                game.player.stamina = classStats.stamina;
+                
+                // Appliquer les stats de classe
+                game.player.stats.strength = classStats.strength;
+                game.player.stats.defense = classStats.defense;
+                game.player.stats.agility = classStats.agility;
+                game.player.stats.intelligence = classStats.intelligence;
+                game.player.stats.luck = classStats.luck;
+                
+                // Initialiser le gestionnaire d'équipement
+                game.equipmentManager = new EquipmentManager(game.player);
+                
+                // Donner quelques objets de départ selon la classe
+                game.equipmentManager.addToInventory('health_potion', 3);
+                game.equipmentManager.addToInventory('mana_potion', 2);
+                
+                if (classType === CHARACTER_CLASSES.WARRIOR) {
+                    game.equipmentManager.addToInventory('iron_sword', 1);
+                    game.equipmentManager.addToInventory('leather_armor', 1);
+                } else if (classType === CHARACTER_CLASSES.MAGE) {
+                    game.equipmentManager.addToInventory('magic_staff', 1);
+                    game.equipmentManager.addToInventory('mage_robe', 1);
+                } else if (classType === CHARACTER_CLASSES.ROGUE) {
+                    game.equipmentManager.addToInventory('assassin_dagger', 1);
+                    game.equipmentManager.addToInventory('leather_armor', 1);
+                } else if (classType === CHARACTER_CLASSES.PALADIN) {
+                    game.equipmentManager.addToInventory('holy_mace', 1);
+                    game.equipmentManager.addToInventory('chain_mail', 1);
+                }
+                
+                window.removeEventListener('classSelected', handleClassSelection);
+                resolve();
+            };
+            
+            window.addEventListener('classSelected', handleClassSelection);
+            game.classManager.showClassSelection();
+        });
 
         updateStatus("Activation des systèmes...");
         game.rpgInterface = new RPGInterfaceManager();
@@ -190,12 +287,30 @@ async function startGameSequence() {
         game.combatSystem = new CombatSystem();
         game.foodSystem = new FoodSystem();
         integrateMiningWithRPG(game);
+        
+        // Générer les ennemis dans le monde
+        game.enemySpawner.generateRandomSpawns(game);
+        game.enemies = game.enemySpawner.getEnemies();
+        
+        // Accepter automatiquement la première quête
+        const starterQuest = game.questManager.getQuest('starter_quest');
+        if (starterQuest) {
+            game.questManager.acceptQuest('starter_quest', game.player);
+        }
 
         updateStatus("Chargement des assets...");
         await engine.start(gameLogic);
 
         showGame();
-        game.rpgInterface.showNotification("Bienvenue dans l'aventure !", "success");
+        
+        // Notifications de bienvenue
+        game.modularInterface.showNotification(`Bienvenue, ${game.player.characterClass.data.name} !`, "success");
+        game.modularInterface.showNotification("Utilisez Tab pour basculer l'interface, I pour l'inventaire", "info", 5000);
+        
+        // Jouer l'ambiance de départ
+        game.ambianceSystem.setAmbientMusic('ambient_forest');
+        game.ambianceSystem.playSound('levelup'); // Son de début d'aventure
+        
         logger.log("Jeu démarré. Appuyez sur 'F2' pour le logger.", 'debug');
 
     } catch (error) {

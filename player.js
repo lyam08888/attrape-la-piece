@@ -22,11 +22,14 @@ export class Player {
         this.isCrouching = false;
 
         // --- RPG Stats ---
-        this.maxHealth = 100;
+        this.baseMaxHealth = 100;
+        this.baseMaxMana = 50;
+        this.baseMaxStamina = 80;
+        this.maxHealth = this.baseMaxHealth;
         this.health = this.maxHealth;
-        this.maxMana = 50;
+        this.maxMana = this.baseMaxMana;
         this.mana = this.maxMana;
-        this.maxStamina = 80;
+        this.maxStamina = this.baseMaxStamina;
         this.stamina = this.maxStamina;
         this.stats = {
             level: 1,
@@ -34,8 +37,27 @@ export class Player {
             xpToNextLevel: 100,
             strength: 10,
             defense: 5,
+            agility: 10,
+            intelligence: 5,
+            luck: 7,
             speed: 10,
         };
+        
+        // Bonus d'équipement
+        this.equipmentBonuses = {
+            health: 0, mana: 0, stamina: 0,
+            strength: 0, defense: 0, agility: 0, intelligence: 0,
+            attack: 0, magicAttack: 0, criticalChance: 0,
+            speed: 0, magicResistance: 0, holyDamage: 0
+        };
+        
+        // Stats calculées
+        this.totalAttack = 0;
+        this.totalDefense = 0;
+        this.totalSpeed = 0;
+        
+        // Classe de personnage (sera définie plus tard)
+        this.characterClass = null;
 
         // --- Tools & Inventory ---
         this.tools = ['tool_pickaxe', 'tool_axe', 'tool_shovel'];
@@ -111,8 +133,14 @@ export class Player {
     }
 
     handleActions(keys, game, delta) {
+        // --- Utilisation d'objets avec les touches numériques ---
+        if (keys['1'] || keys['2'] || keys['3'] || keys['4']) {
+            const slotNumber = keys['1'] ? 1 : keys['2'] ? 2 : keys['3'] ? 3 : 4;
+            this.useQuickSlot(slotNumber, game);
+        }
+        
         // --- Minage et Construction ---
-        if (game.mouse.left || keys.action) {
+        if (game.mouse?.left || keys.action) {
             this.handleMining(game, delta);
         } else {
             // Réinitialiser le minage si le bouton est relâché
@@ -121,13 +149,21 @@ export class Player {
             if (game.miningEffect) game.miningEffect = null;
         }
 
-        if (game.mouse.right) {
+        if (game.mouse?.right) {
             this.handleBuilding(game);
         }
 
         // --- Combat ---
         if (keys.attack) { // Supposons une touche "attack"
              this.handleCombat(game);
+        }
+        
+        // --- Compétences de classe ---
+        if (keys['q'] && this.characterClass) {
+            this.useClassSkill(0, game); // Première compétence
+        }
+        if (keys['w'] && this.characterClass) {
+            this.useClassSkill(1, game); // Deuxième compétence
         }
     }
     
@@ -180,14 +216,56 @@ export class Player {
     }
     
     handleCombat(game) {
-        if (!game.combatSystem) return;
+        if (!game.enemies || game.enemies.length === 0) return;
         
+        const attackRange = 40; // Portée d'attaque du joueur
+        let targetEnemy = null;
+        let closestDistance = attackRange;
+        
+        // Trouver l'ennemi le plus proche dans la portée
         game.enemies.forEach(enemy => {
+            if (enemy.isDead) return;
+            
             const dist = Math.hypot(this.x - enemy.x, this.y - enemy.y);
-            if (dist < this.w * 2) { // Portée d'attaque
-                game.combatSystem.attack(this, enemy);
+            if (dist < closestDistance) {
+                targetEnemy = enemy;
+                closestDistance = dist;
             }
         });
+        
+        if (targetEnemy) {
+            this.attackEnemy(targetEnemy, game);
+        }
+    }
+    
+    attackEnemy(enemy, game) {
+        // Calculer les dégâts
+        const baseDamage = this.totalAttack || this.stats.strength;
+        const critChance = (this.tempCritBonus || 0) + (this.equipmentBonuses?.criticalChance || 0);
+        const isCritical = Math.random() * 100 < critChance;
+        
+        let damage = baseDamage + Math.floor(Math.random() * 5); // Variation aléatoire
+        if (isCritical) {
+            damage *= 2;
+        }
+        
+        // Appliquer les dégâts
+        enemy.takeDamage(damage, this);
+        
+        // Effets visuels et sonores
+        game.ambianceSystem?.playSound('attack');
+        game.ambianceSystem?.particleSystem?.createExplosion(
+            enemy.x + enemy.w/2, 
+            enemy.y + enemy.h/2, 
+            isCritical ? '#FFD700' : '#FF6B6B'
+        );
+        
+        // Notification de dégâts
+        const damageText = isCritical ? `CRITIQUE! ${damage}` : `${damage}`;
+        game.modularInterface?.showNotification(damageText, isCritical ? 'success' : 'info', 1000);
+        
+        // Consommer de l'endurance
+        this.stamina = Math.max(0, this.stamina - 5);
     }
 
     updateSurvivalStats(delta, foodSystem) {
@@ -279,22 +357,200 @@ export class Player {
         }
     }
 
+    // Utilise un slot rapide
+    useQuickSlot(slotNumber, game) {
+        if (!game.equipmentManager) return;
+        
+        // Pour l'instant, utiliser des potions de vie dans les slots
+        const itemMap = {
+            1: 'health_potion',
+            2: 'mana_potion',
+            3: 'stamina_potion',
+            4: 'health_potion'
+        };
+        
+        const itemId = itemMap[slotNumber];
+        if (itemId) {
+            const result = game.equipmentManager.useConsumable(itemId);
+            if (result.success) {
+                game.ambianceSystem?.playSound('heal');
+                game.modularInterface?.showNotification(result.message, 'success');
+            } else {
+                game.modularInterface?.showNotification(result.message, 'error');
+            }
+        }
+    }
+
+    // Utilise une compétence de classe
+    useClassSkill(skillIndex, game) {
+        if (!this.characterClass) return;
+        
+        const availableSkills = this.characterClass.getAvailableSkills(this.stats.level);
+        const skill = availableSkills[skillIndex];
+        
+        if (!skill) return;
+        
+        // Vérifier le coût en mana (exemple)
+        const manaCost = 10 + (skillIndex * 5);
+        if (this.mana < manaCost) {
+            game.modularInterface?.showNotification("Pas assez de mana !", 'error');
+            return;
+        }
+        
+        this.mana -= manaCost;
+        
+        // Appliquer l'effet de la compétence
+        this.applySkillEffect(skill, game);
+        
+        game.ambianceSystem?.playSound('attack');
+        game.modularInterface?.showNotification(`${skill.name} utilisé !`, 'success');
+    }
+
+    applySkillEffect(skill, game) {
+        switch (skill.name) {
+            case 'Charge':
+                // Augmenter temporairement l'attaque
+                this.tempAttackBonus = (this.tempAttackBonus || 0) + 10;
+                setTimeout(() => {
+                    this.tempAttackBonus = Math.max(0, (this.tempAttackBonus || 0) - 10);
+                }, 5000);
+                break;
+                
+            case 'Soin':
+                this.health = Math.min(this.health + 50, this.maxHealth);
+                game.ambianceSystem?.playSound('heal');
+                break;
+                
+            case 'Boule de Feu':
+                // Créer un projectile magique
+                this.createMagicProjectile(game, 'fireball');
+                break;
+                
+            case 'Attaque Sournoise':
+                // Augmenter les dégâts critiques temporairement
+                this.tempCritBonus = (this.tempCritBonus || 0) + 25;
+                setTimeout(() => {
+                    this.tempCritBonus = Math.max(0, (this.tempCritBonus || 0) - 25);
+                }, 3000);
+                break;
+                
+            case 'Téléportation':
+                if (game.mouse) {
+                    const mouseX = game.mouse.x / game.config.zoom + game.camera.x;
+                    const mouseY = game.mouse.y / game.config.zoom + game.camera.y;
+                    this.x = mouseX - this.w / 2;
+                    this.y = mouseY - this.h / 2;
+                    game.ambianceSystem?.particleSystem?.createExplosion(this.x, this.y, '#3F51B5');
+                }
+                break;
+        }
+    }
+
+    createMagicProjectile(game, type) {
+        // Créer un effet visuel de projectile magique
+        if (game.ambianceSystem?.particleSystem) {
+            const targetX = game.mouse ? game.mouse.x / game.config.zoom + game.camera.x : this.x + 50;
+            const targetY = game.mouse ? game.mouse.y / game.config.zoom + game.camera.y : this.y;
+            
+            // Animation de projectile simple avec des particules
+            const steps = 20;
+            const deltaX = (targetX - this.x) / steps;
+            const deltaY = (targetY - this.y) / steps;
+            
+            for (let i = 0; i < steps; i++) {
+                setTimeout(() => {
+                    const x = this.x + deltaX * i;
+                    const y = this.y + deltaY * i;
+                    game.ambianceSystem.particleSystem.addParticle(x, y, 'circle', {
+                        speed: 1,
+                        life: 0.3,
+                        size: 4,
+                        color: type === 'fireball' ? '#FF4444' : '#4444FF'
+                    });
+                }, i * 50);
+            }
+        }
+    }
+
+    // Gagner de l'expérience
+    gainXP(amount, game) {
+        this.stats.xp += amount;
+        
+        while (this.stats.xp >= this.stats.xpToNextLevel) {
+            this.levelUp(game);
+        }
+    }
+
+    levelUp(game) {
+        this.stats.xp -= this.stats.xpToNextLevel;
+        this.stats.level++;
+        this.stats.xpToNextLevel = Math.floor(this.stats.xpToNextLevel * 1.2);
+        
+        // Augmenter les stats selon la classe
+        if (this.characterClass) {
+            const growth = this.characterClass.data.statGrowth;
+            this.baseMaxHealth += growth.health;
+            this.baseMaxMana += growth.mana;
+            this.baseMaxStamina += growth.stamina;
+            this.stats.strength += growth.strength;
+            this.stats.defense += growth.defense;
+            this.stats.agility += growth.agility;
+            this.stats.intelligence += growth.intelligence;
+            this.stats.luck += growth.luck;
+            
+            // Restaurer la santé complète au niveau supérieur
+            this.health = this.maxHealth;
+            this.mana = this.maxMana;
+            this.stamina = this.maxStamina;
+        }
+        
+        // Effets visuels et sonores
+        game.ambianceSystem?.playSound('levelup');
+        game.ambianceSystem?.particleSystem?.createLevelUpEffect(this.x + this.w/2, this.y + this.h/2);
+        game.modularInterface?.showNotification(`Niveau ${this.stats.level} atteint !`, 'success', 4000);
+    }
+
     draw(ctx, assets) {
-        // Simple rectangle for now, animation can be added later
-        ctx.fillStyle = '#FF6B6B';
+        // Couleur basée sur la classe
+        let playerColor = '#FF6B6B';
+        if (this.characterClass) {
+            playerColor = this.characterClass.data.color;
+        }
+        
+        ctx.fillStyle = playerColor;
         ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        // Icône de classe au-dessus du joueur
+        if (this.characterClass) {
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.strokeText(this.characterClass.data.icon, this.x + this.w/2, this.y - 5);
+            ctx.fillText(this.characterClass.data.icon, this.x + this.w/2, this.y - 5);
+        }
 
         // Health bar above player
         const barWidth = this.w;
-        const barHeight = 5;
+        const barHeight = 4;
         const barX = this.x;
-        const barY = this.y - 10;
+        const barY = this.y - 15;
         
+        // Barre de vie
         ctx.fillStyle = '#333';
         ctx.fillRect(barX, barY, barWidth, barHeight);
-        
         const healthPercent = this.health / this.maxHealth;
         ctx.fillStyle = healthPercent > 0.5 ? '#4CAF50' : healthPercent > 0.2 ? '#FFC107' : '#F44336';
         ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+        
+        // Barre de mana
+        if (this.maxMana > 0) {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY + 5, barWidth, barHeight);
+            const manaPercent = this.mana / this.maxMana;
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(barX, barY + 5, barWidth * manaPercent, barHeight);
+        }
     }
 }

@@ -1,0 +1,532 @@
+/* rpg-interface.css - Styles pour l'interface RPG modulaire */
+
+/* Animations pour les notifications */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 5px currentColor;
+    }
+    50% {
+        box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    }
+}
+
+/* Interface RPG principale */
+#rpgInterface {
+    font-family: 'VT323', monospace;
+    user-select: none;
+}
+
+/* Fenêtres RPG */
+.rpg-window {
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease;
+}
+
+.rpg-window:hover {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.window-titlebar {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.window-titlebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.window-content {
+    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+}
+
+.window-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.window-content::-webkit-scrollbar-track {
+    background: #333;
+    border-radius: 4px;
+}
+
+.window-content::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 4px;
+}
+
+.window-content::-webkit-scrollbar-thumb:hover {
+    background: #45a049;
+}
+
+/* Boutons RPG */
+.rpg-button {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    border: 2px solid #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    font-family: 'VT323', monospace;
+    font-size: 1.2em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.rpg-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.rpg-button:hover::before {
+    left: 100%;
+}
+
+.rpg-button:hover {
+    background: linear-gradient(135deg, #45a049, #4CAF50);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    transform: translateY(-2px);
+}
+
+.rpg-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
+
+/* Slots d'équipement */
+.equipment-slot {
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.equipment-slot:hover {
+    border-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.1) !important;
+    transform: scale(1.05);
+}
+
+.equipment-slot.equipped {
+    border-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.2) !important;
+    animation: glow 2s infinite;
+}
+
+.equipment-slot.equipped::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    color: #4CAF50;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* Grille d'inventaire */
+#inventoryGrid {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #555;
+    border-radius: 5px;
+}
+
+.inventory-slot {
+    aspect-ratio: 1;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    font-size: 1.2em;
+}
+
+.inventory-slot:hover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.inventory-slot.has-item {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4CAF50;
+}
+
+.inventory-slot .item-count {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    font-size: 0.7em;
+    padding: 1px 3px;
+    border-radius: 2px;
+    min-width: 12px;
+    text-align: center;
+}
+
+.inventory-slot .rarity-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+.rarity-common { border: 2px solid #FFFFFF; }
+.rarity-uncommon { border: 2px solid #4CAF50; }
+.rarity-rare { border: 2px solid #2196F3; }
+.rarity-epic { border: 2px solid #9C27B0; }
+.rarity-legendary { border: 2px solid #FF9800; }
+.rarity-mythic { border: 2px solid #F44336; }
+
+/* Filtres */
+.filter-btn, .quest-filter {
+    background: #555;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    font-family: 'VT323', monospace;
+}
+
+.filter-btn:hover, .quest-filter:hover {
+    background: #666;
+    transform: translateY(-1px);
+}
+
+.filter-btn.active, .quest-filter.active {
+    background: #4CAF50;
+    color: white;
+}
+
+/* Barres de stats */
+.stat-bar {
+    background: #333;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.stat-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.health-bar { background: #e74c3c; }
+.mana-bar { background: #3498db; }
+.stamina-bar { background: #f39c12; }
+.xp-bar { background: #4CAF50; }
+
+/* Slots rapides */
+.quick-slot {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.quick-slot:hover {
+    border-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.1) !important;
+    transform: scale(1.1);
+}
+
+.quick-slot.active {
+    border-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.2) !important;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Arbre de compétences */
+.skill-node {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #333;
+    border: 3px solid #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 1.5em;
+}
+
+.skill-node:hover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    transform: scale(1.1);
+}
+
+.skill-node.available {
+    border-color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+    animation: glow 2s infinite;
+}
+
+.skill-node.learned {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.skill-node.learned::after {
+    content: '✓';
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #4CAF50;
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+}
+
+/* Connexions entre compétences */
+.skill-connection {
+    position: absolute;
+    background: #555;
+    z-index: -1;
+}
+
+.skill-connection.active {
+    background: #4CAF50;
+    box-shadow: 0 0 10px #4CAF50;
+}
+
+/* Quêtes */
+.quest-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.quest-item:hover {
+    background: rgba(76, 175, 80, 0.2) !important;
+    border-color: #4CAF50 !important;
+    transform: translateX(5px);
+}
+
+.quest-item.completed {
+    opacity: 0.7;
+    background: rgba(76, 175, 80, 0.1) !important;
+}
+
+.quest-item.completed::before {
+    content: '✓ ';
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Tooltips */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    max-width: 200px;
+    z-index: 10000;
+    pointer-events: none;
+    border: 1px solid #4CAF50;
+    animation: fadeIn 0.2s ease;
+}
+
+.tooltip::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #4CAF50 transparent transparent transparent;
+}
+
+/* Effets de particules */
+.particle-effect {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rpg-window {
+        width: 90% !important;
+        height: 80% !important;
+        left: 5% !important;
+        top: 10% !important;
+    }
+    
+    #mainToolbar {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    #gameHUD {
+        flex-direction: column;
+        height: auto;
+        padding: 8px;
+    }
+    
+    .quick-slot {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.2em !important;
+    }
+}
+
+/* Thème sombre amélioré */
+.dark-theme {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #333;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --accent-color: #4CAF50;
+    --accent-hover: #45a049;
+    --border-color: #555;
+}
+
+/* Effets de lueur pour les objets magiques */
+.magical-glow {
+    animation: magicalGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes magicalGlow {
+    from {
+        box-shadow: 0 0 5px #4CAF50, 0 0 10px #4CAF50, 0 0 15px #4CAF50;
+    }
+    to {
+        box-shadow: 0 0 10px #4CAF50, 0 0 20px #4CAF50, 0 0 30px #4CAF50;
+    }
+}
+
+/* Animations de combat */
+.combat-animation {
+    animation: combatShake 0.5s ease-in-out;
+}
+
+@keyframes combatShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Effets de niveau supérieur */
+.levelup-effect {
+    animation: levelUpBurst 1s ease-out;
+}
+
+@keyframes levelUpBurst {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
