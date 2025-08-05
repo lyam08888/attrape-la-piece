@@ -1425,4 +1425,4 @@ class NPCAISystem {
     }
 }
 
-export { AdvancedNPCSystem };
+// export { AdvancedNPCSystem }; // doublon supprimé
