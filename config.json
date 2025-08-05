@@ -165,7 +165,27 @@
     "player_crouch_walk2": "assets/player_crouch_walk2.png",
     "player_prone": "assets/player_prone.png",
     "player_prone_walk1": "assets/player_prone_walk1.png",
-    "player_prone_walk2": "assets/player_prone_walk2.png"
+    "player_prone_walk2": "assets/player_prone_walk2.png",
+    
+    "animal_rabbit": "assets/animal_rabbit.png",
+    "animal_deer": "assets/animal_deer.png",
+    "animal_fox": "assets/animal_fox.png",
+    "animal_brown_bear": "assets/animal_brown_bear.png",
+    "animal_dog": "assets/animal_dog.png",
+    "animal_mouse": "assets/animal_mouse.png",
+    "animal_boar": "assets/animal_boar.png",
+    "animal_robin": "assets/animal_robin.png",
+    "animal_eagle": "assets/animal_eagle.png",
+    "animal_owl": "assets/animal_owl.png",
+    "animal_bat": "assets/animal_bat.png",
+    "animal_butterfly": "assets/animal_butterfly.png",
+    "animal_carp": "assets/animal_carp.png",
+    "animal_salmon": "assets/animal_salmon.png",
+    "animal_great_white_shark": "assets/animal_great_white_shark.png",
+    "animal_dolphin": "assets/animal_dolphin.png",
+    "animal_mole": "assets/animal_mole.png",
+    "animal_beetle": "assets/animal_beetle.png",
+    "animal_earthworm": "assets/animal_earthworm.png"
   },
   "playerAnimations": {
     "idle": ["player_idle1", "player_idle2"],

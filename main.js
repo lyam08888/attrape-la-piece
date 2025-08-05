@@ -37,6 +37,9 @@ import { EnemySpawner } from './enemySystem.js';
 import { QuestManager } from './questSystem.js';
 import { FaunaSystem } from './faunaSystem.js';
 import { ControlsHUD } from './controlsHUD.js';
+import { Minimap } from './minimap.js';
+import { PerformanceOptimizer } from './performanceOptimizer.js';
+import { WelcomeMessage } from './welcomeMessage.js';
 
 // --- Configuration Globale ---
 let game = {};
@@ -157,6 +160,8 @@ const gameLogic = {
         game.questManager?.update(game.player, game, delta);
         game.faunaSystem?.update(game, delta);
         game.controlsHUD?.update(delta);
+        game.minimap?.update(game);
+        game.performanceOptimizer?.update(delta);
         logger.update(); // Mettre à jour le logger
         
         updateCamera();
@@ -209,6 +214,7 @@ const gameLogic = {
         // Dessiner les interfaces
         game.rpgInterface?.draw(ctx);
         game.controlsHUD?.draw(ctx);
+        game.minimap?.draw(ctx, game);
         
         // Dessiner le logger par-dessus tout
         logger.draw(ctx);
@@ -398,6 +404,12 @@ async function startGameSequence() {
         
         // Initialiser le HUD des contrôles
         game.controlsHUD = new ControlsHUD();
+        
+        // Initialiser la minimap
+        game.minimap = new Minimap(config);
+        
+        // Initialiser l'optimiseur de performance
+        game.performanceOptimizer = new PerformanceOptimizer();
         
         updateStatus("Sélection de classe...");
         

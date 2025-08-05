@@ -162,19 +162,28 @@ export class FaunaSystem {
     spawnAnimal(game) {
         const player = game.player;
         
-        // Choisir un type d'animal basé sur le biome
+        // Choisir un type d'animal basé sur le biome et la position
+        const playerTileX = Math.floor(player.x / game.config.tileSize);
+        const playerTileY = Math.floor(player.y / game.config.tileSize);
         const playerY = player.y / game.config.worldHeight;
+        
         let availableTypes = [];
 
+        // Déterminer les types d'animaux disponibles selon la profondeur
         if (playerY < 0.3) {
-            // Surface
+            // Surface - animaux terrestres et volants
             availableTypes = [...this.animalTypes.terrestrial, ...this.animalTypes.flying];
         } else if (playerY < 0.8) {
-            // Souterrain
-            availableTypes = [...this.animalTypes.underground, ...this.animalTypes.flying];
+            // Souterrain - animaux souterrains et quelques volants
+            availableTypes = [...this.animalTypes.underground, ...this.animalTypes.flying.slice(0, 2)];
         } else {
-            // Profondeur
+            // Profondeur - seulement animaux souterrains
             availableTypes = this.animalTypes.underground;
+        }
+
+        // Ajouter des animaux aquatiques près de l'eau (zones avec beaucoup d'air = eau)
+        if (this.isNearWater(game, playerTileX, playerTileY)) {
+            availableTypes = [...availableTypes, ...this.animalTypes.aquatic];
         }
 
         if (availableTypes.length === 0) return;
@@ -276,5 +285,27 @@ export class FaunaSystem {
             return true;
         }
         return false;
+    }
+
+    isNearWater(game, x, y) {
+        // Vérifier s'il y a beaucoup d'air autour (simulation d'eau)
+        let airCount = 0;
+        const checkRadius = 5;
+        
+        for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+            for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+                const checkY = y + dy;
+                const checkX = x + dx;
+                
+                if (game.tileMap[checkY] && game.tileMap[checkY][checkX] !== undefined) {
+                    if (game.tileMap[checkY][checkX] === 0) {
+                        airCount++;
+                    }
+                }
+            }
+        }
+        
+        const totalChecked = (checkRadius * 2 + 1) * (checkRadius * 2 + 1);
+        return (airCount / totalChecked) > 0.6; // Plus de 60% d'air = zone aquatique
     }
 }

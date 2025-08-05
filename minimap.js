@@ -1,294 +1,166 @@
-// minimap.js - Système de minimap
+// minimap.js - Système de minimap pour la navigation
 
 export class Minimap {
-    constructor(width, height, scale = 4) {
-        this.width = width;
-        this.height = height;
-        this.scale = scale; // Nombre de pixels de jeu par pixel de minimap
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.ctx = this.canvas.getContext('2d');
-        this.lastUpdate = 0;
-        this.updateInterval = 100; // Mettre à jour toutes les 100ms
+    constructor(config) {
+        this.config = config;
+        this.size = 150; // Taille de la minimap
+        this.scale = 0.1; // Échelle de la minimap
+        this.visible = true;
+        this.position = { x: 10, y: 10 }; // Position sur l'écran
+        this.exploredTiles = new Set(); // Tuiles explorées
     }
 
-    update(game, currentTime) {
-        if (currentTime - this.lastUpdate < this.updateInterval) return;
-        this.lastUpdate = currentTime;
+    update(game) {
+        if (!game.player || !game.tileMap) return;
 
-        const { tileSize } = game.config;
-        const player = game.player;
-        if (!player) return;
+        // Marquer les tuiles autour du joueur comme explorées
+        const playerTileX = Math.floor(game.player.x / this.config.tileSize);
+        const playerTileY = Math.floor(game.player.y / this.config.tileSize);
+        const exploreRadius = 10;
 
-        // Effacer la minimap
-        this.ctx.fillStyle = '#000000';
-        this.ctx.fillRect(0, 0, this.width, this.height);
-
-        // Calculer la zone à afficher autour du joueur
-        const centerX = player.x + player.w / 2;
-        const centerY = player.y + player.h / 2;
-        
-        const mapCenterX = this.width / 2;
-        const mapCenterY = this.height / 2;
-        
-        const worldStartX = centerX - (mapCenterX * this.scale);
-        const worldStartY = centerY - (mapCenterY * this.scale);
-
-        // Dessiner les tuiles
-        for (let mapY = 0; mapY < this.height; mapY++) {
-            for (let mapX = 0; mapX < this.width; mapX++) {
-                const worldX = worldStartX + (mapX * this.scale);
-                const worldY = worldStartY + (mapY * this.scale);
+        for (let dy = -exploreRadius; dy <= exploreRadius; dy++) {
+            for (let dx = -exploreRadius; dx <= exploreRadius; dx++) {
+                const tileX = playerTileX + dx;
+                const tileY = playerTileY + dy;
                 
-                const tileX = Math.floor(worldX / tileSize);
-                const tileY = Math.floor(worldY / tileSize);
-                
-                const tileType = game.tileMap[tileY]?.[tileX];
-                if (tileType > 0) {
-                    this.ctx.fillStyle = this.getTileColor(tileType);
-                    this.ctx.fillRect(mapX, mapY, 1, 1);
+                if (tileX >= 0 && tileX < game.tileMap[0]?.length && 
+                    tileY >= 0 && tileY < game.tileMap.length) {
+                    this.exploredTiles.add(`${tileX},${tileY}`);
                 }
             }
         }
+    }
 
-        // Dessiner les entités
-        this.drawEntities(game, worldStartX, worldStartY);
+    draw(ctx, game) {
+        if (!this.visible || !game.player || !game.tileMap) return;
+
+        ctx.save();
+
+        // Fond de la minimap
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(this.position.x, this.position.y, this.size, this.size);
+
+        // Bordure
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.position.x, this.position.y, this.size, this.size);
+
+        // Calculer la zone à afficher
+        const playerTileX = Math.floor(game.player.x / this.config.tileSize);
+        const playerTileY = Math.floor(game.player.y / this.config.tileSize);
+        const tilesPerSide = Math.floor(this.size / 2);
         
-        // Dessiner le joueur (toujours au centre)
-        this.ctx.fillStyle = '#00ff00';
-        this.ctx.fillRect(mapCenterX - 1, mapCenterY - 1, 3, 3);
+        const startX = Math.max(0, playerTileX - tilesPerSide);
+        const endX = Math.min(game.tileMap[0]?.length || 0, playerTileX + tilesPerSide);
+        const startY = Math.max(0, playerTileY - tilesPerSide);
+        const endY = Math.min(game.tileMap.length, playerTileY + tilesPerSide);
+
+        // Dessiner les tuiles
+        const pixelSize = this.size / (tilesPerSide * 2);
         
-        // Dessiner la direction du joueur
-        this.ctx.strokeStyle = '#00ff00';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.moveTo(mapCenterX, mapCenterY);
-        this.ctx.lineTo(mapCenterX + player.dir * 3, mapCenterY);
-        this.ctx.stroke();
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const tileKey = `${x},${y}`;
+                
+                // Ne dessiner que les tuiles explorées
+                if (!this.exploredTiles.has(tileKey)) continue;
+
+                const tileType = game.tileMap[y]?.[x];
+                if (tileType === undefined) continue;
+
+                const screenX = this.position.x + (x - startX) * pixelSize;
+                const screenY = this.position.y + (y - startY) * pixelSize;
+
+                // Couleurs des tuiles
+                let color = this.getTileColor(tileType);
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(screenX, screenY, pixelSize, pixelSize);
+            }
+        }
+
+        // Dessiner le joueur
+        const playerScreenX = this.position.x + (playerTileX - startX) * pixelSize;
+        const playerScreenY = this.position.y + (playerTileY - startY) * pixelSize;
+        
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(playerScreenX - 1, playerScreenY - 1, 3, 3);
+
+        // Dessiner les animaux proches
+        if (game.faunaSystem) {
+            game.faunaSystem.animals.forEach(animal => {
+                const animalTileX = Math.floor(animal.x / this.config.tileSize);
+                const animalTileY = Math.floor(animal.y / this.config.tileSize);
+                
+                if (animalTileX >= startX && animalTileX < endX && 
+                    animalTileY >= startY && animalTileY < endY) {
+                    
+                    const animalScreenX = this.position.x + (animalTileX - startX) * pixelSize;
+                    const animalScreenY = this.position.y + (animalTileY - startY) * pixelSize;
+                    
+                    ctx.fillStyle = this.getAnimalColor(animal.type.name);
+                    ctx.fillRect(animalScreenX, animalScreenY, 1, 1);
+                }
+            });
+        }
+
+        // Titre
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '12px VT323, monospace';
+        ctx.fillText('Minimap', this.position.x + 5, this.position.y - 5);
+
+        ctx.restore();
     }
 
     getTileColor(tileType) {
         const colors = {
-            1: '#4a7c59',  // GRASS - vert
-            2: '#8b4513',  // DIRT - marron
-            3: '#696969',  // STONE - gris
-            4: '#8b4513',  // WOOD - marron
-            5: '#228b22',  // LEAVES - vert foncé
-            6: '#2f2f2f',  // COAL - noir
-            7: '#cd853f',  // IRON - orange
-            8: '#1a1a1a',  // BEDROCK - noir profond
-            9: '#4682b4',  // WATER - bleu
-            10: '#9370db', // CRYSTAL - violet
-            11: '#ff69b4', // GLOW_MUSHROOM - rose
-            12: '#f0f8ff', // CLOUD - blanc
-            13: '#dc143c', // HELLSTONE - rouge
-            14: '#ff4500', // LAVA - orange rouge
-            15: '#f4a460', // SAND - sable
-            16: '#8b4513', // OAK_WOOD - marron
-            17: '#228b22', // OAK_LEAVES - vert
-            18: '#ff0000', // FLOWER_RED - rouge
-            19: '#ffff00', // FLOWER_YELLOW - jaune
-            20: '#ffd700', // GOLD - or
-            21: '#00ffff', // DIAMOND - cyan
-            22: '#0000ff', // LAPIS - bleu
-            23: '#a0522d', // GRANITE - marron clair
-            24: '#dcdcdc', // DIORITE - gris clair
-            25: '#708090', // ANDESITE - gris ardoise
-            26: '#fffacd', // HEAVENLY_STONE - crème
-            27: '#c0c0c0', // MOON_ROCK - argent
-            28: '#8b7355', // SOUL_SAND - marron terne
-            29: '#2f1b14', // SCORCHED_STONE - marron très foncé
-            30: '#36013f', // OBSIDIAN - violet très foncé
-            31: '#9966cc'  // AMETHYST - violet
+            0: 'rgba(135, 206, 235, 0.3)', // AIR - bleu clair transparent (ciel/eau)
+            1: '#696969', // STONE - gris
+            2: '#32CD32', // GRASS - vert
+            3: '#8B4513', // DIRT - marron
+            100: '#F0F8FF', // DIVINE_STONE - blanc bleuté
+            103: '#BFFF00', // autre grass - vert clair
+            106: '#E0FFFF', // CLOUD - blanc nuageux
+            112: '#9370DB', // CRYSTAL - violet
+            121: '#F4E285', // SAND - sable
+            130: '#8B0000'  // HELLSTONE - rouge foncé
         };
         
-        return colors[tileType] || '#ffffff';
+        return colors[tileType] || '#CCCCCC';
     }
 
-    drawEntities(game, worldStartX, worldStartY) {
-        // Dessiner les ennemis
-        game.enemies.forEach(enemy => {
-            if (enemy.isDead) return;
-            
-            const mapX = Math.floor((enemy.x - worldStartX) / this.scale);
-            const mapY = Math.floor((enemy.y - worldStartY) / this.scale);
-            
-            if (mapX >= 0 && mapX < this.width && mapY >= 0 && mapY < this.height) {
-                this.ctx.fillStyle = '#ff0000';
-                this.ctx.fillRect(mapX, mapY, 2, 2);
-            }
-        });
-
-        // Dessiner les PNJ
-        game.pnjs.forEach(pnj => {
-            const mapX = Math.floor((pnj.x - worldStartX) / this.scale);
-            const mapY = Math.floor((pnj.y - worldStartY) / this.scale);
-            
-            if (mapX >= 0 && mapX < this.width && mapY >= 0 && mapY < this.height) {
-                this.ctx.fillStyle = '#0000ff';
-                this.ctx.fillRect(mapX, mapY, 2, 2);
-            }
-        });
-
-        // Dessiner les collectibles importants
-        game.collectibles.forEach(collectible => {
-            // Ne dessiner que les minerais précieux
-            if (collectible.tileType >= 6) { // COAL et plus précieux
-                const mapX = Math.floor((collectible.x - worldStartX) / this.scale);
-                const mapY = Math.floor((collectible.y - worldStartY) / this.scale);
-                
-                if (mapX >= 0 && mapX < this.width && mapY >= 0 && mapY < this.height) {
-                    this.ctx.fillStyle = this.getTileColor(collectible.tileType);
-                    this.ctx.fillRect(mapX, mapY, 1, 1);
-                }
-            }
-        });
+    getAnimalColor(animalName) {
+        const colors = {
+            'rabbit': '#FFFFFF',
+            'deer': '#8B4513',
+            'fox': '#FF4500',
+            'bear': '#654321',
+            'wolf': '#708090',
+            'squirrel': '#D2691E',
+            'boar': '#2F4F4F',
+            'bird': '#87CEEB',
+            'eagle': '#B8860B',
+            'owl': '#8B7355',
+            'bat': '#2F2F2F',
+            'butterfly': '#FFB6C1',
+            'fish': '#00CED1',
+            'salmon': '#FA8072',
+            'shark': '#2F4F4F',
+            'dolphin': '#4682B4',
+            'mole': '#8B4513',
+            'spider': '#800080',
+            'worm': '#9ACD32'
+        };
+        
+        return colors[animalName] || '#FFFF00';
     }
 
-    draw(targetCtx, x, y) {
-        // Dessiner la minimap sur le canvas principal
-        targetCtx.save();
-        
-        // Bordure
-        targetCtx.strokeStyle = '#666666';
-        targetCtx.lineWidth = 2;
-        targetCtx.strokeRect(x - 1, y - 1, this.width + 2, this.height + 2);
-        
-        // Fond semi-transparent
-        targetCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        targetCtx.fillRect(x, y, this.width, this.height);
-        
-        // Minimap
-        targetCtx.drawImage(this.canvas, x, y);
-        
-        // Légende
-        this.drawLegend(targetCtx, x, y + this.height + 5);
-        
-        targetCtx.restore();
+    toggle() {
+        this.visible = !this.visible;
     }
 
-    drawLegend(ctx, x, y) {
-        const legendItems = [
-            { color: '#00ff00', text: 'Joueur' },
-            { color: '#ff0000', text: 'Ennemis' },
-            { color: '#0000ff', text: 'PNJ' },
-            { color: '#ffd700', text: 'Minerais' }
-        ];
-
-        ctx.font = '8px "VT323"';
-        ctx.fillStyle = '#ffffff';
-        
-        legendItems.forEach((item, index) => {
-            const itemY = y + (index * 12);
-            
-            // Carré de couleur
-            ctx.fillStyle = item.color;
-            ctx.fillRect(x, itemY, 8, 8);
-            
-            // Texte
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(item.text, x + 12, itemY + 6);
-        });
+    setPosition(x, y) {
+        this.position.x = x;
+        this.position.y = y;
     }
-
-    // Méthodes utilitaires
-    worldToMap(worldX, worldY, centerWorldX, centerWorldY) {
-        const mapCenterX = this.width / 2;
-        const mapCenterY = this.height / 2;
-        
-        const mapX = mapCenterX + (worldX - centerWorldX) / this.scale;
-        const mapY = mapCenterY + (worldY - centerWorldY) / this.scale;
-        
-        return { x: mapX, y: mapY };
-    }
-
-    mapToWorld(mapX, mapY, centerWorldX, centerWorldY) {
-        const mapCenterX = this.width / 2;
-        const mapCenterY = this.height / 2;
-        
-        const worldX = centerWorldX + (mapX - mapCenterX) * this.scale;
-        const worldY = centerWorldY + (mapY - mapCenterY) * this.scale;
-        
-        return { x: worldX, y: worldY };
-    }
-
-    setScale(newScale) {
-        this.scale = Math.max(1, Math.min(10, newScale));
-    }
-
-    toggleSize() {
-        if (this.width === 150) {
-            this.resize(300, 300);
-        } else {
-            this.resize(150, 150);
-        }
-    }
-
-    resize(width, height) {
-        this.width = width;
-        this.height = height;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        
-        // Mettre à jour l'élément DOM si nécessaire
-        const minimapElement = document.getElementById('minimap');
-        if (minimapElement) {
-            minimapElement.style.width = width + 'px';
-            minimapElement.style.height = height + 'px';
-        }
-    }
-}
-
-// Fonction pour intégrer la minimap dans l'interface
-export function initializeMinimap(game) {
-    const minimapElement = document.getElementById('minimap');
-    if (!minimapElement) return null;
-
-    const minimap = new Minimap(150, 150, 4);
-    
-    // Ajouter des contrôles à la minimap
-    minimapElement.addEventListener('click', (e) => {
-        const rect = minimapElement.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        
-        // Double-clic pour changer la taille
-        if (e.detail === 2) {
-            minimap.toggleSize();
-        }
-    });
-
-    // Molette pour changer le zoom
-    minimapElement.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 1 : -1;
-        minimap.setScale(minimap.scale + delta);
-    });
-
-    return minimap;
-}
-
-// Fonction pour dessiner la minimap dans l'interface
-export function drawMinimapToElement(minimap, game) {
-    const minimapElement = document.getElementById('minimap');
-    if (!minimapElement || !minimap) return;
-
-    // Créer un canvas temporaire pour dessiner dans l'élément DOM
-    let canvas = minimapElement.querySelector('canvas');
-    if (!canvas) {
-        canvas = document.createElement('canvas');
-        canvas.width = minimap.width;
-        canvas.height = minimap.height;
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        minimapElement.appendChild(canvas);
-    }
-
-    const ctx = canvas.getContext('2d');
-    minimap.update(game, performance.now());
-    
-    // Effacer et dessiner
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(minimap.canvas, 0, 0);
 }

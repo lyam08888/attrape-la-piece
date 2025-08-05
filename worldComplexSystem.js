@@ -1,9 +1,12 @@
 // worldComplexSystem.js - Système de monde complexe, multi-couches, destructible et évolutif
 
+import { BiomeSystem } from './biomeSystem.js';
+
 export class WorldComplexSystem {
     constructor(config) {
         this.config = config;
         this.layers = this.initializeLayers();
+        this.biomeSystem = new BiomeSystem();
         this.tileMap = this.generateComplexWorld();
         this.destructionEvents = [];
     }
@@ -25,31 +28,32 @@ export class WorldComplexSystem {
         const height = Math.floor(this.config.worldHeight / this.config.tileSize);
         const tileMap = Array.from({ length: height }, () => Array(width).fill(0));
         
-        // Génération de terrain avec bruit de Perlin pour un aspect plus naturel
+        // Génération de terrain avec bruit et biomes pour un aspect plus naturel
         const surfaceHeight = this.generateSurfaceHeights(width, height);
+        const biomeMap = this.biomeSystem.generateBiomeMap(width, height);
         
         for (let x = 0; x < width; x++) {
             const surfaceY = surfaceHeight[x];
             
             for (let y = 0; y < height; y++) {
                 const yNorm = y / height;
-                const layer = this.getLayerForY(yNorm);
+                const biome = biomeMap[y] ? biomeMap[y][x] : this.biomeSystem.biomes.PLAINS;
                 
-                // Génération basée sur la hauteur de surface
-                if (y < surfaceY - 50) {
+                // Génération basée sur la hauteur de surface et le biome
+                if (y < surfaceY - 20) {
                     // Ciel
                     if (yNorm < 0.04) {
                         tileMap[y][x] = 0; // Espace
                     } else if (yNorm < 0.10) {
                         // Nuages occasionnels
-                        if (Math.random() < 0.1 && this.noise(x * 0.1, y * 0.1) > 0.3) {
+                        if (Math.random() < 0.05 && this.noise(x * 0.1, y * 0.1) > 0.4) {
                             tileMap[y][x] = 106; // CLOUD
                         } else {
                             tileMap[y][x] = 0; // AIR
                         }
                     } else if (yNorm < 0.18) {
                         // Îles flottantes occasionnelles
-                        if (this.noise(x * 0.05, y * 0.05) > 0.6) {
+                        if (this.noise(x * 0.03, y * 0.03) > 0.7) {
                             tileMap[y][x] = 100; // DIVINE_STONE
                         } else {
                             tileMap[y][x] = 0; // AIR
@@ -58,50 +62,48 @@ export class WorldComplexSystem {
                         tileMap[y][x] = 0; // AIR
                     }
                 } else if (y < surfaceY) {
-                    // Surface - herbe et arbres
-                    if (y === surfaceY - 1) {
-                        tileMap[y][x] = 2; // GRASS
-                        // Arbres occasionnels
-                        if (Math.random() < 0.05) {
-                            this.generateTree(tileMap, x, y, width, height);
-                        }
+                    // Surface basée sur le biome
+                    const distanceFromSurface = surfaceY - y;
+                    
+                    if (distanceFromSurface <= 1) {
+                        tileMap[y][x] = biome.surfaceTile;
+                    } else if (distanceFromSurface <= 5) {
+                        tileMap[y][x] = biome.subSurfaceTile;
                     } else {
-                        tileMap[y][x] = 3; // DIRT
+                        tileMap[y][x] = biome.undergroundTile;
                     }
                 } else {
                     // Souterrain
                     const depthRatio = (y - surfaceY) / (height - surfaceY);
                     
-                    if (depthRatio < 0.3) {
-                        // Couche de terre/pierre
-                        if (Math.random() < 0.05) {
-                            tileMap[y][x] = 0; // Cavernes
-                        } else if (depthRatio < 0.1) {
-                            tileMap[y][x] = 3; // DIRT
+                    if (depthRatio < 0.2) {
+                        // Couche de transition
+                        if (Math.random() < 0.03) {
+                            tileMap[y][x] = 0; // Petites cavernes
                         } else {
-                            tileMap[y][x] = 1; // STONE
+                            tileMap[y][x] = biome.undergroundTile;
                         }
-                    } else if (depthRatio < 0.6) {
+                    } else if (depthRatio < 0.5) {
                         // Couche de pierre avec minerais
-                        if (Math.random() < 0.08) {
-                            tileMap[y][x] = 0; // Cavernes plus grandes
-                        } else if (Math.random() < 0.02) {
+                        if (Math.random() < 0.06) {
+                            tileMap[y][x] = 0; // Cavernes
+                        } else if (Math.random() < biome.oreChance) {
                             tileMap[y][x] = 112; // CRYSTAL (minerai)
                         } else {
                             tileMap[y][x] = 1; // STONE
                         }
-                    } else if (depthRatio < 0.9) {
+                    } else if (depthRatio < 0.8) {
                         // Couche profonde
-                        if (Math.random() < 0.1) {
+                        if (Math.random() < 0.08) {
                             tileMap[y][x] = 0; // Cavernes profondes
-                        } else if (Math.random() < 0.05) {
+                        } else if (Math.random() < 0.03) {
                             tileMap[y][x] = 112; // CRYSTAL
                         } else {
                             tileMap[y][x] = 1; // STONE
                         }
                     } else {
                         // Enfer
-                        if (Math.random() < 0.05) {
+                        if (Math.random() < 0.04) {
                             tileMap[y][x] = 0; // Lacs de lave
                         } else {
                             tileMap[y][x] = 130; // HELLSTONE
@@ -114,6 +116,12 @@ export class WorldComplexSystem {
         // Générer des structures spéciales
         this.generateCaves(tileMap, width, height);
         this.generateOres(tileMap, width, height);
+        
+        // Générer des structures de biomes
+        this.biomeSystem.generateStructures(tileMap, biomeMap, width, height);
+        
+        // Stocker la carte des biomes pour référence
+        this.biomeMap = biomeMap;
         
         return tileMap;
     }
