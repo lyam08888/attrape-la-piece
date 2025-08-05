@@ -589,6 +589,10 @@ export class ModularRPGInterface {
     }
 
     createInventoryContent() {
+        const slots = Array.from({ length: 40 }).map((_, i) => `
+            <div class="inventory-slot" data-slot="${i}" style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 2px solid #666; border-radius: 8px; display: flex; align-items: center; justify-content: center;"></div>
+        `).join('');
+
         return `
             <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px;">
                 <h4 style="color: #4CAF50; margin: 0;">Objets</h4>
@@ -596,7 +600,7 @@ export class ModularRPGInterface {
                     <span id="inventoryCount">0</span> / <span id="inventoryMax">50</span>
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button class="filter-btn active" data-filter="all" style="background: #4CAF50; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em;">Tout</button>
                 <button class="filter-btn" data-filter="weapon" style="background: #555; border: none; color: white; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em;">Armes</button>
@@ -614,7 +618,7 @@ export class ModularRPGInterface {
                 background: rgba(0,0,0,0.3);
                 border-radius: 5px;
             ">
-                <!-- Les objets seront ajoutés dynamiquement ici -->
+                ${slots}
             </div>
 
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #555;">
