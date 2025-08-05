@@ -40,6 +40,36 @@ import { QuestManager } from './questSystem.js';
 let game = {};
 let engine = null;
 const logger = new Logger();
+
+// Fonction de débogage
+function debugGameState() {
+    console.log('=== DEBUG GAME STATE ===');
+    console.log('Game object:', game);
+    console.log('Player:', game.player);
+    console.log('TileMap dimensions:', game.tileMap ? `${game.tileMap.length}x${game.tileMap[0]?.length}` : 'undefined');
+    console.log('Camera:', game.camera);
+    console.log('Config:', config);
+    
+    if (game.tileMap) {
+        const nonAirTiles = game.tileMap.flat().filter(t => t !== 0).length;
+        const totalTiles = game.tileMap.length * game.tileMap[0].length;
+        console.log(`Tiles: ${nonAirTiles} non-AIR / ${totalTiles} total`);
+        
+        // Afficher quelques lignes de la surface
+        const surfaceStart = Math.floor(game.tileMap.length * 0.18);
+        console.log(`Surface (ligne ${surfaceStart}):`, game.tileMap[surfaceStart]?.slice(0, 20));
+    }
+    
+    logger.log('État du jeu affiché dans la console', 'debug');
+}
+
+// Ajouter le raccourci F12 pour le débogage
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'F12') {
+        e.preventDefault();
+        debugGameState();
+    }
+});
 const config = {
     version: "3.2-stable",
     tileSize: 16,
@@ -330,9 +360,22 @@ async function startGameSequence() {
         // Déclencher l'affichage de la sélection de classe
         game.classManager.showClassSelection();
         
+        // Timeout de sécurité pour éviter d'attendre indéfiniment
+        let classSelectionTimeout = setTimeout(async () => {
+            logger.warn("Timeout de sélection de classe, sélection automatique du guerrier");
+            const { CharacterClass } = await import('./characterClasses.js');
+            window.dispatchEvent(new CustomEvent('classSelected', { 
+                detail: { 
+                    classType: 'warrior',
+                    classData: new CharacterClass('warrior')
+                } 
+            }));
+        }, 10000); // 10 secondes
+        
         // Attendre la sélection de classe avant de continuer
         await new Promise((resolve) => {
             const handleClassSelection = (event) => {
+                clearTimeout(classSelectionTimeout); // Annuler le timeout
                 const { classType, classData } = event.detail;
                 
                 updateStatus("Création de l'aventurier...");
