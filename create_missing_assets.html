@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Créateur d'Assets Manquants</title>
+</head>
+<body>
+    <h1>Créateur d'Assets Manquants</h1>
+    <canvas id="canvas" width="16" height="16" style="border: 1px solid black; image-rendering: pixelated; width: 160px; height: 160px;"></canvas>
+    <br><br>
+    <button onclick="createAsset('tile_cactus', '#228B22')">Créer Cactus</button>
+    <button onclick="createAsset('tile_pine_wood', '#8B4513')">Créer Pin Bois</button>
+    <button onclick="createAsset('tile_pine_leaves', '#006400')">Créer Pin Feuilles</button>
+    <button onclick="createAsset('tile_seaweed', '#2E8B57')">Créer Algue</button>
+    <button onclick="createAsset('tile_treasure_chest', '#DAA520')">Créer Coffre</button>
+    <button onclick="createAsset('tile_rare_pearl', '#F0F8FF')">Créer Perle Rare</button>
+    <button onclick="createAsset('tile_deep_stone', '#2F4F4F')">Créer Pierre Profonde</button>
+    <button onclick="createAsset('tile_bioluminescent', '#00FFFF')">Créer Bioluminescent</button>
+    <button onclick="createAsset('tile_pressure_crystal', '#9370DB')">Créer Cristal Pression</button>
+    <button onclick="createAsset('tile_deep_coral', '#FF7F50')">Créer Corail Profond</button>
+    <button onclick="createAsset('tile_abyssal_pearl', '#191970')">Créer Perle Abyssale</button>
+    <button onclick="createAsset('tile_deep_treasure', '#FFD700')">Créer Trésor Profond</button>
+    <button onclick="createAsset('tile_hellfire_crystal', '#DC143C')">Créer Cristal Infernal</button>
+    <button onclick="createAsset('tile_demon_gold', '#B22222')">Créer Or Démoniaque</button>
+    <button onclick="createAsset('player_idle_blink', '#FF6B6B')">Créer Joueur Clignement</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function createAsset(name, color) {
+            // Effacer le canvas
+            ctx.clearRect(0, 0, 16, 16);
+            
+            // Créer une texture simple
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 16, 16);
+            
+            // Ajouter des détails selon le type
+            if (name.includes('cactus')) {
+                ctx.fillStyle = '#32CD32';
+                ctx.fillRect(2, 2, 12, 12);
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(4, 4, 8, 8);
+            } else if (name.includes('wood')) {
+                ctx.fillStyle = '#A0522D';
+                for (let i = 0; i < 16; i += 2) {
+                    ctx.fillRect(i, 0, 1, 16);
+                }
+            } else if (name.includes('leaves')) {
+                ctx.fillStyle = '#228B22';
+                for (let x = 0; x < 16; x += 2) {
+                    for (let y = 0; y < 16; y += 2) {
+                        if (Math.random() > 0.3) {
+                            ctx.fillRect(x, y, 2, 2);
+                        }
+                    }
+                }
+            } else if (name.includes('crystal')) {
+                ctx.fillStyle = color;
+                ctx.fillRect(4, 4, 8, 8);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(6, 6, 4, 4);
+            } else if (name.includes('pearl')) {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(8, 8, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(8, 8, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            } else if (name.includes('treasure') || name.includes('chest')) {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(2, 6, 12, 8);
+                ctx.fillStyle = color;
+                ctx.fillRect(3, 7, 10, 6);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(7, 9, 2, 2);
+            } else if (name.includes('player')) {
+                // Créer un sprite de joueur simple
+                ctx.fillStyle = color;
+                ctx.fillRect(6, 2, 4, 6); // tête
+                ctx.fillRect(5, 8, 6, 4); // corps
+                ctx.fillRect(4, 12, 2, 4); // jambe gauche
+                ctx.fillRect(10, 12, 2, 4); // jambe droite
+                ctx.fillRect(3, 9, 2, 3); // bras gauche
+                ctx.fillRect(11, 9, 2, 3); // bras droit
+            }
+            
+            // Télécharger l'image
+            const link = document.createElement('a');
+            link.download = name + '.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

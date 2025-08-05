@@ -131,13 +131,62 @@ export class GameEngine {
                     resolve();
                 };
                 img.onerror = () => {
-                    this.logger.warn(`Échec du chargement de l'asset: ${path}`);
+                    // Ne pas spammer les logs pour les assets manquants
+                    if (Math.random() < 0.1) { // Log seulement 10% des erreurs
+                        this.logger.warn(`Asset manquant: ${key} (${path})`);
+                    }
+                    // Créer un asset de remplacement simple
+                    this.createFallbackAsset(key);
                     resolve();
                 };
             }));
         }
         await Promise.allSettled(promises);
         this.logger.success(`${loadedCount}/${totalAssets} assets chargés avec succès.`);
+    }
+
+    createFallbackAsset(key) {
+        // Créer un canvas 16x16 pour l'asset de remplacement
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        
+        // Couleurs par défaut selon le type d'asset
+        let color = '#CCCCCC'; // Gris par défaut
+        
+        if (key.includes('tile_')) {
+            if (key.includes('cactus')) color = '#228B22';
+            else if (key.includes('wood')) color = '#8B4513';
+            else if (key.includes('leaves')) color = '#006400';
+            else if (key.includes('stone')) color = '#696969';
+            else if (key.includes('crystal')) color = '#9370DB';
+            else if (key.includes('pearl')) color = '#F0F8FF';
+            else if (key.includes('coral')) color = '#FF7F50';
+            else if (key.includes('treasure')) color = '#DAA520';
+            else if (key.includes('hell')) color = '#DC143C';
+            else if (key.includes('demon')) color = '#B22222';
+            else if (key.includes('deep')) color = '#2F4F4F';
+            else if (key.includes('bio')) color = '#00FFFF';
+        } else if (key.includes('player_')) {
+            color = '#FF6B6B';
+        } else if (key.includes('tool_')) {
+            color = '#8B4513';
+        }
+        
+        // Dessiner un rectangle coloré simple
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 16, 16);
+        
+        // Ajouter une bordure pour distinguer
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, 16, 16);
+        
+        // Convertir en image et stocker
+        const img = new Image();
+        img.src = canvas.toDataURL();
+        this.assets[key] = img;
     }
 
     setupInput() {
