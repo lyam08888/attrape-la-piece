@@ -171,16 +171,29 @@ function drawWorld(ctx, assets) {
         logger.log(`Caméra: x=${game.camera.x}, y=${game.camera.y}, startX=${startX}, startY=${startY}, première ligne visible: [${game.tileMap[startY].slice(startX, endX).join(', ')}]`, 'debug');
     }
 
+    // Mapping ID -> nom d'asset
+    const tileIdToAsset = {
+        0: null,
+        1: 'tile_stone',
+        2: 'tile_grass',
+        3: 'tile_dirt',
+        100: 'tile_divine_stone',
+        103: 'tile_blessed_grass',
+        106: 'tile_cloud',
+        112: 'tile_crystal_stone',
+        121: 'tile_sand',
+        130: 'tile_hellstone',
+    };
     for (let y = Math.max(0, startY); y < Math.min(game.tileMap.length, endY); y++) {
         for (let x = Math.max(0, startX); x < Math.min(game.tileMap[y].length, endX); x++) {
             const tileType = game.tileMap[y][x];
             if (tileType > TILE.AIR) {
-                const assetKey = Object.keys(TILE).find(k => TILE[k] === tileType)?.toLowerCase();
-                const asset = assets[`tile_${assetKey}`];
+                const assetName = tileIdToAsset[tileType];
+                const asset = assetName ? assets[assetName] : null;
                 if (asset) {
                     ctx.drawImage(asset, x * tileSize, y * tileSize, tileSize, tileSize);
                 } else {
-                    const colors = { 1: '#32CD32', 2: '#8B4513', 3: '#696969' };
+                    const colors = { 1: '#32CD32', 2: '#8B4513', 3: '#696969', 100: '#F0F8FF', 103: '#BFFF00', 106: '#E0FFFF', 112: '#9370DB', 121: '#F4E285', 130: '#8B0000' };
                     ctx.fillStyle = colors[tileType] || '#CCCCCC';
                     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
