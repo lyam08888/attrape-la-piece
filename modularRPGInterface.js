@@ -8,6 +8,7 @@ export class ModularRPGInterface {
         this.dragOffset = { x: 0, y: 0 };
         this.windowZIndex = 1000;
         this.isVisible = true;
+        this.draggedSlot = null;
         
         this.initializeInterface();
         this.setupEventListeners();
@@ -271,6 +272,15 @@ export class ModularRPGInterface {
             resizable: true
         });
 
+        // Fenêtre d'outils
+        this.createWindow('tools', {
+            title: '🛠️ Outils',
+            position: { x: 600, y: 100 },
+            size: { width: 320, height: 120 },
+            content: this.createToolsContent(),
+            resizable: true
+        });
+
         // Fenêtre de compétences
         this.createWindow('skills', {
             title: '📜 Compétences',
@@ -309,6 +319,9 @@ export class ModularRPGInterface {
 
         // HUD permanent (non déplaçable)
         this.createHUD();
+
+        // Configurer le drag & drop des objets
+        this.setupDragAndDrop();
     }
 
     createWindow(id, options) {
@@ -672,6 +685,16 @@ export class ModularRPGInterface {
         `;
     }
 
+    createToolsContent() {
+        const slots = Array.from({ length: 6 }).map((_, i) => `
+            <div class="tool-slot" data-slot="${i}" style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); border: 2px solid #666; border-radius: 8px; display: flex; align-items: center; justify-content: center;"></div>
+        `).join('');
+
+        return `
+            <div style="display: flex; gap: 5px;">${slots}</div>
+        `;
+    }
+
     createSkillsContent() {
         return `
             <div style="margin-bottom: 15px;">
@@ -801,7 +824,40 @@ export class ModularRPGInterface {
         });
     }
 
+    setupDragAndDrop() {
+        const slots = this.container.querySelectorAll('.inventory-slot, .equipment-slot, .tool-slot');
+        slots.forEach(slot => {
+            slot.setAttribute('draggable', 'true');
+            slot.addEventListener('dragstart', () => {
+                this.draggedSlot = slot;
+            });
+            slot.addEventListener('dragover', (e) => e.preventDefault());
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (this.draggedSlot && this.draggedSlot !== slot) {
+                    const temp = slot.innerHTML;
+                    slot.innerHTML = this.draggedSlot.innerHTML;
+                    this.draggedSlot.innerHTML = temp;
+                }
+            });
+        });
+    }
+
     toggleWindow(windowId) {
+        if (windowId === 'inventory') {
+            ['inventory', 'equipment', 'tools'].forEach(id => {
+                const win = this.windows.get(id);
+                if (!win) return;
+                const visible = win.element.style.display !== 'none';
+                if (visible) {
+                    this.hideWindow(id);
+                } else {
+                    this.showWindow(id);
+                }
+            });
+            return;
+        }
+
         const windowData = this.windows.get(windowId);
         if (!windowData) return;
 
@@ -819,9 +875,10 @@ export class ModularRPGInterface {
 
         windowData.element.style.display = 'block';
         windowData.element.style.zIndex = this.windowZIndex++;
-        
+
         // Mettre à jour le contenu si nécessaire
         this.updateWindowContent(windowId);
+        this.setupDragAndDrop();
     }
 
     hideWindow(windowId) {
