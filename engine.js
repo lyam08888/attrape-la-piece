@@ -265,13 +265,7 @@ export class GameEngine {
                     window.game.modularInterface.toggleWindow('settings');
                 }
             }
-            
-            if (key === 'Enter' && !e.repeat) {
-                if (window.game?.welcomeMessage?.isVisible()) {
-                    window.game.welcomeMessage.hide();
-                }
-            }
-            
+
             if (key === 'F12' && !e.repeat) {
                 e.preventDefault();
                 if (window.game?.debugOverlay) {
