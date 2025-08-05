@@ -277,6 +277,10 @@ async function startGameSequence() {
                 const spawnPoint = findSafeSpawnPoint(game.tileMap, config.player.height, config.tileSize);
                 game.spawnPoint = spawnPoint;
                 game.player = new Player(spawnPoint.x, spawnPoint.y, config, null);
+                // Log la tuile sous le joueur
+                const px = Math.floor(game.player.x / config.tileSize);
+                const py = Math.floor(game.player.y / config.tileSize) + 2;
+                logger.log(`Joueur spawn en x=${game.player.x}, y=${game.player.y}, tuile sous les pieds: ${game.tileMap[py]?.[px]}`, 'debug');
                 // Centrer la caméra sur le joueur
                 game.camera.x = game.player.x - game.canvas.width / (2 * config.zoom);
                 game.camera.y = game.player.y - game.canvas.height / (2 * config.zoom);
