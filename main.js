@@ -83,7 +83,7 @@ const config = {
     worldWidth: 2048,
     worldHeight: 1024,
     physics: { gravity: 0.35, jumpForce: 8, playerSpeed: 3, friction: 0.85, maxFallSpeed: 10, groundAcceleration: 0.4, airAcceleration: 0.2 },
-    player: { width: 16, height: 24 },
+    player: { width: 32, height: 48 },
     chunkSize: 16,
     renderDistance: 8,
     keyBindings: {

@@ -32,6 +32,9 @@ export class ModularRPGInterface {
         // Créer la barre d'outils principale
         this.createMainToolbar();
         
+        // Créer la barre d'outils de jeu (hotbar)
+        this.createGameHotbar();
+        
         // Créer les fenêtres par défaut
         this.createDefaultWindows();
     }

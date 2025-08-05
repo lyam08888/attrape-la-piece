@@ -67,8 +67,8 @@
   },
   "player": {
     "maxLives": 5,
-    "width": 16,
-    "height": 24,
+    "width": 32,
+    "height": 48,
     "collisionMargin": 0,
     "hitbox": {
       "offsetX": 2,
@@ -186,7 +186,16 @@
     "animal_dolphin": "assets/animal_dolphin.png",
     "animal_mole": "assets/animal_mole.png",
     "animal_beetle": "assets/animal_beetle.png",
-    "animal_earthworm": "assets/animal_earthworm.png"
+    "animal_earthworm": "assets/animal_earthworm.png",
+    
+    "pnj_alien_mage_f_idle": "assets/PNJ/pnj_alien_mage_f/pnj_alien_mage_f_idle_spritesheet.png",
+    "pnj_alien_mage_f_walk": "assets/PNJ/pnj_alien_mage_f/pnj_alien_mage_f_walk_spritesheet.png",
+    "pnj_alien_mage_f_run": "assets/PNJ/pnj_alien_mage_f/pnj_alien_mage_f_run_spritesheet.png",
+    "pnj_alien_mage_f_jump": "assets/PNJ/pnj_alien_mage_f/pnj_alien_mage_f_jump_spritesheet.png",
+    
+    "monster_aerial_amorphous_none_idle": "assets/monster/monster_aerial_amorphous_none/monster_aerial_amorphous_none_idle_spritesheet.png",
+    "monster_aerial_amorphous_none_move": "assets/monster/monster_aerial_amorphous_none/monster_aerial_amorphous_none_move_spritesheet.png",
+    "monster_aerial_amorphous_none_action": "assets/monster/monster_aerial_amorphous_none/monster_aerial_amorphous_none_action_spritesheet.png"
   },
   "playerAnimations": {
     "idle": ["player_idle1", "player_idle2"],

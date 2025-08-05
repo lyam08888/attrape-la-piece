@@ -27,6 +27,8 @@ export class Player {
         this.canDoubleJump = true;
         this.isGliding = false;
         this.isCrouching = false;
+        this.isFlying = false;
+        this.isProne = false; // Position allongée
 
         // --- RPG Stats ---
         this.baseMaxHealth = 100;
@@ -111,6 +113,18 @@ export class Player {
     }
 
     handleMovement(keys, physics) {
+        // Gestion du vol
+        if (keys.fly) {
+            this.isFlying = !this.isFlying;
+        }
+        
+        // Gestion de l'accroupissement
+        if (keys.down && this.isGrounded) {
+            this.isCrouching = true;
+        } else {
+            this.isCrouching = false;
+        }
+        
         let targetSpeed = 0;
         if (keys.left) {
             targetSpeed = -this.speed;
@@ -128,22 +142,38 @@ export class Player {
         this.vx *= friction;
         if (Math.abs(this.vx) < 0.1) this.vx = 0;
 
-        if (keys.jump && (this.isGrounded || this.canDoubleJump)) {
-            if (this.isGrounded) {
-                this.vy = -physics.jumpForce;
-                this.isGrounded = false;
-                this.canDoubleJump = true;
-            } else if (this.canDoubleJump) {
-                this.vy = -physics.jumpForce * 0.8;
-                this.canDoubleJump = false;
+        // Logique de saut et vol
+        if (this.isFlying) {
+            // En mode vol
+            if (keys.jump || keys.up) {
+                this.vy = -this.speed * 0.8; // Voler vers le haut
+            } else if (keys.down) {
+                this.vy = this.speed * 0.8; // Voler vers le bas
+            } else {
+                this.vy *= 0.9; // Ralentir verticalement
+            }
+        } else {
+            // Mode normal
+            if (keys.jump && (this.isGrounded || this.canDoubleJump)) {
+                if (this.isGrounded) {
+                    this.vy = -physics.jumpForce;
+                    this.isGrounded = false;
+                    this.canDoubleJump = true;
+                } else if (this.canDoubleJump) {
+                    this.vy = -physics.jumpForce * 0.8;
+                    this.canDoubleJump = false;
+                }
             }
         }
     }
 
     applyGravity(physics) {
-        this.vy += physics.gravity;
-        if (this.vy > physics.maxFallSpeed) {
-            this.vy = physics.maxFallSpeed;
+        // Ne pas appliquer la gravité en mode vol
+        if (!this.isFlying) {
+            this.vy += physics.gravity;
+            if (this.vy > physics.maxFallSpeed) {
+                this.vy = physics.maxFallSpeed;
+            }
         }
     }
 
