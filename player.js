@@ -739,9 +739,10 @@ export class Player {
         if (toolSprite && toolSprite.complete) {
             const toolW = toolSprite.width;
             const toolH = toolSprite.height;
-            const offsetX = this.facing === -1 ? -toolW + 8 : this.w - 8;
-            const drawX = this.x + offsetX;
-            const drawY = this.y + this.h / 2 - toolH / 2;
+            // Position approximative de la main du joueur
+            const handY = this.y + this.h * 0.7;
+            const drawX = this.x + (this.facing === -1 ? -toolW / 2 : this.w - toolW / 2);
+            const drawY = handY - toolH / 2;
             if (this.facing === -1) {
                 ctx.save();
                 ctx.scale(-1, 1);
