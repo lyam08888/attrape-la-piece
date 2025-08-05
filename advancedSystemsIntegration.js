@@ -1,17 +1,18 @@
 // advancedSystemsIntegration.js - Intégration et corrections des systèmes avancés
 
 // Imports pour les systèmes avancés
-import { WeatherSystem } from './weatherSystem.js';
+import { WeatherSystem as AdvancedWeatherSystem } from './weatherSystem.js';
 import { DisasterManager as DisasterManagerAdvanced } from './disasterManager.js';
-import { AnimalSystem } from './animalSystem.js';
+import { AnimalManager as AnimalSystemAdvanced } from './animalSystem.js';
 import { ExplorationSystem } from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
-import { LightingSystem as AdvancedLightingSystem } from './lighting.js';
+import { LightingSystem as DynamicLightingSystem } from './lighting.js';
 import { WorldAnimator } from './worldAnimator.js';
 import { generateMonsters } from './generateurMonstres.js';
 import { generateAnimals } from './generateurAnimaux.js';
 import { generatePNJ } from './generateurPNJ.js';
 import { PNJ } from './PNJ.js';
+import { FoodSystem } from './foodSystem.js';
 
 // Classes de base manquantes pour les systèmes avancés
 export class ParticleSystem {
@@ -303,19 +304,6 @@ export class NPCAISystem {
 
 // --- Intégration des systèmes de jeu avancés existants ---
 
-import { WeatherSystem as AdvancedWeatherSystem } from './weatherSystem.js';
-import { FoodSystem } from './foodSystem.js';
-// The animal module exports AnimalManager; alias as AnimalSystem for clarity
-import { AnimalManager as AnimalSystem } from './animalSystem.js';
-import { ExplorationSystem } from './explorationSystem.js';
-import { TimeSystem } from './timeSystem.js';
-import { LightingSystem as DynamicLightingSystem } from './lighting.js';
-import { WorldAnimator } from './worldAnimator.js';
-import { generateMonsters } from './generateurMonstres.js';
-import { generateAnimals } from './generateurAnimaux.js';
-import { generatePNJ } from './generateurPNJ.js';
-import { PNJ } from './PNJ.js';
-
 /**
  * Intègre tous les systèmes de jeu avancés dans l'objet de jeu principal
  * et corrige les dépendances globales manquantes.
@@ -368,7 +356,7 @@ export function integrateAdvancedSystems(game) {
     console.log('    -> ✨ Animateur du monde initialisé.');
 
     // 6. Système de faune (animaux)
-    game.animalManager = new AnimalSystem();
+    game.animalManager = new AnimalSystemAdvanced();
     game.animals = game.animalManager.animals;
     if (typeof generateAnimals === 'function') {
         const animals = generateAnimals(5, game.config, game.tileMap); // Génère 5 animaux
