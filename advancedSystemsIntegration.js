@@ -380,13 +380,16 @@ if (!Array.isArray(game.enemies)) game.enemies = [];
 
     // 8. Génération de PNJ
     // Assurez-vous que les PNJ ont une configuration valide.
-    if (typeof generatePNJ === 'function' && typeof PNJ === 'function') {
+    // Système PNJ avancé
+    if (!game.advancedNPCSystem) game.advancedNPCSystem = new AdvancedNPCSystem(game);
+    if (typeof generatePNJ === 'function') {
         for (let i = 0; i < 5; i++) {
             const pnjData = generatePNJ();
             const spawnPos = findValidSpawn(game.tileMap, game.config.tileSize);
             if (spawnPos) {
-                const newPnj = new PNJ(spawnPos.x, spawnPos.y, game.config, pnjData);
-                game.pnjs.push(newPnj);
+                // Utilise le template ARCHANGEL_GABRIEL par défaut, adapte selon ton système
+                const newPnj = game.advancedNPCSystem.createNPC('ARCHANGEL_GABRIEL', spawnPos.x, spawnPos.y, pnjData);
+                if (newPnj) game.pnjs.push(newPnj);
             }
         }
     }
