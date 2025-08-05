@@ -71,10 +71,10 @@
     "height": 72,
     "collisionMargin": 0,
     "hitbox": {
-      "offsetX": 3,
-      "offsetY": 3,
-      "width": 18,
-      "height": 30
+      "offsetX": 0,
+      "offsetY": 0,
+      "width": 48,
+      "height": 72
     },
     "reach": 4,
     "attackRange": 20
