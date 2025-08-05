@@ -72,9 +72,23 @@ export class Player {
         this.damageFlash = 0;
 
         // --- Tools & Inventory ---
-        this.tools = ['tool_pickaxe', 'tool_axe', 'tool_shovel'];
+        this.tools = [
+            'tool_pickaxe',
+            'tool_axe',
+            'tool_shovel',
+            'tool_sword',
+            'tool_bow',
+            'tool_fishing_rod'
+        ];
         this.selectedToolIndex = 0;
-        this.toolDurability = { tool_pickaxe: 100, tool_axe: 100, tool_shovel: 100 };
+        this.toolDurability = {
+            tool_pickaxe: 100,
+            tool_axe: 100,
+            tool_shovel: 100,
+            tool_sword: 100,
+            tool_bow: 100,
+            tool_fishing_rod: 100
+        };
         this.durability = { ...this.toolDurability };
         this.inventory = {}; // itemType -> count
 
@@ -198,10 +212,18 @@ export class Player {
     }
 
     handleActions(keys, game, delta) {
-        // --- Utilisation d'objets avec les touches numériques ---
-        if (keys['1'] || keys['2'] || keys['3'] || keys['4']) {
-            const slotNumber = keys['1'] ? 1 : keys['2'] ? 2 : keys['3'] ? 3 : 4;
-            this.useQuickSlot(slotNumber, game);
+        // --- Sélection d'outils avec les touches numériques ---
+        if (keys['1'] || keys['2'] || keys['3'] || keys['4'] || keys['5'] || keys['6']) {
+            const index = keys['1'] ? 0 :
+                          keys['2'] ? 1 :
+                          keys['3'] ? 2 :
+                          keys['4'] ? 3 :
+                          keys['5'] ? 4 : 5;
+            if (game.modularInterface) {
+                game.modularInterface.selectTool(index);
+            } else {
+                this.selectedToolIndex = index;
+            }
         }
         
         // --- Minage et Construction ---
@@ -707,6 +729,25 @@ export class Player {
         } else {
             // Fallback amélioré avec un design plus propre
             this.drawFallbackPlayer(ctx);
+        }
+
+        // Afficher l'outil actuellement sélectionné dans la main du joueur
+        const currentToolKey = this.tools[this.selectedToolIndex];
+        const toolSprite = assets[currentToolKey];
+        if (toolSprite && toolSprite.complete) {
+            const toolW = toolSprite.width;
+            const toolH = toolSprite.height;
+            const offsetX = this.facing === -1 ? -toolW + 8 : this.w - 8;
+            const drawX = this.x + offsetX;
+            const drawY = this.y + this.h / 2 - toolH / 2;
+            if (this.facing === -1) {
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.drawImage(toolSprite, -drawX - toolW, drawY, toolW, toolH);
+                ctx.restore();
+            } else {
+                ctx.drawImage(toolSprite, drawX, drawY, toolW, toolH);
+            }
         }
 
         // Icône de classe au-dessus du joueur
