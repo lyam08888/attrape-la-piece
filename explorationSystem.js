@@ -26,6 +26,8 @@ class ExplorationSystem {
         };
         this.tools = this.initializeAdvancedTools();
         this.constructionBlueprints = this.initializeBlueprints();
+        // Structures déjà construites (empêche les doublons comme l'Hôtel de Ville)
+        this.builtStructures = new Set();
     }
 
     initializeAdvancedTools() {
@@ -164,6 +166,20 @@ class ExplorationSystem {
     initializeBlueprints() {
         return {
             // === STRUCTURES ARCHITECTURALES ===
+            TOWN_HALL: {
+                name: 'Hôtel de Ville',
+                category: 'settlement',
+                unique: true,
+                size: { width: 30, height: 20 },
+                materials: {
+                    'wood': 200,
+                    'stone': 150
+                },
+                specialFeatures: ['central_management', 'population_cap'],
+                buildTime: 1200, // 20 minutes
+                description: 'Le centre administratif de votre colonie'
+            },
+
             FLOATING_CASTLE: {
                 name: 'Château Flottant',
                 category: 'architecture',
@@ -734,6 +750,14 @@ class ExplorationSystem {
         const blueprintData = this.constructionBlueprints[blueprint];
         if (!blueprintData) return false;
 
+        // Empêcher la construction de structures uniques déjà présentes
+        if (blueprintData.unique && this.builtStructures.has(blueprint)) {
+            if (game.logger) {
+                game.logger.log(`🏗️ ${blueprintData.name} déjà construit !`);
+            }
+            return false;
+        }
+
         // Vérifier les matériaux
         if (!this.hasRequiredMaterials(player, blueprintData.materials)) {
             if (game.logger) {
@@ -747,6 +771,11 @@ class ExplorationSystem {
 
         // Construire la structure
         this.buildStructure(game, targetX, targetY, blueprintData);
+
+        // Marquer la structure comme construite pour les structures uniques
+        if (blueprintData.unique) {
+            this.builtStructures.add(blueprint);
+        }
 
         if (game.logger) {
             game.logger.log(`🏗️ ${blueprintData.name} construit !`);
@@ -772,6 +801,22 @@ class ExplorationSystem {
                 break;
             default:
                 this.buildGenericStructure(game, tileX, tileY, blueprint);
+        }
+    }
+
+    buildGenericStructure(game, centerX, centerY, blueprint) {
+        const width = blueprint.size?.width || 10;
+        const height = blueprint.size?.height || 10;
+        const halfWidth = Math.floor(width / 2);
+
+        for (let dx = -halfWidth; dx <= halfWidth; dx++) {
+            for (let dy = 0; dy < height; dy++) {
+                const x = centerX + dx;
+                const y = centerY + dy;
+                if (game.tileMap[y]?.[x] !== undefined) {
+                    game.tileMap[y][x] = TILE.STONE;
+                }
+            }
         }
     }
 
