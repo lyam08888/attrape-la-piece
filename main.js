@@ -228,6 +228,25 @@ const gameLogic = {
         // Dessiner le logger par-dessus tout
         logger.draw(ctx);
     },
+    // Sélection directe d'un outil
+    selectTool: (index) => {
+        if (game.modularInterface) {
+            game.modularInterface.selectTool(index);
+        } else if (game.player) {
+            game.player.selectedToolIndex = index;
+        }
+    },
+    // Changer d'outil via la molette ou d'autres commandes
+    cycleTool: (direction) => {
+        if (!game.player) return;
+        const total = game.player.tools.length;
+        const newIndex = (game.player.selectedToolIndex + direction + total) % total;
+        if (game.modularInterface) {
+            game.modularInterface.selectTool(newIndex);
+        } else {
+            game.player.selectedToolIndex = newIndex;
+        }
+    },
     isPaused: () => game.paused
 };
 
@@ -560,7 +579,7 @@ async function startGameSequence() {
         
         // Notifications de bienvenue
         game.modularInterface.showNotification(`Bienvenue, ${game.player.characterClass.data.name} !`, "success");
-        game.modularInterface.showNotification("Contrôles: WASD/Flèches=Bouger, Espace=Attaque, 1-4=Potions, Q/W=Compétences", "info", 8000);
+        game.modularInterface.showNotification("Contrôles: WASD/Flèches=Bouger, Espace=Attaque, 1-6=Outils, Q/W=Compétences", "info", 8000);
         game.modularInterface.showNotification("Interface: Tab=Basculer, I=Inventaire, C=Personnage, J=Quêtes", "info", 6000);
         
         // Jouer l'ambiance de départ
