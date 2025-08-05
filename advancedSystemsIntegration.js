@@ -2,7 +2,7 @@
 
 // Imports pour les systèmes avancés
 import { WeatherSystem } from './weatherSystem.js';
-import { DisasterManager } from './disasterManager.js';
+import { DisasterManager as DisasterManagerAdvanced } from './disasterManager.js';
 import { AnimalSystem } from './animalSystem.js';
 import { ExplorationSystem } from './explorationSystem.js';
 import { TimeSystem } from './timeSystem.js';
@@ -304,7 +304,7 @@ export class NPCAISystem {
 // --- Intégration des systèmes de jeu avancés existants ---
 
 import { WeatherSystem as AdvancedWeatherSystem } from './weatherSystem.js';
-import { DisasterManager } from './disasterManager.js';
+import { DisasterManager as DisasterManagerAdvanced } from './disasterManager.js';
 import { FoodSystem } from './foodSystem.js';
 // The animal module exports AnimalManager; alias as AnimalSystem for clarity
 import { AnimalManager as AnimalSystem } from './animalSystem.js';
@@ -356,7 +356,7 @@ export function integrateAdvancedSystems(game) {
 
     // 3. Gestionnaire de désastres et de catastrophes naturelles
     // Dépend de la météo et du temps.
-    game.disasterManager = new DisasterManager(game);
+    game.disasterManager = new DisasterManagerAdvanced(game);
     console.log('    -> 🌋 Gestionnaire de désastres initialisé.');
 
     // 4. Système d'éclairage dynamique
