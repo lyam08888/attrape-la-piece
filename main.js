@@ -39,7 +39,6 @@ import { FaunaSystem } from './faunaSystem.js';
 import { ControlsHUD } from './controlsHUD.js';
 import { Minimap } from './minimap.js';
 import { PerformanceOptimizer } from './performanceOptimizer.js';
-import { WelcomeMessage } from './welcomeMessage.js';
 import { DebugOverlay } from './debugOverlay.js';
 
 // --- Configuration Globale ---
@@ -100,6 +99,36 @@ function updateLoadingStatus(message) {
     const statusEl = document.getElementById('loadingStatus');
     if (statusEl) statusEl.textContent = message;
     console.log(message);
+}
+
+function logPatchNotes() {
+    const improvements = [
+        '🌍 GÉNÉRATION DE MONDE AMÉLIORÉE:',
+        '  • Terrain naturel avec collines et vallées',
+        '  • Biomes variés (Plaines, Forêts, Déserts, Montagnes)',
+        '  • Cavernes et structures générées procéduralement',
+        '  • Minerais et ressources répartis intelligemment',
+        '',
+        '🐾 SYSTÈME DE FAUNE VIVANT:',
+        '  • 18+ espèces d\'animaux différentes',
+        '  • Comportements IA réalistes',
+        '  • Animaux adaptés aux biomes',
+        '  • Interactions avec l\'environnement',
+        '',
+        '🗺️ INTERFACE AMÉLIORÉE:',
+        '  • Minimap avec exploration',
+        '  • HUD des contrôles',
+        '  • Optimisations de performance',
+        '  • Meilleure gestion des assets',
+        '',
+        '🎮 CONTRÔLES:',
+        '  • Flèches ou WASD pour se déplacer',
+        '  • Espace/W pour sauter',
+        '  • E pour miner, F pour attaquer',
+        '  • M pour basculer la minimap'
+    ];
+    logger.log('🎮 SUPER PIXEL ADVENTURE 2 - AMÉLIORÉ! 🎮', 'info');
+    improvements.forEach(line => logger.log(line, 'info'));
 }
 
 function resizeCanvas() {
@@ -165,7 +194,6 @@ const gameLogic = {
         game.controlsHUD?.update(delta);
         game.minimap?.update(game);
         game.performanceOptimizer?.update(delta);
-        game.welcomeMessage?.update(delta);
         game.debugOverlay?.update(game, delta);
         logger.update(); // Mettre à jour le logger
         
@@ -220,10 +248,7 @@ const gameLogic = {
         game.rpgInterface?.draw(ctx);
         game.controlsHUD?.draw(ctx);
         game.minimap?.draw(ctx, game);
-        
-        // Dessiner le message de bienvenue par-dessus tout
-        game.welcomeMessage?.draw(ctx);
-        
+
         // Dessiner l'overlay de debug
         game.debugOverlay?.draw(ctx);
         
@@ -448,13 +473,10 @@ async function startGameSequence() {
         
         // Initialiser la minimap
         game.minimap = new Minimap(config);
-        
+
         // Initialiser l'optimiseur de performance
         game.performanceOptimizer = new PerformanceOptimizer();
-        
-        // Initialiser le message de bienvenue
-        game.welcomeMessage = new WelcomeMessage();
-        
+
         // Initialiser l'overlay de debug
         game.debugOverlay = new DebugOverlay();
         
@@ -535,12 +557,12 @@ async function startGameSequence() {
                     game.equipmentManager.addToInventory('holy_mace', 1);
                     game.equipmentManager.addToInventory('chain_mail', 1);
                 }
-                
-                // Afficher le message de bienvenue
+
+                // Journaliser les nouveautés dans la console
                 setTimeout(() => {
-                    game.welcomeMessage?.show();
+                    logPatchNotes();
                 }, 1000);
-                
+
                 window.removeEventListener('classSelected', handleClassSelection);
                 resolve();
             };
