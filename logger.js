@@ -8,13 +8,16 @@ export class Logger {
         this.maxMessages = 10; // Nombre maximum de messages à afficher
         this.isVisible = false; // Le logger n'est visible que si activé
         this.contentElement = null; // Conteneur des logs dans la fenêtre
+        this.consoleOutput = false; // Affiche aussi dans la console si true
     }
 
     log(message, type = 'info') {
         const timestamp = new Date().toLocaleTimeString();
         const fullMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
-        
-        console.log(fullMessage); // Garde la journalisation console
+
+        if (this.consoleOutput) {
+            console.log(fullMessage);
+        }
 
         // Ajoute le message à l'affichage en jeu
         this.messages.unshift({ text: fullMessage, type, life: 300 }); // Dure 5 secondes (300 frames)
