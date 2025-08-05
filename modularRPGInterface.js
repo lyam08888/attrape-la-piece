@@ -444,16 +444,20 @@ export class ModularRPGInterface {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            right: 20px;
-            height: 80px;
             background: linear-gradient(135deg, rgba(26,26,26,0.9), rgba(45,45,45,0.9));
             border: 2px solid #4CAF50;
             border-radius: 10px;
             padding: 10px;
             pointer-events: auto;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 20px;
+            width: fit-content;
+            max-width: calc(100% - 40px);
+            resize: both;
+            overflow: auto;
+            cursor: move;
         `;
 
         hud.innerHTML = `
@@ -496,6 +500,37 @@ export class ModularRPGInterface {
                 <div id="quickSlot4" class="quick-slot" style="width: 50px; height: 50px; background: #333; border: 2px solid #555; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer;">4</div>
             </div>
         `;
+
+        // Rendre la barre déplaçable
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        hud.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.quick-slot')) return; // éviter de déplacer lors de l'utilisation des slots
+            isDragging = true;
+            dragOffsetX = e.clientX - hud.offsetLeft;
+            dragOffsetY = e.clientY - hud.offsetTop;
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const newX = Math.max(0, Math.min(window.innerWidth - hud.offsetWidth, e.clientX - dragOffsetX));
+            const newY = Math.max(0, Math.min(window.innerHeight - hud.offsetHeight, e.clientY - dragOffsetY));
+
+            hud.style.left = newX + 'px';
+            hud.style.top = newY + 'px';
+            hud.style.bottom = 'auto';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.userSelect = '';
+            }
+        });
 
         this.container.appendChild(hud);
     }
