@@ -118,20 +118,39 @@ export class Player {
             this.isFlying = !this.isFlying;
         }
         
-        // Gestion de l'accroupissement
+        // Gestion de l'accroupissement et position allongée
         if (keys.down && this.isGrounded) {
-            this.isCrouching = true;
+            if (keys.down && this.isCrouching) {
+                // Double appui sur bas = position allongée
+                this.isProne = true;
+                this.isCrouching = false;
+            } else {
+                this.isCrouching = true;
+                this.isProne = false;
+            }
         } else {
             this.isCrouching = false;
+            this.isProne = false;
         }
         
         let targetSpeed = 0;
+        let speedMultiplier = 1;
+        
+        // Ajuster la vitesse selon la posture
+        if (this.isProne) {
+            speedMultiplier = 0.3; // Très lent en position allongée
+        } else if (this.isCrouching) {
+            speedMultiplier = 0.6; // Lent accroupi
+        } else if (this.isFlying) {
+            speedMultiplier = 1.2; // Plus rapide en vol
+        }
+        
         if (keys.left) {
-            targetSpeed = -this.speed;
+            targetSpeed = -this.speed * speedMultiplier;
             this.facing = -1;
         }
         if (keys.right) {
-            targetSpeed = this.speed;
+            targetSpeed = this.speed * speedMultiplier;
             this.facing = 1;
         }
         
@@ -728,7 +747,21 @@ export class Player {
         this.frameTimer += 0.016; // Approximation de 60 FPS
         
         // Déterminer l'animation basée sur l'état du joueur
-        if (!this.isGrounded) {
+        if (this.isFlying) {
+            this.currentAnimation = 'flying';
+        } else if (this.isProne) {
+            if (Math.abs(this.vx) > 0.1) {
+                this.currentAnimation = 'proneWalking';
+            } else {
+                this.currentAnimation = 'prone';
+            }
+        } else if (this.isCrouching) {
+            if (Math.abs(this.vx) > 0.1) {
+                this.currentAnimation = 'crouchWalking';
+            } else {
+                this.currentAnimation = 'crouching';
+            }
+        } else if (!this.isGrounded) {
             if (this.canDoubleJump === false) {
                 this.currentAnimation = 'doubleJump';
             } else {
@@ -758,7 +791,11 @@ export class Player {
             running: ['player_run1', 'player_run2'],
             jumping: ['player_jump'],
             doubleJump: ['player_double_jump1', 'player_double_jump2'],
-            flying: ['player_fly1', 'player_fly2']
+            flying: ['player_fly1', 'player_fly2'],
+            crouching: ['player_crouch'],
+            crouchWalking: ['player_crouch_walk1', 'player_crouch_walk2'],
+            prone: ['player_prone'],
+            proneWalking: ['player_prone_walk1', 'player_prone_walk2']
         };
         
         const currentFrames = animations[this.currentAnimation] || animations.idle;

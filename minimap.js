@@ -55,15 +55,15 @@ export class Minimap {
         // Calculer la zone à afficher
         const playerTileX = Math.floor(game.player.x / this.config.tileSize);
         const playerTileY = Math.floor(game.player.y / this.config.tileSize);
-        const tilesPerSide = Math.floor(this.size / 2);
+        const tilesPerSide = Math.floor(this.size / 4); // Réduire pour éviter les bugs
         
         const startX = Math.max(0, playerTileX - tilesPerSide);
         const endX = Math.min(game.tileMap[0]?.length || 0, playerTileX + tilesPerSide);
         const startY = Math.max(0, playerTileY - tilesPerSide);
         const endY = Math.min(game.tileMap.length, playerTileY + tilesPerSide);
 
-        // Dessiner les tuiles
-        const pixelSize = this.size / (tilesPerSide * 2);
+        // Dessiner les tuiles avec une taille fixe
+        const pixelSize = Math.max(1, Math.floor(this.size / (tilesPerSide * 2)));
         
         for (let y = startY; y < endY; y++) {
             for (let x = startX; x < endX; x++) {

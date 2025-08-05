@@ -107,6 +107,142 @@ export class ModularRPGInterface {
         this.container.appendChild(toolbar);
     }
 
+    createGameHotbar() {
+        const hotbar = document.createElement('div');
+        hotbar.id = 'gameHotbar';
+        hotbar.style.cssText = `
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border: 2px solid #4CAF50;
+            border-radius: 15px;
+            padding: 10px;
+            display: flex;
+            gap: 5px;
+            pointer-events: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        `;
+
+        // Créer les slots d'outils
+        const tools = [
+            { id: 'tool_pickaxe', name: 'Pioche', key: '1' },
+            { id: 'tool_axe', name: 'Hache', key: '2' },
+            { id: 'tool_shovel', name: 'Pelle', key: '3' },
+            { id: 'tool_sword', name: 'Épée', key: '4' },
+            { id: 'tool_bow', name: 'Arc', key: '5' },
+            { id: 'tool_fishing_rod', name: 'Canne à pêche', key: '6' }
+        ];
+
+        tools.forEach((tool, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'tool-slot';
+            slot.style.cssText = `
+                width: 50px;
+                height: 50px;
+                background: rgba(0,0,0,0.5);
+                border: 2px solid #666;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            `;
+
+            // Numéro de la touche
+            const keyLabel = document.createElement('div');
+            keyLabel.textContent = tool.key;
+            keyLabel.style.cssText = `
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: #4CAF50;
+                color: white;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: bold;
+            `;
+
+            // Icône de l'outil (placeholder)
+            const icon = document.createElement('div');
+            icon.textContent = this.getToolIcon(tool.id);
+            icon.style.cssText = `
+                font-size: 24px;
+                color: white;
+            `;
+
+            slot.appendChild(icon);
+            slot.appendChild(keyLabel);
+
+            // Événements
+            slot.addEventListener('mouseenter', () => {
+                slot.style.borderColor = '#4CAF50';
+                slot.style.background = 'rgba(76, 175, 80, 0.2)';
+            });
+
+            slot.addEventListener('mouseleave', () => {
+                slot.style.borderColor = '#666';
+                slot.style.background = 'rgba(0,0,0,0.5)';
+            });
+
+            slot.addEventListener('click', () => {
+                this.selectTool(index);
+            });
+
+            hotbar.appendChild(slot);
+        });
+
+        this.container.appendChild(hotbar);
+        this.hotbar = hotbar;
+        this.selectedToolIndex = 0;
+        this.updateHotbarSelection();
+    }
+
+    getToolIcon(toolId) {
+        const icons = {
+            'tool_pickaxe': '⛏️',
+            'tool_axe': '🪓',
+            'tool_shovel': '🔨',
+            'tool_sword': '⚔️',
+            'tool_bow': '🏹',
+            'tool_fishing_rod': '🎣'
+        };
+        return icons[toolId] || '🔧';
+    }
+
+    selectTool(index) {
+        this.selectedToolIndex = index;
+        this.updateHotbarSelection();
+        
+        // Notifier le joueur du changement d'outil
+        if (window.game && window.game.player) {
+            window.game.player.selectedToolIndex = index;
+        }
+    }
+
+    updateHotbarSelection() {
+        if (!this.hotbar) return;
+        
+        const slots = this.hotbar.querySelectorAll('.tool-slot');
+        slots.forEach((slot, index) => {
+            if (index === this.selectedToolIndex) {
+                slot.style.borderColor = '#FFD700';
+                slot.style.background = 'rgba(255, 215, 0, 0.3)';
+            } else {
+                slot.style.borderColor = '#666';
+                slot.style.background = 'rgba(0,0,0,0.5)';
+            }
+        });
+    }
+
     createDefaultWindows() {
         // Fenêtre de personnage
         this.createWindow('character', {

@@ -61,7 +61,8 @@ export class GameEngine {
         this.keys = {
             left: false, right: false, jump: false, action: false,
             fly: false, down: false, run: false, repair: false,
-            up: false,
+            up: false, attack: false,
+            '1': false, '2': false, '3': false, '4': false, '5': false, '6': false
         };
         this.mouse = { x: 0, y: 0, left: false, right: false };
         this.gameLogic = {};
@@ -279,8 +280,11 @@ export class GameEngine {
             }
             
             for (let i = 1; i <= 6; i++) {
-                if (key === binds[`tool${i}`] && this.gameLogic.selectTool) {
-                    this.gameLogic.selectTool(i - 1);
+                if (key === binds[`tool${i}`]) {
+                    this.keys[i.toString()] = true;
+                    if (this.gameLogic.selectTool) {
+                        this.gameLogic.selectTool(i - 1);
+                    }
                 }
             }
             // L'ouverture des menus est gérée côté interface.
@@ -305,6 +309,13 @@ export class GameEngine {
             if (key === binds.run) this.keys.run = false;
             if (key === binds.repair) this.keys.repair = false;
             if (key === binds.attack) this.keys.attack = false;
+            
+            // Gestion des touches numériques
+            for (let i = 1; i <= 6; i++) {
+                if (key === binds[`tool${i}`]) {
+                    this.keys[i.toString()] = false;
+                }
+            }
         });
         this.canvas.addEventListener('mousemove', e => {
             const rect = this.canvas.getBoundingClientRect();
