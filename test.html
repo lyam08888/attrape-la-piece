@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Attrape la Pièce RPG</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+        .test-result {
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .success { background: #2d5a2d; color: #90ee90; }
+        .error { background: #5a2d2d; color: #ff9090; }
+        .warning { background: #5a5a2d; color: #ffff90; }
+        .info { background: #2d2d5a; color: #9090ff; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        #console {
+            background: #000;
+            color: #00ff00;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            border: 1px solid #333;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test du Jeu RPG - Attrape la Pièce</h1>
+    
+    <div class="test-section">
+        <h2>📋 Tests Automatiques</h2>
+        <button onclick="runAllTests()">Lancer Tous les Tests</button>
+        <button onclick="clearConsole()">Effacer Console</button>
+        <div id="testResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎮 Tests Manuels</h2>
+        <button onclick="testPlayerMovement()">Test Mouvement Joueur</button>
+        <button onclick="testCombatSystem()">Test Système Combat</button>
+        <button onclick="testInventory()">Test Inventaire</button>
+        <button onclick="testQuests()">Test Quêtes</button>
+        <button onclick="testAmbiance()">Test Ambiance</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Outils de Debug</h2>
+        <button onclick="showGameState()">État du Jeu</button>
+        <button onclick="giveTestItems()">Donner Objets Test</button>
+        <button onclick="levelUpPlayer()">Niveau +1</button>
+        <button onclick="spawnTestEnemy()">Spawn Ennemi</button>
+        <button onclick="toggleDebugMode()">Mode Debug</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Console de Debug</h2>
+        <div id="console"></div>
+    </div>
+
+    <script type="module">
+        import { GameEngine } from './engine.js';
+        import { Player } from './player.js';
+        import { CharacterClassManager, CHARACTER_CLASSES } from './characterClasses.js';
+        import { EquipmentManager } from './equipmentSystem.js';
+        import { QuestManager } from './questSystem.js';
+        import { AmbianceSystem } from './ambianceSystem.js';
+        import { EnemySpawner } from './enemySystem.js';
+        import { GAME_CONFIG, ConfigManager } from './gameConfig.js';
+
+        let testGame = {};
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.innerHTML = `[${timestamp}] ${message}`;
+            div.className = type;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function addTestResult(name, success, message = '') {
+            testResults.push({ name, success, message });
+            const resultsDiv = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `${success ? '✅' : '❌'} ${name}: ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+            document.getElementById('testResults').innerHTML = '';
+            testResults = [];
+        }
+
+        // Tests automatiques
+        window.runAllTests = async function() {
+            clearConsole();
+            log('🧪 Début des tests automatiques', 'info');
+            
+            try {
+                // Test 1: Configuration
+                log('Test 1: Configuration du jeu');
+                const config = GAME_CONFIG;
+                if (config && config.world && config.player) {
+                    addTestResult('Configuration', true, 'Configuration chargée correctement');
+                } else {
+                    addTestResult('Configuration', false, 'Configuration manquante');
+                }
+
+                // Test 2: Classes de personnage
+                log('Test 2: Classes de personnage');
+                const classManager = new CharacterClassManager();
+                const classes = Object.keys(CHARACTER_CLASSES);
+                if (classes.length >= 4) {
+                    addTestResult('Classes', true, `${classes.length} classes disponibles`);
+                } else {
+                    addTestResult('Classes', false, 'Classes insuffisantes');
+                }
+
+                // Test 3: Système d'équipement
+                log('Test 3: Système d\'équipement');
+                const mockPlayer = { stats: { level: 1 }, equipmentBonuses: {} };
+                const equipManager = new EquipmentManager(mockPlayer);
+                equipManager.addToInventory('health_potion', 5);
+                if (equipManager.inventory.get('health_potion') === 5) {
+                    addTestResult('Équipement', true, 'Inventaire fonctionnel');
+                } else {
+                    addTestResult('Équipement', false, 'Problème inventaire');
+                }
+
+                // Test 4: Système de quêtes
+                log('Test 4: Système de quêtes');
+                const questManager = new QuestManager();
+                const availableQuests = questManager.getAvailableQuests(mockPlayer);
+                if (availableQuests.length > 0) {
+                    addTestResult('Quêtes', true, `${availableQuests.length} quêtes disponibles`);
+                } else {
+                    addTestResult('Quêtes', false, 'Aucune quête trouvée');
+                }
+
+                // Test 5: Système d'ambiance
+                log('Test 5: Système d\'ambiance');
+                const ambianceSystem = new AmbianceSystem();
+                if (ambianceSystem.particleSystem && ambianceSystem.weatherSystem) {
+                    addTestResult('Ambiance', true, 'Systèmes d\'ambiance initialisés');
+                } else {
+                    addTestResult('Ambiance', false, 'Problème système ambiance');
+                }
+
+                // Test 6: Système d'ennemis
+                log('Test 6: Système d\'ennemis');
+                const enemySpawner = new EnemySpawner();
+                enemySpawner.addSpawnPoint(100, 100, 'goblin', 1);
+                if (enemySpawner.spawnPoints.length > 0) {
+                    addTestResult('Ennemis', true, 'Système de spawn fonctionnel');
+                } else {
+                    addTestResult('Ennemis', false, 'Problème système ennemis');
+                }
+
+                log('✅ Tests automatiques terminés', 'success');
+                
+            } catch (error) {
+                log(`❌ Erreur pendant les tests: ${error.message}`, 'error');
+                addTestResult('Tests', false, error.message);
+            }
+        };
+
+        // Tests manuels
+        window.testPlayerMovement = function() {
+            log('🏃 Test mouvement joueur', 'info');
+            // Simuler la création d'un joueur
+            try {
+                const player = new Player(100, 100, GAME_CONFIG, null);
+                player.vx = 5;
+                player.vy = -10;
+                log(`Joueur créé à (${player.x}, ${player.y})`, 'success');
+                log(`Vitesse: vx=${player.vx}, vy=${player.vy}`, 'info');
+            } catch (error) {
+                log(`❌ Erreur création joueur: ${error.message}`, 'error');
+            }
+        };
+
+        window.testCombatSystem = function() {
+            log('⚔️ Test système de combat', 'info');
+            try {
+                // Simuler un combat
+                const damage = Math.floor(Math.random() * 20) + 10;
+                const isCritical = Math.random() < 0.2;
+                log(`Dégâts simulés: ${damage} ${isCritical ? '(CRITIQUE!)' : ''}`, 
+                    isCritical ? 'warning' : 'info');
+            } catch (error) {
+                log(`❌ Erreur combat: ${error.message}`, 'error');
+            }
+        };
+
+        window.testInventory = function() {
+            log('🎒 Test inventaire', 'info');
+            try {
+                const mockPlayer = { stats: { level: 1 }, equipmentBonuses: {} };
+                const equipManager = new EquipmentManager(mockPlayer);
+                
+                // Ajouter des objets
+                equipManager.addToInventory('health_potion', 3);
+                equipManager.addToInventory('iron_sword', 1);
+                equipManager.addToInventory('leather_armor', 1);
+                
+                log(`Objets dans l'inventaire: ${equipManager.inventory.size}`, 'success');
+                for (const [item, quantity] of equipManager.inventory) {
+                    log(`- ${item}: ${quantity}`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Erreur inventaire: ${error.message}`, 'error');
+            }
+        };
+
+        window.testQuests = function() {
+            log('📜 Test quêtes', 'info');
+            try {
+                const questManager = new QuestManager();
+                const mockPlayer = { stats: { level: 1 } };
+                
+                const availableQuests = questManager.getAvailableQuests(mockPlayer);
+                log(`Quêtes disponibles: ${availableQuests.length}`, 'success');
+                
+                availableQuests.forEach(quest => {
+                    log(`- ${quest.title} (Niveau ${quest.level})`, 'info');
+                });
+                
+                // Accepter une quête
+                if (availableQuests.length > 0) {
+                    const firstQuest = availableQuests[0];
+                    questManager.acceptQuest(firstQuest.id, mockPlayer);
+                    log(`Quête acceptée: ${firstQuest.title}`, 'success');
+                }
+            } catch (error) {
+                log(`❌ Erreur quêtes: ${error.message}`, 'error');
+            }
+        };
+
+        window.testAmbiance = function() {
+            log('🎵 Test ambiance', 'info');
+            try {
+                const ambianceSystem = new AmbianceSystem();
+                
+                // Test particules
+                ambianceSystem.particleSystem.addParticle(100, 100, 'spark', {
+                    speed: 2,
+                    life: 1.0,
+                    size: 3,
+                    color: '#FF6B6B'
+                });
+                log(`Particules actives: ${ambianceSystem.particleSystem.particles.length}`, 'success');
+                
+                // Test météo
+                ambianceSystem.weatherSystem.currentWeather = 'rain';
+                log(`Météo actuelle: ${ambianceSystem.weatherSystem.currentWeather}`, 'info');
+                
+                // Test son
+                ambianceSystem.playSound('pickup');
+                log('Son de test joué', 'success');
+                
+            } catch (error) {
+                log(`❌ Erreur ambiance: ${error.message}`, 'error');
+            }
+        };
+
+        // Outils de debug
+        window.showGameState = function() {
+            log('📊 État du jeu', 'info');
+            log(`Configuration chargée: ${GAME_CONFIG ? 'Oui' : 'Non'}`, 'info');
+            log(`Monde: ${GAME_CONFIG.world.width}x${GAME_CONFIG.world.height}`, 'info');
+            log(`Taille des tuiles: ${GAME_CONFIG.world.tileSize}px`, 'info');
+            log(`Classes disponibles: ${Object.keys(CHARACTER_CLASSES).length}`, 'info');
+        };
+
+        window.giveTestItems = function() {
+            log('🎁 Ajout d\'objets de test', 'warning');
+            log('Cette fonction nécessite un jeu actif', 'info');
+        };
+
+        window.levelUpPlayer = function() {
+            log('⬆️ Niveau +1', 'warning');
+            log('Cette fonction nécessite un jeu actif', 'info');
+        };
+
+        window.spawnTestEnemy = function() {
+            log('👹 Spawn ennemi de test', 'warning');
+            log('Cette fonction nécessite un jeu actif', 'info');
+        };
+
+        window.toggleDebugMode = function() {
+            GAME_CONFIG.debug.showFPS = !GAME_CONFIG.debug.showFPS;
+            GAME_CONFIG.debug.showCollisionBoxes = !GAME_CONFIG.debug.showCollisionBoxes;
+            log(`Mode debug: ${GAME_CONFIG.debug.showFPS ? 'Activé' : 'Désactivé'}`, 'warning');
+        };
+
+        // Initialisation
+        log('🎮 Page de test chargée', 'success');
+        log('Cliquez sur "Lancer Tous les Tests" pour commencer', 'info');
+    </script>
+</body>
+</html>
