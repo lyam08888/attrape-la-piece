@@ -1,4 +1,4 @@
-import { WeatherSystem } from './weatherSystem.js';
+import { WeatherSystem as WeatherSystemAdvanced } from './weatherSystem.js';
 
 // ambianceSystem.js - Système d'ambiance complète pour le jeu RPG
 
@@ -13,7 +13,7 @@ export class AmbianceSystem {
         this.isEnabled = true;
         
         this.particleSystem = new ParticleSystem();
-        this.weatherSystem = new WeatherSystem();
+        this.weatherSystem = new WeatherSystemAdvanced();
         this.lightingSystem = new LightingSystem();
         
         this.initializeAudio();
