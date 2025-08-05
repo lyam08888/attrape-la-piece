@@ -1,10 +1,13 @@
 // logger.js - Système de journalisation amélioré pour le débogage en jeu
 
+import { windowManager } from './windowManager.js';
+
 export class Logger {
     constructor() {
         this.messages = [];
         this.maxMessages = 10; // Nombre maximum de messages à afficher
         this.isVisible = false; // Le logger n'est visible que si activé
+        this.contentElement = null; // Conteneur des logs dans la fenêtre
     }
 
     log(message, type = 'info') {
@@ -18,45 +21,64 @@ export class Logger {
         if (this.messages.length > this.maxMessages) {
             this.messages.pop();
         }
-        // Affichage stylé dans le panneau HTML
+        // Affichage stylé dans la fenêtre de logs
         this.displayInPanel(fullMessage, type);
     }
 
-    displayInPanel(msg, type) {
-        let panel = document.getElementById('logPanel');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'logPanel';
-            panel.style.position = 'fixed';
-            panel.style.bottom = '10px';
-            panel.style.right = '10px';
-            panel.style.width = '420px';
-            panel.style.maxHeight = '300px';
-            panel.style.overflowY = 'auto';
-            panel.style.background = 'rgba(20,20,20,0.95)';
-            panel.style.border = '2px solid #444';
-            panel.style.borderRadius = '8px';
-            panel.style.fontFamily = 'VT323, monospace';
-            panel.style.fontSize = '15px';
-            panel.style.zIndex = 9999;
-            panel.style.boxShadow = '0 2px 12px #000a';
-            document.body.appendChild(panel);
+    ensureWindow() {
+        // Crée la fenêtre de logs si nécessaire
+        if (!windowManager.isWindowOpen('logger')) {
+            const content = `<div id="loggerContent" style="font-family: 'VT323', monospace; font-size: 14px;"></div>`;
+            const win = windowManager.createWindow('logger', 'Logs', content, {
+                width: 420,
+                height: 300,
+                icon: 'fas fa-terminal',
+                resizable: true
+            });
+            this.contentElement = win.element.querySelector('#loggerContent');
+            this.isVisible = true;
+        } else if (!this.contentElement) {
+            const win = windowManager.getWindow('logger');
+            this.contentElement = win?.element.querySelector('#loggerContent');
         }
+    }
+
+    displayInPanel(msg, type) {
+        this.ensureWindow();
+        if (!this.contentElement) return;
+
         const line = document.createElement('div');
         line.textContent = msg;
-        line.style.margin = '2px 8px';
+        line.style.margin = '2px 0';
         line.style.padding = '2px 0';
         line.style.borderBottom = '1px solid #2226';
         switch(type) {
-            case 'error': line.style.color = '#ff5555'; line.style.fontWeight = 'bold'; line.innerHTML = '❌ ' + line.innerHTML; break;
-            case 'warn': line.style.color = '#ffe066'; line.innerHTML = '⚠️ ' + line.innerHTML; break;
-            case 'success': line.style.color = '#7CFC00'; line.innerHTML = '✅ ' + line.innerHTML; break;
-            case 'debug': line.style.color = '#00BFFF'; line.innerHTML = '🛠️ ' + line.innerHTML; break;
-            default: line.style.color = '#fff'; line.innerHTML = 'ℹ️ ' + line.innerHTML;
+            case 'error':
+                line.style.color = '#ff5555';
+                line.style.fontWeight = 'bold';
+                line.textContent = '❌ ' + line.textContent;
+                break;
+            case 'warn':
+                line.style.color = '#ffe066';
+                line.textContent = '⚠️ ' + line.textContent;
+                break;
+            case 'success':
+                line.style.color = '#7CFC00';
+                line.textContent = '✅ ' + line.textContent;
+                break;
+            case 'debug':
+                line.style.color = '#00BFFF';
+                line.textContent = '🛠️ ' + line.textContent;
+                break;
+            default:
+                line.style.color = '#fff';
+                line.textContent = 'ℹ️ ' + line.textContent;
         }
-        panel.insertBefore(line, panel.firstChild);
+        this.contentElement.insertBefore(line, this.contentElement.firstChild);
         // Limite le nombre de logs visibles
-        while (panel.childNodes.length > 15) panel.removeChild(panel.lastChild);
+        while (this.contentElement.childNodes.length > 15) {
+            this.contentElement.removeChild(this.contentElement.lastChild);
+        }
     }
     
     error(message) {
@@ -72,8 +94,22 @@ export class Logger {
     }
 
     toggleVisibility() {
-        this.isVisible = !this.isVisible;
-        this.log(`Logger in-game ${this.isVisible ? 'activé' : 'désactivé'}.`, 'debug');
+        if (!windowManager.isWindowOpen('logger')) {
+            this.ensureWindow();
+            this.isVisible = true;
+            this.log('Logger in-game activé.', 'debug');
+        } else {
+            const win = windowManager.getWindow('logger');
+            if (win.isMinimized) {
+                windowManager.restoreWindow('logger');
+                this.isVisible = true;
+                this.log('Logger in-game activé.', 'debug');
+            } else {
+                windowManager.minimizeWindow('logger');
+                this.isVisible = false;
+                this.log('Logger in-game désactivé.', 'debug');
+            }
+        }
     }
 
     update() {
