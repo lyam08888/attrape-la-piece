@@ -262,7 +262,7 @@ export class WeatherSystem {
     }
 
     draw(ctx, camera, canvas) {
-        if (!this.config.weatherEffects) return;
+        if (!this.particles) return;
         
         ctx.save();
         
