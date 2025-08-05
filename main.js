@@ -102,7 +102,7 @@ const gameLogic = {
         game.player.update(keys, game, delta);
         game.enemySpawner?.update(game, delta);
         game.enemies = game.enemySpawner?.getEnemies() || [];
-        game.pnjs?.forEach(p => p.update(game, delta));
+        game.pnjs?.forEach(p => { if (typeof p.update === 'function') p.update(game, delta); });
         game.timeSystem?.update(delta);
         game.rpgInterface?.updateHUD();
         game.modularInterface?.updateHUD(game.player);
