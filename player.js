@@ -226,7 +226,13 @@ export class Player {
             }
         }
         
-        // --- Minage et Construction ---
+        // --- Combat via clic gauche ou touche dédiée ---
+        const attackPressed = game.mouse?.left || keys.attack;
+        if (attackPressed) {
+            this.handleCombat(game);
+        }
+
+        // --- Minage (clic gauche ou touche d'action) ---
         if (game.mouse?.left || keys.action) {
             this.handleMining(game, delta);
         } else {
@@ -237,13 +243,9 @@ export class Player {
             if (game.miningEffect) game.miningEffect = null;
         }
 
+        // --- Construction (clic droit) ---
         if (game.mouse?.right) {
             this.handleBuilding(game);
-        }
-
-        // --- Combat ---
-        if (keys.attack) { // Supposons une touche "attack"
-             this.handleCombat(game);
         }
         
         // --- Compétences de classe ---
