@@ -1266,4 +1266,4 @@ export class AdvancedWorldGenerator {
     }
 }
 
-export { AdvancedWorldGenerator };
+// export { AdvancedWorldGenerator }; // doublon supprimé
